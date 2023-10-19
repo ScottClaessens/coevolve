@@ -34,8 +34,8 @@ Make Stan data for dynamic coevolutionary model
 \examples{
 # simulate data
 set.seed(1)
-n <- 100
-tree <- ape::rtree(100)
+n <- 20
+tree <- ape::rtree(n)
 d <- data.frame(
    id = tree$tip.label,
    x = rbinom(n, size = 1, prob = 0.5),

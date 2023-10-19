@@ -13,17 +13,53 @@
 #'   must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}.
 #' @param prior A list of priors for the model.
-#' @param ... Additional arguments for \pkg{Stan}.
+#' @param ... Additional arguments for \pkg{cmdstanr::sampling()}.
 #'
-#' @return The model.
+#' @return Fitted model of class \code{CmdStanModel}.
 #' @export
 #'
-#' @examples #coev_fit()
+#' @examples
+#' \dontrun{
+#' # simulate data
+#' set.seed(1)
+#' n <- 20
+#' tree <- ape::rtree(n)
+#' d <- data.frame(
+#'   id = tree$tip.label,
+#'   x = rbinom(n, size = 1, prob = 0.5),
+#'   y = ordered(sample(1:4, size = n, replace = TRUE))
+#' )
+#' # fit dynamic coevolutionary model
+#' coev_fit(
+#'   data = d,
+#'   variables = list(
+#'     x = "bernoulli_logit",
+#'     y = "ordered_logistic"
+#'   ),
+#'   id = "id",
+#'   tree = tree,
+#'   # additional arguments for cmdstanr::sample()
+#'   chains = 4,
+#'   parallel_chains = 4,
+#'   iter_warmup = 500
+#' )
+#' }
 coev_fit <- function(data, variables, id, tree, prior = NULL, ...) {
   # check arguments
   run_checks(data, variables, id, tree)
   # write stan code for model
+  sc <- coev_make_stancode(data, variables, id, tree, prior)
   # get data list for stan
+  sd <- coev_make_standata(data, variables, id, tree, prior)
   # fit model
+  model <-
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = TRUE
+    )$sample(
+      data = sd,
+      ...
+    )
   # return fitted model
+  return(model)
 }

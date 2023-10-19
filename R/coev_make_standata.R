@@ -20,8 +20,8 @@
 #' @examples
 #' # simulate data
 #' set.seed(1)
-#' n <- 100
-#' tree <- ape::rtree(100)
+#' n <- 20
+#' tree <- ape::rtree(n)
 #' d <- data.frame(
 #'    id = tree$tip.label,
 #'    x = rbinom(n, size = 1, prob = 0.5),
@@ -72,7 +72,7 @@ coev_make_standata <- function(data, variables, id, tree, prior = NULL) {
   for (j in 1:length(variables)) {
     obs[[names(variables)[j]]] <- as.integer(data[,names(variables)[j]])
   }
-  obs <- as.data.frame(obs)
+  obs <- as.matrix(as.data.frame(obs))
   # data list for stan
   sd <- list(
     N = length(tree$tip.label), # number of taxa
@@ -81,8 +81,7 @@ coev_make_standata <- function(data, variables, id, tree, prior = NULL) {
     node_seq = node_seq,        # sequence of nodes
     parent = parent,            # parent node for each node
     ts = parent_time,           # amount of time since parent node
-    y = obs,                    # observed data
-    tips = tree$tip.label       # preserve ordering of tips
+    y = obs                     # observed data
   )
   return(sd)
 }

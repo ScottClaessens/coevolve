@@ -25,14 +25,38 @@ must exactly match the tip labels in the phylogeny.}
 
 \item{prior}{A list of priors for the model.}
 
-\item{...}{Additional arguments for \pkg{Stan}.}
+\item{...}{Additional arguments for \pkg{cmdstanr::sampling()}.}
 }
 \value{
-The model.
+Fitted model of class \code{CmdStanModel}.
 }
 \description{
 Fit Bayesian dynamic coevolutionary model in Stan
 }
 \examples{
-#coev_fit()
+\dontrun{
+# simulate data
+set.seed(1)
+n <- 20
+tree <- ape::rtree(n)
+d <- data.frame(
+  id = tree$tip.label,
+  x = rbinom(n, size = 1, prob = 0.5),
+  y = ordered(sample(1:4, size = n, replace = TRUE))
+)
+# fit dynamic coevolutionary model
+coev_fit(
+  data = d,
+  variables = list(
+    x = "bernoulli_logit",
+    y = "ordered_logistic"
+  ),
+  id = "id",
+  tree = tree,
+  # additional arguments for cmdstanr::sample()
+  chains = 4,
+  parallel_chains = 4,
+  iter_warmup = 500
+)
+}
 }
