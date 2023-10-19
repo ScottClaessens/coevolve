@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-The *coevolve* package allows the user to fit Bayesian dynamic coevolutionary models in Stan.
+The **coevolve** package allows the user to fit Bayesian dynamic coevolutionary models in Stan.
 
 ## Installation
 

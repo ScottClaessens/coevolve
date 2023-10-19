@@ -8,7 +8,7 @@
 
 ## Overview
 
-The *coevolve* package allows the user to fit Bayesian dynamic
+The **coevolve** package allows the user to fit Bayesian dynamic
 coevolutionary models in Stan.
 
 ## Installation
