@@ -1,6 +1,39 @@
-coev_make_stancode <- function(data, variables, distributions, tree, prior = NULL) {
+#' Make Stan code for dynamic coevolutionary model
+#'
+#' @param data An object of class \code{data.frame} (or one that can be coerced
+#'   to that class) containing data of all variables used in the model.
+#' @param variables A named list identifying variables that should coevolve in
+#'   the model and their associated response distributions as character strings (e.g.
+#'   \code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}). Must identify
+#'   at least two variables. Variable names must refer to valid column names in data.
+#'   Currently, the only supported response distributions are \code{bernoulli_logit}
+#'   and \code{ordered_logistic}.
+#' @param prior A list of priors for the model.
+#'
+#' @return A character string containing the \pkg{Stan} code to fit the dynamic coevolutionary model.
+#' @export
+#'
+#' @examples
+#' # simulate data
+#' n <- 100
+#' d <- data.frame(
+#'     x = rbinom(n, size = 1, prob = 0.5),
+#'     y = ordered(sample(1:4, size = n, replace = TRUE))
+#' )
+#' # make stan code
+#' coev_make_stancode(
+#'    data = d,
+#'    variables = list(
+#'        x = "bernoulli_logit",
+#'        y = "ordered_logistic"
+#'    )
+#' )
+coev_make_stancode <- function(data, variables, prior = NULL) {
   ## 0. Check arguments
 
+  # extract distributions and variable names from named list
+  distributions <- as.character(variables)
+  variables <- names(variables)
   # stop if variables are not valid column names in data
   if (!all(variables %in% colnames(data))) {
     stop("Some variable names are not valid column names in data.")
@@ -107,10 +140,10 @@ coev_make_stancode <- function(data, variables, distributions, tree, prior = NUL
     "  int N; // number of taxa\n",
     "  int J; // number of variables\n",
     "  int N_seg; // number of segments in tree\n",
-    "  int node_seq[N_seg]; // sequence of nodes\n",
-    "  int parent[N_seg]; // parent node for each node\n",
-    "  vector[N_seg] ts; // amount of time since parent node\n",
-    "  int y[N,J]; // observed data\n",
+    "  array[N_seg] int node_seq; // sequence of nodes\n",
+    "  array[N_seg] int parent; // parent node for each node\n",
+    "  array[N_seg] real ts; // amount of time since parent node\n",
+    "  array[N,J] int y; // observed data\n",
     "}"
   )
   # write parameters block
