@@ -4,7 +4,7 @@
 \alias{coev_fit}
 \title{Fit Bayesian dynamic coevolutionary model in Stan}
 \usage{
-coev_fit(data, variables, tree, prior = NULL, ...)
+coev_fit(data, variables, id, tree, prior = NULL, ...)
 }
 \arguments{
 \item{data}{An object of class \code{data.frame} (or one that can be coerced
@@ -16,6 +16,10 @@ the model and their associated response distributions (e.g.
 at least two variables. Variable names must refer to valid column names in data.
 Currently, the only supported response distributions are \code{bernoulli_logit}
 and \code{ordered_logistic}.}
+
+\item{id}{A string identifying the variable in the data that links rows to tips
+on the phylogeny. Must refer to a valid column name in the data. The id column
+must exactly match the tip labels in the phylogeny.}
 
 \item{tree}{A phylogenetic tree object of class \code{phylo}.}
 

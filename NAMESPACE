@@ -2,3 +2,4 @@
 
 export(coev_fit)
 export(coev_make_stancode)
+export(coev_make_standata)

@@ -8,6 +8,10 @@
 #'   at least two variables. Variable names must refer to valid column names in data.
 #'   Currently, the only supported response distributions are \code{bernoulli_logit}
 #'   and \code{ordered_logistic}.
+#' @param id A string identifying the variable in the data that links rows to tips
+#'   on the phylogeny. Must refer to a valid column name in the data. The id column
+#'   must exactly match the tip labels in the phylogeny.
+#' @param tree A phylogenetic tree object of class \code{phylo}.
 #' @param prior A list of priors for the model.
 #'
 #' @return A character string containing the \pkg{Stan} code to fit the dynamic coevolutionary model.
@@ -15,10 +19,13 @@
 #'
 #' @examples
 #' # simulate data
+#' set.seed(1)
 #' n <- 100
+#' tree <- ape::rtree(100)
 #' d <- data.frame(
-#'     x = rbinom(n, size = 1, prob = 0.5),
-#'     y = ordered(sample(1:4, size = n, replace = TRUE))
+#'    id = tree$tip.label,
+#'    x = rbinom(n, size = 1, prob = 0.5),
+#'    y = ordered(sample(1:4, size = n, replace = TRUE))
 #' )
 #' # make stan code
 #' coev_make_stancode(
@@ -26,45 +33,16 @@
 #'    variables = list(
 #'        x = "bernoulli_logit",
 #'        y = "ordered_logistic"
-#'    )
+#'    ),
+#'    id = "id",
+#'    tree = tree
 #' )
-coev_make_stancode <- function(data, variables, prior = NULL) {
-  ## 0. Check arguments
-
+coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
+  # check arguments
+  run_checks(data, variables, id, tree)
   # extract distributions and variable names from named list
   distributions <- as.character(variables)
   variables <- names(variables)
-  # stop if variables are not valid column names in data
-  if (!all(variables %in% colnames(data))) {
-    stop("Some variable names are not valid column names in data.")
-  }
-  # stop if response distributions are not valid
-  if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic"))) {
-    stop("Response distributions other than 'bernoulli_logit' and 'ordered_logistic' are not yet supported.")
-  }
-  # stop if not at least two variables
-  if (length(variables) < 2) {
-    stop("Must be at least two variables.")
-  }
-  # stop if number of variables and response distributions do not match
-  if (length(variables) != length(distributions)) {
-    stop("Must be the same number of variables and response distributions.")
-  }
-  # stop if any binary variables are not 0/1 integers
-  for (i in 1:length(distributions)) {
-    if (distributions[i] == "bernoulli_logit" & (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] %in% 0:1))) {
-      stop("Variables following the 'bernoulli_logit' response distribution must be integers with values of 0/1.")
-    }
-  }
-  # stop if any ordinal variables are not ordered factors in data
-  for (i in 1:length(distributions)) {
-    if (distributions[i] == "ordered_logistic" & !is.ordered(data[,variables[i]])) {
-      stop("Variables following the 'ordered_logistic' response distribution must be ordered factors.")
-    }
-  }
-
-  ## 1. Write Stan code for model
-
   # write functions block
   sc_functions <- paste0(
     "functions {\n",
