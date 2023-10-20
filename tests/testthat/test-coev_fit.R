@@ -167,7 +167,7 @@ test_that("coev_fit() fits the model without error", {
     x = rbinom(n, size = 1, prob = 0.5),
     y = ordered(sample(1:4, size = n, replace = TRUE))
   )
-  # expect the following errors
+  # expect run without error
   expect_no_error(
     coev_fit(
       data = d,
