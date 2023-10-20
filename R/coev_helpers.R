@@ -49,12 +49,12 @@ run_checks <- function(data, variables, id, tree) {
   if (!(id %in% colnames(data))) {
     stop("Argument 'id' is not a valid column name in the data.")
   }
-  # stop if id in data does not match tree tip labels exactly
-  if (!identical(sort(data[,id]), sort(tree$tip.label))) {
-    stop("The id variable in the data does not match tree tip labels exactly.")
-  }
   # stop if tree is not a phylo object
   if (!methods::is(tree, "phylo")) {
     stop("Argument 'id' must be an phylogenetic tree object of class phylo.")
+  }
+  # stop if id in data does not match tree tip labels exactly
+  if (!identical(sort(data[,id]), sort(tree$tip.label))) {
+    stop("The id variable in the data does not match tree tip labels exactly.")
   }
 }
