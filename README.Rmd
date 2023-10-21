@@ -33,7 +33,61 @@ devtools::install_github("ScottClaessens/coevolve")
 
 ## Example
 
-Example goes here...
+We can simulate a phylogenetic tree with some data to see how the package works. First, simulate a phylogenetic tree.
+
+```{r}
+# set the random seed
+set.seed(1)
+# number of taxa
+n <- 50
+# random tree
+tree <- ape::rtree(n)
+```
+
+Then, simulate data for two binary traits. We allow these traits to evolve independently on the tree, but they do not influence one another in their evolution. In other words, they do not coevolve.
+
+```{r}
+# simulate data
+d <- 
+  data.frame(
+    # id to match dataset to tree tips
+    id = tree$tip.label,
+    # simulate binary variables (0/1 integers)
+    # that evolve independently on the tree
+    x = as.integer(ape::rTraitDisc(tree)) - 1L,
+    y = as.integer(ape::rTraitDisc(tree)) - 1L
+  )
+
+head(d)
+```
+
+We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr` with the `coev_fit()` function. We declare both variables and set the response distribution `bernoulli_logit`.
+
+```{r}
+# load the coevolve package
+library(coevolve)
+
+# fit model
+m <-
+  coev_fit(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree,
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    refresh = 0,
+    show_messages = FALSE,
+    seed = 1
+  )
+
+m
+```
+
+From the cross selection effects, we correctly infer that the two traits do not influence one another in their evolution.
 
 ## Citing coevolve
 
