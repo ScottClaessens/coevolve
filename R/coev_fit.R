@@ -60,6 +60,16 @@ coev_fit <- function(data, variables, id, tree, prior = NULL, ...) {
       data = sd,
       ...
     )
-  # return fitted model
-  return(model)
+  # return object of class 'coevfit'
+  out <-
+    list(
+      fit = model,
+      data = data,
+      data_name = deparse(substitute(data)),
+      variables = variables,
+      id = id,
+      tree = tree
+    )
+  class(out) <- "coevfit"
+  return(out)
 }

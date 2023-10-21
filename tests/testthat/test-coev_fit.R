@@ -177,6 +177,7 @@ test_that("coev_fit() fits the model without error", {
       ),
       id = "id",
       tree = tree,
+      parallel_chains = 4,
       iter_warmup = 100,
       iter_sampling = 100
     )
