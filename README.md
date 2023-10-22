@@ -87,14 +87,14 @@ m <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 2 finished in 422.8 seconds.
-#> Chain 1 finished in 475.2 seconds.
-#> Chain 3 finished in 490.7 seconds.
-#> Chain 4 finished in 492.8 seconds.
+#> Chain 2 finished in 446.5 seconds.
+#> Chain 1 finished in 489.6 seconds.
+#> Chain 3 finished in 504.1 seconds.
+#> Chain 4 finished in 506.2 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 470.3 seconds.
-#> Total execution time: 493.1 seconds.
+#> Mean chain execution time: 486.6 seconds.
+#> Total execution time: 506.5 seconds.
 #> Warning: 2 of 4000 (0.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 
@@ -107,18 +107,22 @@ m
 #> 
 #> Autoregressive selection effects:
 #>    mean median   sd  mad    q5   q95 rhat ess_bulk ess_tail
-#> x -1.17  -1.14 0.69 0.68 -2.37 -0.12 1.00  6171.48  2752.86
-#> y -0.70  -0.68 0.82 0.80 -2.06  0.60 1.00  4817.27  2714.89
+#> x -1.17  -1.14 0.69 0.68 -2.37 -0.12 1.00     6171     2753
+#> y -0.70  -0.68 0.82 0.80 -2.06  0.60 1.00     4817     2715
 #> 
 #> Cross selection effects:
 #>       mean median   sd  mad    q5  q95 rhat ess_bulk ess_tail
-#> x ⟶ y 0.78   0.77 0.62 0.59 -0.20 1.82 1.00  4309.08  2677.62
-#> y ⟶ x 1.26   1.25 0.88 0.86 -0.17 2.70 1.00  3584.96  2557.74
+#> x ⟶ y 0.78   0.77 0.62 0.59 -0.20 1.82 1.00     4309     2678
+#> y ⟶ x 1.26   1.25 0.88 0.86 -0.17 2.70 1.00     3585     2558
 #> 
 #> Drift scale parameters:
 #>   mean median   sd  mad   q5  q95 rhat ess_bulk ess_tail
-#> x 0.71   0.59 0.54 0.51 0.06 1.76 1.00  2575.25  2194.75
-#> y 2.04   2.03 0.79 0.76 0.68 3.36 1.00  2149.39  1495.79
+#> x 0.71   0.59 0.54 0.51 0.06 1.76 1.00     2575     2195
+#> y 2.04   2.03 0.79 0.76 0.68 3.36 1.00     2149     1496
+#> 
+#> Note: Not all model parameters are displayed in this summary.
+#> Warning: There were 2 divergent transitions after warmup.
+#> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
 From the cross selection effects, we correctly infer that the two traits

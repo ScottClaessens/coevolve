@@ -167,19 +167,24 @@ test_that("coev_fit() fits the model without error", {
     x = rbinom(n, size = 1, prob = 0.5),
     y = ordered(sample(1:4, size = n, replace = TRUE))
   )
-  # expect run without error
-  expect_no_error(
-    coev_fit(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      parallel_chains = 4,
-      iter_warmup = 100,
-      iter_sampling = 100
-    )
+  m <- coev_fit(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "ordered_logistic"
+    ),
+    id = "id",
+    tree = tree,
+    parallel_chains = 4,
+    iter_warmup = 100,
+    iter_sampling = 100
   )
+  # expect no errors for model fitting or summaries
+  expect_no_error(m)
+  expect_no_error(summary(m))
+  expect_output(print(m))
+  expect_output(print(summary(m)))
+  # expect error if prob for summary is outside of range 0 - 1
+  expect_error(summary(m, prob = -0.01))
+  expect_error(summary(m, prob =  1.01))
 })
