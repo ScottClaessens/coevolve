@@ -33,7 +33,6 @@ Make Stan data for dynamic coevolutionary model
 }
 \examples{
 # simulate data
-set.seed(1)
 n <- 20
 tree <- ape::rtree(n)
 d <- data.frame(

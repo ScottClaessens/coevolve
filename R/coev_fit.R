@@ -21,7 +21,6 @@
 #' @examples
 #' \dontrun{
 #' # simulate data
-#' set.seed(1)
 #' n <- 20
 #' tree <- ape::rtree(n)
 #' d <- data.frame(
@@ -41,7 +40,8 @@
 #'   # additional arguments for cmdstanr::sample()
 #'   chains = 4,
 #'   parallel_chains = 4,
-#'   iter_warmup = 500
+#'   iter_warmup = 500,
+#'   seed = 1
 #' )
 #' }
 coev_fit <- function(data, variables, id, tree, prior = NULL, ...) {

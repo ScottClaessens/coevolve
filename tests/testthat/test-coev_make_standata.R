@@ -1,13 +1,14 @@
 test_that("coev_make_standata() produces expected errors", {
   # simulate data
-  set.seed(1)
-  n <- 20
-  tree <- ape::rtree(n)
-  d <- data.frame(
-    id = tree$tip.label,
-    x = rbinom(n, size = 1, prob = 0.5),
-    y = ordered(sample(1:4, size = n, replace = TRUE))
-  )
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rtree(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = ordered(sample(1:4, size = n, replace = TRUE))
+    )
+  })
   # expect the following errors
   expect_error(
     coev_make_standata(
@@ -160,14 +161,15 @@ test_that("coev_make_standata() produces expected errors", {
 
 test_that("coev_make_standata() returns a list with correct names for stan", {
   # simulate data
-  set.seed(1)
-  n <- 20
-  tree <- ape::rtree(n)
-  d <- data.frame(
-    id = tree$tip.label,
-    x = rbinom(n, size = 1, prob = 0.5),
-    y = ordered(sample(1:4, size = n, replace = TRUE))
-  )
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rtree(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = ordered(sample(1:4, size = n, replace = TRUE))
+    )
+  })
   # make stan data
   sd <-
     coev_make_standata(
