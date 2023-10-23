@@ -24,9 +24,15 @@ The **coevolve** package allows the user to fit Bayesian dynamic coevolutionary 
 
 ## Installation
 
-You can install the development version of coevolve from [GitHub](https://github.com/) with:
+To use the **coevolve** package, you must first install the `cmdstanr` package (see full installation instructions here: https://mc-stan.org/cmdstanr/).
 
-``` r
+```r
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+```
+
+You can then install the development version of `coevolve` with:
+
+```r
 # install.packages("devtools")
 devtools::install_github("ScottClaessens/coevolve")
 ```
@@ -84,10 +90,16 @@ m <-
     seed = 1
   )
 
-m
+summary(m)
 ```
 
 From the cross selection effects, we correctly infer that the two traits do not influence one another in their evolution.
+
+We can also plot the cross selection effects from this model using the `coev_plot_cross()` function.
+
+```{r}
+coev_plot_cross(m)
+```
 
 ## Citing coevolve
 

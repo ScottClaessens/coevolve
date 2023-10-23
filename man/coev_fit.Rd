@@ -28,7 +28,7 @@ must exactly match the tip labels in the phylogeny.}
 \item{...}{Additional arguments for \pkg{cmdstanr::sampling()}.}
 }
 \value{
-Fitted model of class \code{CmdStanModel}.
+Fitted model of class \code{coevfit}.
 }
 \description{
 Fit Bayesian dynamic coevolutionary model in Stan

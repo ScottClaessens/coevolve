@@ -13,8 +13,15 @@ coevolutionary models in Stan.
 
 ## Installation
 
-You can install the development version of coevolve from
-[GitHub](https://github.com/) with:
+To use the **coevolve** package, you must first install the `cmdstanr`
+package (see full installation instructions here:
+<https://mc-stan.org/cmdstanr/>).
+
+``` r
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+```
+
+You can then install the development version of `coevolve` with:
 
 ``` r
 # install.packages("devtools")
@@ -87,18 +94,18 @@ m <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 2 finished in 446.5 seconds.
-#> Chain 1 finished in 489.6 seconds.
-#> Chain 3 finished in 504.1 seconds.
-#> Chain 4 finished in 506.2 seconds.
+#> Chain 2 finished in 346.4 seconds.
+#> Chain 1 finished in 389.4 seconds.
+#> Chain 3 finished in 401.4 seconds.
+#> Chain 4 finished in 403.3 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 486.6 seconds.
-#> Total execution time: 506.5 seconds.
+#> Mean chain execution time: 385.1 seconds.
+#> Total execution time: 403.6 seconds.
 #> Warning: 2 of 4000 (0.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 
-m
+summary(m)
 #> Variables: x = bernoulli_logit 
 #>            y = bernoulli_logit 
 #>      Data: d (Number of observations: 50)
@@ -127,6 +134,15 @@ m
 
 From the cross selection effects, we correctly infer that the two traits
 do not influence one another in their evolution.
+
+We can also plot the cross selection effects from this model using the
+`coev_plot_cross()` function.
+
+``` r
+coev_plot_cross(m)
+```
+
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
 
 ## Citing coevolve
 

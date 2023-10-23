@@ -15,7 +15,7 @@
 #' @param prior A list of priors for the model.
 #' @param ... Additional arguments for \pkg{cmdstanr::sampling()}.
 #'
-#' @return Fitted model of class \code{CmdStanModel}.
+#' @return Fitted model of class \code{coevfit}.
 #' @export
 #'
 #' @examples
