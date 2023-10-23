@@ -57,4 +57,12 @@ run_checks <- function(data, variables, id, tree) {
   if (!identical(sort(data[,id]), sort(tree$tip.label))) {
     stop("The id variable in the data does not match tree tip labels exactly.")
   }
+  # stop if id in data contains missing values
+  if (any(is.na(data[,id]))) {
+    stop("The id variable in the data must not contain NAs.")
+  }
+  # stop if coevolving variables contain missing data
+  if (any(is.na(data[,variables]))) {
+    stop("Coevolving variables in the data must not contain NAs.")
+  }
 }

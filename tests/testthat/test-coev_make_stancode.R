@@ -156,6 +156,37 @@ test_that("coev_make_stancode() produces expected errors", {
     },
     "The id variable in the data does not match tree tip labels exactly."
   )
+  expect_error(
+    {
+      d2 <- d; d2$id[1] <- NA
+      tree2 <- tree; tree2$tip.label[1] <- NA
+      coev_make_stancode(
+        data = d2,
+        variables = list(
+          x = "bernoulli_logit",
+          y = "ordered_logistic"
+        ),
+        id = "id",
+        tree = tree2
+      )
+    },
+    "The id variable in the data must not contain NAs."
+  )
+  expect_error(
+    {
+      d2 <- d; d2$y[1] <- NA
+      coev_make_stancode(
+        data = d2,
+        variables = list(
+          x = "bernoulli_logit",
+          y = "ordered_logistic"
+        ),
+        id = "id",
+        tree = tree
+      )
+    },
+    "Coevolving variables in the data must not contain NAs."
+  )
 })
 
 
