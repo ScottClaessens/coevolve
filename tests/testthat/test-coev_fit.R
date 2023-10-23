@@ -177,7 +177,8 @@ test_that("coev_fit() fits the model without error", {
     tree = tree,
     parallel_chains = 4,
     iter_warmup = 100,
-    iter_sampling = 100
+    iter_sampling = 100,
+    seed = 1
   )
   # expect no errors for model fitting or summaries
   expect_no_error(m)
