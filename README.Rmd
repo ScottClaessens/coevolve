@@ -50,7 +50,7 @@ n <- 50
 tree <- ape::rtree(n)
 ```
 
-Then, simulate data for two binary traits. We allow these traits to evolve independently on the tree, but they do not influence one another in their evolution. In other words, they do not coevolve.
+Then, simulate data for a binary trait and two ordinal traits.
 
 ```{r}
 # simulate data
@@ -58,16 +58,16 @@ d <-
   data.frame(
     # id to match dataset to tree tips
     id = tree$tip.label,
-    # simulate binary variables (0/1 integers)
-    # that evolve independently on the tree
-    x = as.integer(ape::rTraitDisc(tree)) - 1L,
-    y = as.integer(ape::rTraitDisc(tree)) - 1L
+    # simulate variables
+    x = as.integer(rbinom(n, 1, 0.5)),
+    y = ordered(sample(1:3, size = n, replace = TRUE)),
+    z = ordered(sample(1:5, size = n, replace = TRUE))
   )
 
 head(d)
 ```
 
-We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr` with the `coev_fit()` function. We declare both variables and set the response distribution `bernoulli_logit`.
+We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr` with the `coev_fit()` function. We declare all variables and set the response distributions for binary and ordinal variables as `bernoulli_logit` and `ordered_logistic` respectively.
 
 ```{r}
 # load the coevolve package
@@ -79,7 +79,8 @@ m <-
     data = d,
     variables = list(
       x = "bernoulli_logit",
-      y = "bernoulli_logit"
+      y = "ordered_logistic",
+      z = "ordered_logistic"
     ),
     id = "id",
     tree = tree,
@@ -93,7 +94,7 @@ m <-
 summary(m)
 ```
 
-From the cross selection effects, we correctly infer that the two traits do not influence one another in their evolution.
+From the cross selection effects, we infer that the three traits do not influence one another in their evolution.
 
 We can also plot the cross selection effects from this model using the `coev_plot_cross()` function.
 
