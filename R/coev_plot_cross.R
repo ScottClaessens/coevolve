@@ -37,7 +37,7 @@
 coev_plot_cross <- function(object, ...) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
-    stop("Argument 'object' must be a fitted coevolutionary model of class coevfit.")
+    stop2("Argument 'object' must be a fitted coevolutionary model of class coevfit.")
   }
   # extract posterior draws for alpha matrix
   suppressWarnings({

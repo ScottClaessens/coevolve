@@ -19,7 +19,7 @@
 summary.coevfit <- function(object, prob = 0.95, ...) {
   # stop if prob is outside of range 0 - 1
   if (prob <= 0 | prob >= 1) {
-    stop("Argument 'prob' is not between 0 and 1.")
+    stop2("Argument 'prob' is not between 0 and 1.")
   }
   # get summary of selection and drift parameters from cmdstanr
   s <- as.data.frame(object$fit$summary(variables = c("alpha","sigma")))
@@ -112,7 +112,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
   cat("Note: Not all model parameters are displayed in this summary.")
   # warnings for high rhats or divergences
   if (max(x$rhats, na.rm = TRUE) > 1.05) {
-    warning(
+    warning2(
       paste0(
         "Parts of the model have not converged (some Rhats are > 1.05). ",
         "Be careful when analysing the results! We recommend running ",
@@ -122,7 +122,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
     )
   }
   if (x$num_divergent > 0) {
-    warning(
+    warning2(
       paste0(
         "There were ", x$num_divergent, " divergent transitions after warmup. ",
         "http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup"
@@ -141,7 +141,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
 print_format <- function(x, digits = 2, no_digits = c("ess_bulk", "ess_tail")) {
   digits <- as.numeric(digits)
   if (length(digits) != 1L) {
-    stop("'digits' should be a single numeric value.")
+    stop2("'digits' should be a single numeric value.")
   }
   out <- x
   fmt <- paste0("%.", digits, "f")

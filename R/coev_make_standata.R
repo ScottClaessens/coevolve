@@ -43,7 +43,7 @@ coev_make_standata <- function(data, variables, id, tree, prior = NULL) {
   data <- data[match(tree$tip.label, data[,id]),]
   # stop if data and tips do not match
   if (!identical(tree$tip.label, data[,id])) {
-    stop("Data and phylogeny tips do not match.")
+    stop2("Data and phylogeny tips do not match.")
   }
   # cut up tree into segments
   times <- ape::node.depth.edgelength(tree)
