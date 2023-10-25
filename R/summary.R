@@ -112,22 +112,22 @@ print.coevsummary <- function(x, digits = 2, ...) {
   cat("Note: Not all model parameters are displayed in this summary.")
   # warnings for high rhats or divergences
   if (max(x$rhats, na.rm = TRUE) > 1.05) {
+    cat("\n")
     warning2(
       paste0(
         "Parts of the model have not converged (some Rhats are > 1.05). ",
         "Be careful when analysing the results! We recommend running ",
         "more iterations and/or setting stronger priors."
-      ),
-      call. = FALSE
+      )
     )
   }
   if (x$num_divergent > 0) {
+    cat("\n")
     warning2(
       paste0(
         "There were ", x$num_divergent, " divergent transitions after warmup. ",
         "http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup"
-      ),
-      call. = FALSE
+      )
     )
   }
   invisible(x)

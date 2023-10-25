@@ -202,6 +202,8 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
       sc_model <- paste0(sc_model, "      y[i,", j, "] ~ bernoulli_logit(eta[i,", j, "]);\n")
     } else if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(sc_model, "      y[i,", j, "] ~ ordered_logistic(eta[i,", j, "], c", j, ");\n")
+    } else if (distributions[j] == "poisson_log") {
+      sc_model <- paste0(sc_model, "      y[i,", j, "] ~ poisson_log(eta[i,", j, "]);\n")
     }
   }
   sc_model <- paste0(sc_model, "  }\n}")

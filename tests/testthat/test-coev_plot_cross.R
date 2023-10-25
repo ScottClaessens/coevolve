@@ -26,8 +26,8 @@ test_that("coev_plot_cross() produces ggplot object", {
     id = "id",
     tree = tree,
     parallel_chains = 4,
-    iter_warmup = 500,
-    iter_sampling = 500,
+    iter_warmup = 100,
+    iter_sampling = 100,
     seed = 1
   )
   # should run without error and produce ggplot object

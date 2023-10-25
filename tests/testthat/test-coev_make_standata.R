@@ -6,7 +6,8 @@ test_that("coev_make_standata() produces expected errors", {
     d <- data.frame(
       id = tree$tip.label,
       x = rbinom(n, size = 1, prob = 0.5),
-      y = ordered(sample(1:4, size = n, replace = TRUE))
+      y = ordered(sample(1:4, size = n, replace = TRUE)),
+      z = rpois(n, 3)
     )
   })
   # expect the following errors
@@ -60,13 +61,13 @@ test_that("coev_make_standata() produces expected errors", {
     coev_make_standata(
       data = d,
       variables = list(
-        x = "poisson", # incorrect response distribution
+        x = "test", # incorrect response distribution
         y = "ordered_logistic"
       ),
       id = "id",
       tree = tree
     ),
-    "Response distributions other than 'bernoulli_logit' and 'ordered_logistic' are not yet supported."
+    "Response distributions other than 'bernoulli_logit', 'ordered_logistic', and 'poisson_log' are not yet supported."
   )
   expect_error(
     coev_make_standata(
@@ -103,6 +104,18 @@ test_that("coev_make_standata() produces expected errors", {
       tree = tree
     ),
     "Variables following the 'ordered_logistic' response distribution must be ordered factors in the data."
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        y = "poisson_log", # not integer >= 0
+        z = "poisson_log"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Variables following the 'poisson_log' response distribution must be integers greater than or equal to zero in the data."
   )
   expect_error(
     coev_make_standata(

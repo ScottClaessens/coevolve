@@ -22,8 +22,8 @@ run_checks <- function(data, variables, id, tree) {
     stop2("Some variable names are not valid column names in the data.")
   }
   # stop if response distributions are not valid
-  if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic"))) {
-    stop2("Response distributions other than 'bernoulli_logit' and 'ordered_logistic' are not yet supported.")
+  if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic", "poisson_log"))) {
+    stop2("Response distributions other than 'bernoulli_logit', 'ordered_logistic', and 'poisson_log' are not yet supported.")
   }
   # stop if not at least two variables
   if (!(length(variables) >= 2)) {
@@ -39,6 +39,12 @@ run_checks <- function(data, variables, id, tree) {
   for (i in 1:length(distributions)) {
     if (distributions[i] == "ordered_logistic" & !is.ordered(data[,variables[i]])) {
       stop2("Variables following the 'ordered_logistic' response distribution must be ordered factors in the data.")
+    }
+  }
+  # stop if any count variables are not integers greater than or equal to 0
+  for (i in 1:length(distributions)) {
+    if (distributions[i] == "poisson_log" & (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
+      stop2("Variables following the 'poisson_log' response distribution must be integers greater than or equal to zero in the data.")
     }
   }
   # stop if id is not a character of length one
