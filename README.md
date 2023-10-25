@@ -18,7 +18,8 @@ package (see full installation instructions here:
 <https://mc-stan.org/cmdstanr/>).
 
 ``` r
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/",
+                 getOption("repos")))
 ```
 
 You can then install the development version of `coevolve` with:
@@ -37,12 +38,13 @@ package works. First, simulate a phylogenetic tree.
 # set the random seed
 set.seed(1)
 # number of taxa
-n <- 50
+n <- 20
 # random tree
 tree <- ape::rtree(n)
 ```
 
-Then, simulate data for a binary trait and two ordinal traits.
+Then, simulate data for a binary trait, an ordinal trait, and a count
+trait.
 
 ``` r
 # simulate data
@@ -51,25 +53,25 @@ d <-
     # id to match dataset to tree tips
     id = tree$tip.label,
     # simulate variables
-    x = as.integer(rbinom(n, 1, 0.5)),
+    x = rbinom(n, 1, 0.5),
     y = ordered(sample(1:3, size = n, replace = TRUE)),
-    z = ordered(sample(1:5, size = n, replace = TRUE))
+    z = rpois(n, 2)
   )
 
 head(d)
 #>    id x y z
-#> 1 t42 1 3 4
-#> 2 t38 0 1 4
-#> 3 t47 0 1 4
-#> 4 t20 1 1 5
-#> 5 t28 1 1 2
-#> 6 t48 0 1 4
+#> 1 t10 1 1 2
+#> 2 t14 1 1 2
+#> 3 t20 0 2 1
+#> 4  t7 1 1 3
+#> 5  t9 1 1 2
+#> 6 t15 0 1 2
 ```
 
 We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr`
 with the `coev_fit()` function. We declare all variables and set the
-response distributions for binary and ordinal variables as
-`bernoulli_logit` and `ordered_logistic` respectively.
+response distributions for binary, ordinal, and count variables as
+`bernoulli_logit`, `ordered_logistic`, and `poisson_log` respectively.
 
 ``` r
 # load the coevolve package
@@ -82,7 +84,7 @@ m <-
     variables = list(
       x = "bernoulli_logit",
       y = "ordered_logistic",
-      z = "ordered_logistic"
+      z = "poisson_log"
     ),
     id = "id",
     tree = tree,
@@ -94,48 +96,48 @@ m <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 2 finished in 2874.2 seconds.
-#> Chain 4 finished in 2955.1 seconds.
-#> Chain 3 finished in 2956.9 seconds.
-#> Chain 1 finished in 2965.0 seconds.
+#> Chain 4 finished in 1091.8 seconds.
+#> Chain 1 finished in 1093.4 seconds.
+#> Chain 3 finished in 1126.8 seconds.
+#> Chain 2 finished in 1244.7 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 2937.8 seconds.
-#> Total execution time: 2965.7 seconds.
-#> Warning: 1 of 4000 (0.0%) transitions ended with a divergence.
+#> Mean chain execution time: 1139.2 seconds.
+#> Total execution time: 1245.3 seconds.
+#> Warning: 14 of 4000 (0.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 
 summary(m)
 #> Variables: x = bernoulli_logit 
 #>            y = ordered_logistic 
-#>            z = ordered_logistic 
-#>      Data: d (Number of observations: 50)
+#>            z = poisson_log 
+#>      Data: d (Number of observations: 20)
 #>     Draws: 4 chains, each with iter = 1000; warmup = 1000; thin = 1
 #>            total post-warmup draws = 4000
 #> 
 #> Autoregressive selection effects:
-#>   mean median   sd  mad    q5  q95 rhat ess_bulk ess_tail
-#> x 0.38   0.41 1.02 1.05 -1.33 1.98 1.00     4716     3029
-#> y 0.23   0.26 1.01 1.00 -1.47 1.82 1.00     5394     2984
-#> z 0.09   0.10 1.00 0.99 -1.55 1.72 1.00     4785     3246
+#>    mean median   sd  mad    q5  q95 rhat ess_bulk ess_tail
+#> x  0.38   0.42 1.03 1.07 -1.33 1.98 1.00     4632     2943
+#> y -0.07  -0.06 0.95 0.91 -1.66 1.47 1.00     3824     2972
+#> z  0.01   0.07 0.84 0.83 -1.49 1.27 1.00     3621     3038
 #> 
 #> Cross selection effects:
 #>        mean median   sd  mad    q5  q95 rhat ess_bulk ess_tail
-#> x ⟶ y -0.11  -0.11 1.00 1.02 -1.75 1.55 1.00     7016     2796
-#> x ⟶ z -0.01  -0.01 1.01 1.01 -1.65 1.71 1.00     5582     3059
-#> y ⟶ x -0.08  -0.08 0.97 0.95 -1.64 1.56 1.00     5909     2974
-#> y ⟶ z  0.04   0.05 1.02 1.03 -1.68 1.68 1.00     5443     3215
-#> z ⟶ x  0.08   0.08 0.94 0.92 -1.50 1.64 1.00     4445     2648
-#> z ⟶ y -0.06  -0.05 0.95 0.94 -1.63 1.50 1.00     5117     3281
+#> x ⟶ y -0.07  -0.07 1.03 1.01 -1.74 1.64 1.00     5053     3145
+#> x ⟶ z  0.05   0.05 0.97 0.95 -1.53 1.61 1.00     3279     2068
+#> y ⟶ x -0.05  -0.06 0.95 0.93 -1.63 1.49 1.00     4514     2684
+#> y ⟶ z  0.08   0.09 0.92 0.95 -1.42 1.53 1.00     3150     3068
+#> z ⟶ x -0.09  -0.10 0.95 0.93 -1.60 1.52 1.00     4559     2250
+#> z ⟶ y  0.28   0.28 0.97 0.98 -1.35 1.89 1.00     4933     3129
 #> 
 #> Drift scale parameters:
 #>   mean median   sd  mad   q5  q95 rhat ess_bulk ess_tail
-#> x 0.81   0.69 0.60 0.61 0.07 1.96 1.00     1989     2311
-#> y 0.68   0.55 0.53 0.49 0.06 1.73 1.00     2354     1993
-#> z 0.97   0.88 0.68 0.71 0.07 2.22 1.00     1487     2185
+#> x 0.76   0.66 0.57 0.56 0.06 1.84 1.00     2520     1812
+#> y 0.86   0.75 0.62 0.64 0.07 2.02 1.01     1944     1740
+#> z 0.51   0.44 0.37 0.37 0.04 1.22 1.00     1923     1769
 #> 
 #> Note: Not all model parameters are displayed in this summary.
-#> Warning: There were 1 divergent transitions after warmup.
+#> Warning: There were 14 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
@@ -149,7 +151,7 @@ We can also plot the cross selection effects from this model using the
 coev_plot_cross(m)
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" />
+<img src="man/figures/README-plot_cross-1.png" width="60%" style="display: block; margin: auto;" />
 
 ## Citing coevolve
 
