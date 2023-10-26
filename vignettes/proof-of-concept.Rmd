@@ -1,0 +1,145 @@
+---
+title: "Proof of concept for the coevolve package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Proof of concept for the coevolve package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(coevolve)
+```
+
+Putting the code here for now:
+
+```{r, eval = FALSE}
+library(ape)
+library(rethinking)
+library(tidyverse)
+
+# simulation of correlated evolution between two ordinal variables
+# x and y, where x -> y but not vice versa
+# 1. start with ancestral node (say, species 1) with x = 0 and y = 0
+# 2. at each time step
+#       a. small probability of lineage split
+#       b. x predicted by parent x at previous time step, plus some error
+#       c. y predicted by parent y AND x at previous time step, plus some error
+
+# function
+simulateCoevolution <- function(n = 100,          # number of timesteps
+                                p_split = 0.05,   # probability of split
+                                selection = 0.95, # strength of selection
+                                drift = 0.05,     # strength of drift
+                                seed = 1          # random seed
+                                ) {
+  # set seed
+  set.seed(seed)
+  # first timestep
+  sim <- data.frame(ts = 1, species = "t1", parent = NA,
+                    split = FALSE, x = 0, y = 0)
+  # initial tree in text form
+  tree <- "(t1:1);"
+  # remaining timesteps
+  for (ts in 2:n) {
+    # current species list
+    current_species <- unique(sim$species)
+    # current number of species
+    current_number <- length(current_species)
+    # loop over current species
+    for (sp in current_species) {
+      # get previous values of x and y
+      prevX <- sim[sim$ts == (ts-1) & sim$species == sp, "x"]
+      prevY <- sim[sim$ts == (ts-1) & sim$species == sp, "y"]
+      # randomly generate split
+      if (runif(1) < p_split) {
+        # if there is a split, a new species branches off
+        new_sp <- paste0("t", current_number + 1)
+        # both species get new values of x and y from shared parent
+        sim <- rbind(
+          sim,
+          data.frame(
+            ts = ts,
+            species = c(sp, new_sp),
+            parent = sp,
+            split = TRUE,
+            x = rnorm(1, selection*prevX, drift),
+            y = rnorm(1, selection*prevX + selection*prevY, drift)
+          )
+        )
+        # update current number of species
+        current_number <- current_number + 1
+        # update tree
+        tree <- str_replace(
+          string = tree,
+          pattern = fixed(paste0(sp, ":")),
+          replacement = paste0("(", sp, ":1,", new_sp, ":1):")
+        )
+      } else {
+        # else if there is no split
+        # species gets new values of x and y from itself
+        sim <- rbind(
+          sim,
+          data.frame(
+            ts = ts,
+            species = sp,
+            parent = sp,
+            split = FALSE,
+            x = rnorm(1, selection*prevX, drift),
+            y = rnorm(1, selection*prevX + selection*prevY, drift)
+          )
+        )
+        # update tree
+        current_count <- str_extract(
+          string = str_extract(string = tree, pattern = paste0(sp, ":\\d+")),
+          pattern = ":\\d+"
+        )
+        tree <- str_replace(
+          string = tree,
+          pattern = paste0(sp, ":\\d+"),
+          replacement = paste0(sp, ":", parse_number(current_count) + 1)
+        )
+      }
+    }
+  }
+  # push final values through ordinal likelihood function
+  d <- sim[sim$ts == max(sim$ts),c("species","x","y")]
+  d$x <- ordered(rordlogit(nrow(d), d$x, a = c(-2, -1, 0, 1)))
+  d$y <- ordered(rordlogit(nrow(d), d$y, a = c(-2, -1, 0, 1)))
+  # return a list with data of the run and phylogenetic tree
+  out <- list(simulation = sim, data = d, tree = read.tree(text = tree))
+  return(out)
+}
+
+out <- simulateCoevolution()
+
+out$simulation
+out$data
+out$tree
+
+m <- coev_fit(
+  data = out$data,
+  variables = list(
+    x = "ordered_logistic",
+    y = "ordered_logistic"
+  ),
+  id = "species",
+  tree = out$tree,
+  parallel_chains = 4
+)
+
+summary(m)
+# doesn't seem to reflect the simulated process
+#  - make cross selection much stronger than auto selection?
+#  - increase number of cutpoints
+#  - switch to gaussian
+#  - run for longer, so more species and more power
+```
+
