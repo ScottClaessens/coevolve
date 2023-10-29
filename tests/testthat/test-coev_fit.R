@@ -5,6 +5,7 @@ test_that("coev_fit() produces expected errors", {
     tree <- ape::rtree(n)
     d <- data.frame(
       id = tree$tip.label,
+      w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
       y = ordered(sample(1:4, size = n, replace = TRUE)),
       z = rpois(n, 3)
@@ -67,7 +68,7 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Response distributions other than 'bernoulli_logit', 'ordered_logistic', and 'poisson_log' are not yet supported."
+    "Response distributions other than 'bernoulli_logit', 'ordered_logistic', 'poisson_log', and 'normal' are not yet supported."
   )
   expect_error(
     coev_fit(
@@ -116,6 +117,18 @@ test_that("coev_fit() produces expected errors", {
       tree = tree
     ),
     "Variables following the 'poisson_log' response distribution must be integers greater than or equal to zero in the data."
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        w = "normal", # not numeric
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Variables following the 'normal' response distribution must be numeric in the data."
   )
   expect_error(
     coev_fit(
@@ -205,10 +218,11 @@ test_that("coev_fit() produces expected errors", {
 test_that("coev_fit() fits the model without error", {
   # simulate data
   withr::with_seed(1, {
-    n <- 20
+    n <- 5
     tree <- ape::rtree(n)
     d <- data.frame(
       id = tree$tip.label,
+      w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
       y = ordered(sample(1:4, size = n, replace = TRUE)),
       z = rpois(n, 3)
@@ -217,6 +231,7 @@ test_that("coev_fit() fits the model without error", {
   m <- coev_fit(
     data = d,
     variables = list(
+      w = "normal",
       x = "bernoulli_logit",
       y = "ordered_logistic",
       z = "poisson_log"

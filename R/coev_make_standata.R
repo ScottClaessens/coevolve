@@ -66,6 +66,8 @@ coev_make_standata <- function(data, variables, id, tree, prior = NULL) {
   }
   # get total num segments in the tree
   N_seg <- length(node_seq)
+  # indicate whether a node in the seq is a tip
+  tip <- ifelse(node_seq > length(tree$tip.label), 0, 1)
   # get observed data
   obs <- list()
   for (j in 1:length(variables)) {
@@ -80,6 +82,7 @@ coev_make_standata <- function(data, variables, id, tree, prior = NULL) {
     node_seq = node_seq,        # sequence of nodes
     parent = parent,            # parent node for each node
     ts = parent_time,           # amount of time since parent node
+    tip = tip,                  # is tip?
     y = obs                     # observed data
   )
   return(sd)

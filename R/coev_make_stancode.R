@@ -109,6 +109,28 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
     "    }\n",
     "    return(irow_mat);\n",
     "  }\n",
+    "  \n",
+    "  // function to convert from type real to type integer, when appropriate\n",
+    "  int bin_search(real x, int min_val, int max_val) {\n",
+    "    // This assumes that min_val >= 0 is the minimum integer in range,\n",
+    "    // max_val > min_val,\n",
+    "    // and that x has already been rounded.\n",
+    "    // It should find the integer equivalent to x.\n",
+    "    int range = (max_val - min_val + 1) / 2; // We add 1 to make sure that truncation doesn't exclude a number\n",
+    "    int mid_pt = min_val + range;\n",
+    "    int out;\n",
+    "    while(range > 0) {\n",
+    "      if(x == mid_pt) {\n",
+    "        out = mid_pt;\n",
+    "        range = 0;\n",
+    "      } else {\n",
+    "        // figure out if range == 1\n",
+    "        range = (range + 1) / 2;\n",
+    "        mid_pt = x > mid_pt ? mid_pt + range: mid_pt - range;\n",
+    "      }\n",
+    "    }\n",
+    "    return out;\n",
+    "  }\n",
     "}"
   )
   # write data block
@@ -120,7 +142,8 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
     "  array[N_seg] int node_seq; // sequence of nodes\n",
     "  array[N_seg] int parent; // parent node for each node\n",
     "  array[N_seg] real ts; // amount of time since parent node\n",
-    "  array[N,J] int y; // observed data\n",
+    "  array[N_seg] int tip; // is tip?\n",
+    "  array[N,J] real y; // observed data\n",
     "}"
   )
   # write parameters block
@@ -148,6 +171,8 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
     "  matrix[J,J] Q;\n",
     "  matrix[J,J] I;\n",
     "  matrix[J,J] A;\n",
+    "  matrix[N_seg,J] drift_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
+    "  matrix[N_seg,J] sigma_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
     "  // selection matrix\n",
     "  for (j in 1:J) {\n",
     "    for (i in 1:J) {\n",
@@ -162,9 +187,11 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
     "  Q = diag_matrix(square(sigma));\n",
     "  // identity matrix\n",
     "  I = diag_matrix(rep_vector(1,J));\n",
-    "  // setting ancestral states\n",
+    "  // setting ancestral states and placeholders\n",
     "  for (j in 1:J) {\n",
     "    eta[node_seq[1],j] = eta_anc[j];\n",
+    "    drift_tips[node_seq[1],j] = -99;\n",
+    "    sigma_tips[node_seq[1],j] = -99;\n",
     "  }\n",
     "  for (i in 2:N_seg) {\n",
     "    matrix[J,J] A_delta; // amount of deterministic change (selection)\n",
@@ -172,11 +199,24 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
     "    vector[J] drift_seg; // accumulated drift over the segment\n",
     "    A_delta = A_dt(A, ts[i]);\n",
     "    VCV = cov_drift(A, Q, ts[i]);\n",
-    "    // No drift on the interaction, bc its simply a product of vars\n",
+    "    // no drift on the interaction, bc its simply a product of vars\n",
     "    drift_seg = cholesky_decompose(VCV) * to_vector( z_drift[i-1,] );\n",
-    "    eta[node_seq[i],] = to_row_vector(\n",
-    "      A_delta * to_vector(eta[parent[i],]) + (inverse(A) * (A_delta - I) * b) + drift_seg\n",
-    "    );\n",
+    "    // if not a tip, add the drift parameter\n",
+    "    if (tip[i] == 0) {\n",
+    "      eta[node_seq[i],] = to_row_vector(\n",
+    "        A_delta * to_vector(eta[parent[i],]) + (inverse(A) * (A_delta - I) * b) + drift_seg\n",
+    "      );\n",
+    "      drift_tips[node_seq[i],] = to_row_vector(rep_vector(-99, J));\n",
+    "      sigma_tips[node_seq[i],] = to_row_vector(rep_vector(-99, J));\n",
+    "    }\n",
+    "    // if is a tip, omit, we'll deal with it in the model block;\n",
+    "    else {\n",
+    "      eta[node_seq[i],] = to_row_vector(\n",
+    "        A_delta * to_vector(eta[parent[i],]) + (inverse(A) * (A_delta - I) * b)\n",
+    "      );\n",
+    "      drift_tips[node_seq[i],] = to_row_vector(drift_seg);\n",
+    "      sigma_tips[node_seq[i],] = to_row_vector(sqrt(diagonal(Q)));\n",
+    "    }\n",
     "  }\n",
     "}"
   )
@@ -198,12 +238,15 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
   # add response distributions
   sc_model <- paste0(sc_model, "  for (i in 1:N) {\n")
   for (j in 1:length(distributions)) {
+    max_val <- max(as.numeric(data[,variables[j]]))
     if (distributions[j] == "bernoulli_logit") {
-      sc_model <- paste0(sc_model, "      y[i,", j, "] ~ bernoulli_logit(eta[i,", j, "]);\n")
+      sc_model <- paste0(sc_model, "      bin_search(y[i,", j, "], 0, 1) ~ bernoulli_logit(eta[i,", j, "] + drift_tips[i,", j, "]);\n")
     } else if (distributions[j] == "ordered_logistic") {
-      sc_model <- paste0(sc_model, "      y[i,", j, "] ~ ordered_logistic(eta[i,", j, "], c", j, ");\n")
+      sc_model <- paste0(sc_model, "      bin_search(y[i,", j, "], 1, ", max_val, ") ~ ordered_logistic(eta[i,", j, "] + drift_tips[i,", j, "], c", j, ");\n")
     } else if (distributions[j] == "poisson_log") {
-      sc_model <- paste0(sc_model, "      y[i,", j, "] ~ poisson_log(eta[i,", j, "]);\n")
+      sc_model <- paste0(sc_model, "      bin_search(y[i,", j, "], 0, ", max_val, ") ~ poisson_log(eta[i,", j, "] + drift_tips[i,", j, "]);\n")
+    } else if (distributions[j] == "normal") {
+      sc_model <- paste0(sc_model, "      y[i,", j, "] ~ normal(eta[i,", j, "], sigma_tips[i,", j, "]);\n")
     }
   }
   sc_model <- paste0(sc_model, "  }\n}")
