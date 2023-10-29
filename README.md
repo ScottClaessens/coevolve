@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# coevolve
+# coevolve <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -18,8 +18,7 @@ package (see full installation instructions here:
 <https://mc-stan.org/cmdstanr/>).
 
 ``` r
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/",
-                 getOption("repos")))
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 ```
 
 You can then install the development version of `coevolve` with:
@@ -94,16 +93,32 @@ m <-
     show_messages = FALSE,
     seed = 1
   )
+#> Warning in 'C:/Users/scla896/AppData/Local/Temp/RtmpuiuDxa/model-4f9c1969329e.stan', line 74, column 16: Found
+#>     int division:
+#>       (max_val - min_val + 1) / 2
+#>     Values will be rounded towards zero. If rounding is not desired you can
+#>     write
+#>     the division as
+#>       (max_val - min_val + 1) / 2.0
+#>     If rounding is intended please use the integer division operator %/%.
+#> Warning in 'C:/Users/scla896/AppData/Local/Temp/RtmpuiuDxa/model-4f9c1969329e.stan', line 83, column 16: Found
+#>     int division:
+#>       (range + 1) / 2
+#>     Values will be rounded towards zero. If rounding is not desired you can
+#>     write
+#>     the division as
+#>       (range + 1) / 2.0
+#>     If rounding is intended please use the integer division operator %/%.
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 4 finished in 1091.8 seconds.
-#> Chain 1 finished in 1093.4 seconds.
-#> Chain 3 finished in 1126.8 seconds.
-#> Chain 2 finished in 1244.7 seconds.
+#> Chain 4 finished in 1079.7 seconds.
+#> Chain 1 finished in 1080.4 seconds.
+#> Chain 3 finished in 1114.4 seconds.
+#> Chain 2 finished in 1233.1 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 1139.2 seconds.
-#> Total execution time: 1245.3 seconds.
+#> Mean chain execution time: 1126.9 seconds.
+#> Total execution time: 1233.8 seconds.
 #> Warning: 14 of 4000 (0.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 

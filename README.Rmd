@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# coevolve
+# coevolve <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -34,8 +34,7 @@ To use the **coevolve** package, you must first install the `cmdstanr` package
 (see full installation instructions here: https://mc-stan.org/cmdstanr/).
 
 ```r
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/",
-                 getOption("repos")))
+install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 ```
 
 You can then install the development version of `coevolve` with:
