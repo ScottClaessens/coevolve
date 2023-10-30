@@ -22,39 +22,59 @@ summary.coevfit <- function(object, prob = 0.95, ...) {
     stop2("Argument 'prob' is not between 0 and 1.")
   }
   # get summary of selection and drift parameters from cmdstanr
-  s <- as.data.frame(object$fit$summary(variables = c("alpha","sigma")))
+  s <- as.data.frame(object$fit$summary())
   # summarise autoregressive selection effects
-  auto <- s[grepl("alpha", s$variable) & (substring(s$variable, 7, 7) == substring(s$variable, 9, 9)),]
-  rownames(auto) <- names(object$variables)[as.integer(substring(auto$variable, 7, 7))]
+  alpha <- s[stringr::str_starts(s$variable, pattern = "alpha\\["),]
+  equal <-
+    readr::parse_number(stringr::str_extract(alpha$variable, pattern = "alpha\\[(\\d+)\\,")) ==
+    readr::parse_number(stringr::str_extract(alpha$variable, pattern = "\\,\\d+\\]"))
+  auto <- alpha[equal,]
+  rownames(auto) <- names(object$variables)[readr::parse_number(stringr::str_extract(auto$variable, pattern = "alpha\\[(\\d+)\\,"))]
   auto <- auto[,2:ncol(auto)]
   # summarise cross selection effects
-  cross <- s[grepl("alpha", s$variable) & (substring(s$variable, 7, 7) != substring(s$variable, 9, 9)),]
+  cross <- alpha[!equal,]
   rownames(cross) <-
     paste0(
-      names(object$variables)[as.integer(substring(cross$variable, 9, 9))],
+      names(object$variables)[readr::parse_number(stringr::str_extract(cross$variable, pattern = "\\,\\d+\\]"))],
       " \U27F6 ",
-      names(object$variables)[as.integer(substring(cross$variable, 7, 7))]
+      names(object$variables)[readr::parse_number(stringr::str_extract(cross$variable, pattern = "alpha\\[(\\d+)\\,"))]
     )
   cross <- cross[,2:ncol(cross)]
   # summarise drift parameters
-  drift <- s[grepl("sigma", s$variable),]
-  rownames(drift) <- names(object$variables)[as.integer(substring(drift$variable, 7, 7))]
+  drift <- s[stringr::str_starts(s$variable, pattern = "sigma\\["),]
+  rownames(drift) <- names(object$variables)[readr::parse_number(drift$variable)]
   drift <- drift[,2:ncol(drift)]
+  # summarise SDE intercepts
+  sde_intercepts <- s[stringr::str_starts(s$variable, "b"),]
+  rownames(sde_intercepts) <- names(object$variables)[readr::parse_number(sde_intercepts$variable)]
+  sde_intercepts <- sde_intercepts[,2:ncol(sde_intercepts)]
+  # summarise ordinal cutpoints
+  cutpoints <- NULL
+  if ("ordered_logistic" %in% object$variables) {
+    cutpoints <- s[stringr::str_starts(s$variable, "c"),]
+    rownames(cutpoints) <- paste0(
+      names(object$variables)[readr::parse_number(cutpoints$variable)],
+      stringr::str_extract(cutpoints$variable, pattern = "\\[\\d+\\]")
+      )
+    cutpoints <- cutpoints[,2:ncol(cutpoints)]
+  }
   # create summary list
   out <-
     list(
-      variables     = object$variables,
-      data_name     = object$data_name,
-      nobs          = nrow(object$data),
-      chains        = object$fit$num_chains(),
-      iter          = object$fit$metadata()$iter_sampling,
-      warmup        = object$fit$metadata()$iter_sampling,
-      thin          = object$fit$metadata()$thin,
-      auto          = auto,
-      cross         = cross,
-      drift         = drift,
-      num_divergent = sum(object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent),
-      rhats         = object$fit$summary(NULL, "rhat")$rhat
+      variables      = object$variables,
+      data_name      = object$data_name,
+      nobs           = nrow(object$data),
+      chains         = object$fit$num_chains(),
+      iter           = object$fit$metadata()$iter_sampling,
+      warmup         = object$fit$metadata()$iter_sampling,
+      thin           = object$fit$metadata()$thin,
+      auto           = auto,
+      cross          = cross,
+      drift          = drift,
+      sde_intercepts = sde_intercepts,
+      cutpoints      = cutpoints,
+      num_divergent  = sum(object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent),
+      rhats          = object$fit$summary(NULL, "rhat")$rhat
     )
   class(out) <- "coevsummary"
   return(out)
@@ -108,8 +128,16 @@ print.coevsummary <- function(x, digits = 2, ...) {
   cat("Drift scale parameters:\n")
   print_format(x$drift, digits = digits)
   cat("\n")
-  # note
-  cat("Note: Not all model parameters are displayed in this summary.")
+  # print SDE intercepts
+  cat("Continuous time intercept parameters:\n")
+  print_format(x$sde_intercepts, digits = digits)
+  cat("\n")
+  # print ordinal cutpoints
+  if (!is.null(x$cutpoints)) {
+    cat("Ordinal cupoint parameters:\n")
+    print_format(x$cutpoints, digits = digits)
+    cat("\n")
+  }
   # warnings for high rhats or divergences
   if (max(x$rhats, na.rm = TRUE) > 1.05) {
     cat("\n")

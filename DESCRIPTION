@@ -23,7 +23,9 @@ Imports:
     ggplot2,
     methods,
     phangorn,
+    readr,
     rlang,
+    stringr,
     tidyr,
     tidyselect
 VignetteBuilder: knitr

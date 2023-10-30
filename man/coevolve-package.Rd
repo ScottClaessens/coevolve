@@ -6,6 +6,8 @@
 \alias{coevolve-package}
 \title{coevolve: Fit Bayesian Dynamic Coevolutionary Models using 'Stan'}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 Fit Bayesian dynamic coevolutionary models using 'Stan'. The package allows an abritrary number of variables with different response distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck evolutionary process, allowing users to assess directionality between coevolving variables.
 }
 \seealso{
