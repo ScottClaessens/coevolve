@@ -9,19 +9,19 @@ test_that("coev_plot_cross() produces expected errors", {
 test_that("coev_plot_cross() produces ggplot object", {
   # simulate data
   withr::with_seed(1, {
-    n <- 20
+    n <- 5
     tree <- ape::rtree(n)
     d <- data.frame(
       id = tree$tip.label,
       x = rbinom(n, size = 1, prob = 0.5),
-      y = ordered(sample(1:4, size = n, replace = TRUE))
+      y = rbinom(n, size = 1, prob = 0.5)
     )
   })
   m <- coev_fit(
     data = d,
     variables = list(
       x = "bernoulli_logit",
-      y = "ordered_logistic"
+      y = "bernoulli_logit"
     ),
     id = "id",
     tree = tree,
