@@ -2,7 +2,7 @@ test_that("coev_make_stancode() produces expected errors", {
   # simulate data
   withr::with_seed(1, {
     n <- 20
-    tree <- ape::rtree(n)
+    tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
       w = rnorm(n),
@@ -220,7 +220,7 @@ test_that("coev_make_stancode() returns a character of length one", {
   # simulate data
   withr::with_seed(1, {
     n <- 20
-    tree <- ape::rtree(n)
+    tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
       x = rbinom(n, size = 1, prob = 0.5),
@@ -248,7 +248,7 @@ test_that("coev_make_stancode() creates Stan code that is syntactically correct"
   # simulate data
   withr::with_seed(1, {
     n <- 20
-    tree <- ape::rtree(n)
+    tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
       x = rbinom(n, size = 1, prob = 0.5),

@@ -9,11 +9,15 @@
 #'   Currently, the only supported response distributions are \code{bernoulli_logit}
 #'   for binary variables, \code{ordered_logistic} for ordinal variables, and
 #'   \code{poisson_log} for count variables.
-#' @param id A character of length one identifying the variable in the data that links rows to tips
-#'   on the phylogeny. Must refer to a valid column name in the data. The id column
-#'   must exactly match the tip labels in the phylogeny.
+#' @param id A character of length one identifying the variable in the data that
+#'   links rows to tips on the phylogeny. Must refer to a valid column name in
+#'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}.
-#' @param prior A list of priors for the model.
+#' @param dist_mat (optional) A distance matrix with row and column names exactly
+#'   matching the tip labels in the phylogeny. The model will control for spatial
+#'   location by including a separate Gaussian Process over locations for every
+#'   coevolving variable in the model.
+#' @param prior (optional) A list of priors for the model.
 #' @param ... Additional arguments for \pkg{cmdstanr::sampling()}.
 #'
 #' @return Fitted model of class \code{coevfit}.
@@ -23,7 +27,7 @@
 #' \dontrun{
 #' # simulate data
 #' n <- 20
-#' tree <- ape::rtree(n)
+#' tree <- ape::rcoal(n)
 #' d <- data.frame(
 #'   id = tree$tip.label,
 #'   x = rbinom(n, size = 1, prob = 0.5),
@@ -45,13 +49,13 @@
 #'   seed = 1
 #' )
 #' }
-coev_fit <- function(data, variables, id, tree, prior = NULL, ...) {
+coev_fit <- function(data, variables, id, tree, dist_mat = NULL, prior = NULL, ...) {
   # check arguments
-  run_checks(data, variables, id, tree)
+  run_checks(data, variables, id, tree, dist_mat)
   # write stan code for model
-  sc <- coev_make_stancode(data, variables, id, tree, prior)
+  sc <- coev_make_stancode(data, variables, id, tree, dist_mat, prior)
   # get data list for stan
-  sd <- coev_make_standata(data, variables, id, tree, prior)
+  sd <- coev_make_standata(data, variables, id, tree, dist_mat, prior)
   # fit model
   model <-
     cmdstanr::cmdstan_model(
@@ -69,7 +73,8 @@ coev_fit <- function(data, variables, id, tree, prior = NULL, ...) {
       data_name = deparse(substitute(data)),
       variables = variables,
       id = id,
-      tree = tree
+      tree = tree,
+      dist_mat = sd$dist_mat
     )
   class(out) <- "coevfit"
   return(out)

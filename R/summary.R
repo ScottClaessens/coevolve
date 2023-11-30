@@ -2,11 +2,15 @@
 #'
 #' @param object An object of class \code{coevfit}.
 #' @param prob A value between 0 and 1 indicating the desired probability
-#' to be covered by the uncertainty intervals. The default is 0.95.
+#'   to be covered by the uncertainty intervals. The default is 0.95.
+#' @param robust If \code{FALSE} (the default) the mean is used as the measure
+#'   of central tendency and the standard deviation as the measure of variability.
+#'   If \code{TRUE}, the median and the median absolute deviation are applied
+#'   instead.
 #' @param ... Other potential arguments
 #'
 #' @details The convergence diagnostics \code{rhat}, \code{ess_bulk}, and
-#' \code{ess_tail} are described in detail in Vehtari et al. (2020).
+#'   \code{ess_tail} are described in detail in Vehtari et al. (2020).
 #'
 #' @references
 #' Aki Vehtari, Andrew Gelman, Daniel Simpson, Bob Carpenter, and
@@ -16,13 +20,26 @@
 #'
 #' @method summary coevfit
 #' @export
-summary.coevfit <- function(object, prob = 0.95, ...) {
+summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   # stop if prob is outside of range 0 - 1
   if (prob <= 0 | prob >= 1) {
     stop2("Argument 'prob' is not between 0 and 1.")
   }
+  # percentiles to print
+  probs <- c(((1 - prob) / 2), 1 - ((1 - prob) / 2))
   # get summary of selection and drift parameters from cmdstanr
-  s <- as.data.frame(object$fit$summary())
+  s <-
+    as.data.frame(
+      object$fit$summary(
+        NULL,
+        Estimate = ifelse(robust, "median", "mean"),
+        `Est.Error` = ifelse(robust, "mad", "sd"),
+        ~quantile(.x, probs = probs),
+        Rhat = "rhat",
+        Bulk_ESS = "ess_bulk",
+        Tail_ESS = "ess_tail"
+        )
+    )
   # summarise autoregressive selection effects
   alpha <- s[stringr::str_starts(s$variable, pattern = "alpha\\["),]
   equal <-
@@ -58,6 +75,18 @@ summary.coevfit <- function(object, prob = 0.95, ...) {
       )
     cutpoints <- cutpoints[,2:ncol(cutpoints)]
   }
+  # summarise gaussian process parameters
+  gpterms <- NULL
+  if (!is.null(object$dist_mat)) {
+    gpterms <- s[stringr::str_starts(s$variable, "rho_dist") |
+                   stringr::str_starts(s$variable, "sigma_dist"),]
+    gpvars <- stringr::str_extract(gpterms$variable, pattern = "[^_]+")
+    rownames(gpterms) <- paste0(
+      ifelse(gpvars == "sigma", "sdgp", gpvars),
+      "(", names(object$variables)[readr::parse_number(gpterms$variable)], ")"
+    )
+    gpterms <- gpterms[,2:ncol(gpterms)]
+  }
   # create summary list
   out <-
     list(
@@ -73,6 +102,7 @@ summary.coevfit <- function(object, prob = 0.95, ...) {
       drift          = drift,
       sde_intercepts = sde_intercepts,
       cutpoints      = cutpoints,
+      gpterms        = gpterms,
       num_divergent  = sum(object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent),
       rhats          = object$fit$summary(NULL, "rhat")$rhat
     )
@@ -134,13 +164,18 @@ print.coevsummary <- function(x, digits = 2, ...) {
   cat("\n")
   # print ordinal cutpoints
   if (!is.null(x$cutpoints)) {
-    cat("Ordinal cupoint parameters:\n")
+    cat("Ordinal cutpoint parameters:\n")
     print_format(x$cutpoints, digits = digits)
+    cat("\n")
+  }
+  # print gaussian process parameters
+  if (!is.null(x$gpterms)) {
+    cat("Gaussian Process parameters for distances:\n")
+    print_format(x$gpterms, digits = digits)
     cat("\n")
   }
   # warnings for high rhats or divergences
   if (max(x$rhats, na.rm = TRUE) > 1.05) {
-    cat("\n")
     warning2(
       paste0(
         "Parts of the model have not converged (some Rhats are > 1.05). ",
@@ -148,15 +183,16 @@ print.coevsummary <- function(x, digits = 2, ...) {
         "more iterations and/or setting stronger priors."
       )
     )
+    cat("\n")
   }
   if (x$num_divergent > 0) {
-    cat("\n")
     warning2(
       paste0(
         "There were ", x$num_divergent, " divergent transitions after warmup. ",
         "http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup"
       )
     )
+    cat("\n")
   }
   invisible(x)
 }
@@ -166,7 +202,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
 # @param x object to be printed
 # @param digits number of digits to show
 # @param no_digits names of columns for which no digits should be shown
-print_format <- function(x, digits = 2, no_digits = c("ess_bulk", "ess_tail")) {
+print_format <- function(x, digits = 2, no_digits = c("Bulk_ESS", "Tail_ESS")) {
   digits <- as.numeric(digits)
   if (length(digits) != 1L) {
     stop2("'digits' should be a single numeric value.")

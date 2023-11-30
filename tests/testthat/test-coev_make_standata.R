@@ -2,7 +2,7 @@ test_that("coev_make_standata() produces expected errors", {
   # simulate data
   withr::with_seed(1, {
     n <- 20
-    tree <- ape::rtree(n)
+    tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
       w = rnorm(n),
@@ -215,12 +215,11 @@ test_that("coev_make_standata() produces expected errors", {
   )
 })
 
-
 test_that("coev_make_standata() returns a list with correct names for stan", {
   # simulate data
   withr::with_seed(1, {
     n <- 20
-    tree <- ape::rtree(n)
+    tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
       x = rbinom(n, size = 1, prob = 0.5),
@@ -228,7 +227,7 @@ test_that("coev_make_standata() returns a list with correct names for stan", {
     )
   })
   # make stan data
-  sd <-
+  sd1 <-
     coev_make_standata(
       data = d,
       variables = list(
@@ -239,7 +238,29 @@ test_that("coev_make_standata() returns a list with correct names for stan", {
       tree = tree
     )
   # expect list with correct names
-  expect_no_error(sd)
-  expect_type(sd, "list")
-  expect_equal(names(sd), c("N", "J", "N_seg", "node_seq", "parent", "ts", "tip", "y"))
+  expect_no_error(sd1)
+  expect_type(sd1, "list")
+  expect_equal(names(sd1), c("N", "J", "N_seg", "node_seq", "parent", "ts",
+                            "tip", "y"))
+  # include distance matrix
+  withr::with_seed(1, {
+    dist_mat <- as.matrix(dist(rnorm(n)))
+    rownames(dist_mat) <- colnames(dist_mat) <- tree$tip.label
+  })
+  sd2 <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = dist_mat
+    )
+  # expect list with correct names
+  expect_no_error(sd2)
+  expect_type(sd2, "list")
+  expect_equal(names(sd2), c("N", "J", "N_seg", "node_seq", "parent", "ts",
+                             "tip", "y", "dist_mat"))
 })

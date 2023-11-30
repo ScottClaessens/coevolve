@@ -10,7 +10,7 @@ test_that("coev_plot_cross() produces ggplot object", {
   # simulate data
   withr::with_seed(1, {
     n <- 5
-    tree <- ape::rtree(n)
+    tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
       x = rbinom(n, size = 1, prob = 0.5),
