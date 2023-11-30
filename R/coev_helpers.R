@@ -1,5 +1,5 @@
 # helper function for checking arguments
-run_checks <- function(data, variables, id, tree) {
+run_checks <- function(data, variables, id, tree, dist_mat) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
@@ -76,6 +76,30 @@ run_checks <- function(data, variables, id, tree) {
   # stop if coevolving variables contain missing data
   if (any(is.na(data[,variables]))) {
     stop2("Coevolving variables in the data must not contain NAs.")
+  }
+  # if user entered a geographic distance matrix
+  if (!is.null(dist_mat)) {
+    # stop if dist_mat is not a matrix
+    if (!methods::is(dist_mat, "matrix")) {
+      stop2("Argument 'dist_mat' must be a matrix.")
+    }
+    # stop if dist_mat is not numeric
+    if (!is.numeric(dist_mat)) {
+      stop2("Argument 'dist_mat' must be a numeric matrix.")
+    }
+    # stop if dist_mat is not symmetric
+    if (!isSymmetric(dist_mat)) {
+      stop2("Argument 'dist_mat' must be a symmetric matrix.")
+    }
+    # stop if diagonal of dist_mat is not 0
+    if (!identical(as.numeric(diag(dist_mat)), rep(0, nrow(data)))) {
+      stop2("Argument 'dist_mat' must have zeroes on the diagonal of the matrix.")
+    }
+    # stop if row and column names do not match tip labels exactly
+    if (!identical(sort(data[,id]), sort(rownames(dist_mat))) |
+        !identical(sort(data[,id]), sort(colnames(dist_mat)))) {
+      stop2("Row and column names for argument 'dist_mat' do not match tree tip labels exactly.")
+    }
   }
 }
 

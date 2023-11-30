@@ -8,11 +8,15 @@
 #'   at least two variables. Variable names must refer to valid column names in data.
 #'   Currently, the only supported response distributions are \code{bernoulli_logit}
 #'   and \code{ordered_logistic}.
-#' @param id A character of length one identifying the variable in the data that links rows to tips
-#'   on the phylogeny. Must refer to a valid column name in the data. The id column
-#'   must exactly match the tip labels in the phylogeny.
+#' @param id A character of length one identifying the variable in the data that
+#'   links rows to tips on the phylogeny. Must refer to a valid column name in
+#'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}.
-#' @param prior A list of priors for the model.
+#' @param dist_mat (optional) A distance matrix with row and column names exactly
+#'   matching the tip labels in the phylogeny. The model will control for spatial
+#'   location by including a separate Gaussian Process over locations for every
+#'   coevolving variable in the model.
+#' @param prior (optional) A list of priors for the model.
 #'
 #' @return A character string containing the \pkg{Stan} code to fit the dynamic coevolutionary model.
 #' @export
@@ -20,7 +24,7 @@
 #' @examples
 #' # simulate data
 #' n <- 20
-#' tree <- ape::rtree(n)
+#' tree <- ape::rcoal(n)
 #' d <- data.frame(
 #'    id = tree$tip.label,
 #'    x = rbinom(n, size = 1, prob = 0.5),
@@ -36,9 +40,9 @@
 #'    id = "id",
 #'    tree = tree
 #' )
-coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
+coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL, prior = NULL) {
   # check arguments
-  run_checks(data, variables, id, tree)
+  run_checks(data, variables, id, tree, dist_mat)
   # extract distributions and variable names from named list
   distributions <- as.character(variables)
   variables <- names(variables)
@@ -143,9 +147,13 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
     "  array[N_seg] int parent; // parent node for each node\n",
     "  array[N_seg] real ts; // amount of time since parent node\n",
     "  array[N_seg] int tip; // is tip?\n",
-    "  array[N,J] real y; // observed data\n",
-    "}"
+    "  array[N,J] real y; // observed data\n"
   )
+  # add distance matrix if user has defined one
+  if (!is.null(dist_mat)) {
+    sc_data <- paste0(sc_data, "  array[N,N] real dist_mat; // distance matrix\n")
+  }
+  sc_data <- paste0(sc_data, "}")
   # write parameters block
   sc_parameters <- paste0(
     "parameters{\n",
@@ -163,6 +171,15 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
       sc_parameters <- paste0(sc_parameters, "  ordered[", num_cuts, "] c", i, "; // cut points for variable ", i, "\n")
     }
   }
+  # add gaussian process parameters if distance matrix specified by user
+  if (!is.null(dist_mat)) {
+    sc_parameters <- paste0(
+      sc_parameters,
+      "  matrix[N,J] dist_z; // spatial covariance random effects, unscaled and uncorrelated\n",
+      "  vector<lower=0>[J] rho_dist; // how quickly does covariance decline with distance\n",
+      "  vector<lower=0>[J] sigma_dist; // maximum covariance due to spatial location\n"
+    )
+  }
   sc_parameters <- paste0(sc_parameters, "}")
   # write transformed parameters block
   sc_transformed_parameters <- paste0(
@@ -170,7 +187,17 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
     "  matrix[N_seg,J] eta;\n",
     "  matrix[J,J] Q;\n",
     "  matrix[J,J] I;\n",
-    "  matrix[J,J] A;\n",
+    "  matrix[J,J] A;\n"
+  )
+  # add distance random effects if distance matrix specified by user
+  if (!is.null(dist_mat)) {
+    sc_transformed_parameters <- paste0(
+      sc_transformed_parameters,
+      "  matrix[N,J] dist_v; // distance covariance random effects\n"
+    )
+  }
+  sc_transformed_parameters <- paste0(
+    sc_transformed_parameters,
     "  matrix[N_seg,J] drift_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
     "  matrix[N_seg,J] sigma_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
     "  // selection matrix\n",
@@ -217,9 +244,29 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
     "      drift_tips[node_seq[i],] = to_row_vector(drift_seg);\n",
     "      sigma_tips[node_seq[i],] = to_row_vector(sqrt(diagonal(Q)));\n",
     "    }\n",
-    "  }\n",
-    "}"
+    "  }\n"
   )
+  # add gaussian process functions if dist_mat specified by user
+  if (!is.null(dist_mat)) {
+    sc_transformed_parameters <- paste0(
+      sc_transformed_parameters,
+      "  // distance covariance functions\n",
+      "  for (j in 1:J) {\n",
+      "    matrix[N,N] dist_cov;\n",
+      "    matrix[N,N] L_dist_cov;\n",
+      "    for ( i in 1:(N-1) )\n",
+      "      for ( m in (i+1):N ) {\n",
+      "        dist_cov[i,m] = sigma_dist[j]*exp(-(rho_dist[j]*dist_mat[i,m]));\n",
+      "        dist_cov[m,i] = dist_cov[i,m];\n",
+      "      }\n",
+      "    for ( q in 1:N )\n",
+      "      dist_cov[q,q] = sigma_dist[j] + 0.01;\n",
+      "    L_dist_cov = cholesky_decompose(dist_cov);\n",
+      "    dist_v[,j] = L_dist_cov * dist_z[,j];\n",
+      "  }\n"
+    )
+  }
+  sc_transformed_parameters <- paste0(sc_transformed_parameters, "}")
   # write model block
   sc_model <- paste0(
     "model{\n",
@@ -235,18 +282,47 @@ coev_make_stancode <- function(data, variables, id, tree, prior = NULL) {
       sc_model <- paste0(sc_model, "  c", j, " ~ normal(0, 2);\n")
     }
   }
+  # add priors for any gaussian process parameters
+  if (!is.null(dist_mat)) {
+    sc_model <- paste0(
+      sc_model,
+      "  to_vector(dist_z) ~ std_normal();\n",
+      "  sigma_dist ~ exponential(1);\n",
+      "  rho_dist ~ exponential(1);\n"
+    )
+  }
   # add response distributions
   sc_model <- paste0(sc_model, "  for (i in 1:N) {\n")
   for (j in 1:length(distributions)) {
     max_val <- max(as.numeric(data[,variables[j]]))
     if (distributions[j] == "bernoulli_logit") {
-      sc_model <- paste0(sc_model, "      bin_search(y[i,", j, "], 0, 1) ~ bernoulli_logit(eta[i,", j, "] + drift_tips[i,", j, "]);\n")
+      sc_model <- paste0(
+        sc_model,
+        "      bin_search(y[i,", j, "], 0, 1) ~ ",
+        "bernoulli_logit(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        " + drift_tips[i,", j, "]);\n")
     } else if (distributions[j] == "ordered_logistic") {
-      sc_model <- paste0(sc_model, "      bin_search(y[i,", j, "], 1, ", max_val, ") ~ ordered_logistic(eta[i,", j, "] + drift_tips[i,", j, "], c", j, ");\n")
+      sc_model <- paste0(
+        sc_model,
+        "      bin_search(y[i,", j, "], 1, ", max_val, ") ~ ",
+        "ordered_logistic(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        " + drift_tips[i,", j, "], c", j, ");\n")
     } else if (distributions[j] == "poisson_log") {
-      sc_model <- paste0(sc_model, "      bin_search(y[i,", j, "], 0, ", max_val, ") ~ poisson_log(eta[i,", j, "] + drift_tips[i,", j, "]);\n")
+      sc_model <- paste0(
+        sc_model,
+        "      bin_search(y[i,", j, "], 0, ", max_val, ") ~ ",
+        "poisson_log(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        " + drift_tips[i,", j, "]);\n")
     } else if (distributions[j] == "normal") {
-      sc_model <- paste0(sc_model, "      y[i,", j, "] ~ normal(eta[i,", j, "], sigma_tips[i,", j, "]);\n")
+      sc_model <- paste0(
+        sc_model,
+        "      y[i,", j, "] ~ ",
+        "normal(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        ", sigma_tips[i,", j, "]);\n")
     }
   }
   sc_model <- paste0(sc_model, "  }\n}")

@@ -39,7 +39,7 @@ set.seed(1)
 # number of taxa
 n <- 20
 # random tree
-tree <- ape::rtree(n)
+tree <- ape::rcoal(n)
 ```
 
 Then, simulate data for a binary trait, an ordinal trait, and a count

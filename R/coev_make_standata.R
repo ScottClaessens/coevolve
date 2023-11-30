@@ -8,11 +8,15 @@
 #'   at least two variables. Variable names must refer to valid column names in data.
 #'   Currently, the only supported response distributions are \code{bernoulli_logit}
 #'   and \code{ordered_logistic}.
-#' @param id A character of length one identifying the variable in the data that links rows to tips
-#'   on the phylogeny. Must refer to a valid column name in the data. The id column
-#'   must exactly match the tip labels in the phylogeny.
+#' @param id A character of length one identifying the variable in the data that
+#'   links rows to tips on the phylogeny. Must refer to a valid column name in
+#'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}.
-#' @param prior A list of priors for the model.
+#' @param dist_mat (optional) A distance matrix with row and column names exactly
+#'   matching the tip labels in the phylogeny. The model will control for spatial
+#'   location by including a separate Gaussian Process over locations for every
+#'   coevolving variable in the model.
+#' @param prior (optional) A list of priors for the model.
 #'
 #' @return A list containing the data for fitting the dynamic coevolutionary model in \pkg{Stan}.
 #' @export
@@ -20,7 +24,7 @@
 #' @examples
 #' # simulate data
 #' n <- 20
-#' tree <- ape::rtree(n)
+#' tree <- ape::rcoal(n)
 #' d <- data.frame(
 #'    id = tree$tip.label,
 #'    x = rbinom(n, size = 1, prob = 0.5),
@@ -36,9 +40,9 @@
 #'    id = "id",
 #'    tree = tree
 #' )
-coev_make_standata <- function(data, variables, id, tree, prior = NULL) {
+coev_make_standata <- function(data, variables, id, tree, dist_mat = NULL, prior = NULL) {
   # check arguments
-  run_checks(data, variables, id, tree)
+  run_checks(data, variables, id, tree, dist_mat)
   # match data to tree tip label ordering
   data <- data[match(tree$tip.label, data[,id]),]
   # stop if data and tips do not match
@@ -74,6 +78,8 @@ coev_make_standata <- function(data, variables, id, tree, prior = NULL) {
     obs[[names(variables)[j]]] <- as.integer(data[,names(variables)[j]])
   }
   obs <- as.matrix(as.data.frame(obs))
+  # normalise distance matrix so that maximum distance = 1
+  if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
   # data list for stan
   sd <- list(
     N = length(tree$tip.label), # number of taxa
@@ -85,5 +91,7 @@ coev_make_standata <- function(data, variables, id, tree, prior = NULL) {
     tip = tip,                  # is tip?
     y = obs                     # observed data
   )
+  # add distance matrix if specified
+  if (!is.null(dist_mat)) sd <- append(sd, list(dist_mat = dist_mat))
   return(sd)
 }
