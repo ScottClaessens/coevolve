@@ -60,6 +60,10 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
   if (var1 == var2) {
     stop2("Argument 'var1' and 'var2' must refer to different variables.")
   }
+  # stop if contour not logical
+  if (!is.logical(contour)) {
+    stop2("Argument 'contour' must be logical.")
+  }
   # get posterior draws for eta
   suppressWarnings({eta <- tidybayes::gather_draws(object$fit, eta[node,variable])})
   # restrict to tips only (nodes 1-n)
