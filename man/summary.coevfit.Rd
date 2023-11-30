@@ -4,13 +4,18 @@
 \alias{summary.coevfit}
 \title{Create a summary of a fitted model represented by a \code{coevfit} object}
 \usage{
-\method{summary}{coevfit}(object, prob = 0.95, ...)
+\method{summary}{coevfit}(object, prob = 0.95, robust = FALSE, ...)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}.}
 
 \item{prob}{A value between 0 and 1 indicating the desired probability
 to be covered by the uncertainty intervals. The default is 0.95.}
+
+\item{robust}{If \code{FALSE} (the default) the mean is used as the measure
+of central tendency and the standard deviation as the measure of variability.
+If \code{TRUE}, the median and the median absolute deviation are applied
+instead.}
 
 \item{...}{Other potential arguments}
 }

@@ -13,7 +13,7 @@ coev_plot_selection_gradient(object, var1, var2, contour = FALSE)
 
 \item{var2}{A character string equal to one of the coevolving variables in the model}
 
-\item{countour}{Logical (defaults to FALSE); whether to show white contour lines
+\item{contour}{Logical (defaults to FALSE); whether to show white contour lines
 to indicate where selection is stronger than drift}
 }
 \value{

@@ -37,7 +37,7 @@ package works. First, simulate a phylogenetic tree.
 # set the random seed
 set.seed(1)
 # number of taxa
-n <- 20
+n <- 10
 # random tree
 tree <- ape::rcoal(n)
 ```
@@ -58,13 +58,13 @@ d <-
   )
 
 head(d)
-#>    id x y z
-#> 1 t10 1 1 2
-#> 2 t14 1 1 2
-#> 3 t20 0 2 1
-#> 4  t7 1 1 3
-#> 5  t9 1 1 2
-#> 6 t15 0 1 2
+#>   id x y z
+#> 1 t6 0 2 2
+#> 2 t4 0 2 4
+#> 3 t9 0 2 4
+#> 4 t8 0 1 1
+#> 5 t2 0 2 3
+#> 6 t7 1 2 5
 ```
 
 We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr`
@@ -90,69 +90,63 @@ m <-
     # additional arguments for cmdstanr
     parallel_chains = 4,
     refresh = 0,
-    show_messages = FALSE,
     seed = 1
   )
-#> Warning in 'C:/Users/scla896/AppData/Local/Temp/RtmpuiuDxa/model-4f9c1969329e.stan', line 74, column 16: Found
-#>     int division:
-#>       (max_val - min_val + 1) / 2
-#>     Values will be rounded towards zero. If rounding is not desired you can
-#>     write
-#>     the division as
-#>       (max_val - min_val + 1) / 2.0
-#>     If rounding is intended please use the integer division operator %/%.
-#> Warning in 'C:/Users/scla896/AppData/Local/Temp/RtmpuiuDxa/model-4f9c1969329e.stan', line 83, column 16: Found
-#>     int division:
-#>       (range + 1) / 2
-#>     Values will be rounded towards zero. If rounding is not desired you can
-#>     write
-#>     the division as
-#>       (range + 1) / 2.0
-#>     If rounding is intended please use the integer division operator %/%.
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 4 finished in 1079.7 seconds.
-#> Chain 1 finished in 1080.4 seconds.
-#> Chain 3 finished in 1114.4 seconds.
-#> Chain 2 finished in 1233.1 seconds.
+#> Chain 1 finished in 572.3 seconds.
+#> Chain 2 finished in 578.9 seconds.
+#> Chain 4 finished in 653.3 seconds.
+#> Chain 3 finished in 679.8 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 1126.9 seconds.
-#> Total execution time: 1233.8 seconds.
-#> Warning: 14 of 4000 (0.0%) transitions ended with a divergence.
-#> See https://mc-stan.org/misc/warnings for details.
+#> Mean chain execution time: 621.1 seconds.
+#> Total execution time: 680.2 seconds.
+```
 
+The results can be investigated using:
+
+``` r
 summary(m)
 #> Variables: x = bernoulli_logit 
 #>            y = ordered_logistic 
 #>            z = poisson_log 
-#>      Data: d (Number of observations: 20)
+#>      Data: d (Number of observations: 10)
 #>     Draws: 4 chains, each with iter = 1000; warmup = 1000; thin = 1
 #>            total post-warmup draws = 4000
 #> 
 #> Autoregressive selection effects:
-#>    mean median   sd  mad    q5  q95 rhat ess_bulk ess_tail
-#> x  0.38   0.42 1.03 1.07 -1.33 1.98 1.00     4632     2943
-#> y -0.07  -0.06 0.95 0.91 -1.66 1.47 1.00     3824     2972
-#> z  0.01   0.07 0.84 0.83 -1.49 1.27 1.00     3621     3038
+#>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> x     0.07      0.97 -1.85  1.98 1.00     3924     2823
+#> y     0.05      1.01 -1.95  1.99 1.00     3875     2727
+#> z    -0.10      0.83 -1.84  1.38 1.00     3002     2731
 #> 
 #> Cross selection effects:
-#>        mean median   sd  mad    q5  q95 rhat ess_bulk ess_tail
-#> x ⟶ y -0.07  -0.07 1.03 1.01 -1.74 1.64 1.00     5053     3145
-#> x ⟶ z  0.05   0.05 0.97 0.95 -1.53 1.61 1.00     3279     2068
-#> y ⟶ x -0.05  -0.06 0.95 0.93 -1.63 1.49 1.00     4514     2684
-#> y ⟶ z  0.08   0.09 0.92 0.95 -1.42 1.53 1.00     3150     3068
-#> z ⟶ x -0.09  -0.10 0.95 0.93 -1.60 1.52 1.00     4559     2250
-#> z ⟶ y  0.28   0.28 0.97 0.98 -1.35 1.89 1.00     4933     3129
+#>       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> x ⟶ y     0.01      1.03 -2.04  1.96 1.00     4285     2897
+#> x ⟶ z    -0.18      1.00 -2.14  1.74 1.00     1847     1295
+#> y ⟶ x     0.05      0.99 -1.88  2.04 1.00     3295     3130
+#> y ⟶ z    -0.12      0.98 -2.00  1.87 1.00     2516     2003
+#> z ⟶ x    -0.17      0.95 -2.00  1.69 1.00     3166     1419
+#> z ⟶ y    -0.08      0.97 -1.91  1.88 1.00     3223     2365
 #> 
 #> Drift scale parameters:
-#>   mean median   sd  mad   q5  q95 rhat ess_bulk ess_tail
-#> x 0.76   0.66 0.57 0.56 0.06 1.84 1.00     2520     1812
-#> y 0.86   0.75 0.62 0.64 0.07 2.02 1.01     1944     1740
-#> z 0.51   0.44 0.37 0.37 0.04 1.22 1.00     1923     1769
+#>   Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> x     0.89      0.64 0.05  2.38 1.00     1877     2009
+#> y     0.78      0.60 0.03  2.20 1.00     1909     1757
+#> z     0.58      0.44 0.02  1.68 1.00     1759     1492
 #> 
-#> Note: Not all model parameters are displayed in this summary.
-#> Warning: There were 14 divergent transitions after warmup.
+#> Continuous time intercept parameters:
+#>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> x    -0.33      0.91 -2.10  1.47 1.00     4323     2973
+#> y    -0.06      0.94 -1.88  1.77 1.00     4097     3033
+#> z     0.62      0.82 -1.04  2.20 1.00     3166     2554
+#> 
+#> Ordinal cutpoint parameters:
+#>      Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> y[1]    -1.66      1.04 -3.79  0.25 1.00     2245     2687
+#> y[2]     1.95      1.11 -0.14  4.27 1.00     4332     3213
+#> Warning: There were 15 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 

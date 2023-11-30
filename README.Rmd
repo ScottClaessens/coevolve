@@ -33,13 +33,13 @@ models in Stan.
 To use the **coevolve** package, you must first install the `cmdstanr` package
 (see full installation instructions here: https://mc-stan.org/cmdstanr/).
 
-```r
+```{r install_cmdstanr, eval = FALSE}
 install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 ```
 
 You can then install the development version of `coevolve` with:
 
-```r
+```{r install_coevolve, eval = FALSE}
 # install.packages("devtools")
 devtools::install_github("ScottClaessens/coevolve")
 ```
@@ -53,7 +53,7 @@ First, simulate a phylogenetic tree.
 # set the random seed
 set.seed(1)
 # number of taxa
-n <- 20
+n <- 10
 # random tree
 tree <- ape::rcoal(n)
 ```
@@ -80,7 +80,7 @@ We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr` with the
 for binary, ordinal, and count variables as `bernoulli_logit`, `ordered_logistic`,
 and `poisson_log` respectively.
 
-```{r fit_model}
+```{r fit_model, warning=FALSE, message=FALSE}
 # load the coevolve package
 library(coevolve)
 
@@ -98,10 +98,13 @@ m <-
     # additional arguments for cmdstanr
     parallel_chains = 4,
     refresh = 0,
-    show_messages = FALSE,
     seed = 1
   )
+```
 
+The results can be investigated using:
+
+```{r fit_summary}
 summary(m)
 ```
 

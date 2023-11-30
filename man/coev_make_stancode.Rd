@@ -4,7 +4,7 @@
 \alias{coev_make_stancode}
 \title{Make Stan code for dynamic coevolutionary model}
 \usage{
-coev_make_stancode(data, variables, id, tree, prior = NULL)
+coev_make_stancode(data, variables, id, tree, dist_mat = NULL, prior = NULL)
 }
 \arguments{
 \item{data}{An object of class \code{data.frame} (or one that can be coerced
@@ -17,13 +17,18 @@ at least two variables. Variable names must refer to valid column names in data.
 Currently, the only supported response distributions are \code{bernoulli_logit}
 and \code{ordered_logistic}.}
 
-\item{id}{A character of length one identifying the variable in the data that links rows to tips
-on the phylogeny. Must refer to a valid column name in the data. The id column
-must exactly match the tip labels in the phylogeny.}
+\item{id}{A character of length one identifying the variable in the data that
+links rows to tips on the phylogeny. Must refer to a valid column name in
+the data. The id column must exactly match the tip labels in the phylogeny.}
 
 \item{tree}{A phylogenetic tree object of class \code{phylo}.}
 
-\item{prior}{A list of priors for the model.}
+\item{dist_mat}{(optional) A distance matrix with row and column names exactly
+matching the tip labels in the phylogeny. The model will control for spatial
+location by including a separate Gaussian Process over locations for every
+coevolving variable in the model.}
+
+\item{prior}{(optional) A list of priors for the model.}
 }
 \value{
 A character string containing the \pkg{Stan} code to fit the dynamic coevolutionary model.
