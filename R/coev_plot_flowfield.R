@@ -96,7 +96,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   }
   # create flow field diagram
   OU.flowField <-
-    flowField(
+    phaseR::flowField(
       OU,
       xlim = c(eta$low[var1ID] - 0.2, eta$high[var1ID] + 0.2),
       ylim = c(eta$low[var2ID] - 0.2, eta$high[var2ID] + 0.2),
@@ -116,7 +116,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
       lwd = 2
     )
   # var 1 label
-  mtext(
+  graphics::mtext(
     side = 1,
     text = paste0(var1, " (z-score)"),
     at = eta$median[var1ID],
@@ -124,7 +124,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     cex = 1.3
   )
   # var 2 label
-  mtext(
+  graphics::mtext(
     side = 2,
     text = paste0(var2, " (z-score)"),
     at = eta$median[var2ID],
@@ -134,7 +134,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   # add nullclines to phase plane
   if (nullclines) {
     nc <-
-      nullclines(
+      phaseR::nullclines(
         OU,
         xlim = c(eta$low[var1ID] - 0.2, eta$high[var1ID] + 0.2),
         ylim = c(eta$low[var2ID] - 0.2, eta$high[var2ID] + 0.2),
@@ -147,14 +147,14 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
       )
   }
   # add axes
-  axis(
+  graphics::axis(
     side = 1,
     at = c(eta$low[var1ID], eta$median[var1ID], eta$high[var1ID]),
     labels = (
       c(eta$low[var1ID], eta$median[var1ID], eta$high[var1ID]) - eta$median[var1ID]
     ) / eta$mad[var1ID]
   )
-  axis(
+  graphics::axis(
     side = 2,
     at = c(eta$low[var2ID], eta$median[var2ID], eta$high[var2ID]),
     labels = (

@@ -1,4 +1,4 @@
-test_that("coev_plot_selection_gradient() produces expected errors", {
+test_that("coev_plot_flowfield() produces expected errors", {
   # simulate data
   withr::with_seed(1, {
     n <- 5
@@ -24,36 +24,36 @@ test_that("coev_plot_selection_gradient() produces expected errors", {
   )
   # expect the following errors
   expect_error(
-    coev_plot_selection_gradient(object = "fail", var1 = "x", var2 = "y"),
+    coev_plot_flowfield(object = "fail", var1 = "x", var2 = "y"),
     "Argument 'object' must be a fitted coevolutionary model of class coevfit."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m, var1 = 0:1, var2 = "y"),
+    coev_plot_flowfield(object = m, var1 = 0:1, var2 = "y"),
     "Argument 'var1' must be a character string of length one."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m, var1 = "z", var2 = "y"),
+    coev_plot_flowfield(object = m, var1 = "z", var2 = "y"),
     "Argument 'var1' must be a variable included in the fitted model."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m, var1 = "x", var2 = 0:1),
+    coev_plot_flowfield(object = m, var1 = "x", var2 = 0:1),
     "Argument 'var2' must be a character string of length one."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m, var1 = "x", var2 = "z"),
+    coev_plot_flowfield(object = m, var1 = "x", var2 = "z"),
     "Argument 'var2' must be a variable included in the fitted model."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m, var1 = "x", var2 = "x"),
+    coev_plot_flowfield(object = m, var1 = "x", var2 = "x"),
     "Argument 'var1' and 'var2' must refer to different variables."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m, var1 = "x", var2 = "y", contour = "hello"),
-    "Argument 'contour' must be logical."
+    coev_plot_flowfield(object = m, var1 = "x", var2 = "y", nullclines = "hello"),
+    "Argument 'nullclines' must be logical."
   )
 })
 
-test_that("coev_plot_selection_gradient() produces ggplot object", {
+test_that("coev_plot_flowfield() produces ggplot object", {
   # simulate data
   withr::with_seed(1, {
     n <- 5
@@ -77,13 +77,7 @@ test_that("coev_plot_selection_gradient() produces ggplot object", {
     iter_sampling = 100,
     seed = 1
   )
-  # should run without error and produce ggplot object
-  expect_no_error(coev_plot_selection_gradient(m, var1 = "x", var2 = "y"))
-  expect_no_error(coev_plot_selection_gradient(m, var1 = "x", var2 = "y", contour = TRUE))
-  expect_true(
-    methods::is(
-      coev_plot_selection_gradient(m, var1 = "x", var2 = "y"),
-      "ggplot"
-      )
-    )
+  # should run without error
+  expect_no_error(coev_plot_flowfield(m, var1 = "x", var2 = "y"))
+  expect_no_error(coev_plot_flowfield(m, var1 = "x", var2 = "y", nullclines = TRUE))
 })

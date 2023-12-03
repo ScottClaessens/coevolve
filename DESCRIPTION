@@ -25,6 +25,7 @@ Imports:
     ggplot2,
     methods,
     phangorn,
+    phaseR,
     readr,
     rlang,
     stringr,
@@ -32,3 +33,5 @@ Imports:
     tidyr,
     tidyselect
 VignetteBuilder: knitr
+Depends: 
+    R (>= 2.10)
