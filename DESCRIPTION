@@ -7,6 +7,7 @@ Authors@R:
 Description: Fit Bayesian dynamic coevolutionary models using 'Stan'. The package allows an abritrary number of variables with different response distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck evolutionary process, allowing users to assess directionality between coevolving variables.
 License: GPL-2
 URL: https://github.com/ScottClaessens/coevolve
+BugReports: https://github.com/ScottClaessens/coevolve/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
@@ -34,4 +35,4 @@ Imports:
     tidyselect
 VignetteBuilder: knitr
 Depends: 
-    R (>= 2.10)
+    R (>= 3.5.0)
