@@ -92,7 +92,7 @@ run_checks <- function(data, variables, id, tree, dist_mat) {
       stop2("Argument 'dist_mat' must be a symmetric matrix.")
     }
     # stop if diagonal of dist_mat is not 0
-    if (!identical(as.numeric(diag(dist_mat)), rep(0, nrow(data)))) {
+    if (!identical(as.numeric(diag(dist_mat)), rep(0, nrow(dist_mat)))) {
       stop2("Argument 'dist_mat' must have zeroes on the diagonal of the matrix.")
     }
     # stop if row and column names do not match tip labels exactly

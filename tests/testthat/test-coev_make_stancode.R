@@ -213,6 +213,71 @@ test_that("coev_make_stancode() produces expected errors", {
     },
     "Coevolving variables in the data must not contain NAs."
   )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = "testing" # not of class matrix
+    ),
+    "Argument 'dist_mat' must be a matrix."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(letters) # matrix not numeric
+    ),
+    "Argument 'dist_mat' must be a numeric matrix."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(1:100, nrow = 10) # matrix not symmetric
+    ),
+    "Argument 'dist_mat' must be a symmetric matrix."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(rep(1, 100), nrow = 10) # matrix symmetric but diagonal not zero
+    ),
+    "Argument 'dist_mat' must have zeroes on the diagonal of the matrix."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(rep(0, 100), nrow = 10) # matrix row/col names do not match tips
+    ),
+    "Row and column names for argument 'dist_mat' do not match tree tip labels exactly."
+  )
 })
 
 
@@ -256,8 +321,8 @@ test_that("coev_make_stancode() creates Stan code that is syntactically correct"
       z = rpois(n, 3)
     )
   })
-  # make stan code
-  sc <-
+  # make stan code without distance matrix
+  sc1 <-
     coev_make_stancode(
       data = d,
       variables = list(
@@ -268,12 +333,34 @@ test_that("coev_make_stancode() creates Stan code that is syntactically correct"
       id = "id",
       tree = tree
     )
+  # make stan code with distance matrix
+  dist_mat <- as.matrix(dist(rnorm(n)))
+  rownames(dist_mat) <- colnames(dist_mat) <- d$id
+  sc2 <-
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic",
+        z = "poisson_log"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = dist_mat
+    )
   # check stan code is syntactically correct
-  expect_no_error(sc)
+  expect_no_error(sc1)
+  expect_no_error(sc2)
   expect_true(
     cmdstanr::cmdstan_model(
-      stan_file = cmdstanr::write_stan_file(sc),
+      stan_file = cmdstanr::write_stan_file(sc1),
       compile = FALSE
-      )$check_syntax(quiet = TRUE)
-    )
+    )$check_syntax(quiet = TRUE)
+  )
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc2),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
 })

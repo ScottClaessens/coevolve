@@ -228,7 +228,8 @@ test_that("coev_fit() fits the model without error", {
       z = rpois(n, 3)
     )
   })
-  m <- coev_fit(
+  # model without distance matrix
+  m1 <- coev_fit(
     data = d,
     variables = list(
       w = "normal",
@@ -243,12 +244,35 @@ test_that("coev_fit() fits the model without error", {
     iter_sampling = 100,
     seed = 1
   )
+  # model with distance matrix
+  dist_mat <- as.matrix(dist(rnorm(n)))
+  rownames(dist_mat) <- colnames(dist_mat) <- d$id
+  m2 <- coev_fit(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "ordered_logistic"
+    ),
+    id = "id",
+    tree = tree,
+    dist_mat = dist_mat,
+    parallel_chains = 4,
+    iter_warmup = 100,
+    iter_sampling = 100,
+    seed = 1
+  )
   # expect no errors for model fitting or summaries
-  expect_no_error(m)
-  expect_no_error(summary(m))
-  expect_output(print(m))
-  expect_output(print(summary(m)))
+  expect_no_error(m1)
+  expect_no_error(m2)
+  expect_no_error(summary(m1))
+  expect_no_error(summary(m2))
+  expect_output(print(m1))
+  expect_output(print(m2))
+  expect_output(print(summary(m1)))
+  expect_output(print(summary(m2)))
   # expect error if prob for summary is outside of range 0 - 1
-  expect_error(summary(m, prob = -0.01))
-  expect_error(summary(m, prob =  1.01))
+  expect_error(summary(m1, prob = -0.01))
+  expect_error(summary(m2, prob = -0.01))
+  expect_error(summary(m1, prob =  1.01))
+  expect_error(summary(m2, prob =  1.01))
 })

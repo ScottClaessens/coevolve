@@ -213,6 +213,71 @@ test_that("coev_make_standata() produces expected errors", {
     },
     "Coevolving variables in the data must not contain NAs."
   )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = "testing" # not of class matrix
+    ),
+    "Argument 'dist_mat' must be a matrix."
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(letters) # matrix not numeric
+    ),
+    "Argument 'dist_mat' must be a numeric matrix."
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(1:100, nrow = 10) # matrix not symmetric
+    ),
+    "Argument 'dist_mat' must be a symmetric matrix."
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(rep(1, 100), nrow = 10) # matrix symmetric but diagonal not zero
+    ),
+    "Argument 'dist_mat' must have zeroes on the diagonal of the matrix."
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(rep(0, 100), nrow = 10) # matrix row/col names do not match tips
+    ),
+    "Row and column names for argument 'dist_mat' do not match tree tip labels exactly."
+  )
 })
 
 test_that("coev_make_standata() returns a list with correct names for stan", {
