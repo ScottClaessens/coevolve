@@ -1,0 +1,290 @@
+---
+title: "Introduction to the coevolve package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to the coevolve package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(
+  comment = NA,
+  message = FALSE,
+  warning = FALSE,
+  dev = "jpeg",
+  dpi = 100,
+  fig.asp = 0.8,
+  out.width = "60%",
+  fig.align = "center",
+  fig.alt = "",
+  fig.cap = ""
+  )
+library(ape)
+library(tidyverse)
+```
+
+## Introduction
+
+This vignette provides an introduction to the **coevolve** package. It briefly
+describes the class of dynamic coevolutionary model that the package is designed
+to fit. Then it runs through a working example, simulating data and showing that
+the model can reconstruct the true coevolutionary process that generated the
+data.
+
+## The dynamic coevolutionary model
+
+In the **coevolve** package, the main function is `coev_fit()`, which fits a
+dynamic coevolutionary model to taxa variables given the phylogenetic
+relationships among taxa. The model allows the user to determine whether
+evolutionary change in one variable precedes evolutionary change in another
+variable.
+
+A full description of the dynamic coevolutionary model can be found in
+[this pre-print](https://ecoevorxiv.org/repository/view/4119/). Briefly, the
+model represents observed variables as latent variables that are allowed to
+coevolve along an evolutionary time series. Coevolution unfolds according to a
+stochastic differential equation similar to an Ornstein-Uhlenbeck process, which
+contains both "selection" (tendency towards an optimum value) and "drift"
+(exogenous Gaussian noise) components. Change in the latent variables depend
+upon all other latent variables in the model and themselves, allowing users to
+assess the directional influence of one variable on future change in another
+variable.
+
+Similar coevolutionary models are offered in programs like BayesTraits
+(see [here](http://www.evolution.reading.ac.uk/BayesTraitsV4.1.1/BayesTraitsV4.1.1.html)).
+However, these models are limited to a small number of discrete traits. The
+**coevolve** package goes beyond these models by allowing the user to estimate
+coevolutionary effects between any number of variables and a much wider range of
+response distributions, including continuous, binary, ordinal, and count
+distributions.
+
+## Proof-of-concept simulation
+
+To show the model in action, we can first simulate a dataset where we know the
+true directional influence between variables. In the following simulation
+(code not shown here for space reasons), we simulate the coevolution between two
+continuous variables *x* and *y*, where changes in *x* influence future changes
+in *y* but not vice versa.
+
+```{r simulation_function, include=FALSE}
+# Simulation of coevolution between two continuous variables
+
+# x and y, where x -> y but not vice versa
+# 1. start with ancestral node (say, species 1) with x = 0 and y = 0
+# 2. at each time step:
+#       a. small probability of lineage split
+#       b. x predicted by parent x at previous time step, plus some error
+#       c. y predicted by parent y AND x at previous time step, plus some error
+
+# function
+simulate_coevolution <- function(n = 110,          # number of timesteps
+                                 p_split = 0.05,   # probability of split
+                                 selection = 0.95, # strength of selection
+                                 drift = 0.05,     # strength of drift
+                                 seed = 1          # random seed
+                                 ) {
+  # set seed
+  set.seed(seed)
+  # first timestep
+  sim <- data.frame(ts = 1, species = "t1", parent = NA,
+                    split = FALSE, x = 0, y = 0)
+  # initial tree in text form
+  tree <- "(t1:1);"
+  # remaining timesteps
+  for (ts in 2:n) {
+    # current species list
+    current_species <- unique(sim$species)
+    # current number of species
+    current_number <- length(current_species)
+    # loop over current species
+    for (sp in current_species) {
+      # get previous values of x and y
+      prevX <- sim[sim$ts == (ts-1) & sim$species == sp, "x"]
+      prevY <- sim[sim$ts == (ts-1) & sim$species == sp, "y"]
+      # randomly generate split
+      if (runif(1) < p_split) {
+        # if there is a split, a new species branches off
+        new_sp <- paste0("t", current_number + 1)
+        # both species get new values of x and y from shared parent
+        sim <- rbind(
+          sim,
+          data.frame(
+            ts = ts,
+            species = c(sp, new_sp),
+            parent = sp,
+            split = TRUE,
+            x = rnorm(1, selection*prevX, drift),
+            y = rnorm(1, selection*prevX + selection*prevY, drift)
+          )
+        )
+        # update current number of species
+        current_number <- current_number + 1
+        # update tree
+        tree <- str_replace(
+          string = tree,
+          pattern = fixed(paste0(sp, ":")),
+          replacement = paste0("(", sp, ":1,", new_sp, ":1):")
+        )
+      } else {
+        # else if there is no split
+        # species gets new values of x and y from itself
+        sim <- rbind(
+          sim,
+          data.frame(
+            ts = ts,
+            species = sp,
+            parent = sp,
+            split = FALSE,
+            x = rnorm(1, selection*prevX, drift),
+            y = rnorm(1, selection*prevX + selection*prevY, drift)
+          )
+        )
+        # update tree
+        current_count <- str_extract(
+          string = str_extract(string = tree, pattern = paste0(sp, ":\\d+")),
+          pattern = ":\\d+"
+        )
+        tree <- str_replace(
+          string = tree,
+          pattern = paste0(sp, ":\\d+"),
+          replacement = paste0(sp, ":", parse_number(current_count) + 1)
+        )
+      }
+    }
+  }
+  # get final values (standardised)
+  d <- sim[sim$ts == max(sim$ts),c("species","x","y")]
+  d$x <- as.numeric(scale(d$x))
+  d$y <- as.numeric(scale(d$y))
+  # return a list with data of the run and phylogenetic tree
+  out <- list(simulation = sim, data = d, tree = read.tree(text = tree))
+  return(out)
+}
+```
+
+```{r simulation}
+sim <- simulate_coevolution(seed = 1)
+```
+
+We can plot the phylogenetic tree tracking the evolution of different species
+in this simulation.
+
+```{r tree, echo=FALSE, out.width="100%"}
+plot(sim$tree, show.tip.label = FALSE)
+```
+
+We can also plot how the variables *x* and *y* coevolved over time. It is clear
+from this that *x* does indeed have a large directional influence in *y* --
+even a small decrease in *x* results in a large subsequent decrease in *y*, and
+then when *x* begins to climb again, so does *y*.
+
+```{r coevolution, echo=FALSE}
+sim$simulation %>%
+  pivot_longer(
+    cols = c(x, y),
+    names_to = "Variable"
+    ) %>%
+  ggplot(
+    aes(
+      x = ts,
+      y = value,
+      colour = Variable
+      )
+    ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_line(stat = "summary_bin", binwidth = 1, fun = mean) +
+  labs(x = "Timestep", y = "Average value") +
+  theme_classic()
+```
+
+We then end up with the following observed data for *x* and *y* at the tips of
+the tree.
+
+```{r glimpse_data}
+glimpse(sim$data)
+```
+
+We can fit our dynamic coevolutionary model to this dataset. We specify that *x*
+and *y* are both continuous variables, feed in our simulated data and phylogeny,
+and indicate which column in the dataset matches the tip labels on the tree. We
+also define additional arguments for running the model in `cmdstanr`, which
+happens behind the scenes.
+
+```{r fit_model_1, eval=FALSE}
+library(coevolve)
+
+fit <-
+  coev_fit(
+    data = sim$data,
+    variables = list(
+      x = "normal",
+      y = "normal"
+    ),
+    id = "species",
+    tree = sim$tree,
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_warmup = 500,
+    iter_sampling = 1000,
+    refresh = 0,
+    seed = 1
+  )
+```
+
+```{r fit_model_2, include=FALSE}
+library(coevolve)
+
+fit <-
+  coev_fit(
+    data = sim$data,
+    variables = list(
+      x = "normal",
+      y = "normal"
+    ),
+    id = "species",
+    tree = sim$tree,
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_warmup = 500,
+    iter_sampling = 1000,
+    refresh = 0,
+    seed = 1
+  )
+```
+
+We can then inspect the model results.
+
+```{r summarise_model}
+summary(fit)
+```
+
+The model confirms the true coevolutionary relationship. We correctly infer that
+changes in *x* precede changes in *y*, but not vice versa.
+
+We can visualise the posterior densities for the two cross-effects.
+
+```{r plot_cross}
+coev_plot_cross(fit)
+```
+
+We can also visualise the coevolutionary dynamics with a selection gradient
+heatmap, where increasing green indicates positive selection, increasing red
+indicates negative selection, and the area between the white contour lines
+indicates where deterministic selection on a trait is weaker than stochastic
+drift.
+
+```{r plot_heatmap}
+coev_plot_selection_gradient(fit, var1 = "x", var2 = "y", contour = TRUE)
+```
+
+Finally, we can visualise the coevolutionary dynamics with a flowfield, with
+arrows indicating the direction of evolutionary change at different combinations
+of *x* and *y*.
+
+```{r plot_flowfield}
+coev_plot_flowfield(fit, var1 = "x", var2 = "y")
+```
+
+These visualisations confirm our inference that changes in *x* precede changes
+in *y*, but not vice versa.
