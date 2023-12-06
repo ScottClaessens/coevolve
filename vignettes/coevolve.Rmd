@@ -62,14 +62,14 @@ sim <- simulate_coevolution(seed = 1)
 We can plot the phylogenetic tree tracking the evolution of different species
 in this simulation.
 
-<img src="figure/tree-1.jpeg" width="100%" style="display: block; margin: auto;" />
+<img src="tree-1.jpeg" width="100%" style="display: block; margin: auto;" />
 
 We can also plot how the variables *x* and *y* coevolved over time. It is clear
 from this that *x* does indeed have a large directional influence on *y* --
 even a small decrease in *x* results in a large subsequent decrease in *y*, and
 then when *x* begins to climb again, so does *y*.
 
-<img src="figure/coevolution-1.jpeg" width="60%" style="display: block; margin: auto;" />
+<img src="coevolution-1.jpeg" width="60%" style="display: block; margin: auto;" />
 
 We then end up with the following observed data for *x* and *y* at the tips of
 the tree.
@@ -162,7 +162,7 @@ We can visualise the posterior densities for the two cross-effects.
 coev_plot_cross(fit)
 ```
 
-<img src="figure/plot_cross-1.jpeg" width="60%" style="display: block; margin: auto;" />
+<img src="plot_cross-1.jpeg" width="60%" style="display: block; margin: auto;" />
 
 We can also visualise the coevolutionary dynamics with a selection gradient
 heatmap, where increasing green indicates positive selection, increasing red
@@ -175,7 +175,7 @@ drift.
 coev_plot_selection_gradient(fit, var1 = "x", var2 = "y", contour = TRUE)
 ```
 
-<img src="figure/plot_heatmap-1.jpeg" width="60%" style="display: block; margin: auto;" />
+<img src="plot_heatmap-1.jpeg" width="60%" style="display: block; margin: auto;" />
 
 Finally, we can visualise the coevolutionary dynamics with a flowfield, with
 arrows indicating the direction of evolutionary change at different combinations
@@ -186,7 +186,7 @@ of *x* and *y*.
 coev_plot_flowfield(fit, var1 = "x", var2 = "y")
 ```
 
-<img src="figure/plot_flowfield-1.jpeg" width="60%" style="display: block; margin: auto;" />
+<img src="plot_flowfield-1.jpeg" width="60%" style="display: block; margin: auto;" />
 
 These visualisations confirm our inference that changes in *x* precede changes
 in *y*, but not vice versa.
