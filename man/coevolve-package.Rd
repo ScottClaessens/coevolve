@@ -14,6 +14,7 @@ Fit Bayesian dynamic coevolutionary models using 'Stan'. The package allows an a
 Useful links:
 \itemize{
   \item \url{https://github.com/ScottClaessens/coevolve}
+  \item Report bugs at \url{https://github.com/ScottClaessens/coevolve/issues}
 }
 
 }
