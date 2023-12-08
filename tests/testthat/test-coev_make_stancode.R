@@ -278,6 +278,62 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     "Row and column names for argument 'dist_mat' do not match tree tip labels exactly."
   )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior = "testing" # not a list
+    ),
+    "Argument 'prior' is not a list."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list("testing") # not a named list
+    ),
+    "Argument 'prior' is not a named list."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list(testing = "testing") # incorrect name
+    ),
+    paste0(
+      "Argument 'prior' list contains names that are not allowed. Please ",
+      "use only the following names: 'alpha', 'b', 'sigma', 'eta_anc', ",
+      "'c', 'sigma_dist', and 'rho_dist'"
+    )
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list(alpha = "normal(0,2)", alpha = "normal(0,2)") # duplicate names
+    ),
+    "Argument 'prior' contains duplicate names."
+  )
 })
 
 
@@ -362,5 +418,49 @@ test_that("coev_make_stancode() creates Stan code that is syntactically correct"
       stan_file = cmdstanr::write_stan_file(sc2),
       compile = FALSE
     )$check_syntax(quiet = TRUE)
+  )
+})
+
+test_that("Setting manual priors in coev_make_stancode() works as expected", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = rbinom(n, size = 1, prob = 0.5)
+    )
+  })
+  # invalid priors should throw an error
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "bernoulli_logit"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list(alpha = "testing")
+    )
+  )
+  # valid priors should throw no errors
+  expect_no_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "bernoulli_logit"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list(
+        alpha   = "normal(0, 2)",
+        b       = "normal(0, 2)",
+        sigma   = "exponential(1)",
+        eta_anc = "normal(0, 2)"
+        )
+    )
   )
 })

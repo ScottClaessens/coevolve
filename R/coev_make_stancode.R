@@ -13,10 +13,21 @@
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}.
 #' @param dist_mat (optional) A distance matrix with row and column names exactly
-#'   matching the tip labels in the phylogeny. The model will control for spatial
-#'   location by including a separate Gaussian Process over locations for every
-#'   coevolving variable in the model.
-#' @param prior (optional) A list of priors for the model.
+#'   matching the tip labels in the phylogeny. If specified, the model will
+#'   additionally control for spatial location by including a separate Gaussian
+#'   Process over locations for every coevolving variable in the model.
+#' @param prior (optional) A named list of priors for the model. If not specified,
+#'   the model uses default priors (see Stan code). Alternatively, the user can
+#'   specify a named list of priors. The list must contain non-duplicated entries
+#'   for any of the following variables: the autoregressive and cross-effects
+#'   (\code{alpha}), the drift scale parameters (\code{sigma}), the continuous
+#'   time intercepts (\code{b}), the ancestral states for the traits (\code{eta_anc}),
+#'   the cutpoints for ordinal variables (\code{c}), the sigma parameter(s) for
+#'   Gaussian Processes over locations (\code{sigma_dist}), and the rho parameter(s)
+#'   for Gaussian Processes over locations (\code{rho_dist}). These must be
+#'   entered with valid prior strings, e.g. \code{list(alpha = "normal(0, 2)")}.
+#'   Invalid prior strings will throw an error when the function internally checks
+#'   the syntax of resulting Stan code.
 #'
 #' @return A character string containing the \pkg{Stan} code to fit the dynamic coevolutionary model.
 #' @export
@@ -42,10 +53,27 @@
 #' )
 coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL, prior = NULL) {
   # check arguments
-  run_checks(data, variables, id, tree, dist_mat)
+  run_checks(data, variables, id, tree, dist_mat, prior)
   # extract distributions and variable names from named list
   distributions <- as.character(variables)
   variables <- names(variables)
+  # get priors
+  priors <-
+    list(
+      alpha      = "std_normal()",
+      b          = "std_normal()",
+      sigma      = "std_normal()",
+      eta_anc    = "std_normal()",
+      c          = "normal(0, 2)",
+      sigma_dist = "exponential(1)",
+      rho_dist   = "exponential(1)"
+    )
+  # replace priors if user has explicitly set them
+  if (!is.null(prior)) {
+    for (i in names(prior)) {
+      priors[[i]] <- prior[[i]]
+    }
+  }
   # write functions block
   sc_functions <- paste0(
     "functions {\n",
@@ -270,16 +298,16 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL, prior
   # write model block
   sc_model <- paste0(
     "model{\n",
-    "  to_vector(alpha) ~ std_normal();\n",
-    "  b ~ std_normal();\n",
-    "  sigma ~ std_normal();\n",
-    "  eta_anc ~ std_normal();\n",
+    "  to_vector(alpha) ~ ", priors$alpha, ";\n",
+    "  b ~ ", priors$b, ";\n",
+    "  sigma ~ ", priors$sigma, ";\n",
+    "  eta_anc ~ ", priors$eta_anc, ";\n",
     "  to_vector(z_drift) ~ std_normal();\n"
   )
   # add priors for any cut points
   for (j in 1:length(distributions)) {
     if (distributions[j] == "ordered_logistic") {
-      sc_model <- paste0(sc_model, "  c", j, " ~ normal(0, 2);\n")
+      sc_model <- paste0(sc_model, "  c", j, " ~ ", priors$c, ";\n")
     }
   }
   # add priors for any gaussian process parameters
@@ -287,8 +315,8 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL, prior
     sc_model <- paste0(
       sc_model,
       "  to_vector(dist_z) ~ std_normal();\n",
-      "  sigma_dist ~ exponential(1);\n",
-      "  rho_dist ~ exponential(1);\n"
+      "  sigma_dist ~ ", priors$sigma_dist, ";\n",
+      "  rho_dist ~ ", priors$rho_dist, ";\n"
     )
   }
   # add response distributions
@@ -335,5 +363,12 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL, prior
     sc_transformed_parameters, "\n",
     sc_model
   )
+  # check that stan code is syntactically correct
+  # if not (likely due to invalid prior string) return error
+  cmdstanr::cmdstan_model(
+    stan_file = cmdstanr::write_stan_file(sc),
+    compile = FALSE
+  )$check_syntax(quiet = TRUE)
+  # return stan code
   return(sc)
 }

@@ -213,6 +213,127 @@ test_that("coev_fit() produces expected errors", {
     },
     "Coevolving variables in the data must not contain NAs."
   )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = "testing" # not of class matrix
+    ),
+    "Argument 'dist_mat' must be a matrix."
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(letters) # matrix not numeric
+    ),
+    "Argument 'dist_mat' must be a numeric matrix."
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(1:100, nrow = 10) # matrix not symmetric
+    ),
+    "Argument 'dist_mat' must be a symmetric matrix."
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(rep(1, 100), nrow = 10) # matrix symmetric but diagonal not zero
+    ),
+    "Argument 'dist_mat' must have zeroes on the diagonal of the matrix."
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(rep(0, 100), nrow = 10) # matrix row/col names do not match tips
+    ),
+    "Row and column names for argument 'dist_mat' do not match tree tip labels exactly."
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior = "testing" # not a list
+    ),
+    "Argument 'prior' is not a list."
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list("testing") # not a named list
+    ),
+    "Argument 'prior' is not a named list."
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list(testing = "testing") # incorrect name
+    ),
+    paste0(
+      "Argument 'prior' list contains names that are not allowed. Please ",
+      "use only the following names: 'alpha', 'b', 'sigma', 'eta_anc', ",
+      "'c', 'sigma_dist', and 'rho_dist'"
+    )
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list(alpha = "normal(0,2)", alpha = "normal(0,2)") # duplicate names
+    ),
+    "Argument 'prior' contains duplicate names."
+  )
 })
 
 test_that("coev_fit() fits the model without error", {

@@ -14,10 +14,21 @@
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}.
 #' @param dist_mat (optional) A distance matrix with row and column names exactly
-#'   matching the tip labels in the phylogeny. The model will control for spatial
-#'   location by including a separate Gaussian Process over locations for every
-#'   coevolving variable in the model.
-#' @param prior (optional) A list of priors for the model.
+#'   matching the tip labels in the phylogeny. If specified, the model will
+#'   additionally control for spatial location by including a separate Gaussian
+#'   Process over locations for every coevolving variable in the model.
+#' @param prior (optional) A named list of priors for the model. If not specified,
+#'   the model uses default priors (see Stan code). Alternatively, the user can
+#'   specify a named list of priors. The list must contain non-duplicated entries
+#'   for any of the following variables: the autoregressive and cross-effects
+#'   (\code{alpha}), the drift scale parameters (\code{sigma}), the continuous
+#'   time intercepts (\code{b}), the ancestral states for the traits (\code{eta_anc}),
+#'   the cutpoints for ordinal variables (\code{c}), the sigma parameter(s) for
+#'   Gaussian Processes over locations (\code{sigma_dist}), and the rho parameter(s)
+#'   for Gaussian Processes over locations (\code{rho_dist}). These must be
+#'   entered with valid prior strings, e.g. \code{list(alpha = "normal(0, 2)")}.
+#'   Invalid prior strings will throw an error when the function internally checks
+#'   the syntax of resulting Stan code.
 #' @param ... Additional arguments for \pkg{cmdstanr::sampling()}.
 #'
 #' @return Fitted model of class \code{coevfit}.
@@ -51,7 +62,7 @@
 #' }
 coev_fit <- function(data, variables, id, tree, dist_mat = NULL, prior = NULL, ...) {
   # check arguments
-  run_checks(data, variables, id, tree, dist_mat)
+  run_checks(data, variables, id, tree, dist_mat, prior)
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, dist_mat, prior)
   # get data list for stan

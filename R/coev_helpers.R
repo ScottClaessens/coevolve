@@ -1,5 +1,5 @@
 # helper function for checking arguments
-run_checks <- function(data, variables, id, tree, dist_mat) {
+run_checks <- function(data, variables, id, tree, dist_mat, prior) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
@@ -99,6 +99,32 @@ run_checks <- function(data, variables, id, tree, dist_mat) {
     if (!identical(sort(data[,id]), sort(rownames(dist_mat))) |
         !identical(sort(data[,id]), sort(colnames(dist_mat)))) {
       stop2("Row and column names for argument 'dist_mat' do not match tree tip labels exactly.")
+    }
+  }
+  # if user entered a list of priors
+  if (!is.null(prior)) {
+    # stop if prior not a list
+    if (!methods::is(prior, "list")) {
+      stop2("Argument 'prior' is not a list.")
+    }
+    # stop if prior not a named list
+    if (is.null(names(prior))) {
+      stop2("Argument 'prior' is not a named list.")
+    }
+    # stop if prior names not allowed
+    if (!all(names(prior) %in% c("alpha", "b", "sigma", "eta_anc",
+                                 "c", "sigma_dist", "rho_dist"))) {
+      stop2(
+        paste0(
+          "Argument 'prior' list contains names that are not allowed. Please ",
+          "use only the following names: 'alpha', 'b', 'sigma', 'eta_anc', ",
+          "'c', 'sigma_dist', and 'rho_dist'"
+          )
+        )
+    }
+    # stop if prior names contains duplicates
+    if (length(unique(names(prior))) != length(names(prior))) {
+      stop2("Argument 'prior' contains duplicate names.")
     }
   }
 }
