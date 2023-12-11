@@ -29,6 +29,9 @@
 #'   entered with valid prior strings, e.g. \code{list(alpha = "normal(0, 2)")}.
 #'   Invalid prior strings will throw an error when the function internally checks
 #'   the syntax of resulting Stan code.
+#' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
+#'   the data and returns a posterior distribution. If \code{TRUE}, the model
+#'   samples from the prior only, ignoring the likelihood.
 #' @param ... Additional arguments for \pkg{cmdstanr::sampling()}.
 #'
 #' @return Fitted model of class \code{coevfit}.
@@ -60,13 +63,15 @@
 #'   seed = 1
 #' )
 #' }
-coev_fit <- function(data, variables, id, tree, dist_mat = NULL, prior = NULL, ...) {
+coev_fit <- function(data, variables, id, tree,
+                     dist_mat = NULL, prior = NULL,
+                     prior_only = FALSE, ...) {
   # check arguments
-  run_checks(data, variables, id, tree, dist_mat, prior)
+  run_checks(data, variables, id, tree, dist_mat, prior, prior_only)
   # write stan code for model
-  sc <- coev_make_stancode(data, variables, id, tree, dist_mat, prior)
+  sc <- coev_make_stancode(data, variables, id, tree, dist_mat, prior, prior_only)
   # get data list for stan
-  sd <- coev_make_standata(data, variables, id, tree, dist_mat, prior)
+  sd <- coev_make_standata(data, variables, id, tree, dist_mat, prior, prior_only)
   # fit model
   model <-
     cmdstanr::cmdstan_model(
@@ -85,7 +90,8 @@ coev_fit <- function(data, variables, id, tree, dist_mat = NULL, prior = NULL, .
       variables = variables,
       id = id,
       tree = tree,
-      dist_mat = sd$dist_mat
+      dist_mat = sd$dist_mat,
+      prior_only = prior_only
     )
   class(out) <- "coevfit"
   return(out)

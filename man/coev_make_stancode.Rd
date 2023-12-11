@@ -4,7 +4,15 @@
 \alias{coev_make_stancode}
 \title{Make Stan code for dynamic coevolutionary model}
 \usage{
-coev_make_stancode(data, variables, id, tree, dist_mat = NULL, prior = NULL)
+coev_make_stancode(
+  data,
+  variables,
+  id,
+  tree,
+  dist_mat = NULL,
+  prior = NULL,
+  prior_only = FALSE
+)
 }
 \arguments{
 \item{data}{An object of class \code{data.frame} (or one that can be coerced
@@ -40,6 +48,10 @@ for Gaussian Processes over locations (\code{rho_dist}). These must be
 entered with valid prior strings, e.g. \code{list(alpha = "normal(0, 2)")}.
 Invalid prior strings will throw an error when the function internally checks
 the syntax of resulting Stan code.}
+
+\item{prior_only}{Logical. If \code{FALSE} (default), the model is fitted to
+the data and returns a posterior distribution. If \code{TRUE}, the model
+samples from the prior only, ignoring the likelihood.}
 }
 \value{
 A character string containing the \pkg{Stan} code to fit the dynamic coevolutionary model.

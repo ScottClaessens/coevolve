@@ -1,5 +1,5 @@
 # helper function for checking arguments
-run_checks <- function(data, variables, id, tree, dist_mat, prior) {
+run_checks <- function(data, variables, id, tree, dist_mat, prior, prior_only) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
@@ -22,8 +22,14 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior) {
     stop2("Some variable names are not valid column names in the data.")
   }
   # stop if response distributions are not valid
-  if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic", "poisson_log", "normal"))) {
-    stop2("Response distributions other than 'bernoulli_logit', 'ordered_logistic', 'poisson_log', and 'normal' are not yet supported.")
+  if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic",
+                                "poisson_log", "normal"))) {
+    stop2(
+      paste0(
+        "Response distributions other than 'bernoulli_logit', 'ordered_logistic'",
+        ", 'poisson_log', and 'normal' are not yet supported."
+        )
+      )
   }
   # stop if not at least two variables
   if (!(length(variables) >= 2)) {
@@ -32,25 +38,45 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior) {
   # stop if any binary variables are not 0/1 integers
   for (i in 1:length(distributions)) {
     if (distributions[i] == "bernoulli_logit" & (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] %in% 0:1))) {
-      stop2("Variables following the 'bernoulli_logit' response distribution must be integers with values of 0/1 in the data.")
+      stop2(
+        paste0(
+          "Variables following the 'bernoulli_logit' response distribution ",
+          "must be integers with values of 0/1 in the data."
+          )
+        )
     }
   }
   # stop if any ordinal variables are not ordered factors in data
   for (i in 1:length(distributions)) {
     if (distributions[i] == "ordered_logistic" & !is.ordered(data[,variables[i]])) {
-      stop2("Variables following the 'ordered_logistic' response distribution must be ordered factors in the data.")
+      stop2(
+        paste0(
+          "Variables following the 'ordered_logistic' response distribution ",
+          "must be ordered factors in the data."
+          )
+        )
     }
   }
   # stop if any count variables are not integers greater than or equal to 0
   for (i in 1:length(distributions)) {
     if (distributions[i] == "poisson_log" & (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
-      stop2("Variables following the 'poisson_log' response distribution must be integers greater than or equal to zero in the data.")
+      stop2(
+        paste0(
+          "Variables following the 'poisson_log' response distribution must ",
+          "be integers greater than or equal to zero in the data."
+          )
+        )
     }
   }
   # stop if any continuous variables are not numeric
   for (i in 1:length(distributions)) {
     if (distributions[i] == "normal" & !is.numeric(data[,variables[i]])) {
-      stop2("Variables following the 'normal' response distribution must be numeric in the data.")
+      stop2(
+        paste0(
+          "Variables following the 'normal' response distribution must be ",
+          "numeric in the data."
+          )
+        )
     }
   }
   # stop if id is not a character of length one
@@ -98,7 +124,12 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior) {
     # stop if row and column names do not match tip labels exactly
     if (!identical(sort(data[,id]), sort(rownames(dist_mat))) |
         !identical(sort(data[,id]), sort(colnames(dist_mat)))) {
-      stop2("Row and column names for argument 'dist_mat' do not match tree tip labels exactly.")
+      stop2(
+        paste0(
+          "Row and column names for argument 'dist_mat' do not match tree ",
+          "tip labels exactly."
+          )
+        )
     }
   }
   # if user entered a list of priors
@@ -126,6 +157,10 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior) {
     if (length(unique(names(prior))) != length(names(prior))) {
       stop2("Argument 'prior' contains duplicate names.")
     }
+  }
+  # stop if prior_only is not logical
+  if (!is.logical(prior_only)) {
+    stop2("Argument 'prior_only' is not logical.")
   }
 }
 

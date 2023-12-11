@@ -28,6 +28,9 @@
 #'   entered with valid prior strings, e.g. \code{list(alpha = "normal(0, 2)")}.
 #'   Invalid prior strings will throw an error when the function internally checks
 #'   the syntax of resulting Stan code.
+#' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
+#'   the data and returns a posterior distribution. If \code{TRUE}, the model
+#'   samples from the prior only, ignoring the likelihood.
 #'
 #' @return A list containing the data for fitting the dynamic coevolutionary model in \pkg{Stan}.
 #' @export
@@ -51,9 +54,10 @@
 #'    id = "id",
 #'    tree = tree
 #' )
-coev_make_standata <- function(data, variables, id, tree, dist_mat = NULL, prior = NULL) {
+coev_make_standata <- function(data, variables, id, tree, dist_mat = NULL,
+                               prior = NULL, prior_only = FALSE) {
   # check arguments
-  run_checks(data, variables, id, tree, dist_mat, prior)
+  run_checks(data, variables, id, tree, dist_mat, prior, prior_only)
   # match data to tree tip label ordering
   data <- data[match(tree$tip.label, data[,id]),]
   # stop if data and tips do not match
@@ -104,5 +108,7 @@ coev_make_standata <- function(data, variables, id, tree, dist_mat = NULL, prior
   )
   # add distance matrix if specified
   if (!is.null(dist_mat)) sd <- append(sd, list(dist_mat = dist_mat))
+  # add prior_only
+  sd <- append(sd, list(prior_only = as.numeric(prior_only)))
   return(sd)
 }

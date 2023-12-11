@@ -334,8 +334,20 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     "Argument 'prior' contains duplicate names."
   )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior_only = "testing"
+    ),
+    "Argument 'prior_only' is not logical."
+  )
 })
-
 
 test_that("coev_make_stancode() returns a character of length one", {
   # simulate data

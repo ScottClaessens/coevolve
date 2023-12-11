@@ -334,9 +334,22 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     "Argument 'prior' contains duplicate names."
   )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior_only = "testing"
+    ),
+    "Argument 'prior_only' is not logical."
+  )
 })
 
-test_that("coev_make_standata() returns a list with correct names for stan", {
+test_that("coev_make_standata() returns a list with correct names for Stan", {
   # simulate data
   withr::with_seed(1, {
     n <- 20
@@ -358,11 +371,12 @@ test_that("coev_make_standata() returns a list with correct names for stan", {
       id = "id",
       tree = tree
     )
-  # expect list with correct names
+  # expect list with correct names and prior_only = 0
   expect_no_error(sd1)
   expect_type(sd1, "list")
   expect_equal(names(sd1), c("N", "J", "N_seg", "node_seq", "parent", "ts",
-                            "tip", "y"))
+                            "tip", "y", "prior_only"))
+  expect_equal(sd1$prior_only, 0)
   # include distance matrix
   withr::with_seed(1, {
     dist_mat <- as.matrix(dist(rnorm(n)))
@@ -379,9 +393,27 @@ test_that("coev_make_standata() returns a list with correct names for stan", {
       tree = tree,
       dist_mat = dist_mat
     )
-  # expect list with correct names
+  # expect list with correct names and prior_only = 0
   expect_no_error(sd2)
   expect_type(sd2, "list")
   expect_equal(names(sd2), c("N", "J", "N_seg", "node_seq", "parent", "ts",
-                             "tip", "y", "dist_mat"))
+                             "tip", "y", "dist_mat", "prior_only"))
+  expect_equal(sd2$prior_only, 0)
+  # set prior only
+  sd3 <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      prior_only = TRUE
+    )
+  expect_no_error(sd3)
+  expect_type(sd3, "list")
+  expect_equal(names(sd3), c("N", "J", "N_seg", "node_seq", "parent", "ts",
+                             "tip", "y", "prior_only"))
+  expect_equal(sd3$prior_only, 1)
 })
