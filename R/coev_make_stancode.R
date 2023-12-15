@@ -145,28 +145,6 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
     "    }\n",
     "    return(irow_mat);\n",
     "  }\n",
-    "  \n",
-    "  // function to convert from type real to type integer, when appropriate\n",
-    "  int bin_search(real x, int min_val, int max_val) {\n",
-    "    // This assumes that min_val >= 0 is the minimum integer in range,\n",
-    "    // max_val > min_val,\n",
-    "    // and that x has already been rounded.\n",
-    "    // It should find the integer equivalent to x.\n",
-    "    int range = (max_val - min_val + 1) / 2; // We add 1 to make sure that truncation doesn't exclude a number\n",
-    "    int mid_pt = min_val + range;\n",
-    "    int out;\n",
-    "    while(range > 0) {\n",
-    "      if(x == mid_pt) {\n",
-    "        out = mid_pt;\n",
-    "        range = 0;\n",
-    "      } else {\n",
-    "        // figure out if range == 1\n",
-    "        range = (range + 1) / 2;\n",
-    "        mid_pt = x > mid_pt ? mid_pt + range: mid_pt - range;\n",
-    "      }\n",
-    "    }\n",
-    "    return out;\n",
-    "  }\n",
     "}"
   )
   # write data block
@@ -178,9 +156,19 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
     "  array[N_seg] int node_seq; // sequence of nodes\n",
     "  array[N_seg] int parent; // parent node for each node\n",
     "  array[N_seg] real ts; // amount of time since parent node\n",
-    "  array[N_seg] int tip; // is tip?\n",
-    "  array[N,J] real y; // observed data\n"
+    "  array[N_seg] int tip; // is tip?\n"
   )
+  # add observed data variables one by one depending on type
+  for (i in 1:length(variables)) {
+    sc_data <- paste0(
+      sc_data,
+      "  array[N] ",
+      # continuous variables are real numbers
+      # all others are integers
+      ifelse(distributions[i] == "normal", "real", "int"),
+      " y", i, "; // observed data variable ", i,
+      "\n")
+  }
   # add distance matrix if user has defined one
   if (!is.null(dist_mat)) {
     sc_data <- paste0(sc_data, "  array[N,N] real dist_mat; // distance matrix\n")
@@ -331,32 +319,31 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
     "    for (i in 1:N) {\n"
     )
   for (j in 1:length(distributions)) {
-    max_val <- max(as.numeric(data[,variables[j]]))
     if (distributions[j] == "bernoulli_logit") {
       sc_model <- paste0(
         sc_model,
-        "        bin_search(y[i,", j, "], 0, 1) ~ ",
+        "        y", j, "[i] ~ ",
         "bernoulli_logit(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]);\n")
     } else if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(
         sc_model,
-        "        bin_search(y[i,", j, "], 1, ", max_val, ") ~ ",
+        "        y", j, "[i] ~ ",
         "ordered_logistic(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "], c", j, ");\n")
     } else if (distributions[j] == "poisson_log") {
       sc_model <- paste0(
         sc_model,
-        "        bin_search(y[i,", j, "], 0, ", max_val, ") ~ ",
+        "        y", j, "[i] ~ ",
         "poisson_log(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]);\n")
     } else if (distributions[j] == "normal") {
       sc_model <- paste0(
         sc_model,
-        "        y[i,", j, "] ~ ",
+        "        y", j, "[i] ~ ",
         "normal(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         ", sigma_tips[i,", j, "]);\n")

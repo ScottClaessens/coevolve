@@ -87,12 +87,6 @@ coev_make_standata <- function(data, variables, id, tree, dist_mat = NULL,
   N_seg <- length(node_seq)
   # indicate whether a node in the seq is a tip
   tip <- ifelse(node_seq > length(tree$tip.label), 0, 1)
-  # get observed data
-  obs <- list()
-  for (j in 1:length(variables)) {
-    obs[[names(variables)[j]]] <- as.integer(data[,names(variables)[j]])
-  }
-  obs <- as.matrix(as.data.frame(obs))
   # normalise distance matrix so that maximum distance = 1
   if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
   # data list for stan
@@ -103,12 +97,19 @@ coev_make_standata <- function(data, variables, id, tree, dist_mat = NULL,
     node_seq = node_seq,        # sequence of nodes
     parent = parent,            # parent node for each node
     ts = parent_time,           # amount of time since parent node
-    tip = tip,                  # is tip?
-    y = obs                     # observed data
+    tip = tip                   # is tip?
   )
+  # add observed data variables one-by-one
+  for (i in 1:length(variables)) {
+    if (variables[[i]] == "normal") {
+      sd[[paste0("y", i)]] <- as.numeric(data[,names(variables)[i]])
+    } else if (variables[[i]] %in% c("bernoulli_logit", "ordered_logistic", "poisson_log")) {
+      sd[[paste0("y", i)]] <- as.integer(data[,names(variables)[i]])
+    }
+  }
   # add distance matrix if specified
-  if (!is.null(dist_mat)) sd <- append(sd, list(dist_mat = dist_mat))
+  if (!is.null(dist_mat)) sd[["dist_mat"]] <- dist_mat
   # add prior_only
-  sd <- append(sd, list(prior_only = as.numeric(prior_only)))
+  sd[["prior_only"]] <- as.numeric(prior_only)
   return(sd)
 }
