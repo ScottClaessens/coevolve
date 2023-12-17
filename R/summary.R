@@ -161,18 +161,17 @@ print.coevsummary <- function(x, digits = 2, ...) {
   # print SDE intercepts
   cat("Continuous time intercept parameters:\n")
   print_format(x$sde_intercepts, digits = digits)
-  cat("\n")
   # print ordinal cutpoints
   if (!is.null(x$cutpoints)) {
+    cat("\n")
     cat("Ordinal cutpoint parameters:\n")
     print_format(x$cutpoints, digits = digits)
-    cat("\n")
   }
   # print gaussian process parameters
   if (!is.null(x$gpterms)) {
+    cat("\n")
     cat("Gaussian Process parameters for distances:\n")
     print_format(x$gpterms, digits = digits)
-    cat("\n")
   }
   # warnings for high rhats or divergences
   if (max(x$rhats, na.rm = TRUE) > 1.05) {

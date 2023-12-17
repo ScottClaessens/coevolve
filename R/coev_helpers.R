@@ -23,11 +23,11 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior, prior_only) {
   }
   # stop if response distributions are not valid
   if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic",
-                                "poisson_log", "normal"))) {
+                                "poisson_log", "normal", "lognormal"))) {
     stop2(
       paste0(
         "Response distributions other than 'bernoulli_logit', 'ordered_logistic'",
-        ", 'poisson_log', and 'normal' are not yet supported."
+        ", 'poisson_log', 'normal', and 'lognormal' are not yet supported."
         )
       )
   }
@@ -35,7 +35,7 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior, prior_only) {
   if (!(length(variables) >= 2)) {
     stop2("Must be at least two coevolving variables.")
   }
-  # stop if any binary variables are not 0/1 integers
+  # stop if any bernoulli variables are not 0/1 integers
   for (i in 1:length(distributions)) {
     if (distributions[i] == "bernoulli_logit" & (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] %in% 0:1))) {
       stop2(
@@ -68,7 +68,7 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior, prior_only) {
         )
     }
   }
-  # stop if any continuous variables are not numeric
+  # stop if any normal variables are not numeric
   for (i in 1:length(distributions)) {
     if (distributions[i] == "normal" & !is.numeric(data[,variables[i]])) {
       stop2(
@@ -77,6 +77,18 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior, prior_only) {
           "numeric in the data."
           )
         )
+    }
+  }
+  # stop if any lognormal variables are not numeric or are equal to or less than zero
+  for (i in 1:length(distributions)) {
+    if (distributions[i] == "lognormal" & (!is.numeric(data[,variables[i]]) |
+                                           any(data[,variables[i]] <= 0))) {
+      stop2(
+        paste0(
+          "Variables following the 'lognormal' response distribution must be ",
+          "numeric in the data and must be greater than zero."
+        )
+      )
     }
   }
   # stop if id is not a character of length one

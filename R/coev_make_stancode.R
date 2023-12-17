@@ -6,8 +6,8 @@
 #'   the model and their associated response distributions as character strings (e.g.
 #'   \code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}). Must identify
 #'   at least two variables. Variable names must refer to valid column names in data.
-#'   Currently, the only supported response distributions are \code{bernoulli_logit}
-#'   and \code{ordered_logistic}.
+#'   Currently, the only supported response distributions are \code{bernoulli_logit},
+#'   \code{ordered_logistic}, \code{poisson_log}, \code{normal}, and \code{lognormal}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -165,7 +165,7 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
       "  array[N] ",
       # continuous variables are real numbers
       # all others are integers
-      ifelse(distributions[i] == "normal", "real", "int"),
+      ifelse(distributions[i] %in% c("normal", "lognormal"), "real", "int"),
       " y", i, "; // observed data variable ", i,
       "\n")
   }
@@ -345,6 +345,13 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
         sc_model,
         "        y", j, "[i] ~ ",
         "normal(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        ", sigma_tips[i,", j, "]);\n")
+    } else if (distributions[j] == "lognormal") {
+      sc_model <- paste0(
+        sc_model,
+        "        y", j, "[i] ~ ",
+        "lognormal(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         ", sigma_tips[i,", j, "]);\n")
     }

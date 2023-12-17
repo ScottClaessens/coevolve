@@ -3,12 +3,11 @@
 #' @param data An object of class \code{data.frame} (or one that can be coerced
 #'   to that class) containing data of all variables used in the model.
 #' @param variables A named list identifying variables that should coevolve in
-#'   the model and their associated response distributions (e.g.
-#'   \code{list(var1 = bernoulli_logit, var2 = ordered_logistic)}). Must identify
+#'   the model and their associated response distributions as character strings (e.g.
+#'   \code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}). Must identify
 #'   at least two variables. Variable names must refer to valid column names in data.
-#'   Currently, the only supported response distributions are \code{bernoulli_logit}
-#'   for binary variables, \code{ordered_logistic} for ordinal variables, and
-#'   \code{poisson_log} for count variables.
+#'   Currently, the only supported response distributions are \code{bernoulli_logit},
+#'   \code{ordered_logistic}, \code{poisson_log}, \code{normal}, and \code{lognormal}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
