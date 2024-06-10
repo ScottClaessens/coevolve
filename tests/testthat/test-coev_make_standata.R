@@ -68,7 +68,10 @@ test_that("coev_make_standata() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Response distributions other than 'bernoulli_logit', 'ordered_logistic', 'poisson_log', and 'normal' are not yet supported."
+    paste0(
+      "Response distributions other than 'bernoulli_logit', 'ordered_logistic'",
+      ", 'poisson_log', 'normal', and 'lognormal' are not yet supported."
+    )
   )
   expect_error(
     coev_make_standata(
