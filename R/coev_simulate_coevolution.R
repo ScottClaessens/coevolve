@@ -129,7 +129,7 @@ coev_simulate_coevolution <- function(n,
         prev[i] <- sim[sim$ts == (ts-1) & sim$species == sp, i]
       }
       # randomly generate split
-      if (runif(1) < prob_split) {
+      if (stats::runif(1) < prob_split) {
         # if there is a split, a new species branches off
         new_sp <- paste0("t", current_number + 1)
         # both species get new values of variables from shared parent
@@ -144,15 +144,15 @@ coev_simulate_coevolution <- function(n,
           mean <- 0
           # loop over predictor variables
           for (j in variables) mean <- mean + selection_matrix[i,j]*prev[j]
-          new_values[i] <- rnorm(1, mean, drift[i])
+          new_values[i] <- stats::rnorm(1, mean, drift[i])
         }
         sim <- rbind(sim, new_values)
         # update current number of species
         current_number <- current_number + 1
         # update tree
-        tree <- str_replace(
+        tree <- stringr::str_replace(
           string = tree,
-          pattern = fixed(paste0(sp, ":")),
+          pattern = stringr::fixed(paste0(sp, ":")),
           replacement = paste0("(", sp, ":1,", new_sp, ":1):")
         )
       } else {
@@ -168,31 +168,34 @@ coev_simulate_coevolution <- function(n,
           mean <- 0
           # loop over predictor variables
           for (j in variables) mean <- mean + selection_matrix[i,j]*prev[j]
-          new_values[i] <- rnorm(1, mean, drift[i])
+          new_values[i] <- stats::rnorm(1, mean, drift[i])
         }
         sim <- rbind(sim, new_values)
         # update tree
-        current_count <- str_extract(
-          string = str_extract(string = tree, pattern = paste0(sp, ":\\d+")),
+        current_count <- stringr::str_extract(
+          string = stringr::str_extract(
+            string = tree,
+            pattern = paste0(sp, ":\\d+")
+            ),
           pattern = ":\\d+"
         )
-        tree <- str_replace(
+        tree <- stringr::str_replace(
           string = tree,
           pattern = paste0(sp, ":\\d+"),
-          replacement = paste0(sp, ":", parse_number(current_count) + 1)
+          replacement = paste0(sp, ":", readr::parse_number(current_count) + 1)
         )
       }
     }
   }
   # get final values (standardised)
-  d <- sim[sim$ts == max(sim$ts),c("species",variables)]
+  d <- sim[sim$ts == max(sim$ts), c("species", variables)]
   for (i in variables) d[,i] <- as.numeric(scale(d[,i]))
   # if there are more species than n, randomly prune dataset
-  if (nrow(d) > n) d <- slice_sample(d, n = as.integer(n))
+  if (nrow(d) > n) d <- dplyr::slice_sample(d, n = as.integer(n))
   # remove rownames from d
   rownames(d) <- NULL
   # prune phylogenetic tree as well
-  tree <- keep.tip(read.tree(text = tree), d$species)
+  tree <- ape::keep.tip(ape::read.tree(text = tree), d$species)
   # return a list with data of the run and phylogenetic tree
   out <- list(
     data = d,

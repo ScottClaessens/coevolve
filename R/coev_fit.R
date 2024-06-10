@@ -78,6 +78,7 @@ coev_fit <- function(data, variables, id, tree,
       compile = TRUE
     )$sample(
       data = sd,
+      show_exceptions = FALSE,
       ...
     )
   # return object of class 'coevfit'

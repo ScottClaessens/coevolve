@@ -65,7 +65,9 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     stop2("Argument 'nullclines' must be logical.")
   }
   # get posterior draws for eta
-  suppressWarnings({eta <- tidybayes::gather_draws(object$fit, eta[node,variable])})
+  suppressWarnings({
+    eta <- tidybayes::gather_draws(object$fit, eta[node,variable])
+    })
   # restrict to tips only (nodes 1-n)
   eta <- eta[eta$node %in% 1:nrow(object$data),]
   # calculate posterior median eta for each tip
@@ -80,10 +82,10 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     low    = median - 2.5*mad
   )
   # get median parameter values for A, b, and sigma
-  A <- apply(object$fit$draws("A"), 3, median)
+  A <- apply(object$fit$draws("A"), 3, stats::median)
   dim(A) <- rep(length(names(object$variables)), 2)
-  b <- as.vector(apply(object$fit$draws("b"), 3, median))
-  sigma <- as.vector(apply(object$fit$draws("sigma"), 3, median))
+  b <- as.vector(apply(object$fit$draws("b"), 3, stats::median))
+  sigma <- as.vector(apply(object$fit$draws("sigma"), 3, stats::median))
   # get IDs for variables
   var1ID <- which(names(object$variables) == var1)
   var2ID <- which(names(object$variables) == var2)
@@ -95,26 +97,28 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     list(dy)
   }
   # create flow field diagram
-  OU.flowField <-
-    phaseR::flowField(
-      OU,
-      xlim = c(eta$low[var1ID] - 0.2, eta$high[var1ID] + 0.2),
-      ylim = c(eta$low[var2ID] - 0.2, eta$high[var2ID] + 0.2),
-      parameters = NA,
-      add = FALSE,
-      xlab = "",
-      ylab = "",
-      points = 12,
-      col = "grey",
-      xaxt = 'n',
-      yaxt = 'n',
-      arrow.type = "proportional",
-      frac = 1.5,
-      xaxs = "i",
-      yaxs = "i",
-      axes = FALSE,
-      lwd = 2
-    )
+  suppressWarnings({
+    OU.flowField <-
+      phaseR::flowField(
+        OU,
+        xlim = c(eta$low[var1ID] - 0.2, eta$high[var1ID] + 0.2),
+        ylim = c(eta$low[var2ID] - 0.2, eta$high[var2ID] + 0.2),
+        parameters = NA,
+        add = FALSE,
+        xlab = "",
+        ylab = "",
+        points = 12,
+        col = "grey",
+        xaxt = 'n',
+        yaxt = 'n',
+        arrow.type = "proportional",
+        frac = 1.5,
+        xaxs = "i",
+        yaxs = "i",
+        axes = FALSE,
+        lwd = 2
+      )
+  })
   # var 1 label
   graphics::mtext(
     side = 1,
@@ -132,20 +136,22 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     cex = 1.3
   )
   # add nullclines to phase plane
-  if (nullclines) {
-    nc <-
-      phaseR::nullclines(
-        OU,
-        xlim = c(eta$low[var1ID] - 0.2, eta$high[var1ID] + 0.2),
-        ylim = c(eta$low[var2ID] - 0.2, eta$high[var2ID] + 0.2),
-        parameters = NA,
-        points = 20,
-        axes = FALSE,
-        col = c("#c55852","#5387b6"),
-        add.legend = FALSE,
-        lwd = 2
-      )
-  }
+  suppressWarnings({
+    if (nullclines) {
+      nc <-
+        phaseR::nullclines(
+          OU,
+          xlim = c(eta$low[var1ID] - 0.2, eta$high[var1ID] + 0.2),
+          ylim = c(eta$low[var2ID] - 0.2, eta$high[var2ID] + 0.2),
+          parameters = NA,
+          points = 20,
+          axes = FALSE,
+          col = c("#c55852","#5387b6"),
+          add.legend = FALSE,
+          lwd = 2
+        )
+    }
+  })
   # add axes
   graphics::axis(
     side = 1,
