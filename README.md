@@ -1,7 +1,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# coevolve <img src="man/figures/logo.png" align="right" height="139" alt="" />
+<img src="man/figures/logo.png" align="right" height="139" alt="" />
+
+# coevolve
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -9,7 +11,17 @@
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian dynamic
-coevolutionary models in Stan.
+coevolutionary phylogenetic models in Stan. These models can be used to
+estimate how variables have coevolved over evolutionary time and to
+assess causal directionality (X → Y vs. Y → X) and contingencies (X,
+then Y) in evolution.
+
+While existing methods only allow pairs of binary traits to coevolve
+(e.g.,
+[BayesTraits](https://www.evolution.reading.ac.uk/BayesTraitsV4.1.2/BayesTraitsV4.1.2.html)),
+the **coevolve** package allows users to include multiple traits of
+different data types, including binary, ordinal, count, and continuous
+traits.
 
 ## Installation
 
@@ -70,7 +82,8 @@ head(d)
 We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr`
 with the `coev_fit()` function. We declare all variables and set the
 response distributions for binary, ordinal, and count variables as
-`bernoulli_logit`, `ordered_logistic`, and `poisson_softmax` respectively.
+`bernoulli_logit`, `ordered_logistic`, and `poisson_softmax`
+respectively.
 
 ``` r
 # load the coevolve package
@@ -94,14 +107,14 @@ m <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 1 finished in 572.3 seconds.
-#> Chain 2 finished in 578.9 seconds.
-#> Chain 4 finished in 653.3 seconds.
-#> Chain 3 finished in 679.8 seconds.
+#> Chain 3 finished in 410.7 seconds.
+#> Chain 4 finished in 413.0 seconds.
+#> Chain 1 finished in 413.9 seconds.
+#> Chain 2 finished in 416.1 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 621.1 seconds.
-#> Total execution time: 680.2 seconds.
+#> Mean chain execution time: 413.4 seconds.
+#> Total execution time: 416.4 seconds.
 ```
 
 The results can be investigated using:
@@ -117,36 +130,36 @@ summary(m)
 #> 
 #> Autoregressive selection effects:
 #>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x     0.07      0.97 -1.85  1.98 1.00     3924     2823
-#> y     0.05      1.01 -1.95  1.99 1.00     3875     2727
-#> z    -0.10      0.83 -1.84  1.38 1.00     3002     2731
+#> x     0.05      1.01 -2.00  2.00 1.00     6749     3096
+#> y     0.00      1.00 -1.94  1.96 1.00     6782     3359
+#> z    -0.72      0.75 -2.32  0.63 1.00     7058     2913
 #> 
 #> Cross selection effects:
 #>       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x ⟶ y     0.01      1.03 -2.04  1.96 1.00     4285     2897
-#> x ⟶ z    -0.18      1.00 -2.14  1.74 1.00     1847     1295
-#> y ⟶ x     0.05      0.99 -1.88  2.04 1.00     3295     3130
-#> y ⟶ z    -0.12      0.98 -2.00  1.87 1.00     2516     2003
-#> z ⟶ x    -0.17      0.95 -2.00  1.69 1.00     3166     1419
-#> z ⟶ y    -0.08      0.97 -1.91  1.88 1.00     3223     2365
+#> x ⟶ y     0.02      0.97 -1.92  1.90 1.00     7368     3142
+#> x ⟶ z    -0.36      1.07 -2.36  1.84 1.00     4109     3381
+#> y ⟶ x     0.01      1.00 -1.94  1.94 1.00     5984     2771
+#> y ⟶ z    -0.20      1.10 -2.30  1.99 1.00     3267     3170
+#> z ⟶ x    -0.28      0.84 -1.90  1.39 1.00     5231     3161
+#> z ⟶ y    -0.19      0.91 -1.92  1.61 1.00     4562     3073
 #> 
 #> Drift scale parameters:
 #>   Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x     0.89      0.64 0.05  2.38 1.00     1877     2009
-#> y     0.78      0.60 0.03  2.20 1.00     1909     1757
-#> z     0.58      0.44 0.02  1.68 1.00     1759     1492
+#> x     0.92      0.66 0.04  2.42 1.00     3005     2235
+#> y     0.84      0.62 0.03  2.32 1.00     3447     2448
+#> z     0.87      0.60 0.05  2.17 1.00     3078     2282
 #> 
 #> Continuous time intercept parameters:
 #>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x    -0.33      0.91 -2.10  1.47 1.00     4323     2973
-#> y    -0.06      0.94 -1.88  1.77 1.00     4097     3033
-#> z     0.62      0.82 -1.04  2.20 1.00     3166     2554
+#> x    -0.28      0.98 -2.21  1.64 1.00     7253     2935
+#> y    -0.04      0.98 -1.89  1.92 1.00     6932     2545
+#> z     0.92      0.90 -0.90  2.65 1.00     5979     3059
 #> 
 #> Ordinal cutpoint parameters:
 #>      Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> y[1]    -1.66      1.04 -3.79  0.25 1.00     2245     2687
-#> y[2]     1.95      1.11 -0.14  4.27 1.00     4332     3213
-#> Warning: There were 15 divergent transitions after warmup.
+#> y[1]    -1.81      1.17 -4.13  0.43 1.00     2894     2681
+#> y[2]     1.83      1.17 -0.43  4.16 1.00     4462     3616
+#> Warning: There were 3 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 

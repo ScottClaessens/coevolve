@@ -18,7 +18,9 @@ knitr::opts_chunk$set(
 )
 ```
 
-# coevolve <img src="man/figures/logo.png" align="right" height="139" alt="" />
+<img src="man/figures/logo.png" align="right" height="139" alt="" />
+
+# coevolve
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -26,7 +28,14 @@ knitr::opts_chunk$set(
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian dynamic coevolutionary
-models in Stan.
+phylogenetic models in Stan. These models can be used to estimate how variables 
+have coevolved over evolutionary time and to assess causal directionality
+(X → Y vs. Y → X) and contingencies (X, then Y) in evolution.
+
+While existing methods only allow pairs of binary traits to coevolve
+(e.g., [BayesTraits](https://www.evolution.reading.ac.uk/BayesTraitsV4.1.2/BayesTraitsV4.1.2.html)),
+the **coevolve** package allows users to include multiple traits of different
+data types, including binary, ordinal, count, and continuous traits.
 
 ## Installation
 
