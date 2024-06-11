@@ -99,8 +99,9 @@ test_that("coev_simulate_coevolution() produces expected errors", {
 test_that("coev_simulate_coevolution() returns named list", {
   n <- 5
   variables <- c("x","y")
-  selection_matrix <- matrix(c(0.95,0.00,0.80,0.95), nrow = 2,
-                             dimnames = list(variables, variables))
+  selection_matrix <- matrix(c(0.95,0.80,0.00,0.95), nrow = 2,
+                             # test when name order does not match variable order
+                             dimnames = list(c("x","y"), c("y","x")))
   drift <- c("x" = 0.05, "y" = 0.05)
   prob_split <- 0.05
   sim <- coev_simulate_coevolution(n, variables, selection_matrix,

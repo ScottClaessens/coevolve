@@ -99,6 +99,16 @@ coev_simulate_coevolution <- function(n,
   } else if (length(prob_split) != 1) {
     stop2("Argument 'prob_split' must be of length 1.")
   }
+  # ensure selection_matrix and drift vector have names
+  # in the same order as "variables" vector
+  selection_matrix <- selection_matrix[variables,variables]
+  drift <- drift[variables]
+  if (!(identical(variables, rownames(selection_matrix)) &
+        identical(variables, colnames(selection_matrix)))) {
+    stop2("Selection matrix names are not equal to variable names.")
+  } else if (!identical(variables, names(drift))) {
+    stop2("Drift vector names are not equal to variable names.")
+  }
   # begin simulation
   # first timestep
   sim <- data.frame(
