@@ -70,7 +70,7 @@ head(d)
 We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr`
 with the `coev_fit()` function. We declare all variables and set the
 response distributions for binary, ordinal, and count variables as
-`bernoulli_logit`, `ordered_logistic`, and `poisson_log` respectively.
+`bernoulli_logit`, `ordered_logistic`, and `poisson_softmax` respectively.
 
 ``` r
 # load the coevolve package
@@ -83,7 +83,7 @@ m <-
     variables = list(
       x = "bernoulli_logit",
       y = "ordered_logistic",
-      z = "poisson_log"
+      z = "poisson_softmax"
     ),
     id = "id",
     tree = tree,
@@ -110,7 +110,7 @@ The results can be investigated using:
 summary(m)
 #> Variables: x = bernoulli_logit 
 #>            y = ordered_logistic 
-#>            z = poisson_log 
+#>            z = poisson_softmax 
 #>      Data: d (Number of observations: 10)
 #>     Draws: 4 chains, each with iter = 1000; warmup = 1000; thin = 1
 #>            total post-warmup draws = 4000

@@ -23,11 +23,11 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior, prior_only) {
   }
   # stop if response distributions are not valid
   if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic",
-                                "poisson_log", "normal", "lognormal"))) {
+                                "poisson_softmax", "normal", "lognormal"))) {
     stop2(
       paste0(
         "Response distributions other than 'bernoulli_logit', 'ordered_logistic'",
-        ", 'poisson_log', 'normal', and 'lognormal' are not yet supported."
+        ", 'poisson_softmax', 'normal', and 'lognormal' are not yet supported."
         )
       )
   }
@@ -59,10 +59,10 @@ run_checks <- function(data, variables, id, tree, dist_mat, prior, prior_only) {
   }
   # stop if any count variables are not integers greater than or equal to 0
   for (i in 1:length(distributions)) {
-    if (distributions[i] == "poisson_log" & (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
+    if (distributions[i] == "poisson_softmax" & (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
       stop2(
         paste0(
-          "Variables following the 'poisson_log' response distribution must ",
+          "Variables following the 'poisson_softmax' response distribution must ",
           "be integers greater than or equal to zero in the data."
           )
         )

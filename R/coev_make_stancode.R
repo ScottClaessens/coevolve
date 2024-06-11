@@ -7,7 +7,7 @@
 #'   \code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}). Must identify
 #'   at least two variables. Variable names must refer to valid column names in data.
 #'   Currently, the only supported response distributions are \code{bernoulli_logit},
-#'   \code{ordered_logistic}, \code{poisson_log}, \code{normal}, and \code{lognormal}.
+#'   \code{ordered_logistic}, \code{poisson_softmax}, \code{normal}, and \code{lognormal}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -333,13 +333,13 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
         "ordered_logistic(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "], c", j, ");\n")
-    } else if (distributions[j] == "poisson_log") {
+    } else if (distributions[j] == "poisson_softmax") {
       sc_model <- paste0(
         sc_model,
         "        y", j, "[i] ~ ",
-        "poisson_log(eta[i,", j, "]",
+        "poisson(log1p_exp(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        " + drift_tips[i,", j, "]);\n")
+        " + drift_tips[i,", j, "]));\n")
     } else if (distributions[j] == "normal") {
       sc_model <- paste0(
         sc_model,

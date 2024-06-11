@@ -70,7 +70,7 @@ test_that("coev_fit() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', 'ordered_logistic'",
-      ", 'poisson_log', 'normal', and 'lognormal' are not yet supported."
+      ", 'poisson_softmax', 'normal', and 'lognormal' are not yet supported."
     )
   )
   expect_error(
@@ -113,13 +113,13 @@ test_that("coev_fit() produces expected errors", {
     coev_fit(
       data = d,
       variables = list(
-        y = "poisson_log", # not integer >= 0
-        z = "poisson_log"
+        y = "poisson_softmax", # not integer >= 0
+        z = "poisson_softmax"
       ),
       id = "id",
       tree = tree
     ),
-    "Variables following the 'poisson_log' response distribution must be integers greater than or equal to zero in the data."
+    "Variables following the 'poisson_softmax' response distribution must be integers greater than or equal to zero in the data."
   )
   expect_error(
     coev_fit(
@@ -372,7 +372,7 @@ test_that("coev_fit() fits the model without error", {
       w = "normal",
       x = "bernoulli_logit",
       y = "ordered_logistic",
-      z = "poisson_log"
+      z = "poisson_softmax"
     ),
     id = "id",
     tree = tree,

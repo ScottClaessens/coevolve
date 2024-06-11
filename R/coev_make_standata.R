@@ -7,7 +7,7 @@
 #'   \code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}). Must identify
 #'   at least two variables. Variable names must refer to valid column names in data.
 #'   Currently, the only supported response distributions are \code{bernoulli_logit},
-#'   \code{ordered_logistic}, \code{poisson_log}, \code{normal}, and \code{lognormal}.
+#'   \code{ordered_logistic}, \code{poisson_softmax}, \code{normal}, and \code{lognormal}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -103,7 +103,7 @@ coev_make_standata <- function(data, variables, id, tree, dist_mat = NULL,
   for (i in 1:length(variables)) {
     if (variables[[i]] %in% c("normal", "lognormal")) {
       sd[[paste0("y", i)]] <- as.numeric(data[,names(variables)[i]])
-    } else if (variables[[i]] %in% c("bernoulli_logit", "ordered_logistic", "poisson_log")) {
+    } else if (variables[[i]] %in% c("bernoulli_logit", "ordered_logistic", "poisson_softmax")) {
       sd[[paste0("y", i)]] <- as.integer(data[,names(variables)[i]])
     }
   }
