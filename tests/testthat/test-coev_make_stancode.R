@@ -167,7 +167,7 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = "testing" # not of class phylo
     ),
-    "Argument 'id' must be an phylogenetic tree object of class phylo."
+    "Argument 'tree' must be an phylogenetic tree object of class phylo."
   )
   expect_error(
     {
@@ -215,6 +215,75 @@ test_that("coev_make_stancode() produces expected errors", {
       )
     },
     "Coevolving variables in the data must not contain NAs."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      effects_mat = "testing" # not of class matrix
+    ),
+    "Argument 'effects_mat' must be a matrix."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      effects_mat = matrix(1) # not boolean matrix
+    ),
+    "Argument 'effects_mat' must be a boolean matrix."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      effects_mat = matrix(TRUE) # no row/col names
+    ),
+    "Argument 'effects_mat' does not have valid row or column names."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      effects_mat = matrix(TRUE, dimnames = list("fail","fail")) # invalid row/col names
+    ),
+    paste0(
+      "Row and column names for argument 'effects_mat' do not match ",
+      "variable names exactly."
+    )
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      effects_mat = matrix(c(T,T,T,F), ncol = 2, nrow = 2, byrow = TRUE,
+                           dimnames = list(c("x","y"),c("x","y"))) # autoregressive effect = FALSE
+    ),
+    "Argument 'effects_mat' must specify TRUE for all autoregressive effects."
   )
   expect_error(
     coev_make_stancode(
@@ -277,7 +346,22 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = matrix(rep(0, 100), nrow = 10) # matrix row/col names do not match tips
+      dist_mat = matrix(0) # no row/col names
+    ),
+    "Argument 'dist_mat' does not have valid row or column names."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = matrix(rep(0, 100), nrow = 10,
+                        # matrix row/col names do not match tips
+                        dimnames = list(letters[1:10], letters[1:10]))
     ),
     "Row and column names for argument 'dist_mat' do not match tree tip labels exactly."
   )
