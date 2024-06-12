@@ -57,6 +57,8 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       names(object$variables)[readr::parse_number(stringr::str_extract(cross$variable, pattern = "alpha\\[(\\d+)\\,"))]
     )
   cross <- cross[,2:ncol(cross)]
+  # only include cross selection effects that have been estimated in summary
+  cross <- cross[!is.na(cross$Rhat),]
   # summarise drift parameters
   drift <- s[stringr::str_starts(s$variable, pattern = "sigma\\["),]
   rownames(drift) <- names(object$variables)[readr::parse_number(drift$variable)]
@@ -150,10 +152,12 @@ print.coevsummary <- function(x, digits = 2, ...) {
   cat("Autoregressive selection effects:\n")
   print_format(x$auto, digits = digits)
   cat("\n")
-  # print cross effects
-  cat("Cross selection effects:\n")
-  print_format(x$cross, digits = digits)
-  cat("\n")
+  # print cross effects (if any have been estimated)
+  if (nrow(x$cross) > 0) {
+    cat("Cross selection effects:\n")
+    print_format(x$cross, digits = digits)
+    cat("\n")
+  }
   # print drift
   cat("Drift scale parameters:\n")
   print_format(x$drift, digits = digits)
