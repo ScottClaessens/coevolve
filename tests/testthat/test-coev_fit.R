@@ -539,13 +539,14 @@ test_that("effects_mat argument to coev_fit() works as expected", {
     ncol = 2,
     dimnames = list(c("x","y"),c("y","x")) # mixed out of order to test
   )
+  variables <- list(
+    x = "bernoulli_logit",
+    y = "ordered_logistic"
+  )
   # model with effects matrix
   m <- coev_fit(
     data = d,
-    variables = list(
-      x = "bernoulli_logit",
-      y = "ordered_logistic"
-    ),
+    variables = variables,
     id = "id",
     tree = tree,
     effects_mat = effects_mat,
@@ -559,4 +560,17 @@ test_that("effects_mat argument to coev_fit() works as expected", {
   expect_no_error(summary(m))
   expect_output(print(m))
   expect_output(print(summary(m)))
+  # expect effects_mat correct in model output
+  expect_true(
+    identical(
+      m$effects_mat,
+      +effects_mat[names(variables),names(variables)]
+      )
+    )
+  # correct parameter estimated to be zero (alpha[2,1])
+  expect_true(all(as.vector(m$fit$draws()[,,"alpha[2,1]"]) == 0))
+  # other parameters estimated as normal
+  expect_true(!all(as.vector(m$fit$draws()[,,"alpha[1,1]"]) == 0))
+  expect_true(!all(as.vector(m$fit$draws()[,,"alpha[1,2]"]) == 0))
+  expect_true(!all(as.vector(m$fit$draws()[,,"alpha[2,2]"]) == 0))
 })
