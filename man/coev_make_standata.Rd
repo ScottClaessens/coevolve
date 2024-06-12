@@ -9,6 +9,7 @@ coev_make_standata(
   variables,
   id,
   tree,
+  effects_mat = NULL,
   dist_mat = NULL,
   prior = NULL,
   prior_only = FALSE
@@ -30,6 +31,15 @@ links rows to tips on the phylogeny. Must refer to a valid column name in
 the data. The id column must exactly match the tip labels in the phylogeny.}
 
 \item{tree}{A phylogenetic tree object of class \code{phylo}.}
+
+\item{effects_mat}{(optional) A boolean matrix with row and column names
+exactly matching the variables declared for the model. If not specified,
+all cross-lagged effects will be estimated in the model. If specified, the
+model will only estimate cross-lagged effects where cells in the matrix are
+TRUE and will ignore cross-lagged effects where cells in the matrix are FALSE.
+In the matrix, columns represent predictor variables and rows represent
+outcome variables. All autoregressive effects (e.g., X -> X) must be TRUE
+in the matrix.}
 
 \item{dist_mat}{(optional) A distance matrix with row and column names exactly
 matching the tip labels in the phylogeny. If specified, the model will

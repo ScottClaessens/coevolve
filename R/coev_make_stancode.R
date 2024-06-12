@@ -12,6 +12,14 @@
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}.
+#' @param effects_mat (optional) A boolean matrix with row and column names
+#'   exactly matching the variables declared for the model. If not specified,
+#'   all cross-lagged effects will be estimated in the model. If specified, the
+#'   model will only estimate cross-lagged effects where cells in the matrix are
+#'   TRUE and will ignore cross-lagged effects where cells in the matrix are FALSE.
+#'   In the matrix, columns represent predictor variables and rows represent
+#'   outcome variables. All autoregressive effects (e.g., X -> X) must be TRUE
+#'   in the matrix.
 #' @param dist_mat (optional) A distance matrix with row and column names exactly
 #'   matching the tip labels in the phylogeny. If specified, the model will
 #'   additionally control for spatial location by including a separate Gaussian
@@ -54,10 +62,11 @@
 #'    id = "id",
 #'    tree = tree
 #' )
-coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
+coev_make_stancode <- function(data, variables, id, tree,
+                               effects_mat = NULL, dist_mat = NULL,
                                prior = NULL, prior_only = FALSE) {
   # check arguments
-  run_checks(data, variables, id, tree, dist_mat, prior, prior_only)
+  run_checks(data, variables, id, tree, effects_mat, dist_mat, prior, prior_only)
   # extract distributions and variable names from named list
   distributions <- as.character(variables)
   variables <- names(variables)
@@ -156,7 +165,9 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
     "  array[N_seg] int node_seq; // sequence of nodes\n",
     "  array[N_seg] int parent; // parent node for each node\n",
     "  array[N_seg] real ts; // amount of time since parent node\n",
-    "  array[N_seg] int tip; // is tip?\n"
+    "  array[N_seg] int tip; // is tip?\n",
+    "  array[J,J] int effects_mat; // which effects should be estimated?\n",
+    "  int num_effects; // number of effects being estimated\n"
   )
   # add observed data variables one by one depending on type
   for (i in 1:length(variables)) {
@@ -178,7 +189,7 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
   # write parameters block
   sc_parameters <- paste0(
     "parameters{\n",
-    "  matrix[J,J] alpha; // selection coefficients\n",
+    "  vector[num_effects] alpha_pars; // selection coefficients (actual parameters)\n",
     "  vector<lower=0>[J] sigma; // drift scale\n",
     "  vector[J] b; // SDE intercepts\n",
     "  vector[J] eta_anc; // ancestral states\n",
@@ -208,7 +219,8 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
     "  matrix[N_seg,J] eta;\n",
     "  matrix[J,J] Q;\n",
     "  matrix[J,J] I;\n",
-    "  matrix[J,J] A;\n"
+    "  matrix[J,J] A;\n",
+    "  matrix[J,J] alpha;\n"
   )
   # add distance random effects if distance matrix specified by user
   if (!is.null(dist_mat)) {
@@ -221,7 +233,22 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
     sc_transformed_parameters,
     "  matrix[N_seg,J] drift_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
     "  matrix[N_seg,J] sigma_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
-    "  // selection matrix\n",
+    "  // construct alpha matrix\n",
+    "  {\n",
+    "    int index;\n",
+    "    index = 1;\n",
+    "    for (i in 1:J) {\n",
+    "      for (j in 1:J) {\n",
+    "        if (effects_mat[i,j] == 1) {\n",
+    "          alpha[i,j] = alpha_pars[index];\n",
+    "          index += 1;\n",
+    "        } else if (effects_mat[i,j] == 0) {\n",
+    "          alpha[i,j] = 0;\n",
+    "        }\n",
+    "      }\n",
+    "    }\n",
+    "  }\n",
+    "  // calculate selection matrix\n",
     "  for (j in 1:J) {\n",
     "    for (i in 1:J) {\n",
     "      if (i == j) {\n",
@@ -291,7 +318,7 @@ coev_make_stancode <- function(data, variables, id, tree, dist_mat = NULL,
   # write model block
   sc_model <- paste0(
     "model{\n",
-    "  to_vector(alpha) ~ ", priors$alpha, ";\n",
+    "  to_vector(alpha_pars) ~ ", priors$alpha, ";\n",
     "  b ~ ", priors$b, ";\n",
     "  sigma ~ ", priors$sigma, ";\n",
     "  eta_anc ~ ", priors$eta_anc, ";\n",

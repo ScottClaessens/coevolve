@@ -12,8 +12,16 @@
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}.
-#' @param dist_mat (optional) A distance matrix with row and column names exactly
-#'   matching the tip labels in the phylogeny. If specified, the model will
+#' @param effects_mat (optional) A boolean matrix with row and column names
+#'   exactly matching the variables declared for the model. If not specified,
+#'   all cross-lagged effects will be estimated in the model. If specified, the
+#'   model will only estimate cross-lagged effects where cells in the matrix are
+#'   TRUE and will ignore cross-lagged effects where cells in the matrix are FALSE.
+#'   In the matrix, columns represent predictor variables and rows represent
+#'   outcome variables. All autoregressive effects (e.g., X -> X) must be TRUE
+#'   in the matrix.
+#' @param dist_mat (optional) A numeric distance matrix with row and column names
+#'   exactly matching the tip labels in the phylogeny. If specified, the model will
 #'   additionally control for spatial location by including a separate Gaussian
 #'   Process over locations for every coevolving variable in the model.
 #' @param prior (optional) A named list of priors for the model. If not specified,
@@ -63,14 +71,16 @@
 #' )
 #' }
 coev_fit <- function(data, variables, id, tree,
-                     dist_mat = NULL, prior = NULL,
-                     prior_only = FALSE, ...) {
+                     effects_mat = NULL, dist_mat = NULL,
+                     prior = NULL, prior_only = FALSE, ...) {
   # check arguments
-  run_checks(data, variables, id, tree, dist_mat, prior, prior_only)
+  run_checks(data, variables, id, tree, effects_mat, dist_mat, prior, prior_only)
   # write stan code for model
-  sc <- coev_make_stancode(data, variables, id, tree, dist_mat, prior, prior_only)
+  sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
+                           dist_mat, prior, prior_only)
   # get data list for stan
-  sd <- coev_make_standata(data, variables, id, tree, dist_mat, prior, prior_only)
+  sd <- coev_make_standata(data, variables, id, tree, effects_mat,
+                           dist_mat, prior, prior_only)
   # fit model
   model <-
     cmdstanr::cmdstan_model(
@@ -90,6 +100,7 @@ coev_fit <- function(data, variables, id, tree,
       variables = variables,
       id = id,
       tree = tree,
+      effects_mat = sd$effects_mat,
       dist_mat = sd$dist_mat,
       prior_only = prior_only
     )

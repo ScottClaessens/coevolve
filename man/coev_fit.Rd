@@ -9,6 +9,7 @@ coev_fit(
   variables,
   id,
   tree,
+  effects_mat = NULL,
   dist_mat = NULL,
   prior = NULL,
   prior_only = FALSE,
@@ -32,8 +33,17 @@ the data. The id column must exactly match the tip labels in the phylogeny.}
 
 \item{tree}{A phylogenetic tree object of class \code{phylo}.}
 
-\item{dist_mat}{(optional) A distance matrix with row and column names exactly
-matching the tip labels in the phylogeny. If specified, the model will
+\item{effects_mat}{(optional) A boolean matrix with row and column names
+exactly matching the variables declared for the model. If not specified,
+all cross-lagged effects will be estimated in the model. If specified, the
+model will only estimate cross-lagged effects where cells in the matrix are
+TRUE and will ignore cross-lagged effects where cells in the matrix are FALSE.
+In the matrix, columns represent predictor variables and rows represent
+outcome variables. All autoregressive effects (e.g., X -> X) must be TRUE
+in the matrix.}
+
+\item{dist_mat}{(optional) A numeric distance matrix with row and column names
+exactly matching the tip labels in the phylogeny. If specified, the model will
 additionally control for spatial location by including a separate Gaussian
 Process over locations for every coevolving variable in the model.}
 

@@ -12,6 +12,14 @@
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}.
+#' @param effects_mat (optional) A boolean matrix with row and column names
+#'   exactly matching the variables declared for the model. If not specified,
+#'   all cross-lagged effects will be estimated in the model. If specified, the
+#'   model will only estimate cross-lagged effects where cells in the matrix are
+#'   TRUE and will ignore cross-lagged effects where cells in the matrix are FALSE.
+#'   In the matrix, columns represent predictor variables and rows represent
+#'   outcome variables. All autoregressive effects (e.g., X -> X) must be TRUE
+#'   in the matrix.
 #' @param dist_mat (optional) A distance matrix with row and column names exactly
 #'   matching the tip labels in the phylogeny. If specified, the model will
 #'   additionally control for spatial location by including a separate Gaussian
@@ -54,15 +62,32 @@
 #'    id = "id",
 #'    tree = tree
 #' )
-coev_make_standata <- function(data, variables, id, tree, dist_mat = NULL,
+coev_make_standata <- function(data, variables, id, tree,
+                               effects_mat = NULL, dist_mat = NULL,
                                prior = NULL, prior_only = FALSE) {
   # check arguments
-  run_checks(data, variables, id, tree, dist_mat, prior, prior_only)
+  run_checks(data, variables, id, tree, effects_mat, dist_mat, prior, prior_only)
   # match data to tree tip label ordering
   data <- data[match(tree$tip.label, data[,id]),]
-  # stop if data and tips do not match
+  # match distance matrix to tree tip label ordering
+  if (!is.null(dist_mat)) dist_mat <- dist_mat[tree$tip.label,tree$tip.label]
+  # create effects matrix if not specified
+  if (is.null(effects_mat)) {
+    effects_mat <- matrix(TRUE, nrow = length(variables), ncol = length(variables),
+                          dimnames = list(names(variables), names(variables)))
+  }
+  # match effects_mat to vector of variables
+  effects_mat <- effects_mat[names(variables),names(variables)]
+  # convert effects_mat to integer matrix (unary conversion +)
+  effects_mat <- +effects_mat
+  # stop for internal mismatches
   if (!identical(tree$tip.label, data[,id])) {
     stop2("Data and phylogeny tips do not match.")
+  } else if (!is.null(dist_mat) & !identical(tree$tip.label, data[,id])) {
+    stop2("Distance matrix and phylogeny tips do not match.")
+  } else if (!identical(names(variables), rownames(effects_mat)) |
+             !identical(names(variables), colnames(effects_mat))) {
+    stop2("Effects matrix and variable names do not match.")
   }
   # cut up tree into segments
   times <- ape::node.depth.edgelength(tree)
@@ -91,13 +116,15 @@ coev_make_standata <- function(data, variables, id, tree, dist_mat = NULL,
   if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
   # data list for stan
   sd <- list(
-    N = length(tree$tip.label), # number of taxa
-    J = length(variables),      # number of variables
-    N_seg = N_seg,              # number of segments in the tree
-    node_seq = node_seq,        # sequence of nodes
-    parent = parent,            # parent node for each node
-    ts = parent_time,           # amount of time since parent node
-    tip = tip                   # is tip?
+    N = length(tree$tip.label),    # number of taxa
+    J = length(variables),         # number of variables
+    N_seg = N_seg,                 # number of segments in the tree
+    node_seq = node_seq,           # sequence of nodes
+    parent = parent,               # parent node for each node
+    ts = parent_time,              # amount of time since parent node
+    tip = tip,                     # is tip?
+    effects_mat = effects_mat,     # which effects should be estimated?
+    num_effects = sum(effects_mat) # number of effects being estimated
   )
   # add observed data variables one-by-one
   for (i in 1:length(variables)) {
