@@ -70,7 +70,7 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', 'ordered_logistic'",
-      ", 'poisson_softmax', 'normal', and 'lognormal' are not yet supported."
+      ", 'poisson_softplus', 'normal', and 'lognormal' are not yet supported."
     )
   )
   expect_error(
@@ -113,13 +113,13 @@ test_that("coev_make_standata() produces expected errors", {
     coev_make_standata(
       data = d,
       variables = list(
-        y = "poisson_softmax", # not integer >= 0
-        z = "poisson_softmax"
+        y = "poisson_softplus", # not integer >= 0
+        z = "poisson_softplus"
       ),
       id = "id",
       tree = tree
     ),
-    "Variables following the 'poisson_softmax' response distribution must be integers greater than or equal to zero in the data."
+    "Variables following the 'poisson_softplus' response distribution must be integers greater than or equal to zero in the data."
   )
   expect_error(
     coev_make_standata(
