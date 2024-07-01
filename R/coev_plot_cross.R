@@ -39,11 +39,11 @@ coev_plot_cross <- function(object, ...) {
   if (!methods::is(object, "coevfit")) {
     stop2("Argument 'object' must be a fitted coevolutionary model of class coevfit.")
   }
-  # extract posterior draws for alpha matrix
+  # extract posterior draws for A matrix
   suppressWarnings({
     post <- tidyr::pivot_longer(
-      object$fit$draws("alpha", format = "df"),
-      cols = tidyselect::starts_with("alpha"),
+      object$fit$draws("A", format = "df"),
+      cols = tidyselect::starts_with("A"),
       names_to = "parameter"
     )
   })

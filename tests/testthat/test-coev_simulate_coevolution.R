@@ -1,5 +1,5 @@
 test_that("coev_simulate_coevolution() produces expected errors", {
-  n <- 5
+  n <- 10
   variables <- c("x","y")
   selection_matrix <- matrix(c(0.95,0.00,0.80,0.95), nrow = 2,
                              dimnames = list(variables, variables))
@@ -97,7 +97,7 @@ test_that("coev_simulate_coevolution() produces expected errors", {
 })
 
 test_that("coev_simulate_coevolution() returns named list", {
-  n <- 5
+  n <- 10
   variables <- c("x","y")
   selection_matrix <- matrix(c(0.95,0.80,0.00,0.95), nrow = 2,
                              # test when name order does not match variable order

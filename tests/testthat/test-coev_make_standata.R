@@ -404,8 +404,8 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
-      "use only the following names: 'alpha', 'b', 'sigma', 'eta_anc', ",
-      "'c', 'sigma_dist', and 'rho_dist'"
+      "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
+      "'Q_diag', 'c', 'sigma_dist', and 'rho_dist'"
     )
   )
   expect_error(
@@ -417,7 +417,7 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      prior = list(alpha = "normal(0,2)", alpha = "normal(0,2)") # duplicate names
+      prior = list(A_diag = "normal(0,2)", A_diag = "normal(0,2)") # duplicate names
     ),
     "Argument 'prior' contains duplicate names."
   )
@@ -461,7 +461,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   # expect list with correct names and prior_only = 0
   expect_no_error(sd1)
   expect_type(sd1, "list")
-  expect_equal(names(sd1), c("N", "J", "N_seg", "node_seq", "parent", "ts",
+  expect_equal(names(sd1), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
                             "tip", "effects_mat", "num_effects", "y1", "y2",
                             "prior_only"))
   expect_equal(sd1$prior_only, 0)
@@ -484,7 +484,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   # expect list with correct names and prior_only = 0
   expect_no_error(sd2)
   expect_type(sd2, "list")
-  expect_equal(names(sd2), c("N", "J", "N_seg", "node_seq", "parent", "ts",
+  expect_equal(names(sd2), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
                              "tip", "effects_mat", "num_effects", "y1", "y2",
                              "dist_mat", "prior_only"))
   expect_equal(sd2$prior_only, 0)
@@ -502,7 +502,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     )
   expect_no_error(sd3)
   expect_type(sd3, "list")
-  expect_equal(names(sd3), c("N", "J", "N_seg", "node_seq", "parent", "ts",
+  expect_equal(names(sd3), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
                              "tip", "effects_mat", "num_effects",
                              "y1", "y2", "prior_only"))
   expect_equal(sd3$prior_only, 1)

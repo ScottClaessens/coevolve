@@ -404,8 +404,8 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
-      "use only the following names: 'alpha', 'b', 'sigma', 'eta_anc', ",
-      "'c', 'sigma_dist', and 'rho_dist'"
+      "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
+      "'Q_diag', 'c', 'sigma_dist', and 'rho_dist'"
     )
   )
   expect_error(
@@ -417,7 +417,7 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      prior = list(alpha = "normal(0,2)", alpha = "normal(0,2)") # duplicate names
+      prior = list(A_diag = "normal(0,2)", A_diag = "normal(0,2)") # duplicate names
     ),
     "Argument 'prior' contains duplicate names."
   )
@@ -541,7 +541,7 @@ test_that("Setting manual priors in coev_make_stancode() works as expected", {
       ),
       id = "id",
       tree = tree,
-      prior = list(alpha = "testing")
+      prior = list(A_diag = "testing")
     )
   )
   # valid priors should throw no errors
@@ -555,10 +555,11 @@ test_that("Setting manual priors in coev_make_stancode() works as expected", {
       id = "id",
       tree = tree,
       prior = list(
-        alpha   = "normal(0, 2)",
-        b       = "normal(0, 2)",
-        sigma   = "exponential(1)",
-        eta_anc = "normal(0, 2)"
+        b         = "normal(0, 2)",
+        eta_anc   = "normal(0, 2)",
+        A_offdiag = "normal(0, 2)",
+        A_diag    = "normal(0, 2)",
+        Q_diag    = "normal(0, 2)"
         )
     )
   )

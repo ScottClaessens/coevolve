@@ -116,15 +116,15 @@ coev_make_standata <- function(data, variables, id, tree,
   if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
   # data list for stan
   sd <- list(
-    N = length(tree$tip.label),    # number of taxa
-    J = length(variables),         # number of variables
-    N_seg = N_seg,                 # number of segments in the tree
-    node_seq = node_seq,           # sequence of nodes
-    parent = parent,               # parent node for each node
-    ts = parent_time,              # amount of time since parent node
-    tip = tip,                     # is tip?
-    effects_mat = effects_mat,     # which effects should be estimated?
-    num_effects = sum(effects_mat) # number of effects being estimated
+    N_tips = length(tree$tip.label), # number of tips
+    J = length(variables),           # number of variables
+    N_seg = N_seg,                   # number of segments in the tree
+    node_seq = node_seq,             # sequence of nodes
+    parent = parent,                 # parent node for each node
+    ts = parent_time,                # amount of time since parent node
+    tip = tip,                       # is tip?
+    effects_mat = effects_mat,       # which effects should be estimated?
+    num_effects = sum(effects_mat)   # number of effects being estimated
   )
   # add observed data variables one-by-one
   for (i in 1:length(variables)) {

@@ -81,11 +81,10 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     high   = median + 2.5*mad,
     low    = median - 2.5*mad
   )
-  # get median parameter values for A, b, and sigma
+  # get median parameter values for A and b
   A <- apply(object$fit$draws("A"), 3, stats::median)
   dim(A) <- rep(length(names(object$variables)), 2)
   b <- as.vector(apply(object$fit$draws("b"), 3, stats::median))
-  sigma <- as.vector(apply(object$fit$draws("sigma"), 3, stats::median))
   # get IDs for variables
   var1ID <- which(names(object$variables) == var1)
   var2ID <- which(names(object$variables) == var2)
@@ -167,5 +166,4 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
       c(eta$low[var2ID], eta$median[var2ID], eta$high[var2ID]) - eta$median[var2ID]
     ) / eta$mad[var2ID]
   )
-
 }

@@ -191,13 +191,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       stop2("Argument 'prior' is not a named list.")
     }
     # stop if prior names not allowed
-    if (!all(names(prior) %in% c("alpha", "b", "sigma", "eta_anc",
-                                 "c", "sigma_dist", "rho_dist"))) {
+    if (!all(names(prior) %in% c("b", "eta_anc", "A_offdiag", "A_diag",
+                                 "Q_diag", "c", "sigma_dist", "rho_dist"))) {
       stop2(
         paste0(
           "Argument 'prior' list contains names that are not allowed. Please ",
-          "use only the following names: 'alpha', 'b', 'sigma', 'eta_anc', ",
-          "'c', 'sigma_dist', and 'rho_dist'"
+          "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
+          "'Q_diag', 'c', 'sigma_dist', and 'rho_dist'"
           )
         )
     }

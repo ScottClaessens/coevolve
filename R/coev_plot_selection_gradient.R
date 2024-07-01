@@ -79,11 +79,11 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
     high   = median + 2.5*mad,
     low    = median - 2.5*mad
   )
-  # get median parameter values for A, b, and sigma
+  # get median parameter values for A, b, and Q_diag
   A <- apply(object$fit$draws("A"), 3, stats::median)
   dim(A) <- rep(length(names(object$variables)), 2)
   b <- as.vector(apply(object$fit$draws("b"), 3, stats::median))
-  sigma <- as.vector(apply(object$fit$draws("sigma"), 3, stats::median))
+  Q_diag <- as.vector(apply(object$fit$draws("Q_diag"), 3, stats::median))
   # ornstein uhlenbeck sde function for response and predictor variable
   # this currently assumes that values for all other traits are set to zero
   OU_sde <- function(respValue, predValue, respVarNum, predVarNum) {
@@ -97,7 +97,7 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
         # scaled by mad
         ) / eta$mad[respVarNum]) /
       # divided by sigma, scaled by mad
-      (sigma[respVarNum] / eta$mad[respVarNum])
+      (Q_diag[respVarNum] / eta$mad[respVarNum])
     return(delta_sigma)
   }
   # get predictions for different levels of traits

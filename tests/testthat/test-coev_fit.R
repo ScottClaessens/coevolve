@@ -404,8 +404,8 @@ test_that("coev_fit() produces expected errors", {
     ),
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
-      "use only the following names: 'alpha', 'b', 'sigma', 'eta_anc', ",
-      "'c', 'sigma_dist', and 'rho_dist'"
+      "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
+      "'Q_diag', 'c', 'sigma_dist', and 'rho_dist'"
     )
   )
   expect_error(
@@ -417,7 +417,7 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      prior = list(alpha = "normal(0,2)", alpha = "normal(0,2)") # duplicate names
+      prior = list(A_diag = "normal(0,2)", A_diag = "normal(0,2)") # duplicate names
     ),
     "Argument 'prior' contains duplicate names."
   )
@@ -439,7 +439,7 @@ test_that("coev_fit() produces expected errors", {
 test_that("coev_fit() fits the model without error", {
   # simulate data
   withr::with_seed(1, {
-    n <- 5
+    n <- 10
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
@@ -461,8 +461,8 @@ test_that("coev_fit() fits the model without error", {
     id = "id",
     tree = tree,
     parallel_chains = 4,
-    iter_warmup = 100,
-    iter_sampling = 100,
+    iter_warmup = 1000,
+    iter_sampling = 1000,
     seed = 1
   )
   # model with distance matrix
@@ -478,8 +478,8 @@ test_that("coev_fit() fits the model without error", {
     tree = tree,
     dist_mat = dist_mat,
     parallel_chains = 4,
-    iter_warmup = 100,
-    iter_sampling = 100,
+    iter_warmup = 1000,
+    iter_sampling = 1000,
     seed = 1
   )
   # prior only model
@@ -492,8 +492,8 @@ test_that("coev_fit() fits the model without error", {
     id = "id",
     tree = tree,
     parallel_chains = 4,
-    iter_warmup = 100,
-    iter_sampling = 100,
+    iter_warmup = 1000,
+    iter_sampling = 1000,
     seed = 1,
     prior_only = TRUE
   )
@@ -522,7 +522,7 @@ test_that("coev_fit() fits the model without error", {
 test_that("effects_mat argument to coev_fit() works as expected", {
   # simulate data
   withr::with_seed(1, {
-    n <- 5
+    n <- 10
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
@@ -551,8 +551,8 @@ test_that("effects_mat argument to coev_fit() works as expected", {
     tree = tree,
     effects_mat = effects_mat,
     parallel_chains = 4,
-    iter_warmup = 100,
-    iter_sampling = 100,
+    iter_warmup = 1000,
+    iter_sampling = 1000,
     seed = 1
   )
   # expect no errors for model fitting or summaries
@@ -567,10 +567,10 @@ test_that("effects_mat argument to coev_fit() works as expected", {
       +effects_mat[names(variables),names(variables)]
       )
     )
-  # correct parameter estimated to be zero (alpha[2,1])
-  expect_true(all(as.vector(m$fit$draws()[,,"alpha[2,1]"]) == 0))
+  # correct parameter estimated to be zero (A[2,1])
+  expect_true(all(as.vector(m$fit$draws()[,,"A[2,1]"]) == 0))
   # other parameters estimated as normal
-  expect_true(!all(as.vector(m$fit$draws()[,,"alpha[1,1]"]) == 0))
-  expect_true(!all(as.vector(m$fit$draws()[,,"alpha[1,2]"]) == 0))
-  expect_true(!all(as.vector(m$fit$draws()[,,"alpha[2,2]"]) == 0))
+  expect_true(!all(as.vector(m$fit$draws()[,,"A[1,1]"]) == 0))
+  expect_true(!all(as.vector(m$fit$draws()[,,"A[1,2]"]) == 0))
+  expect_true(!all(as.vector(m$fit$draws()[,,"A[2,2]"]) == 0))
 })

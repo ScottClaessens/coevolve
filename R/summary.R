@@ -41,27 +41,30 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
         )
     )
   # summarise autoregressive selection effects
-  alpha <- s[stringr::str_starts(s$variable, pattern = "alpha\\["),]
+  A <- s[stringr::str_starts(s$variable, pattern = "A\\["),]
   equal <-
-    readr::parse_number(stringr::str_extract(alpha$variable, pattern = "alpha\\[(\\d+)\\,")) ==
-    readr::parse_number(stringr::str_extract(alpha$variable, pattern = "\\,\\d+\\]"))
-  auto <- alpha[equal,]
-  rownames(auto) <- names(object$variables)[readr::parse_number(stringr::str_extract(auto$variable, pattern = "alpha\\[(\\d+)\\,"))]
+    readr::parse_number(stringr::str_extract(A$variable, pattern = "A\\[(\\d+)\\,")) ==
+    readr::parse_number(stringr::str_extract(A$variable, pattern = "\\,\\d+\\]"))
+  auto <- A[equal,]
+  rownames(auto) <- names(object$variables)[readr::parse_number(stringr::str_extract(auto$variable, pattern = "A\\[(\\d+)\\,"))]
   auto <- auto[,2:ncol(auto)]
   # summarise cross selection effects
-  cross <- alpha[!equal,]
+  cross <- A[!equal,]
   rownames(cross) <-
     paste0(
       names(object$variables)[readr::parse_number(stringr::str_extract(cross$variable, pattern = "\\,\\d+\\]"))],
       " \U27F6 ",
-      names(object$variables)[readr::parse_number(stringr::str_extract(cross$variable, pattern = "alpha\\[(\\d+)\\,"))]
+      names(object$variables)[readr::parse_number(stringr::str_extract(cross$variable, pattern = "A\\[(\\d+)\\,"))]
     )
   cross <- cross[,2:ncol(cross)]
   # only include cross selection effects that have been estimated in summary
   cross <- cross[!is.na(cross$Rhat),]
   # summarise drift parameters
-  drift <- s[stringr::str_starts(s$variable, pattern = "sigma\\["),]
-  rownames(drift) <- names(object$variables)[readr::parse_number(drift$variable)]
+  drift <- s[stringr::str_starts(s$variable, pattern = "Q\\["),]
+  drift <- drift[!is.na(drift$Rhat),]
+  rownames(drift) <- names(object$variables)[
+    readr::parse_number(stringr::str_extract(drift$variable, pattern = "Q\\[(\\d+)\\,"))
+    ]
   drift <- drift[,2:ncol(drift)]
   # summarise SDE intercepts
   sde_intercepts <- s[stringr::str_starts(s$variable, "b"),]

@@ -1,7 +1,7 @@
 test_that("coev_plot_flowfield() produces expected errors", {
   # simulate data
   withr::with_seed(1, {
-    n <- 5
+    n <- 10
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
@@ -56,7 +56,7 @@ test_that("coev_plot_flowfield() produces expected errors", {
 test_that("coev_plot_flowfield() produces ggplot object", {
   # simulate data
   withr::with_seed(1, {
-    n <- 5
+    n <- 10
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
@@ -73,8 +73,8 @@ test_that("coev_plot_flowfield() produces ggplot object", {
     id = "id",
     tree = tree,
     parallel_chains = 4,
-    iter_warmup = 100,
-    iter_sampling = 100,
+    iter_warmup = 1000,
+    iter_sampling = 1000,
     seed = 1
   )
   # should run without error

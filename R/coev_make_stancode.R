@@ -73,10 +73,11 @@ coev_make_stancode <- function(data, variables, id, tree,
   # get priors
   priors <-
     list(
-      alpha      = "std_normal()",
       b          = "std_normal()",
-      sigma      = "std_normal()",
       eta_anc    = "std_normal()",
+      A_offdiag  = "std_normal()",
+      A_diag     = "std_normal()",
+      Q_diag     = "std_normal()",
       c          = "normal(0, 2)",
       sigma_dist = "exponential(1)",
       rho_dist   = "exponential(1)"
@@ -159,13 +160,13 @@ coev_make_stancode <- function(data, variables, id, tree,
   # write data block
   sc_data <- paste0(
     "data{\n",
-    "  int N; // number of taxa\n",
-    "  int J; // number of variables\n",
-    "  int N_seg; // number of segments in tree\n",
-    "  array[N_seg] int node_seq; // sequence of nodes\n",
-    "  array[N_seg] int parent; // parent node for each node\n",
-    "  array[N_seg] real ts; // amount of time since parent node\n",
-    "  array[N_seg] int tip; // is tip?\n",
+    "  int N_tips; // number of tips\n",
+    "  int J; // number of response traits\n",
+    "  int N_seg; // total number of segments in the tree\n",
+    "  array[N_seg] int node_seq; // index of tree nodes\n",
+    "  array[N_seg] int parent; // index of the parent node of each descendent\n",
+    "  array[N_seg] real ts; // time since parent\n",
+    "  array[N_seg] int tip; // indicator of whether a given segment ends in a tip\n",
     "  array[J,J] int effects_mat; // which effects should be estimated?\n",
     "  int num_effects; // number of effects being estimated\n"
   )
@@ -173,7 +174,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   for (i in 1:length(variables)) {
     sc_data <- paste0(
       sc_data,
-      "  array[N] ",
+      "  array[N_tips] ",
       # continuous variables are real numbers
       # all others are integers
       ifelse(distributions[i] %in% c("normal", "lognormal"), "real", "int"),
@@ -182,15 +183,16 @@ coev_make_stancode <- function(data, variables, id, tree,
   }
   # add distance matrix if user has defined one
   if (!is.null(dist_mat)) {
-    sc_data <- paste0(sc_data, "  array[N,N] real dist_mat; // distance matrix\n")
+    sc_data <- paste0(sc_data, "  array[N_tips,N_tips] real dist_mat; // distance matrix\n")
   }
   # add prior_only data variable
   sc_data <- paste0(sc_data, "  int prior_only; // should the likelihood be ignored?\n}")
   # write parameters block
   sc_parameters <- paste0(
     "parameters{\n",
-    "  vector[num_effects] alpha_pars; // selection coefficients (actual parameters)\n",
-    "  vector<lower=0>[J] sigma; // drift scale\n",
+    "  vector<upper=0>[J] A_diag; // autoregressive terms of A\n",
+    "  vector[num_effects - J] A_offdiag; // cross-lagged terms of A\n",
+    "  vector<lower=0>[J] Q_diag; // self-drift terms\n",
     "  vector[J] b; // SDE intercepts\n",
     "  vector[J] eta_anc; // ancestral states\n",
     "  matrix[N_seg - 1,J] z_drift; // stochastic drift, unscaled and uncorrelated\n"
@@ -207,7 +209,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   if (!is.null(dist_mat)) {
     sc_parameters <- paste0(
       sc_parameters,
-      "  matrix[N,J] dist_z; // spatial covariance random effects, unscaled and uncorrelated\n",
+      "  matrix[N_tips,J] dist_z; // spatial covariance random effects, unscaled and uncorrelated\n",
       "  vector<lower=0>[J] rho_dist; // how quickly does covariance decline with distance\n",
       "  vector<lower=0>[J] sigma_dist; // maximum covariance due to spatial location\n"
     )
@@ -217,49 +219,61 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_transformed_parameters <- paste0(
     "transformed parameters{\n",
     "  matrix[N_seg,J] eta;\n",
-    "  matrix[J,J] Q;\n",
-    "  matrix[J,J] I;\n",
-    "  matrix[J,J] A;\n",
-    "  matrix[J,J] alpha;\n"
+    "  matrix[J,J] Q; // drift matrix\n",
+    "  matrix[J,J] I; // identity matrix\n",
+    "  matrix[J,J] A; // selection matrix\n",
+    "  vector[J*J - J] Q_offdiag = rep_vector(0.0, J*J - J);\n"
   )
   # add distance random effects if distance matrix specified by user
   if (!is.null(dist_mat)) {
     sc_transformed_parameters <- paste0(
       sc_transformed_parameters,
-      "  matrix[N,J] dist_v; // distance covariance random effects\n"
+      "  matrix[N_tips,J] dist_v; // distance covariance random effects\n"
     )
   }
   sc_transformed_parameters <- paste0(
     sc_transformed_parameters,
     "  matrix[N_seg,J] drift_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
     "  matrix[N_seg,J] sigma_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
-    "  // construct alpha matrix\n",
+    "  // fill A matrix //////////\n",
     "  {\n",
-    "    int index;\n",
-    "    index = 1;\n",
-    "    for (i in 1:J) {\n",
-    "      for (j in 1:J) {\n",
+    "    int ticker = 1;\n",
+    "    // fill upper triangle of matrix\n",
+    "    for (i in 1:(J-1)) {\n",
+    "      for (j in (i+1):J) {\n",
     "        if (effects_mat[i,j] == 1) {\n",
-    "          alpha[i,j] = alpha_pars[index];\n",
-    "          index += 1;\n",
+    "          A[i,j] = A_offdiag[ticker];\n",
+    "          ticker += 1;\n",
     "        } else if (effects_mat[i,j] == 0) {\n",
-    "          alpha[i,j] = 0;\n",
+    "          A[i,j] = 0;\n",
     "        }\n",
     "      }\n",
     "    }\n",
-    "  }\n",
-    "  // calculate selection matrix\n",
-    "  for (j in 1:J) {\n",
-    "    for (i in 1:J) {\n",
-    "      if (i == j) {\n",
-    "        A[i,j] = -exp(alpha[i,j]); // autoregressive effects\n",
-    "      } else {\n",
-    "        A[i,j] = alpha[i,j]; // cross effects\n",
+    "    // fill lower triangle of matrix\n",
+    "    for (i in 1:(J-1)) {\n",
+    "      for (j in (i+1):J) {\n",
+    "        if (effects_mat[j,i] == 1) {\n",
+    "          A[j,i] = A_offdiag[ticker];\n",
+    "          ticker += 1;\n",
+    "        } else if (effects_mat[j,i] == 0) {\n",
+    "          A[j,i] = 0;\n",
+    "        }\n",
     "      }\n",
     "    }\n",
+    "    // fill diag of matrix\n",
+    "    for (j in 1:J) A[j,j] = A_diag[j];\n",
     "  }\n",
-    "  // drift matrix\n",
-    "  Q = diag_matrix(square(sigma));\n",
+    "  // fill Q matrix //////////\n",
+    "  {\n",
+    "    int ticker = 1;\n",
+    "    for (i in 1:(J-1))\n",
+    "      for (j in (i+1):J) {\n",
+    "        Q[i,j] = Q_offdiag[ticker];\n",
+    "        Q[j,i] = Q[i,j]; // symmetry of covariance\n",
+    "        ticker += 1;\n",
+    "      }\n",
+    "    for (j in 1:J) Q[j,j] = Q_diag[j];\n",
+    "  }\n",
     "  // identity matrix\n",
     "  I = diag_matrix(rep_vector(1,J));\n",
     "  // setting ancestral states and placeholders\n",
@@ -274,7 +288,6 @@ coev_make_stancode <- function(data, variables, id, tree,
     "    vector[J] drift_seg; // accumulated drift over the segment\n",
     "    A_delta = A_dt(A, ts[i]);\n",
     "    VCV = cov_drift(A, Q, ts[i]);\n",
-    "    // no drift on the interaction, bc its simply a product of vars\n",
     "    drift_seg = cholesky_decompose(VCV) * to_vector( z_drift[i-1,] );\n",
     "    // if not a tip, add the drift parameter\n",
     "    if (tip[i] == 0) {\n",
@@ -290,7 +303,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "        A_delta * to_vector(eta[parent[i],]) + (inverse(A) * (A_delta - I) * b)\n",
     "      );\n",
     "      drift_tips[node_seq[i],] = to_row_vector(drift_seg);\n",
-    "      sigma_tips[node_seq[i],] = to_row_vector(sqrt(diagonal(Q)));\n",
+    "      sigma_tips[node_seq[i],] = to_row_vector(diagonal(Q));\n",
     "    }\n",
     "  }\n"
   )
@@ -300,14 +313,14 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_transformed_parameters,
       "  // distance covariance functions\n",
       "  for (j in 1:J) {\n",
-      "    matrix[N,N] dist_cov;\n",
-      "    matrix[N,N] L_dist_cov;\n",
-      "    for ( i in 1:(N-1) )\n",
-      "      for ( m in (i+1):N ) {\n",
+      "    matrix[N_tips,N_tips] dist_cov;\n",
+      "    matrix[N_tips,N_tips] L_dist_cov;\n",
+      "    for ( i in 1:(N_tips-1) )\n",
+      "      for ( m in (i+1):N_tips ) {\n",
       "        dist_cov[i,m] = sigma_dist[j]*exp(-(rho_dist[j]*dist_mat[i,m]));\n",
       "        dist_cov[m,i] = dist_cov[i,m];\n",
       "      }\n",
-      "    for ( q in 1:N )\n",
+      "    for ( q in 1:N_tips )\n",
       "      dist_cov[q,q] = sigma_dist[j] + 0.01;\n",
       "    L_dist_cov = cholesky_decompose(dist_cov);\n",
       "    dist_v[,j] = L_dist_cov * dist_z[,j];\n",
@@ -318,11 +331,12 @@ coev_make_stancode <- function(data, variables, id, tree,
   # write model block
   sc_model <- paste0(
     "model{\n",
-    "  to_vector(alpha_pars) ~ ", priors$alpha, ";\n",
     "  b ~ ", priors$b, ";\n",
-    "  sigma ~ ", priors$sigma, ";\n",
     "  eta_anc ~ ", priors$eta_anc, ";\n",
-    "  to_vector(z_drift) ~ std_normal();\n"
+    "  to_vector(z_drift) ~ std_normal();\n",
+    "  A_offdiag ~ ", priors$A_offdiag, ";\n",
+    "  A_diag ~ ", priors$A_diag, ";\n",
+    "  Q_diag ~ ", priors$Q_diag, ";\n"
   )
   # add priors for any cut points
   for (j in 1:length(distributions)) {
@@ -343,7 +357,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_model <- paste0(
     sc_model,
     "  if (!prior_only) {\n",
-    "    for (i in 1:N) {\n"
+    "    for (i in 1:N_tips) {\n"
     )
   for (j in 1:length(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
