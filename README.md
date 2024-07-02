@@ -167,10 +167,10 @@ From the cross selection effects, we infer that the three traits do not
 influence one another in their evolution.
 
 We can also plot the cross selection effects from this model using the
-`coev_plot_cross()` function.
+`coev_plot_delta_theta()` function.
 
 ``` r
-coev_plot_cross(m)
+coev_plot_delta_theta(m)
 ```
 
 <img src="man/figures/README-plot_cross-1.png" width="60%" style="display: block; margin: auto;" />
