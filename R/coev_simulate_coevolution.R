@@ -16,8 +16,8 @@
 #' @param prob_split A numeric probability of a species split in any given
 #'   timestep.
 #'
-#' @return List with standardised dataset at final timestep (data), full
-#'   simulation log (simulation), and pruned phylogenetic tree (tree).
+#' @return List with dataset at final timestep (data), full simulation log
+#'   (simulation), and pruned phylogenetic tree (tree).
 #' @export
 #'
 #' @examples
@@ -197,9 +197,8 @@ coev_simulate_coevolution <- function(n,
       }
     }
   }
-  # get final values (standardised)
+  # get final values
   d <- sim[sim$ts == max(sim$ts), c("species", variables)]
-  for (i in variables) d[,i] <- as.numeric(scale(d[,i]))
   # if there are more species than n, randomly prune dataset
   if (nrow(d) > n) d <- dplyr::slice_sample(d, n = as.integer(n))
   # remove rownames from d

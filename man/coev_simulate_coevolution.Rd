@@ -28,8 +28,8 @@ different variables. Names must include all specified variables.}
 timestep.}
 }
 \value{
-List with standardised dataset at final timestep (data), full
-simulation log (simulation), and pruned phylogenetic tree (tree).
+List with dataset at final timestep (data), full simulation log
+(simulation), and pruned phylogenetic tree (tree).
 }
 \description{
 Simulate the coevolution of multiple variables in discrete time steps
