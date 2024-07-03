@@ -2,10 +2,16 @@ Package: coevolve
 Title: Fit Bayesian Dynamic Coevolutionary Models using 'Stan'
 Version: 0.0.0.9004
 Authors@R: 
-    c(person("Scott", "Claessens", , "scott.claessens@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3562-6981")),
-      person("Erik", "Ringen", , "erikjacob.ringen@uzh.ch", role = c("aut")))
-Description: Fit Bayesian dynamic coevolutionary models using 'Stan'. The package allows an abritrary number of variables with different response distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck evolutionary process, allowing users to assess directionality between coevolving variables.
-License: GPL-2
+    c(person("Scott", "Claessens", , "scott.claessens@gmail.com", 
+             role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3562-6981")),
+      person("Erik", "Ringen", , "erikjacob.ringen@uzh.ch", 
+             role = c("aut")))
+Description: Fit Bayesian dynamic coevolutionary models using 'Stan'. The 
+    package allows an abritrary number of variables with different response 
+    distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck 
+    evolutionary process, allowing users to assess directionality between 
+    coevolving variables.
+License: file LICENSE
 URL: https://github.com/ScottClaessens/coevolve
 BugReports: https://github.com/ScottClaessens/coevolve/issues
 Encoding: UTF-8
@@ -27,12 +33,12 @@ Imports:
     methods,
     phangorn,
     phaseR,
+    posterior,
+    purrr,
     readr,
     rlang,
     stringr,
-    tidybayes,
-    tidyr,
-    tidyselect
+    tidyr
 VignetteBuilder: knitr
 Depends: 
     R (>= 3.5.0)
