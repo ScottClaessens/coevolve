@@ -4,7 +4,7 @@
 #' @param var1 A character string equal to one of the coevolving variables in the model
 #' @param var2 A character string equal to one of the coevolving variables in the model
 #' @param contour Logical (defaults to FALSE); whether to show white contour lines
-#' to indicate where selection is stronger than drift
+#'   to indicate where selection is stronger than drift
 #'
 #' @return A \code{ggplot} object
 #' @export
@@ -64,115 +64,146 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
   if (!is.logical(contour)) {
     stop2("Argument 'contour' must be logical.")
   }
-  # get posterior draws for eta
-  suppressWarnings({eta <- tidybayes::gather_draws(object$fit, eta[node,variable])})
-  # restrict to tips only (nodes 1-n)
-  eta <- eta[eta$node %in% 1:nrow(object$data),]
-  # calculate posterior median eta for each tip
-  eta <- dplyr::summarise(eta, value = stats::median(.value), .groups = "drop")
-  # calculate median, mad, high, and low across all tips
-  eta <- dplyr::group_by(eta, variable)
-  eta <- dplyr::summarise(
-    eta,
-    median = stats::median(value),
-    mad    = stats::mad(value),
-    high   = median + 2.5*mad,
-    low    = median - 2.5*mad
-  )
+  # get IDs for variables
+  id_var1 <- which(names(object$variables) == var1)
+  id_var2 <- which(names(object$variables) == var2)
+  # get posterior draws
+  draws <- posterior::as_draws_rvars(object$fit)
+  # medians and median absolute deviations for both variables
+  eta_var1 <- posterior::rvar_median(draws$eta[1:nrow(object$data), id_var1])
+  eta_var2 <- posterior::rvar_median(draws$eta[1:nrow(object$data), id_var2])
+  med_var1 <- stats::median(eta_var1)
+  med_var2 <- stats::median(eta_var2)
+  mad_var1 <- stats::mad(eta_var1)
+  mad_var2 <- stats::mad(eta_var2)
+  lower_var1 <- med_var1 - 2.5*mad_var1
+  lower_var2 <- med_var2 - 2.5*mad_var2
+  upper_var1 <- med_var1 + 2.5*mad_var1
+  upper_var2 <- med_var2 + 2.5*mad_var2
   # get median parameter values for A, b, and Q_diag
-  A <- apply(object$fit$draws("A"), 3, stats::median)
-  dim(A) <- rep(length(names(object$variables)), 2)
-  b <- as.vector(apply(object$fit$draws("b"), 3, stats::median))
-  Q_diag <- as.vector(apply(object$fit$draws("Q_diag"), 3, stats::median))
+  A <- stats::median(draws$A)
+  b <- stats::median(draws$b)
+  Q_diag <- stats::median(draws$Q_diag)
   # ornstein uhlenbeck sde function for response and predictor variable
   # this currently assumes that values for all other traits are set to zero
-  OU_sde <- function(respValue, predValue, respVarNum, predVarNum) {
-    delta_sigma <-
-      # autoregressive selection effect
-      ((A[respVarNum,respVarNum] * respValue +
-          # cross-lagged selection effect
-          A[respVarNum,predVarNum] * predValue +
-          # sde intercept
-          b[respVarNum]
-        # scaled by mad
-        ) / eta$mad[respVarNum]) /
-      # divided by sigma, scaled by mad
-      (Q_diag[respVarNum] / eta$mad[respVarNum])
-    return(delta_sigma)
+  OU_sde <- function(resp_value, pred_value, resp_id, pred_id) {
+    # autoregressive selection effect
+    ((A[resp_id, resp_id] * resp_value +
+        # cross-lagged selection effect
+        A[resp_id, pred_id] * pred_value +
+        # sde intercept
+        b[resp_id]
+      # scaled by mad
+      ) / c(mad_var1, mad_var2)[resp_id]) /
+    # divided by sigma, scaled by mad
+    (Q_diag[resp_id] / c(mad_var1, mad_var2)[resp_id])
   }
   # get predictions for different levels of traits
-  var1Num <- which(var1 == names(object$variables))
-  var2Num <- which(var2 == names(object$variables))
   preds <-
     expand.grid(
-      var1Value = seq(
-        from = eta$low[eta$variable == var1Num],
-        to = eta$high[eta$variable == var1Num],
+      var1_value = seq(
+        from = lower_var1,
+        to = upper_var1,
         length.out = 20
         ),
-      var2Value = seq(
-        from = eta$low[eta$variable == var2Num],
-        to = eta$high[eta$variable == var2Num],
+      var2_value = seq(
+        from = lower_var2,
+        to = upper_var2,
         length.out = 20
         ),
-      var1DeltaSigma = NA,
-      var2DeltaSigma = NA
+      var1_delta_sigma = NA,
+      var2_delta_sigma = NA
     )
   for (i in 1:nrow(preds)) {
-    preds$var1DeltaSigma[i] <-
+    preds$var1_delta_sigma[i] <-
       OU_sde(
-        resp = preds$var1Value[i],
-        pred = preds$var2Value[i],
-        respVarNum = var1Num,
-        predVarNum = var2Num
+        resp_value = preds$var1_value[i],
+        pred_value = preds$var2_value[i],
+        resp_id = id_var1,
+        pred_id = id_var2
       )
-    preds$var2DeltaSigma[i] <-
+    preds$var2_delta_sigma[i] <-
       OU_sde(
-        resp = preds$var2Value[i],
-        pred = preds$var1Value[i],
-        respVarNum = var2Num,
-        predVarNum = var1Num
+        resp_value = preds$var2_value[i],
+        pred_value = preds$var1_value[i],
+        resp_id = id_var2,
+        pred_id = id_var1
       )
   }
   # plotting
-  out <- tidyr::pivot_longer(preds, -c(var1Value, var2Value))
-  out <- dplyr::mutate(
-    out,
-    name = factor(
-      name,
-      labels = c(
-        expression(paste(Delta, !!var1)),
-        expression(paste(Delta, !!var2))
+  out <-
+    tidyr::pivot_longer(
+      preds,
+      -c("var1_value", "var2_value")
+      )
+  out <-
+    dplyr::mutate(
+      out,
+      name = factor(
+        .data$name,
+        labels = c(
+          expression(paste(Delta, !!var1)),
+          expression(paste(Delta, !!var2))
+          )
         )
       )
-    )
   # plot as z-score
-  out <- ggplot2::ggplot(
-    data = out,
-    ggplot2::aes(x = (var1Value - eta$median[var1Num]) / eta$mad[var1Num],
-                 y = (var2Value - eta$median[var2Num]) / eta$mad[var2Num],
-                 z = value, fill = value)
+  out <-
+    ggplot2::ggplot(
+      data = out,
+      mapping = ggplot2::aes(
+        x = (.data$var1_value - med_var1) / mad_var1,
+        y = (.data$var2_value - med_var2) / mad_var2
+      )
     ) +
-    ggplot2::facet_wrap(~ name, labeller = ggplot2::label_parsed) +
-    ggplot2::geom_raster()
+    ggplot2::facet_wrap(
+      ~ .data$name,
+      labeller = ggplot2::label_parsed
+      ) +
+    ggplot2::geom_raster(
+      mapping = ggplot2::aes(
+        fill = .data$value
+      )
+    )
   # add contour
   if (contour) {
-    out <- out + ggplot2::geom_contour(colour = "white", breaks = c(-1, 1))
+    out <-
+      out +
+      ggplot2::stat_contour(
+        mapping = ggplot2::aes(z = .data$value),
+        colour = "white",
+        breaks = c(-1, 1)
+        )
   }
   out +
-    ggplot2::scale_x_continuous(expand = c(0, 0)) +
-    ggplot2::scale_y_continuous(expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(
+      expand = c(0, 0)
+      ) +
+    ggplot2::scale_y_continuous(
+      expand = c(0, 0)
+      ) +
     colorspace::scale_fill_continuous_divergingx(
-      palette = "Geyser", trans = "reverse",
+      palette = "Geyser",
+      trans = "reverse",
       guide = ggplot2::guide_colourbar(reverse = TRUE)
       ) +
-    ggplot2::theme_bw(base_size = 14) +
-    ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
-                   panel.grid.minor = ggplot2::element_blank(),
-                   panel.spacing = ggplot2::unit(1.5, "lines"),
-                   strip.background = ggplot2::element_blank()) +
-    ggplot2::labs(fill = expression(frac(paste(Delta, alpha), sigma))) +
-    ggplot2::xlab(paste(var1, "(z-score)")) +
-    ggplot2::ylab(paste(var2, "(z-score)")) +
+    ggplot2::theme_bw(
+      base_size = 14
+      ) +
+    ggplot2::theme(
+      panel.grid.major = ggplot2::element_blank(),
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.spacing = ggplot2::unit(1.5, "lines"),
+      strip.background = ggplot2::element_blank()
+      ) +
+    ggplot2::labs(
+      fill = expression(frac(paste(Delta, alpha), sigma))
+      ) +
+    ggplot2::xlab(
+      paste(var1, "(z-score)")
+      ) +
+    ggplot2::ylab(
+      paste(var2, "(z-score)")
+      ) +
     ggplot2::coord_fixed()
 }

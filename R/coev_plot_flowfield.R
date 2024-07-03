@@ -64,35 +64,30 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   if (!is.logical(nullclines)) {
     stop2("Argument 'nullclines' must be logical.")
   }
-  # get posterior draws for eta
-  suppressWarnings({
-    eta <- tidybayes::gather_draws(object$fit, eta[node,variable])
-    })
-  # restrict to tips only (nodes 1-n)
-  eta <- eta[eta$node %in% 1:nrow(object$data),]
-  # calculate posterior median eta for each tip
-  eta <- dplyr::summarise(eta, value = stats::median(.value), .groups = "drop")
-  # calculate median, mad, high, and low across all tips
-  eta <- dplyr::group_by(eta, variable)
-  eta <- dplyr::summarise(
-    eta,
-    median = stats::median(value),
-    mad    = stats::mad(value),
-    high   = median + 2.5*mad,
-    low    = median - 2.5*mad
-  )
-  # get median parameter values for A and b
-  A <- apply(object$fit$draws("A"), 3, stats::median)
-  dim(A) <- rep(length(names(object$variables)), 2)
-  b <- as.vector(apply(object$fit$draws("b"), 3, stats::median))
   # get IDs for variables
-  var1ID <- which(names(object$variables) == var1)
-  var2ID <- which(names(object$variables) == var2)
+  id_var1 <- which(names(object$variables) == var1)
+  id_var2 <- which(names(object$variables) == var2)
+  # get posterior draws
+  draws <- posterior::as_draws_rvars(object$fit)
+  # medians and median absolute deviations for both variables
+  eta_var1 <- posterior::rvar_median(draws$eta[1:nrow(object$data), id_var1])
+  eta_var2 <- posterior::rvar_median(draws$eta[1:nrow(object$data), id_var2])
+  med_var1 <- stats::median(eta_var1)
+  med_var2 <- stats::median(eta_var2)
+  mad_var1 <- stats::mad(eta_var1)
+  mad_var2 <- stats::mad(eta_var2)
+  lower_var1 <- med_var1 - 2.5*mad_var1
+  lower_var2 <- med_var2 - 2.5*mad_var2
+  upper_var1 <- med_var1 + 2.5*mad_var1
+  upper_var2 <- med_var2 + 2.5*mad_var2
+  # get median parameter values for A and b
+  A <- stats::median(draws$A)
+  b <- stats::median(draws$b)
   # function for flow field diagram
   OU <- function(t, y, parameters) {
     dy <- numeric(2)
-    dy[1] <- y[1]*A[var1ID,var1ID] + y[2]*A[var1ID,var2ID] + b[var1ID]
-    dy[2] <- y[2]*A[var2ID,var2ID] + y[1]*A[var2ID,var1ID] + b[var2ID]
+    dy[1] <- y[1]*A[id_var1,id_var1] + y[2]*A[id_var1,id_var2] + b[id_var1]
+    dy[2] <- y[2]*A[id_var2,id_var2] + y[1]*A[id_var2,id_var1] + b[id_var2]
     list(dy)
   }
   # create flow field diagram
@@ -100,8 +95,8 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     OU.flowField <-
       phaseR::flowField(
         OU,
-        xlim = c(eta$low[var1ID] - 0.2, eta$high[var1ID] + 0.2),
-        ylim = c(eta$low[var2ID] - 0.2, eta$high[var2ID] + 0.2),
+        xlim = c(lower_var1, upper_var1),
+        ylim = c(lower_var2, upper_var2),
         parameters = NA,
         add = FALSE,
         xlab = "",
@@ -122,7 +117,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   graphics::mtext(
     side = 1,
     text = paste0(var1, " (z-score)"),
-    at = eta$median[var1ID],
+    at = med_var1,
     line = 2.5,
     cex = 1.3
   )
@@ -130,7 +125,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   graphics::mtext(
     side = 2,
     text = paste0(var2, " (z-score)"),
-    at = eta$median[var2ID],
+    at = med_var2,
     line = 2.5,
     cex = 1.3
   )
@@ -140,8 +135,8 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
       nc <-
         phaseR::nullclines(
           OU,
-          xlim = c(eta$low[var1ID] - 0.2, eta$high[var1ID] + 0.2),
-          ylim = c(eta$low[var2ID] - 0.2, eta$high[var2ID] + 0.2),
+          xlim = c(lower_var1, upper_var1),
+          ylim = c(lower_var2, upper_var2),
           parameters = NA,
           points = 20,
           axes = FALSE,
@@ -154,16 +149,12 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   # add axes
   graphics::axis(
     side = 1,
-    at = c(eta$low[var1ID], eta$median[var1ID], eta$high[var1ID]),
-    labels = (
-      c(eta$low[var1ID], eta$median[var1ID], eta$high[var1ID]) - eta$median[var1ID]
-    ) / eta$mad[var1ID]
+    at = c(lower_var1, med_var1, upper_var1),
+    labels = (c(lower_var1, med_var1, upper_var1) - med_var1) / mad_var1
   )
   graphics::axis(
     side = 2,
-    at = c(eta$low[var2ID], eta$median[var2ID], eta$high[var2ID]),
-    labels = (
-      c(eta$low[var2ID], eta$median[var2ID], eta$high[var2ID]) - eta$median[var2ID]
-    ) / eta$mad[var2ID]
+    at = c(lower_var2, med_var2, upper_var2),
+    labels = (c(lower_var2, med_var2, upper_var2) - med_var2) / mad_var2
   )
 }

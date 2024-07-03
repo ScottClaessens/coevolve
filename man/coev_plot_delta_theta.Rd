@@ -9,7 +9,11 @@ coev_plot_delta_theta(object, variables = NULL, ...)
 \arguments{
 \item{object}{An object of class \code{coevfit}}
 
-\item{...}{Additional arguments passed to \code{tidybayes::stat_slabinterval}}
+\item{variables}{If NULL (default), the plot includes all coevolving
+variables from the model. Otherwise, a character vector of length >= 2
+declaring the variables to be included in the plot.}
+
+\item{...}{Additional arguments passed to \code{ggdist::stat_slabinterval}}
 }
 \value{
 A \code{ggplot} object

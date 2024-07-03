@@ -1,7 +1,10 @@
 #' Plot delta theta values from a fitted \code{coevfit} object
 #'
 #' @param object An object of class \code{coevfit}
-#' @param ... Additional arguments passed to \code{tidybayes::stat_slabinterval}
+#' @param variables If NULL (default), the plot includes all coevolving
+#'   variables from the model. Otherwise, a character vector of length >= 2
+#'   declaring the variables to be included in the plot.
+#' @param ... Additional arguments passed to \code{ggdist::stat_slabinterval}
 #'
 #' @return A \code{ggplot} object
 #' @export
@@ -69,8 +72,8 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
   d <- dplyr::mutate(
     d,
     delta_theta = purrr::map2(
-      .x = response,
-      .y = predictor,
+      .x = .data$response,
+      .y = .data$predictor,
       .f = function(x, y) as.numeric(
         coev_get_delta_theta(
           object,
@@ -81,16 +84,16 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
     )
   )
   # unlist result
-  d <- tidyr::unnest(d, delta_theta)
+  d <- tidyr::unnest(d, "delta_theta")
   # response and predictor as factors
   d$response  <- factor(d$response, levels = variables)
   d$predictor <- factor(d$predictor, levels = variables)
   # get range for plotting
-  dd <- dplyr::group_by(d, response, predictor)
+  dd <- dplyr::group_by(d, .data$response, .data$predictor)
   dd <- dplyr::summarise(
     dd,
-    lower = quantile(delta_theta, 0.02),
-    upper = quantile(delta_theta, 0.98),
+    lower = stats::quantile(.data$delta_theta, 0.02),
+    upper = stats::quantile(.data$delta_theta, 0.98),
     .groups = "drop"
     )
   # plot
@@ -114,7 +117,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       ymin = -Inf, ymax = Inf
     ) +
     ggplot2::facet_grid(
-      response ~ predictor,
+      .data$response ~ .data$predictor,
       switch = "y"
       ) +
     ggplot2::labs(
