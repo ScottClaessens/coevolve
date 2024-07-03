@@ -1,12 +1,9 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-<img src="man/figures/logo.png" align="right" height="139" alt="" />
+<img src="man/figures/logo.png" height="139" alt="coevolve Logo"/>[<img src="https://raw.githubusercontent.com/stan-dev/logos/master/logo_tm.png" align="right" height="139" alt="Stan Logo"/>](https://mc-stan.org/)
 
 # coevolve
-
-<!-- badges: start -->
-<!-- badges: end -->
 
 ## Overview
 
@@ -54,8 +51,7 @@ n <- 10
 tree <- ape::rcoal(n)
 ```
 
-Then, simulate data for a binary trait, an ordinal trait, and a count
-trait.
+Then, simulate data for an ordinal trait and a count trait.
 
 ``` r
 # simulate data
@@ -64,26 +60,24 @@ d <-
     # id to match dataset to tree tips
     id = tree$tip.label,
     # simulate variables
-    x = rbinom(n, 1, 0.5),
-    y = ordered(sample(1:3, size = n, replace = TRUE)),
-    z = rpois(n, 2)
+    x = ordered(sample(1:3, size = n, replace = TRUE)),
+    y = rpois(n, 2)
   )
 
 head(d)
-#>   id x y z
-#> 1 t6 0 2 2
-#> 2 t4 0 2 4
-#> 3 t9 0 2 4
-#> 4 t8 0 1 1
-#> 5 t2 0 2 3
-#> 6 t7 1 2 5
+#>   id x y
+#> 1 t6 1 3
+#> 2 t4 3 0
+#> 3 t9 2 4
+#> 4 t8 2 1
+#> 5 t2 3 3
+#> 6 t7 3 1
 ```
 
 We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr`
-with the `coev_fit()` function. We declare all variables and set the
-response distributions for binary, ordinal, and count variables as
-`bernoulli_logit`, `ordered_logistic`, and `poisson_softplus`
-respectively.
+with the `coev_fit()` function. We declare both variables and set the
+response distributions for ordinal and count variables as
+`ordered_logistic` and `poisson_softplus` respectively.
 
 ``` r
 # load the coevolve package
@@ -94,9 +88,8 @@ m <-
   coev_fit(
     data = d,
     variables = list(
-      x = "bernoulli_logit",
-      y = "ordered_logistic",
-      z = "poisson_softplus"
+      x = "ordered_logistic",
+      y = "poisson_softplus"
     ),
     id = "id",
     tree = tree,
@@ -107,73 +100,67 @@ m <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 3 finished in 410.7 seconds.
-#> Chain 4 finished in 413.0 seconds.
-#> Chain 1 finished in 413.9 seconds.
-#> Chain 2 finished in 416.1 seconds.
+#> Chain 1 finished in 33.2 seconds.
+#> Chain 4 finished in 33.4 seconds.
+#> Chain 2 finished in 33.9 seconds.
+#> Chain 3 finished in 39.9 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 413.4 seconds.
-#> Total execution time: 416.4 seconds.
+#> Mean chain execution time: 35.1 seconds.
+#> Total execution time: 40.2 seconds.
 ```
 
 The results can be investigated using:
 
 ``` r
 summary(m)
-#> Variables: x = bernoulli_logit 
-#>            y = ordered_logistic 
-#>            z = poisson_softplus 
+#> Variables: x = ordered_logistic 
+#>            y = poisson_softplus 
 #>      Data: d (Number of observations: 10)
 #>     Draws: 4 chains, each with iter = 1000; warmup = 1000; thin = 1
 #>            total post-warmup draws = 4000
 #> 
 #> Autoregressive selection effects:
 #>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x     0.05      1.01 -2.00  2.00 1.00     6749     3096
-#> y     0.00      1.00 -1.94  1.96 1.00     6782     3359
-#> z    -0.72      0.75 -2.32  0.63 1.00     7058     2913
+#> x    -0.84      0.63 -2.39 -0.03 1.00     2500     1302
+#> y    -0.53      0.43 -1.58 -0.02 1.00     2653     1555
 #> 
 #> Cross selection effects:
 #>       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x ⟶ y     0.02      0.97 -1.92  1.90 1.00     7368     3142
-#> x ⟶ z    -0.36      1.07 -2.36  1.84 1.00     4109     3381
-#> y ⟶ x     0.01      1.00 -1.94  1.94 1.00     5984     2771
-#> y ⟶ z    -0.20      1.10 -2.30  1.99 1.00     3267     3170
-#> z ⟶ x    -0.28      0.84 -1.90  1.39 1.00     5231     3161
-#> z ⟶ y    -0.19      0.91 -1.92  1.61 1.00     4562     3073
+#> x ⟶ y     0.12      1.10 -2.08  2.21 1.00     2173     3174
+#> y ⟶ x     0.08      0.87 -1.69  1.75 1.00     3149     2635
 #> 
 #> Drift scale parameters:
 #>   Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x     0.92      0.66 0.04  2.42 1.00     3005     2235
-#> y     0.84      0.62 0.03  2.32 1.00     3447     2448
-#> z     0.87      0.60 0.05  2.17 1.00     3078     2282
+#> x     0.74      0.56 0.03  2.09 1.00     3592     1951
+#> y     0.74      0.58 0.03  2.13 1.00     2612     1631
 #> 
 #> Continuous time intercept parameters:
 #>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x    -0.28      0.98 -2.21  1.64 1.00     7253     2935
-#> y    -0.04      0.98 -1.89  1.92 1.00     6932     2545
-#> z     0.92      0.90 -0.90  2.65 1.00     5979     3059
+#> x     0.12      0.96 -1.82  2.01 1.00     3300     3164
+#> y     1.05      0.86 -0.64  2.69 1.00     3973     2885
 #> 
 #> Ordinal cutpoint parameters:
 #>      Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> y[1]    -1.81      1.17 -4.13  0.43 1.00     2894     2681
-#> y[2]     1.83      1.17 -0.43  4.16 1.00     4462     3616
-#> Warning: There were 3 divergent transitions after warmup.
+#> x[1]    -1.87      1.20 -4.34  0.40 1.00     2076     2780
+#> x[2]     1.22      1.15 -0.96  3.57 1.00     2599     3161
+#> Warning: There were 20 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
-From the cross selection effects, we infer that the three traits do not
-influence one another in their evolution.
-
-We can also plot the cross selection effects from this model using the
-`coev_plot_delta_theta()` function.
+We can infer whether these traits influence one another in their
+evolution by plotting $\Delta\theta_{z}$, the expected change in the
+equilibrium trait value of one variable from an absolute deviation
+increase in another variable.
 
 ``` r
 coev_plot_delta_theta(m)
 ```
 
-<img src="man/figures/README-plot_cross-1.png" width="60%" style="display: block; margin: auto;" />
+<img src="man/figures/README-plot_delta_theta-1.png" width="60%" style="display: block; margin: auto;" />
+
+This plot suggests that these variables do not coevolve over
+evolutionary time.
 
 ## Citing coevolve
 
