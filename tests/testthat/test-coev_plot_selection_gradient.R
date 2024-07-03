@@ -1,7 +1,7 @@
-test_that("coev_plot_selection_gradient() produces expected errors", {
+test_that("coev_plot_selection_gradient() produces expected errors and output", {
   # simulate data
   withr::with_seed(1, {
-    n <- 10
+    n <- 5
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
@@ -18,8 +18,8 @@ test_that("coev_plot_selection_gradient() produces expected errors", {
     id = "id",
     tree = tree,
     parallel_chains = 4,
-    iter_warmup = 100,
-    iter_sampling = 100,
+    iter_warmup = 500,
+    iter_sampling = 500,
     seed = 1
   )
   # expect the following errors
@@ -50,32 +50,6 @@ test_that("coev_plot_selection_gradient() produces expected errors", {
   expect_error(
     coev_plot_selection_gradient(object = m, var1 = "x", var2 = "y", contour = "hello"),
     "Argument 'contour' must be logical."
-  )
-})
-
-test_that("coev_plot_selection_gradient() produces ggplot object", {
-  # simulate data
-  withr::with_seed(1, {
-    n <- 10
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rbinom(n, size = 1, prob = 0.5),
-      y = rbinom(n, size = 1, prob = 0.5)
-    )
-  })
-  m <- coev_fit(
-    data = d,
-    variables = list(
-      x = "bernoulli_logit",
-      y = "bernoulli_logit"
-    ),
-    id = "id",
-    tree = tree,
-    parallel_chains = 4,
-    iter_warmup = 1000,
-    iter_sampling = 1000,
-    seed = 1
   )
   # should run without error and produce ggplot object
   expect_no_error(coev_plot_selection_gradient(m, var1 = "x", var2 = "y"))

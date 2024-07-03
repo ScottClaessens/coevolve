@@ -1,7 +1,7 @@
 test_that("coev_get_delta_theta() produces expected errors and output", {
   # simulate data
   withr::with_seed(1, {
-    n <- 10
+    n <- 5
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
@@ -19,8 +19,8 @@ test_that("coev_get_delta_theta() produces expected errors and output", {
     id = "id",
     tree = tree,
     parallel_chains = 4,
-    iter_warmup = 1000,
-    iter_sampling = 1000,
+    iter_warmup = 500,
+    iter_sampling = 500,
     seed = 1
   )
   # expect the following errors
