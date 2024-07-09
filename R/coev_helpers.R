@@ -24,11 +24,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   }
   # stop if response distributions are not valid
   if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic",
-                                "poisson_softplus", "normal", "lognormal"))) {
+                                "poisson_softplus", "normal", "lognormal",
+                                "negative_binomial_softplus"))) {
     stop2(
       paste0(
-        "Response distributions other than 'bernoulli_logit', 'ordered_logistic'",
-        ", 'poisson_softplus', 'normal', and 'lognormal' are not yet supported."
+        "Response distributions other than 'bernoulli_logit', ",
+        "'ordered_logistic', 'poisson_softplus', 'normal', 'lognormal', and ",
+        "'negative_binomial_softplus' are not yet supported."
         )
       )
   }
@@ -38,7 +40,9 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   }
   # stop if any bernoulli variables are not 0/1 integers
   for (i in 1:length(distributions)) {
-    if (distributions[i] == "bernoulli_logit" & (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] %in% 0:1))) {
+    if (distributions[i] == "bernoulli_logit" &
+        (!is.integer(data[,variables[i]]) |
+         !all(data[,variables[i]] %in% 0:1))) {
       stop2(
         paste0(
           "Variables following the 'bernoulli_logit' response distribution ",
@@ -49,7 +53,8 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   }
   # stop if any ordinal variables are not ordered factors in data
   for (i in 1:length(distributions)) {
-    if (distributions[i] == "ordered_logistic" & !is.ordered(data[,variables[i]])) {
+    if (distributions[i] == "ordered_logistic" &
+        !is.ordered(data[,variables[i]])) {
       stop2(
         paste0(
           "Variables following the 'ordered_logistic' response distribution ",
@@ -60,13 +65,24 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   }
   # stop if any count variables are not integers greater than or equal to 0
   for (i in 1:length(distributions)) {
-    if (distributions[i] == "poisson_softplus" & (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
+    if (distributions[i] == "poisson_softplus" &
+        (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
       stop2(
         paste0(
-          "Variables following the 'poisson_softplus' response distribution must ",
-          "be integers greater than or equal to zero in the data."
+          "Variables following the 'poisson_softplus' response distribution ",
+          "must be integers greater than or equal to zero in the data."
           )
         )
+    }
+    if (distributions[i] == "negative_binomial_softplus" &
+        (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
+      stop2(
+        paste0(
+          "Variables following the 'negative_binomial_softplus' response ",
+          "distribution must be integers greater than or equal to zero in ",
+          "the data."
+        )
+      )
     }
   }
   # stop if any normal variables are not numeric
@@ -80,7 +96,8 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         )
     }
   }
-  # stop if any lognormal variables are not numeric or are equal to or less than zero
+  # stop if any lognormal variables are not numeric or are
+  # equal to or less than zero
   for (i in 1:length(distributions)) {
     if (distributions[i] == "lognormal" & (!is.numeric(data[,variables[i]]) |
                                            any(data[,variables[i]] <= 0))) {
@@ -143,7 +160,12 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     # stop if diagonal of effects_mat is ever FALSE
     for (i in variables) {
       if (!effects_mat[i,i]) {
-        stop2("Argument 'effects_mat' must specify TRUE for all autoregressive effects.")
+        stop2(
+          paste0(
+            "Argument 'effects_mat' must specify TRUE for ",
+            "all autoregressive effects."
+          )
+        )
       }
     }
   }
@@ -163,7 +185,9 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     }
     # stop if diagonal of dist_mat is not 0
     if (!identical(as.numeric(diag(dist_mat)), rep(0, nrow(dist_mat)))) {
-      stop2("Argument 'dist_mat' must have zeroes on the diagonal of the matrix.")
+      stop2(
+        "Argument 'dist_mat' must have zeroes on the diagonal of the matrix."
+        )
     }
     # stop if dist_mat has missing row or column names
     if (is.null(rownames(dist_mat)) | is.null(colnames(dist_mat))) {
@@ -192,12 +216,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     }
     # stop if prior names not allowed
     if (!all(names(prior) %in% c("b", "eta_anc", "A_offdiag", "A_diag",
-                                 "Q_diag", "c", "sigma_dist", "rho_dist"))) {
+                                 "Q_diag", "c", "phi", "sigma_dist",
+                                 "rho_dist"))) {
       stop2(
         paste0(
           "Argument 'prior' list contains names that are not allowed. Please ",
-          "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-          "'Q_diag', 'c', 'sigma_dist', and 'rho_dist'"
+          "use only the following names: 'b', 'eta_anc', 'A_offdiag', ",
+          "'A_diag', 'Q_diag', 'c', 'phi', 'sigma_dist', and 'rho_dist'"
           )
         )
     }

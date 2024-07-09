@@ -69,8 +69,9 @@ test_that("coev_make_stancode() produces expected errors", {
       tree = tree
     ),
     paste0(
-      "Response distributions other than 'bernoulli_logit', 'ordered_logistic'",
-      ", 'poisson_softplus', 'normal', and 'lognormal' are not yet supported."
+      "Response distributions other than 'bernoulli_logit', ",
+      "'ordered_logistic', 'poisson_softplus', 'normal', 'lognormal', and ",
+      "'negative_binomial_softplus' are not yet supported."
     )
   )
   expect_error(
@@ -95,7 +96,10 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Variables following the 'bernoulli_logit' response distribution must be integers with values of 0/1 in the data."
+    paste0(
+      "Variables following the 'bernoulli_logit' response distribution ",
+      "must be integers with values of 0/1 in the data."
+      )
   )
   expect_error(
     coev_make_stancode(
@@ -107,7 +111,10 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Variables following the 'ordered_logistic' response distribution must be ordered factors in the data."
+    paste0(
+      "Variables following the 'ordered_logistic' response distribution ",
+      "must be ordered factors in the data."
+      )
   )
   expect_error(
     coev_make_stancode(
@@ -119,7 +126,26 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Variables following the 'poisson_softplus' response distribution must be integers greater than or equal to zero in the data."
+    paste0(
+      "Variables following the 'poisson_softplus' response distribution ",
+      "must be integers greater than or equal to zero in the data."
+      )
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        y = "negative_binomial_softplus", # not integer >= 0
+        z = "negative_binomial_softplus"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Variables following the 'negative_binomial_softplus' response ",
+      "distribution must be integers greater than or equal to zero in ",
+      "the data."
+    )
   )
   expect_error(
     coev_make_stancode(
@@ -131,7 +157,10 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Variables following the 'normal' response distribution must be numeric in the data."
+    paste0(
+      "Variables following the 'normal' response distribution ",
+      "must be numeric in the data."
+      )
   )
   expect_error(
     coev_make_stancode(
@@ -264,7 +293,7 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      effects_mat = matrix(TRUE, dimnames = list("fail","fail")) # invalid row/col names
+      effects_mat = matrix(TRUE, dimnames = list("fail","fail")) # invalid names
     ),
     paste0(
       "Row and column names for argument 'effects_mat' do not match ",
@@ -280,8 +309,9 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      # autoregressive effect = FALSE
       effects_mat = matrix(c(T,T,T,F), ncol = 2, nrow = 2, byrow = TRUE,
-                           dimnames = list(c("x","y"),c("x","y"))) # autoregressive effect = FALSE
+                           dimnames = list(c("x","y"),c("x","y")))
     ),
     "Argument 'effects_mat' must specify TRUE for all autoregressive effects."
   )
@@ -333,7 +363,8 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = matrix(rep(1, 100), nrow = 10) # matrix symmetric but diagonal not zero
+      # matrix symmetric but diagonal not zero
+      dist_mat = matrix(rep(1, 100), nrow = 10)
     ),
     "Argument 'dist_mat' must have zeroes on the diagonal of the matrix."
   )
@@ -363,7 +394,10 @@ test_that("coev_make_stancode() produces expected errors", {
                         # matrix row/col names do not match tips
                         dimnames = list(letters[1:10], letters[1:10]))
     ),
-    "Row and column names for argument 'dist_mat' do not match tree tip labels exactly."
+    paste0(
+      "Row and column names for argument 'dist_mat' do not ",
+      "match tree tip labels exactly."
+      )
   )
   expect_error(
     coev_make_stancode(
@@ -405,7 +439,7 @@ test_that("coev_make_stancode() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'Q_diag', 'c', 'sigma_dist', and 'rho_dist'"
+      "'Q_diag', 'c', 'phi', 'sigma_dist', and 'rho_dist'"
     )
   )
   expect_error(
@@ -417,7 +451,8 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      prior = list(A_diag = "normal(0,2)", A_diag = "normal(0,2)") # duplicate names
+      # duplicate names
+      prior = list(A_diag = "normal(0,2)", A_diag = "normal(0,2)")
     ),
     "Argument 'prior' contains duplicate names."
   )
@@ -464,7 +499,7 @@ test_that("coev_make_stancode() returns a character of length one", {
   expect_length(sc, 1)
 })
 
-test_that("coev_make_stancode() creates Stan code that is syntactically correct", {
+test_that("coev_make_stancode() creates Stan code with correct syntax", {
   # simulate data
   withr::with_seed(1, {
     n <- 20
@@ -532,18 +567,20 @@ test_that("Setting manual priors in coev_make_stancode() works as expected", {
     )
   })
   # invalid priors should throw an error
-  expect_error(
-    coev_make_stancode(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "bernoulli_logit"
-      ),
-      id = "id",
-      tree = tree,
-      prior = list(A_diag = "testing")
+  suppressMessages({
+    expect_error(
+      coev_make_stancode(
+        data = d,
+        variables = list(
+          x = "bernoulli_logit",
+          y = "bernoulli_logit"
+        ),
+        id = "id",
+        tree = tree,
+        prior = list(A_diag = "testing")
+      )
     )
-  )
+  })
   # valid priors should throw no errors
   expect_no_error(
     coev_make_stancode(

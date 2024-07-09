@@ -4,9 +4,9 @@
 #' @param prob A value between 0 and 1 indicating the desired probability
 #'   to be covered by the uncertainty intervals. The default is 0.95.
 #' @param robust If \code{FALSE} (the default) the mean is used as the measure
-#'   of central tendency and the standard deviation as the measure of variability.
-#'   If \code{TRUE}, the median and the median absolute deviation are applied
-#'   instead.
+#'   of central tendency and the standard deviation as the measure of
+#'   variability. If \code{TRUE}, the median and the median absolute deviation
+#'   are applied instead.
 #' @param ... Other potential arguments
 #'
 #' @details The convergence diagnostics \code{rhat}, \code{ess_bulk}, and
@@ -43,18 +43,34 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   # summarise autoregressive selection effects
   A <- s[stringr::str_starts(s$variable, pattern = "A\\["),]
   equal <-
-    readr::parse_number(stringr::str_extract(A$variable, pattern = "A\\[(\\d+)\\,")) ==
-    readr::parse_number(stringr::str_extract(A$variable, pattern = "\\,\\d+\\]"))
+    readr::parse_number(
+      stringr::str_extract(A$variable, pattern = "A\\[(\\d+)\\,")
+      ) ==
+    readr::parse_number(
+      stringr::str_extract(A$variable, pattern = "\\,\\d+\\]")
+      )
   auto <- A[equal,]
-  rownames(auto) <- names(object$variables)[readr::parse_number(stringr::str_extract(auto$variable, pattern = "A\\[(\\d+)\\,"))]
+  rownames(auto) <- names(object$variables)[
+    readr::parse_number(
+      stringr::str_extract(auto$variable, pattern = "A\\[(\\d+)\\,")
+      )
+    ]
   auto <- auto[,2:ncol(auto)]
   # summarise cross selection effects
   cross <- A[!equal,]
   rownames(cross) <-
     paste0(
-      names(object$variables)[readr::parse_number(stringr::str_extract(cross$variable, pattern = "\\,\\d+\\]"))],
+      names(object$variables)[
+        readr::parse_number(
+          stringr::str_extract(cross$variable, pattern = "\\,\\d+\\]")
+          )
+        ],
       " \U27F6 ",
-      names(object$variables)[readr::parse_number(stringr::str_extract(cross$variable, pattern = "A\\[(\\d+)\\,"))]
+      names(object$variables)[
+        readr::parse_number(
+          stringr::str_extract(cross$variable, pattern = "A\\[(\\d+)\\,")
+          )
+        ]
     )
   cross <- cross[,2:ncol(cross)]
   # only include cross selection effects that have been estimated in summary
@@ -63,12 +79,16 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   drift <- s[stringr::str_starts(s$variable, pattern = "Q\\["),]
   drift <- drift[!is.na(drift$Rhat),]
   rownames(drift) <- names(object$variables)[
-    readr::parse_number(stringr::str_extract(drift$variable, pattern = "Q\\[(\\d+)\\,"))
+    readr::parse_number(
+      stringr::str_extract(drift$variable, pattern = "Q\\[(\\d+)\\,")
+      )
     ]
   drift <- drift[,2:ncol(drift)]
   # summarise SDE intercepts
   sde_intercepts <- s[stringr::str_starts(s$variable, "b"),]
-  rownames(sde_intercepts) <- names(object$variables)[readr::parse_number(sde_intercepts$variable)]
+  rownames(sde_intercepts) <- names(object$variables)[
+    readr::parse_number(sde_intercepts$variable)
+    ]
   sde_intercepts <- sde_intercepts[,2:ncol(sde_intercepts)]
   # summarise ordinal cutpoints
   cutpoints <- NULL
@@ -79,6 +99,13 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       stringr::str_extract(cutpoints$variable, pattern = "\\[\\d+\\]")
       )
     cutpoints <- cutpoints[,2:ncol(cutpoints)]
+  }
+  # summarise overdispersion parameters
+  phi <- NULL
+  if ("negative_binomial_softplus" %in% object$variables) {
+    phi <- s[stringr::str_starts(s$variable, "phi"),]
+    rownames(phi) <- names(object$variables)[readr::parse_number(phi$variable)]
+    phi <- phi[,2:ncol(phi)]
   }
   # summarise gaussian process parameters
   gpterms <- NULL
@@ -107,8 +134,11 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       drift          = drift,
       sde_intercepts = sde_intercepts,
       cutpoints      = cutpoints,
+      phi            = phi,
       gpterms        = gpterms,
-      num_divergent  = sum(object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent),
+      num_divergent  = sum(
+        object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent
+        ),
       rhats          = object$fit$summary(NULL, "rhat")$rhat
     )
   class(out) <- "coevsummary"
@@ -120,7 +150,8 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
 #' @aliases print.coevsummary
 #'
 #' @param x An object of class \code{coevfit}
-#' @param digits The number of significant digits for printing out the summary; defaults to 2
+#' @param digits The number of significant digits for printing out the summary;
+#'   defaults to 2
 #' @param ... Additional arguments that would be passed
 #'  to method \code{summary} of \code{coevfit}.
 #'
@@ -144,7 +175,8 @@ print.coevsummary <- function(x, digits = 2, ...) {
     }
   }
   # print data name and number of observations
-  cat(paste0("     Data: ", x$data_name, " (Number of observations: ", x$nobs, ")\n"))
+  cat(paste0("     Data: ", x$data_name,
+             " (Number of observations: ", x$nobs, ")\n"))
   # print mcmc settings
   cat(paste0("    Draws: ", x$chains, " chains, each with iter = ",
              x$iter, "; warmup = ",
@@ -174,6 +206,12 @@ print.coevsummary <- function(x, digits = 2, ...) {
     cat("Ordinal cutpoint parameters:\n")
     print_format(x$cutpoints, digits = digits)
   }
+  # print overdispersion parameters
+  if (!is.null(x$phi)) {
+    cat("\n")
+    cat("Overdispersion parameters:\n")
+    print_format(x$phi, digits = digits)
+  }
   # print gaussian process parameters
   if (!is.null(x$gpterms)) {
     cat("\n")
@@ -195,7 +233,8 @@ print.coevsummary <- function(x, digits = 2, ...) {
     warning2(
       paste0(
         "There were ", x$num_divergent, " divergent transitions after warmup. ",
-        "http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup"
+        "http://mc-stan.org/misc/warnings.html",
+        "#divergent-transitions-after-warmup"
       )
     )
     cat("\n")
