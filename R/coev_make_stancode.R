@@ -176,19 +176,9 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  array[N_seg] real ts; // time since parent\n",
     "  array[N_seg] int tip; // indicator of whether a given segment ends in a tip\n",
     "  array[J,J] int effects_mat; // which effects should be estimated?\n",
-    "  int num_effects; // number of effects being estimated\n"
+    "  int num_effects; // number of effects being estimated\n",
+    "  array[N_tips,J] real y; // observed data\n"
   )
-  # add observed data variables one by one depending on type
-  for (i in 1:length(variables)) {
-    sc_data <- paste0(
-      sc_data,
-      "  array[N_tips] ",
-      # continuous variables are real numbers
-      # all others are integers
-      ifelse(distributions[i] %in% c("normal", "lognormal"), "real", "int"),
-      " y", i, "; // observed data variable ", i,
-      "\n")
-  }
   # add distance matrix if user has defined one
   if (!is.null(dist_mat)) {
     sc_data <-
@@ -399,7 +389,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     if (distributions[j] == "bernoulli_logit") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        to_int(y[i,", j, "]) ~ ",
         "bernoulli_logit(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]);\n"
@@ -407,7 +397,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        to_int(y[i,", j, "]) ~ ",
         "ordered_logistic(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "], c", j, ");\n"
@@ -415,7 +405,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "poisson_softplus") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        to_int(y[i,", j, "]) ~ ",
         "poisson(log1p_exp(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]));\n"
@@ -423,7 +413,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "normal") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        y[i,", j, "] ~ ",
         "normal(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         ", sigma_tips[i,", j, "]);\n"
@@ -431,7 +421,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "lognormal") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        y[i,", j, "] ~ ",
         "lognormal(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         ", sigma_tips[i,", j, "]);\n"
@@ -439,7 +429,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        to_int(y[i,", j, "]) ~ ",
         "neg_binomial_2(log1p_exp(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]), phi", j, ");\n"

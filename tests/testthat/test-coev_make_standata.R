@@ -497,7 +497,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   expect_no_error(sd1)
   expect_type(sd1, "list")
   expect_equal(names(sd1), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
-                            "tip", "effects_mat", "num_effects", "y1", "y2",
+                            "tip", "effects_mat", "num_effects", "y",
                             "prior_only"))
   expect_equal(sd1$prior_only, 0)
   # include distance matrix
@@ -520,7 +520,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   expect_no_error(sd2)
   expect_type(sd2, "list")
   expect_equal(names(sd2), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
-                             "tip", "effects_mat", "num_effects", "y1", "y2",
+                             "tip", "effects_mat", "num_effects", "y",
                              "dist_mat", "prior_only"))
   expect_equal(sd2$prior_only, 0)
   # set prior only
@@ -539,6 +539,6 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   expect_type(sd3, "list")
   expect_equal(names(sd3), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
                              "tip", "effects_mat", "num_effects",
-                             "y1", "y2", "prior_only"))
+                             "y", "prior_only"))
   expect_equal(sd3$prior_only, 1)
 })

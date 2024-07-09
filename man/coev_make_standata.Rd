@@ -20,11 +20,13 @@ coev_make_standata(
 to that class) containing data of all variables used in the model.}
 
 \item{variables}{A named list identifying variables that should coevolve in
-the model and their associated response distributions as character strings (e.g.
-\code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}). Must identify
-at least two variables. Variable names must refer to valid column names in data.
-Currently, the only supported response distributions are \code{bernoulli_logit},
-\code{ordered_logistic}, \code{poisson_softplus}, \code{normal}, and \code{lognormal}.}
+the model and their associated response distributions as character strings
+(e.g. \code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}).
+Must identify at least two variables. Variable names must refer to valid
+column names in data. Currently, the only supported response distributions
+are \code{bernoulli_logit}, \code{ordered_logistic},
+\code{poisson_softplus}, \code{normal}, \code{lognormal}, and
+\code{negative_binomial_softplus}.}
 
 \item{id}{A character of length one identifying the variable in the data that
 links rows to tips on the phylogeny. Must refer to a valid column name in
@@ -36,35 +38,39 @@ the data. The id column must exactly match the tip labels in the phylogeny.}
 exactly matching the variables declared for the model. If not specified,
 all cross-lagged effects will be estimated in the model. If specified, the
 model will only estimate cross-lagged effects where cells in the matrix are
-TRUE and will ignore cross-lagged effects where cells in the matrix are FALSE.
-In the matrix, columns represent predictor variables and rows represent
-outcome variables. All autoregressive effects (e.g., X -> X) must be TRUE
-in the matrix.}
+TRUE and will ignore cross-lagged effects where cells in the matrix are
+FALSE. In the matrix, columns represent predictor variables and rows
+represent outcome variables. All autoregressive effects (e.g., X -> X) must
+be TRUE in the matrix.}
 
-\item{dist_mat}{(optional) A distance matrix with row and column names exactly
-matching the tip labels in the phylogeny. If specified, the model will
-additionally control for spatial location by including a separate Gaussian
-Process over locations for every coevolving variable in the model.}
+\item{dist_mat}{(optional) A distance matrix with row and column names
+exactly matching the tip labels in the phylogeny. If specified, the model
+will additionally control for spatial location by including a separate
+Gaussian Process over locations for every coevolving variable in the model.}
 
-\item{prior}{(optional) A named list of priors for the model. If not specified,
-the model uses default priors (see Stan code). Alternatively, the user can
-specify a named list of priors. The list must contain non-duplicated entries
-for any of the following variables: the autoregressive and cross-effects
-(\code{alpha}), the drift scale parameters (\code{sigma}), the continuous
-time intercepts (\code{b}), the ancestral states for the traits (\code{eta_anc}),
-the cutpoints for ordinal variables (\code{c}), the sigma parameter(s) for
-Gaussian Processes over locations (\code{sigma_dist}), and the rho parameter(s)
-for Gaussian Processes over locations (\code{rho_dist}). These must be
-entered with valid prior strings, e.g. \code{list(alpha = "normal(0, 2)")}.
-Invalid prior strings will throw an error when the function internally checks
-the syntax of resulting Stan code.}
+\item{prior}{(optional) A named list of priors for the model. If not
+specified, the model uses default priors (see Stan code). Alternatively,
+the user can specify a named list of priors. The list must contain
+non-duplicated entries for any of the following variables: the
+autoregressive effects (\code{A_diag}), the cross effects
+(\code{A_offdiag}), the drift scale parameters (\code{Q_diag}), the
+continuous time intercepts (\code{b}), the ancestral states for the traits
+(\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
+overdispersion parameters for negative binomial variables (\code{phi}),
+the sigma parameters for Gaussian Processes over locations
+(\code{sigma_dist}), and the rho parameter for Gaussian Processes over
+locations (\code{rho_dist}). These must be entered with valid prior
+strings, e.g. \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior
+strings will throw an error when the function internally checks the syntax
+of resulting Stan code.}
 
 \item{prior_only}{Logical. If \code{FALSE} (default), the model is fitted to
 the data and returns a posterior distribution. If \code{TRUE}, the model
 samples from the prior only, ignoring the likelihood.}
 }
 \value{
-A list containing the data for fitting the dynamic coevolutionary model in \pkg{Stan}.
+A list containing the data for fitting the dynamic coevolutionary
+model in \pkg{Stan}.
 }
 \description{
 Make Stan data for dynamic coevolutionary model
