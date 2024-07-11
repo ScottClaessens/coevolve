@@ -5,6 +5,7 @@ test_that("coev_fit() produces expected errors", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
+      v = as.integer(rnbinom(n, mu = 4, size = 1)),
       w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
       y = ordered(sample(1:4, size = n, replace = TRUE)),
@@ -146,6 +147,24 @@ test_that("coev_fit() produces expected errors", {
       "distribution must be integers greater than or equal to zero in ",
       "the data."
     )
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        v = "negative_binomial_softplus",
+        z = "negative_binomial_softplus" # sd^2 <= mean
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "No overdispersion or potentially underdispersion for ",
+      "variable 'z' (sd^2 <= mean), do not use the ",
+      "'negative_binomial_softplus' response distribution ",
+      "for this variable."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -481,7 +500,7 @@ test_that("coev_fit() fits the model without error", {
       w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
       y = ordered(sample(1:4, size = n, replace = TRUE)),
-      z = rpois(n, 3)
+      z = as.integer(rnbinom(n, mu = 3, size = 1))
     )
   })
   # model without distance matrix

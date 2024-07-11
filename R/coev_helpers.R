@@ -85,6 +85,22 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       )
     }
   }
+  # stop if any negative binomial variables are not overdispersed
+  for (i in 1:length(distributions)) {
+    if (distributions[i] == "negative_binomial_softplus") {
+      # if variance <= mean
+      if (sd(data[,variables[i]])^2 <= mean(data[,variables[i]])) {
+        stop2(
+          paste0(
+            "No overdispersion or potentially underdispersion for ",
+            "variable '", variables[i], "' (sd^2 <= mean), do not use ",
+            "the 'negative_binomial_softplus' response distribution ",
+            "for this variable."
+          )
+        )
+      }
+    }
+  }
   # stop if any normal variables are not numeric
   for (i in 1:length(distributions)) {
     if (distributions[i] == "normal" & !is.numeric(data[,variables[i]])) {

@@ -5,6 +5,7 @@ test_that("coev_make_stancode() produces expected errors", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
+      v = as.integer(rnbinom(n, mu = 4, size = 1)),
       w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
       y = ordered(sample(1:4, size = n, replace = TRUE)),
@@ -146,6 +147,24 @@ test_that("coev_make_stancode() produces expected errors", {
       "distribution must be integers greater than or equal to zero in ",
       "the data."
     )
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        v = "negative_binomial_softplus",
+        z = "negative_binomial_softplus" # sd^2 <= mean
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "No overdispersion or potentially underdispersion for ",
+      "variable 'z' (sd^2 <= mean), do not use the ",
+      "'negative_binomial_softplus' response distribution ",
+      "for this variable."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_stancode(
@@ -598,6 +617,44 @@ test_that("Setting manual priors in coev_make_stancode() works as expected", {
         A_diag    = "normal(0, 2)",
         Q_diag    = "normal(0, 2)"
         )
+    )
+  )
+})
+
+test_that("coev_make_stancode() produces neg binomial priors as expected", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = as.integer(rnbinom(n, mu = 2, size = 1)),
+      y = as.integer(rnbinom(n, mu = 2, size = 1))
+    )
+  })
+  # default prior for phi should work
+  expect_no_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "negative_binomial_softplus",
+        y = "negative_binomial_softplus"
+      ),
+      id = "id",
+      tree = tree
+    )
+  )
+  # setting a prior for phi should also work
+  expect_no_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "negative_binomial_softplus",
+        y = "negative_binomial_softplus"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list(phi = "std_normal()")
     )
   )
 })

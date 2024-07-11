@@ -86,10 +86,10 @@ coev_make_stancode <- function(data, variables, id, tree,
       A_diag     = "std_normal()",
       Q_diag     = "std_normal()",
       c          = "normal(0, 2)",
-      phi        = "std_normal()",
       sigma_dist = "exponential(1)",
       rho_dist   = "exponential(1)"
     )
+  # note: default prior for phi (overdispersion) set within the model code
   # replace priors if user has explicitly set them
   if (!is.null(prior)) {
     for (i in names(prior)) {
@@ -193,6 +193,32 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_data,
       "  int prior_only; // should the likelihood be ignored?\n}"
       )
+  # write transformed data block
+  sc_transformed_data <- NULL
+  if ("negative_binomial_softplus" %in% distributions & is.null(priors$phi)) {
+    # if negative binomial distribution included and default prior used
+    sc_transformed_data <- "transformed data{\n"
+    for (i in 1:length(distributions)) {
+      if (distributions[i] == "negative_binomial_softplus") {
+        sc_transformed_data <-
+          paste0(
+            sc_transformed_data,
+            "  real inv_overdisp", i, "; // best guess for phi", i, "\n"
+          )
+      }
+    }
+    for (i in 1:length(distributions)) {
+      if (distributions[i] == "negative_binomial_softplus") {
+        sc_transformed_data <-
+          paste0(
+            sc_transformed_data,
+            "  inv_overdisp", i, " = (mean(y[,", i, "])^2) / ",
+            "(sd(y[,", i, "])^2 - mean(y[,", i, "]));\n"
+          )
+      }
+    }
+    sc_transformed_data <- paste0(sc_transformed_data, "}")
+  }
   # write parameters block
   sc_parameters <- paste0(
     "parameters{\n",
@@ -253,8 +279,8 @@ coev_make_stancode <- function(data, variables, id, tree,
   }
   sc_transformed_parameters <- paste0(
     sc_transformed_parameters,
-    "  matrix[N_seg,J] drift_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
-    "  matrix[N_seg,J] sigma_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
+    "  matrix[N_seg,J] drift_tips; // terminal drift parameters\n",
+    "  matrix[N_seg,J] sigma_tips; // terminal drift parameters\n",
     "  // fill A matrix //////////\n",
     "  {\n",
     "    int ticker = 1;\n",
@@ -367,7 +393,19 @@ coev_make_stancode <- function(data, variables, id, tree,
   # add priors for any overdispersion parameters
   for (j in 1:length(distributions)) {
     if (distributions[j] == "negative_binomial_softplus") {
-      sc_model <- paste0(sc_model, "  phi", j, " ~ ", priors$phi, ";\n")
+      sc_model <-
+        paste0(
+          sc_model,
+          "  phi", j, " ~ ",
+          ifelse(
+            is.null(priors$phi),
+            # if prior not set manually, use default prior
+            paste0("normal(inv_overdisp", j, ", inv_overdisp", j, ")"),
+            # else if prior set manually, use set prior
+            priors$phi
+          ),
+          ";\n"
+        )
     }
   }
   # add priors for any gaussian process parameters
@@ -406,7 +444,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_model <- paste0(
         sc_model,
         "        to_int(y[i,", j, "]) ~ ",
-        "poisson(log1p_exp(eta[i,", j, "]",
+        "poisson(mean(y[,", j, "]) * log1p_exp(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]));\n"
         )
@@ -430,7 +468,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_model <- paste0(
         sc_model,
         "        to_int(y[i,", j, "]) ~ ",
-        "neg_binomial_2(log1p_exp(eta[i,", j, "]",
+        "neg_binomial_2(mean(y[,", j, "]) * log1p_exp(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]), phi", j, ");\n"
         )
@@ -447,6 +485,11 @@ coev_make_stancode <- function(data, variables, id, tree,
     "// Generated with coevolve ", utils::packageVersion("coevolve"), "\n",
     sc_functions, "\n",
     sc_data, "\n",
+    ifelse(
+      is.null(sc_transformed_data),
+      "",
+      paste0(sc_transformed_data, "\n")
+      ),
     sc_parameters, "\n",
     sc_transformed_parameters, "\n",
     sc_model
