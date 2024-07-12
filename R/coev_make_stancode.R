@@ -480,72 +480,70 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  }\n",
     "}"
     )
-  
   # generated quantities block
-  sc_gen <- "generated quantities{\n"
-
-  # add observed data variables one by one depending on type
-  for (i in 1:length(variables)) {
-    sc_gen <- paste0(
-      sc_gen,
-      "  array[N_tips] ",
-      # continuous variables are real numbers
-      # all others are integers
-      ifelse(distributions[i] %in% c("normal", "lognormal"), "real", "int"),
-      " yrep", i, "; // predictive check for observed variable ", i,
-      "\n")
-  }
-
-  sc_gen <- paste0(sc_gen,
-    "\n",
-    "    for (i in 1:N_tips) {\n"
-    )
-
+  sc_generated_quantities <-
+    paste0(
+      "generated quantities{\n",
+      "  array[N_tips,J] real yrep; // predictive checks\n",
+      "  for (i in 1:N_tips) {\n"
+      )
   for (j in 1:length(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
-      sc_gen <- paste0(
-        sc_gen,
-        "        yrep", j, "[i] = ",
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "    yrep[i,", j, "] = ",
         "bernoulli_logit_rng(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        " + drift_tips[i,", j, "]);\n")
+        " + drift_tips[i,", j, "]);\n"
+      )
     } else if (distributions[j] == "ordered_logistic") {
-      sc_gen <- paste0(
-        sc_gen,
-        "        yrep", j, "[i] = ",
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "    yrep[i,", j, "] = ",
         "ordered_logistic_rng(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        " + drift_tips[i,", j, "], c", j, ");\n")
+        " + drift_tips[i,", j, "], c", j, ");\n"
+      )
     } else if (distributions[j] == "poisson_softplus") {
-      sc_gen <- paste0(
-        sc_gen,
-        "        yrep", j, "[i] = ",
-        "poisson_rng(log1p_exp(eta[i,", j, "]",
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "    yrep[i,", j, "] = ",
+        "poisson_rng(mean(y[,", j, "]) * log1p_exp(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        " + drift_tips[i,", j, "]));\n")
+        " + drift_tips[i,", j, "]));\n"
+      )
     } else if (distributions[j] == "normal") {
-      sc_gen <- paste0(
-        sc_gen,
-        "        yrep", j, "[i] = ",
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "    yrep[i,", j, "] = ",
         "normal_rng(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        ", sigma_tips[i,", j, "]);\n")
+        ", sigma_tips[i,", j, "]);\n"
+      )
     } else if (distributions[j] == "lognormal") {
-      sc_gen <- paste0(
-        sc_gen,
-        "        yrep", j, "[i] = ",
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "    yrep[i,", j, "] = ",
         "lognormal_rng(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        ", sigma_tips[i,", j, "]);\n")
+        ", sigma_tips[i,", j, "]);\n"
+      )
+    } else if (distributions[j] == "negative_binomial_softplus") {
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "    yrep[i,", j, "] = ",
+        "neg_binomial_2_rng(mean(y[,", j, "]) * log1p_exp(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        " + drift_tips[i,", j, "]), phi", j, ");\n"
+      )
     }
   }
-
-  sc_gen <- paste0(
-    sc_gen,
-    "   }\n",
-    "}"
+  sc_generated_quantities <-
+    paste0(
+      sc_generated_quantities,
+      "   }\n",
+      "}"
     )
-  
   # put stan code together
   sc <- paste0(
     "// Generated with coevolve ", utils::packageVersion("coevolve"), "\n",
@@ -559,7 +557,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     sc_parameters, "\n",
     sc_transformed_parameters, "\n",
     sc_model, "\n",
-    sc_gen
+    sc_generated_quantities
   )
   # check that stan code is syntactically correct
   # if not (likely due to invalid prior string) return error
