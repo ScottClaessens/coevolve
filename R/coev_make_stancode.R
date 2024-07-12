@@ -3,11 +3,13 @@
 #' @param data An object of class \code{data.frame} (or one that can be coerced
 #'   to that class) containing data of all variables used in the model.
 #' @param variables A named list identifying variables that should coevolve in
-#'   the model and their associated response distributions as character strings (e.g.
-#'   \code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}). Must identify
-#'   at least two variables. Variable names must refer to valid column names in data.
-#'   Currently, the only supported response distributions are \code{bernoulli_logit},
-#'   \code{ordered_logistic}, \code{poisson_softplus}, \code{normal}, and \code{lognormal}.
+#'   the model and their associated response distributions as character strings
+#'   (e.g. \code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}).
+#'   Must identify at least two variables. Variable names must refer to valid
+#'   column names in data. Currently, the only supported response distributions
+#'   are \code{bernoulli_logit}, \code{ordered_logistic},
+#'   \code{poisson_softplus}, \code{normal}, \code{lognormal}, and
+#'   \code{negative_binomial_softplus}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -16,31 +18,35 @@
 #'   exactly matching the variables declared for the model. If not specified,
 #'   all cross-lagged effects will be estimated in the model. If specified, the
 #'   model will only estimate cross-lagged effects where cells in the matrix are
-#'   TRUE and will ignore cross-lagged effects where cells in the matrix are FALSE.
-#'   In the matrix, columns represent predictor variables and rows represent
-#'   outcome variables. All autoregressive effects (e.g., X -> X) must be TRUE
-#'   in the matrix.
-#' @param dist_mat (optional) A distance matrix with row and column names exactly
-#'   matching the tip labels in the phylogeny. If specified, the model will
-#'   additionally control for spatial location by including a separate Gaussian
-#'   Process over locations for every coevolving variable in the model.
-#' @param prior (optional) A named list of priors for the model. If not specified,
-#'   the model uses default priors (see Stan code). Alternatively, the user can
-#'   specify a named list of priors. The list must contain non-duplicated entries
-#'   for any of the following variables: the autoregressive and cross-effects
-#'   (\code{alpha}), the drift scale parameters (\code{sigma}), the continuous
-#'   time intercepts (\code{b}), the ancestral states for the traits (\code{eta_anc}),
-#'   the cutpoints for ordinal variables (\code{c}), the sigma parameter(s) for
-#'   Gaussian Processes over locations (\code{sigma_dist}), and the rho parameter(s)
-#'   for Gaussian Processes over locations (\code{rho_dist}). These must be
-#'   entered with valid prior strings, e.g. \code{list(alpha = "normal(0, 2)")}.
-#'   Invalid prior strings will throw an error when the function internally checks
-#'   the syntax of resulting Stan code.
+#'   TRUE and will ignore cross-lagged effects where cells in the matrix are
+#'   FALSE. In the matrix, columns represent predictor variables and rows
+#'   represent outcome variables. All autoregressive effects (e.g., X -> X) must
+#'   be TRUE in the matrix.
+#' @param dist_mat (optional) A distance matrix with row and column names
+#'   exactly matching the tip labels in the phylogeny. If specified, the model
+#'   will additionally control for spatial location by including a separate
+#'   Gaussian Process over locations for every coevolving variable in the model.
+#' @param prior (optional) A named list of priors for the model. If not
+#'   specified, the model uses default priors (see Stan code). Alternatively,
+#'   the user can specify a named list of priors. The list must contain
+#'   non-duplicated entries for any of the following variables: the
+#'   autoregressive effects (\code{A_diag}), the cross effects
+#'   (\code{A_offdiag}), the drift scale parameters (\code{Q_diag}), the
+#'   continuous time intercepts (\code{b}), the ancestral states for the traits
+#'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
+#'   overdispersion parameters for negative binomial variables (\code{phi}),
+#'   the sigma parameters for Gaussian Processes over locations
+#'   (\code{sigma_dist}), and the rho parameter for Gaussian Processes over
+#'   locations (\code{rho_dist}). These must be entered with valid prior
+#'   strings, e.g. \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior
+#'   strings will throw an error when the function internally checks the syntax
+#'   of resulting Stan code.
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
 #'
-#' @return A character string containing the \pkg{Stan} code to fit the dynamic coevolutionary model.
+#' @return A character string containing the \pkg{Stan} code to fit the dynamic
+#'   coevolutionary model.
 #' @export
 #'
 #' @examples
@@ -66,7 +72,8 @@ coev_make_stancode <- function(data, variables, id, tree,
                                effects_mat = NULL, dist_mat = NULL,
                                prior = NULL, prior_only = FALSE) {
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, dist_mat, prior, prior_only)
+  run_checks(data, variables, id, tree, effects_mat,
+             dist_mat, prior, prior_only)
   # extract distributions and variable names from named list
   distributions <- as.character(variables)
   variables <- names(variables)
@@ -82,6 +89,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       sigma_dist = "exponential(1)",
       rho_dist   = "exponential(1)"
     )
+  # note: default prior for phi (overdispersion) set within the model code
   # replace priors if user has explicitly set them
   if (!is.null(prior)) {
     for (i in names(prior)) {
@@ -168,25 +176,49 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  array[N_seg] real ts; // time since parent\n",
     "  array[N_seg] int tip; // indicator of whether a given segment ends in a tip\n",
     "  array[J,J] int effects_mat; // which effects should be estimated?\n",
-    "  int num_effects; // number of effects being estimated\n"
+    "  int num_effects; // number of effects being estimated\n",
+    "  array[N_tips,J] real y; // observed data\n"
   )
-  # add observed data variables one by one depending on type
-  for (i in 1:length(variables)) {
-    sc_data <- paste0(
-      sc_data,
-      "  array[N_tips] ",
-      # continuous variables are real numbers
-      # all others are integers
-      ifelse(distributions[i] %in% c("normal", "lognormal"), "real", "int"),
-      " y", i, "; // observed data variable ", i,
-      "\n")
-  }
   # add distance matrix if user has defined one
   if (!is.null(dist_mat)) {
-    sc_data <- paste0(sc_data, "  array[N_tips,N_tips] real dist_mat; // distance matrix\n")
+    sc_data <-
+      paste0(
+        sc_data,
+        "  array[N_tips,N_tips] real dist_mat; // distance matrix\n"
+        )
   }
   # add prior_only data variable
-  sc_data <- paste0(sc_data, "  int prior_only; // should the likelihood be ignored?\n}")
+  sc_data <-
+    paste0(
+      sc_data,
+      "  int prior_only; // should the likelihood be ignored?\n}"
+      )
+  # write transformed data block
+  sc_transformed_data <- NULL
+  if ("negative_binomial_softplus" %in% distributions & is.null(priors$phi)) {
+    # if negative binomial distribution included and default prior used
+    sc_transformed_data <- "transformed data{\n"
+    for (i in 1:length(distributions)) {
+      if (distributions[i] == "negative_binomial_softplus") {
+        sc_transformed_data <-
+          paste0(
+            sc_transformed_data,
+            "  real inv_overdisp", i, "; // best guess for phi", i, "\n"
+          )
+      }
+    }
+    for (i in 1:length(distributions)) {
+      if (distributions[i] == "negative_binomial_softplus") {
+        sc_transformed_data <-
+          paste0(
+            sc_transformed_data,
+            "  inv_overdisp", i, " = (mean(y[,", i, "])^2) / ",
+            "(sd(y[,", i, "])^2 - mean(y[,", i, "]));\n"
+          )
+      }
+    }
+    sc_transformed_data <- paste0(sc_transformed_data, "}")
+  }
   # write parameters block
   sc_parameters <- paste0(
     "parameters{\n",
@@ -202,7 +234,21 @@ coev_make_stancode <- function(data, variables, id, tree,
     if (distributions[i] == "ordered_logistic") {
       # calculate number of cut points (number of levels - 1)
       num_cuts <- max(as.numeric(data[,variables[i]])) - 1
-      sc_parameters <- paste0(sc_parameters, "  ordered[", num_cuts, "] c", i, "; // cut points for variable ", i, "\n")
+      sc_parameters <-
+        paste0(
+          sc_parameters,
+          "  ordered[", num_cuts, "] c", i, "; ",
+          "// cut points for variable ", i, "\n"
+          )
+    }
+    # add overdispersion parameters for negative_binomial_softplus distributions
+    if (distributions[i] == "negative_binomial_softplus") {
+      sc_parameters <-
+        paste0(
+          sc_parameters,
+          "  real<lower=0> phi", i, "; ",
+          "// neg binom inverse overdispersion parameter for variable ", i, "\n"
+          )
     }
   }
   # add gaussian process parameters if distance matrix specified by user
@@ -233,8 +279,8 @@ coev_make_stancode <- function(data, variables, id, tree,
   }
   sc_transformed_parameters <- paste0(
     sc_transformed_parameters,
-    "  matrix[N_seg,J] drift_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
-    "  matrix[N_seg,J] sigma_tips; // terminal drift parameters, saved here to use in likelihood for Gaussian outcomes\n",
+    "  matrix[N_seg,J] drift_tips; // terminal drift parameters\n",
+    "  matrix[N_seg,J] sigma_tips; // terminal drift parameters\n",
     "  // fill A matrix //////////\n",
     "  {\n",
     "    int ticker = 1;\n",
@@ -344,6 +390,24 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_model <- paste0(sc_model, "  c", j, " ~ ", priors$c, ";\n")
     }
   }
+  # add priors for any overdispersion parameters
+  for (j in 1:length(distributions)) {
+    if (distributions[j] == "negative_binomial_softplus") {
+      sc_model <-
+        paste0(
+          sc_model,
+          "  phi", j, " ~ ",
+          ifelse(
+            is.null(priors$phi),
+            # if prior not set manually, use default prior
+            paste0("normal(inv_overdisp", j, ", inv_overdisp", j, ")"),
+            # else if prior set manually, use set prior
+            priors$phi
+          ),
+          ";\n"
+        )
+    }
+  }
   # add priors for any gaussian process parameters
   if (!is.null(dist_mat)) {
     sc_model <- paste0(
@@ -363,38 +427,51 @@ coev_make_stancode <- function(data, variables, id, tree,
     if (distributions[j] == "bernoulli_logit") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        to_int(y[i,", j, "]) ~ ",
         "bernoulli_logit(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        " + drift_tips[i,", j, "]);\n")
+        " + drift_tips[i,", j, "]);\n"
+        )
     } else if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        to_int(y[i,", j, "]) ~ ",
         "ordered_logistic(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        " + drift_tips[i,", j, "], c", j, ");\n")
+        " + drift_tips[i,", j, "], c", j, ");\n"
+        )
     } else if (distributions[j] == "poisson_softplus") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
-        "poisson(log1p_exp(eta[i,", j, "]",
+        "        to_int(y[i,", j, "]) ~ ",
+        "poisson(mean(y[,", j, "]) * log1p_exp(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        " + drift_tips[i,", j, "]));\n")
+        " + drift_tips[i,", j, "]));\n"
+        )
     } else if (distributions[j] == "normal") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        y[i,", j, "] ~ ",
         "normal(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        ", sigma_tips[i,", j, "]);\n")
+        ", sigma_tips[i,", j, "]);\n"
+        )
     } else if (distributions[j] == "lognormal") {
       sc_model <- paste0(
         sc_model,
-        "        y", j, "[i] ~ ",
+        "        y[i,", j, "] ~ ",
         "lognormal(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
-        ", sigma_tips[i,", j, "]);\n")
+        ", sigma_tips[i,", j, "]);\n"
+        )
+    } else if (distributions[j] == "negative_binomial_softplus") {
+      sc_model <- paste0(
+        sc_model,
+        "        to_int(y[i,", j, "]) ~ ",
+        "neg_binomial_2(mean(y[,", j, "]) * log1p_exp(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        " + drift_tips[i,", j, "]), phi", j, ");\n"
+        )
     }
   }
   sc_model <- paste0(
@@ -471,9 +548,14 @@ coev_make_stancode <- function(data, variables, id, tree,
   
   # put stan code together
   sc <- paste0(
-    "// Generated by the coevolve package\n",
+    "// Generated with coevolve ", utils::packageVersion("coevolve"), "\n",
     sc_functions, "\n",
     sc_data, "\n",
+    ifelse(
+      is.null(sc_transformed_data),
+      "",
+      paste0(sc_transformed_data, "\n")
+      ),
     sc_parameters, "\n",
     sc_transformed_parameters, "\n",
     sc_model, "\n",

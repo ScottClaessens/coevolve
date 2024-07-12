@@ -13,9 +13,9 @@
 to be covered by the uncertainty intervals. The default is 0.95.}
 
 \item{robust}{If \code{FALSE} (the default) the mean is used as the measure
-of central tendency and the standard deviation as the measure of variability.
-If \code{TRUE}, the median and the median absolute deviation are applied
-instead.}
+of central tendency and the standard deviation as the measure of
+variability. If \code{TRUE}, the median and the median absolute deviation
+are applied instead.}
 
 \item{...}{Other potential arguments}
 }

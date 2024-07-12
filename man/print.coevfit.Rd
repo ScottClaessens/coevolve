@@ -10,7 +10,8 @@
 \arguments{
 \item{x}{An object of class \code{coevfit}}
 
-\item{digits}{The number of significant digits for printing out the summary; defaults to 2}
+\item{digits}{The number of significant digits for printing out the summary;
+defaults to 2}
 
 \item{...}{Additional arguments that would be passed
 to method \code{summary} of \code{coevfit}.}

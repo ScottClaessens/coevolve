@@ -5,6 +5,7 @@ test_that("coev_fit() produces expected errors", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
+      v = as.integer(rnbinom(n, mu = 4, size = 1)),
       w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
       y = ordered(sample(1:4, size = n, replace = TRUE)),
@@ -69,8 +70,9 @@ test_that("coev_fit() produces expected errors", {
       tree = tree
     ),
     paste0(
-      "Response distributions other than 'bernoulli_logit', 'ordered_logistic'",
-      ", 'poisson_softplus', 'normal', and 'lognormal' are not yet supported."
+      "Response distributions other than 'bernoulli_logit', ",
+      "'ordered_logistic', 'poisson_softplus', 'normal', 'lognormal', and ",
+      "'negative_binomial_softplus' are not yet supported."
     )
   )
   expect_error(
@@ -95,7 +97,10 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Variables following the 'bernoulli_logit' response distribution must be integers with values of 0/1 in the data."
+    paste0(
+      "Variables following the 'bernoulli_logit' response distribution ",
+      "must be integers with values of 0/1 in the data."
+      )
   )
   expect_error(
     coev_fit(
@@ -107,7 +112,10 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Variables following the 'ordered_logistic' response distribution must be ordered factors in the data."
+    paste0(
+      "Variables following the 'ordered_logistic' response distribution ",
+      "must be ordered factors in the data."
+      )
   )
   expect_error(
     coev_fit(
@@ -119,7 +127,44 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Variables following the 'poisson_softplus' response distribution must be integers greater than or equal to zero in the data."
+    paste0(
+      "Variables following the 'poisson_softplus' response distribution ",
+      "must be integers greater than or equal to zero in the data."
+      )
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        y = "negative_binomial_softplus", # not integer >= 0
+        z = "negative_binomial_softplus"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Variables following the 'negative_binomial_softplus' response ",
+      "distribution must be integers greater than or equal to zero in ",
+      "the data."
+    )
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        v = "negative_binomial_softplus",
+        z = "negative_binomial_softplus" # sd^2 <= mean
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "No overdispersion or potentially underdispersion for ",
+      "variable 'z' (sd^2 <= mean), do not use the ",
+      "'negative_binomial_softplus' response distribution ",
+      "for this variable."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -131,7 +176,10 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Variables following the 'normal' response distribution must be numeric in the data."
+    paste0(
+      "Variables following the 'normal' response distribution ",
+      "must be numeric in the data."
+      )
   )
   expect_error(
     coev_fit(
@@ -264,7 +312,7 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      effects_mat = matrix(TRUE, dimnames = list("fail","fail")) # invalid row/col names
+      effects_mat = matrix(TRUE, dimnames = list("fail","fail")) # invalid names
     ),
     paste0(
       "Row and column names for argument 'effects_mat' do not match ",
@@ -280,8 +328,9 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      # autoregressive effect = FALSE
       effects_mat = matrix(c(T,T,T,F), ncol = 2, nrow = 2, byrow = TRUE,
-                           dimnames = list(c("x","y"),c("x","y"))) # autoregressive effect = FALSE
+                           dimnames = list(c("x","y"),c("x","y")))
     ),
     "Argument 'effects_mat' must specify TRUE for all autoregressive effects."
   )
@@ -333,7 +382,8 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = matrix(rep(1, 100), nrow = 10) # matrix symmetric but diagonal not zero
+      # matrix symmetric but diagonal not zero
+      dist_mat = matrix(rep(1, 100), nrow = 10)
     ),
     "Argument 'dist_mat' must have zeroes on the diagonal of the matrix."
   )
@@ -363,7 +413,10 @@ test_that("coev_fit() produces expected errors", {
                         # matrix row/col names do not match tips
                         dimnames = list(letters[1:10], letters[1:10]))
     ),
-    "Row and column names for argument 'dist_mat' do not match tree tip labels exactly."
+    paste0(
+      "Row and column names for argument 'dist_mat' do not ",
+      "match tree tip labels exactly."
+      )
   )
   expect_error(
     coev_fit(
@@ -405,7 +458,7 @@ test_that("coev_fit() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'Q_diag', 'c', 'sigma_dist', and 'rho_dist'"
+      "'Q_diag', 'c', 'phi', 'sigma_dist', and 'rho_dist'"
     )
   )
   expect_error(
@@ -417,7 +470,8 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      prior = list(A_diag = "normal(0,2)", A_diag = "normal(0,2)") # duplicate names
+      # duplicate names
+      prior = list(A_diag = "normal(0,2)", A_diag = "normal(0,2)")
     ),
     "Argument 'prior' contains duplicate names."
   )
@@ -446,7 +500,7 @@ test_that("coev_fit() fits the model without error", {
       w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
       y = ordered(sample(1:4, size = n, replace = TRUE)),
-      z = rpois(n, 3)
+      z = as.integer(rnbinom(n, mu = 3, size = 1))
     )
   })
   # model without distance matrix
@@ -497,26 +551,47 @@ test_that("coev_fit() fits the model without error", {
     seed = 1,
     prior_only = TRUE
   )
+  # negative binomial model
+  d$z2 <- d$z
+  m4 <- coev_fit(
+    data = d,
+    variables = list(
+      z  = "negative_binomial_softplus",
+      z2 = "negative_binomial_softplus"
+    ),
+    id = "id",
+    tree = tree,
+    parallel_chains = 4,
+    iter_warmup = 500,
+    iter_sampling = 500,
+    seed = 1
+  )
   # expect no errors for model fitting or summaries
   expect_no_error(m1)
   expect_no_error(m2)
   expect_no_error(m3)
+  expect_no_error(m4)
   expect_no_error(summary(m1))
   expect_no_error(summary(m2))
   expect_no_error(summary(m3))
+  expect_no_error(summary(m4))
   expect_output(print(m1))
   expect_output(print(m2))
   expect_output(print(m3))
+  expect_output(print(m4))
   expect_output(print(summary(m1)))
   expect_output(print(summary(m2)))
   expect_output(print(summary(m3)))
+  expect_output(print(summary(m4)))
   # expect error if prob for summary is outside of range 0 - 1
   expect_error(summary(m1, prob = -0.01))
   expect_error(summary(m2, prob = -0.01))
   expect_error(summary(m3, prob = -0.01))
+  expect_error(summary(m4, prob = -0.01))
   expect_error(summary(m1, prob =  1.01))
   expect_error(summary(m2, prob =  1.01))
   expect_error(summary(m3, prob =  1.01))
+  expect_error(summary(m4, prob =  1.01))
 })
 
 test_that("effects_mat argument to coev_fit() works as expected", {

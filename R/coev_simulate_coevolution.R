@@ -72,8 +72,8 @@ coev_simulate_coevolution <- function(n,
                         rep(as.numeric(length(variables)), 2))) {
     stop2(
       paste0(
-        "Argument 'selection_matrix' has number of rows or columns not equal to ",
-        "the number of variables."
+        "Argument 'selection_matrix' has number of rows or columns not equal ",
+        "to the number of variables."
         )
       )
   } else if (!(all(variables %in% rownames(selection_matrix)) &
@@ -85,11 +85,13 @@ coev_simulate_coevolution <- function(n,
         )
       )
   }
-  # stop if drift is not named numeric vector with correct dims and variable names
+  # stop if drift is not named numeric vector with correct dims and var names
   if (!methods::is(drift, "numeric")) {
     stop2("Argument 'drift' is not numeric.")
   } else if (length(drift) != length(variables)) {
-    stop2("Argument 'drift' has length different to specified number of variables.")
+    stop2(
+      "Argument 'drift' has length different to specified number of variables."
+      )
   } else if (!all(variables %in% names(drift))) {
     stop2("Argument 'drift' has names different to specified variable names.")
   }
