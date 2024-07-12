@@ -484,14 +484,22 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_generated_quantities <-
     paste0(
       "generated quantities{\n",
-      "  array[N_tips,J] real yrep; // predictive checks\n",
-      "  for (i in 1:N_tips) {\n"
+      "  vector[N_tips*J] log_lik; // log-likelihood\n",
+      "  matrix[N_tips,J] yrep; // predictive checks\n",
+      "  {\n",
+      "    matrix[N_tips,J] log_lik_temp;\n",
+      "    matrix[N_tips,J] yrep_temp;\n",
+      "    for (i in 1:N_tips) {\n"
       )
   for (j in 1:length(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "    yrep[i,", j, "] = ",
+        "      log_lik_temp[i,", j, "] = ",
+        "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        " + drift_tips[i,", j, "]);\n",
+        "      yrep_temp[i,", j, "] = ",
         "bernoulli_logit_rng(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]);\n"
@@ -499,7 +507,11 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "ordered_logistic") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "    yrep[i,", j, "] = ",
+        "      log_lik_temp[i,", j, "] = ",
+        "ordered_logistic_lpmf(to_int(y[i,", j, "]) | eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        " + drift_tips[i,", j, "], c", j, ");\n",
+        "      yrep_temp[i,", j, "] = ",
         "ordered_logistic_rng(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "], c", j, ");\n"
@@ -507,7 +519,12 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "poisson_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "    yrep[i,", j, "] = ",
+        "      log_lik_temp[i,", j, "] = ",
+        "poisson_lpmf(to_int(y[i,", j, "]) | mean(y[,", j,
+        "]) * log1p_exp(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        " + drift_tips[i,", j, "]));\n",
+        "      yrep_temp[i,", j, "] = ",
         "poisson_rng(mean(y[,", j, "]) * log1p_exp(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]));\n"
@@ -515,7 +532,11 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "normal") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "    yrep[i,", j, "] = ",
+        "      log_lik_temp[i,", j, "] = ",
+        "normal_lpdf(y[i,", j, "] | eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        ", sigma_tips[i,", j, "]);\n",
+        "      yrep_temp[i,", j, "] = ",
         "normal_rng(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         ", sigma_tips[i,", j, "]);\n"
@@ -523,7 +544,11 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "lognormal") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "    yrep[i,", j, "] = ",
+        "      log_lik_temp[i,", j, "] = ",
+        "lognormal_lpdf(y[i,", j, "] | eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        ", sigma_tips[i,", j, "]);\n",
+        "      yrep_temp[i,", j, "] = ",
         "lognormal_rng(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         ", sigma_tips[i,", j, "]);\n"
@@ -531,7 +556,12 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "    yrep[i,", j, "] = ",
+        "      log_lik_temp[i,", j, "] = ",
+        "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(y[,", j,
+        "]) * log1p_exp(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        " + drift_tips[i,", j, "]), phi", j, ");\n",
+        "      yrep_temp[i,", j, "] = ",
         "neg_binomial_2_rng(mean(y[,", j, "]) * log1p_exp(eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         " + drift_tips[i,", j, "]), phi", j, ");\n"
@@ -541,7 +571,10 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_generated_quantities <-
     paste0(
       sc_generated_quantities,
-      "   }\n",
+      "    }\n",
+      "  yrep = yrep_temp;\n",
+      "  log_lik = to_vector(log_lik_temp);\n",
+      "  }\n",
       "}"
     )
   # put stan code together
