@@ -159,7 +159,7 @@ We can visualise the posterior densities for the two cross-effects.
 
 
 ```r
-coev_plot_cross(fit)
+coev_plot_delta_theta(fit)
 ```
 
 <img src="plot_cross-1.jpeg" width="60%" style="display: block; margin: auto;" />
