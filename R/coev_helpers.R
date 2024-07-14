@@ -42,7 +42,7 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   for (i in 1:length(distributions)) {
     if (distributions[i] == "bernoulli_logit" &
         (!is.integer(data[,variables[i]]) |
-         !all(data[,variables[i]] %in% 0:1))) {
+         !all(data[,variables[i]] %in% c(0, 1, NA)))) {
       stop2(
         paste0(
           "Variables following the 'bernoulli_logit' response distribution ",
@@ -66,7 +66,9 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   # stop if any count variables are not integers greater than or equal to 0
   for (i in 1:length(distributions)) {
     if (distributions[i] == "poisson_softplus" &
-        (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
+        (!is.integer(data[,variables[i]]) |
+         !all(data[,variables[i]] >= 0 | is.na(data[,variables[i]])))
+        ) {
       stop2(
         paste0(
           "Variables following the 'poisson_softplus' response distribution ",
@@ -75,7 +77,9 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         )
     }
     if (distributions[i] == "negative_binomial_softplus" &
-        (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
+        (!is.integer(data[,variables[i]]) |
+         !all(data[,variables[i]] >= 0 | is.na(data[,variables[i]])))
+        ) {
       stop2(
         paste0(
           "Variables following the 'negative_binomial_softplus' response ",
@@ -115,8 +119,10 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   # stop if any lognormal variables are not numeric or are
   # equal to or less than zero
   for (i in 1:length(distributions)) {
-    if (distributions[i] == "lognormal" & (!is.numeric(data[,variables[i]]) |
-                                           any(data[,variables[i]] <= 0))) {
+    if (distributions[i] == "lognormal" &
+        (!is.numeric(data[,variables[i]]) |
+         !all(data[,variables[i]] > 0 | is.na(data[,variables[i]])))
+        ) {
       stop2(
         paste0(
           "Variables following the 'lognormal' response distribution must be ",
@@ -144,10 +150,6 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   # stop if id in data contains missing values
   if (any(is.na(data[,id]))) {
     stop2("The id variable in the data must not contain NAs.")
-  }
-  # stop if coevolving variables contain missing data
-  if (any(is.na(data[,variables]))) {
-    stop2("Coevolving variables in the data must not contain NAs.")
   }
   # if user entered an effects matrix
   if (!is.null(effects_mat)) {

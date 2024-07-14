@@ -74,6 +74,11 @@ coev_make_standata <- function(data, variables, id, tree,
   # check arguments
   run_checks(data, variables, id, tree, effects_mat,
              dist_mat, prior, prior_only)
+  # remove data rows where all coevolving variables are NA
+  all_missing <- apply(data[,names(variables)], 1, function(x) all(is.na(x)))
+  data <- data[!all_missing,]
+  # prune tree to updated dataset
+  tree <- ape::keep.tip(tree, data[,id])
   # match data to tree tip label ordering
   data <- data[match(tree$tip.label, data[,id]),]
   # match distance matrix to tree tip label ordering

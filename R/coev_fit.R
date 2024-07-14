@@ -74,7 +74,8 @@ coev_fit <- function(data, variables, id, tree,
                      effects_mat = NULL, dist_mat = NULL,
                      prior = NULL, prior_only = FALSE, ...) {
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, dist_mat, prior, prior_only)
+  run_checks(data, variables, id, tree, effects_mat,
+             dist_mat, prior, prior_only)
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
                            dist_mat, prior, prior_only)
@@ -100,6 +101,8 @@ coev_fit <- function(data, variables, id, tree,
       variables = variables,
       id = id,
       tree = tree,
+      stan_code = sc,
+      stan_data = sd,
       effects_mat = sd$effects_mat,
       dist_mat = sd$dist_mat,
       prior_only = prior_only

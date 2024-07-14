@@ -233,7 +233,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     # add cut points for ordinal_logistic distributions
     if (distributions[i] == "ordered_logistic") {
       # calculate number of cut points (number of levels - 1)
-      num_cuts <- max(as.numeric(data[,variables[i]])) - 1
+      num_cuts <- max(as.numeric(data[,variables[i]]), na.rm = TRUE) - 1
       sc_parameters <-
         paste0(
           sc_parameters,

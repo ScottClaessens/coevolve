@@ -122,9 +122,10 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   # create summary list
   out <-
     list(
+      data           = object$data,
       variables      = object$variables,
       data_name      = object$data_name,
-      nobs           = nrow(object$data),
+      nobs           = object$stan_data$N_tips,
       chains         = object$fit$num_chains(),
       iter           = object$fit$metadata()$iter_sampling,
       warmup         = object$fit$metadata()$iter_sampling,
@@ -239,6 +240,17 @@ print.coevsummary <- function(x, digits = 2, ...) {
     )
     cat("\n")
   }
+  # warnings if data excluded
+  if (nrow(x$data) != x$nobs) {
+    warning2(
+      paste0(
+        "Rows with NAs for all coevolving variables were ",
+        "excluded from the model."
+      )
+    )
+    cat("\n")
+  }
+  # return
   invisible(x)
 }
 

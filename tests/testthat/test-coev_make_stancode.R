@@ -250,21 +250,6 @@ test_that("coev_make_stancode() produces expected errors", {
     "The id variable in the data must not contain NAs."
   )
   expect_error(
-    {
-      d2 <- d; d2$y[1] <- NA
-      coev_make_stancode(
-        data = d2,
-        variables = list(
-          x = "bernoulli_logit",
-          y = "ordered_logistic"
-        ),
-        id = "id",
-        tree = tree
-      )
-    },
-    "Coevolving variables in the data must not contain NAs."
-  )
-  expect_error(
     coev_make_stancode(
       data = d,
       variables = list(
