@@ -634,3 +634,40 @@ test_that("effects_mat argument to coev_fit() works as expected", {
   expect_true(!all(as.vector(m$fit$draws()[,,"A[1,2]"]) == 0))
   expect_true(!all(as.vector(m$fit$draws()[,,"A[2,2]"]) == 0))
 })
+
+test_that("coev_fit() works with missing data", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 5
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = rbinom(n, size = 1, prob = 0.5)
+    )
+  })
+  # some data are missing
+  d$x[c(1,2)] <- NA
+  d$y[c(1,3)] <- NA
+  # fit model with missing data
+  m <- coev_fit(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree,
+    parallel_chains = 4,
+    iter_warmup = 500,
+    iter_sampling = 500,
+    seed = 1
+  )
+  # fitted without error
+  expect_no_error(m)
+  # expect warning in summary output
+  expect_warning(
+    print(m),
+    "Rows with NAs for all coevolving variables were excluded from the model."
+    )
+})

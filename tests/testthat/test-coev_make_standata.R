@@ -546,3 +546,49 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
                              "y", "miss", "prior_only"))
   expect_equal(sd3$prior_only, 1)
 })
+
+test_that("coev_make_standata() works with missing data", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = ordered(sample(1:4, size = n, replace = TRUE))
+    )
+  })
+  # some data are missing
+  # row 1 missing both x and y
+  # row 2 missing x only
+  # row 3 missing y only
+  d$x[c(1,2)] <- NA
+  d$y[c(1,3)] <- NA
+  # make stan data
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    )
+  # runs without error
+  expect_no_error(sd)
+  # N_tips = 19 because one row removed
+  expect_equal(sd$N_tips, 19)
+  expect_equal(nrow(sd$y), 19)
+  expect_equal(nrow(sd$miss), 19)
+  # missing matrix correct
+  d <- d[-1,c("x","y")]
+  miss <- as.matrix(ifelse(is.na(d), 1, 0))
+  rownames(miss) <- NULL
+  expect_identical(sd$miss, miss)
+  # dataset correct
+  d$x <- ifelse(is.na(d$x), -9999, d$x)
+  d$y <- ifelse(is.na(d$y), -9999, d$y)
+  d <- as.matrix(d, rownames.force = FALSE)
+  expect_identical(sd$y, d)
+})

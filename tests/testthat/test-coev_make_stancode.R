@@ -643,3 +643,38 @@ test_that("coev_make_stancode() produces neg binomial priors as expected", {
     )
   )
 })
+
+test_that("coev_make_stancode() works with missing data", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = rbinom(n, size = 1, prob = 0.5)
+    )
+  })
+  # some data are missing
+  d$x[c(1,2)] <- NA
+  d$y[c(1,3)] <- NA
+  # get stan code
+  sc <- coev_make_stancode(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree
+  )
+  # runs without error
+  expect_no_error(sc)
+  # syntactically correct
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+})
