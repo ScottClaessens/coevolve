@@ -64,6 +64,7 @@ jobs:
             phaseR
             posterior
             purrr
+            rcmdcheck
             readr
             rlang
             rmarkdown
