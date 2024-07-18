@@ -476,156 +476,58 @@ test_that("coev_fit() produces expected errors", {
 })
 
 test_that("coev_fit() fits the model without error", {
-  # simulate data
-  withr::with_seed(1, {
-    n <- 5
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      w = rnorm(n),
-      x = rbinom(n, size = 1, prob = 0.5),
-      y = ordered(sample(1:4, size = n, replace = TRUE)),
-      z = as.integer(rnbinom(n, mu = 3, size = 1))
-    )
-  })
-  # model without distance matrix
-  m1 <- coev_fit(
-    data = d,
-    variables = list(
-      w = "normal",
-      x = "bernoulli_logit",
-      y = "ordered_logistic",
-      z = "poisson_softplus"
-    ),
-    id = "id",
-    tree = tree,
-    parallel_chains = 4,
-    iter_warmup = 500,
-    iter_sampling = 500,
-    seed = 1
-  )
-  # model with distance matrix
-  dist_mat <- as.matrix(dist(rnorm(n)))
-  rownames(dist_mat) <- colnames(dist_mat) <- d$id
-  m2 <- coev_fit(
-    data = d,
-    variables = list(
-      x = "bernoulli_logit",
-      y = "ordered_logistic"
-    ),
-    id = "id",
-    tree = tree,
-    dist_mat = dist_mat,
-    parallel_chains = 4,
-    iter_warmup = 500,
-    iter_sampling = 500,
-    seed = 1
-  )
-  # prior only model
-  m3 <- coev_fit(
-    data = d,
-    variables = list(
-      x = "bernoulli_logit",
-      y = "ordered_logistic"
-    ),
-    id = "id",
-    tree = tree,
-    parallel_chains = 4,
-    iter_warmup = 500,
-    iter_sampling = 500,
-    seed = 1,
-    prior_only = TRUE
-  )
-  # negative binomial model
-  d$z2 <- d$z
-  m4 <- coev_fit(
-    data = d,
-    variables = list(
-      z  = "negative_binomial_softplus",
-      z2 = "negative_binomial_softplus"
-    ),
-    id = "id",
-    tree = tree,
-    parallel_chains = 4,
-    iter_warmup = 500,
-    iter_sampling = 500,
-    seed = 1
-  )
+  # load models
+  m1 <- coevolve:::coevfit_example1
+  m2 <- coevolve:::coevfit_example2
+  m3 <- coevolve:::coevfit_example3
+  m4 <- coevolve:::coevfit_example4
+  m5 <- coevolve:::coevfit_example5
+  m6 <- coevolve:::coevfit_example6
+  # suppress warnings
+  SW <- suppressWarnings
   # expect no errors for model fitting or summaries
-  expect_no_error(m1)
-  expect_no_error(m2)
-  expect_no_error(m3)
-  expect_no_error(m4)
-  expect_no_error(summary(m1))
-  expect_no_error(summary(m2))
-  expect_no_error(summary(m3))
-  expect_no_error(summary(m4))
-  expect_output(print(m1))
-  expect_output(print(m2))
-  expect_output(print(m3))
-  expect_output(print(m4))
-  expect_output(print(summary(m1)))
-  expect_output(print(summary(m2)))
-  expect_output(print(summary(m3)))
-  expect_output(print(summary(m4)))
+  expect_no_error(SW(m1))
+  expect_no_error(SW(m2))
+  expect_no_error(SW(m3))
+  expect_no_error(SW(m4))
+  expect_no_error(SW(summary(m1)))
+  expect_no_error(SW(summary(m2)))
+  expect_no_error(SW(summary(m3)))
+  expect_no_error(SW(summary(m4)))
+  expect_output(SW(print(m1)))
+  expect_output(SW(print(m2)))
+  expect_output(SW(print(m3)))
+  expect_output(SW(print(m4)))
+  expect_output(SW(print(summary(m1))))
+  expect_output(SW(print(summary(m2))))
+  expect_output(SW(print(summary(m3))))
+  expect_output(SW(print(summary(m4))))
   # expect error if prob for summary is outside of range 0 - 1
-  expect_error(summary(m1, prob = -0.01))
-  expect_error(summary(m2, prob = -0.01))
-  expect_error(summary(m3, prob = -0.01))
-  expect_error(summary(m4, prob = -0.01))
-  expect_error(summary(m1, prob =  1.01))
-  expect_error(summary(m2, prob =  1.01))
-  expect_error(summary(m3, prob =  1.01))
-  expect_error(summary(m4, prob =  1.01))
+  expect_error(SW(summary(m1, prob = -0.01)))
+  expect_error(SW(summary(m1, prob =  1.01)))
 })
 
 test_that("effects_mat argument to coev_fit() works as expected", {
-  # simulate data
-  withr::with_seed(1, {
-    n <- 5
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rbinom(n, size = 1, prob = 0.5),
-      y = ordered(sample(1:4, size = n, replace = TRUE))
-    )
-  })
-  # create effects matrix
+  # load model
+  m <- coevolve:::coevfit_example5
+  # suppress warnings
+  SW <- suppressWarnings
+  # expect no errors for model fitting or summaries
+  expect_no_error(SW(m))
+  expect_no_error(SW(summary(m)))
+  expect_output(SW(print(m)))
+  expect_output(SW(print(summary(m))))
+  # expect effects_mat correct in model output
   effects_mat <- matrix(
-    c(T,T,
-      T,F),
+    c(TRUE, TRUE,
+      FALSE,TRUE),
     byrow = TRUE,
     nrow = 2,
     ncol = 2,
-    dimnames = list(c("x","y"),c("y","x")) # mixed out of order to test
+    dimnames = list(c("w","x"),c("w","x"))
   )
-  variables <- list(
-    x = "bernoulli_logit",
-    y = "ordered_logistic"
-  )
-  # model with effects matrix
-  m <- coev_fit(
-    data = d,
-    variables = variables,
-    id = "id",
-    tree = tree,
-    effects_mat = effects_mat,
-    parallel_chains = 4,
-    iter_warmup = 500,
-    iter_sampling = 500,
-    seed = 1
-  )
-  # expect no errors for model fitting or summaries
-  expect_no_error(m)
-  expect_no_error(summary(m))
-  expect_output(print(m))
-  expect_output(print(summary(m)))
-  # expect effects_mat correct in model output
   expect_true(
-    identical(
-      m$effects_mat,
-      +effects_mat[names(variables),names(variables)]
-      )
+    identical(m$effects_mat, +effects_mat)
     )
   # correct parameter estimated to be zero (A[2,1])
   expect_true(all(as.vector(m$fit$draws()[,,"A[2,1]"]) == 0))
@@ -636,38 +538,26 @@ test_that("effects_mat argument to coev_fit() works as expected", {
 })
 
 test_that("coev_fit() works with missing data", {
-  # simulate data
-  withr::with_seed(1, {
-    n <- 5
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rbinom(n, size = 1, prob = 0.5),
-      y = rbinom(n, size = 1, prob = 0.5)
-    )
-  })
-  # some data are missing
-  d$x[c(1,2)] <- NA
-  d$y[c(1,3)] <- NA
-  # fit model with missing data
-  m <- coev_fit(
-    data = d,
-    variables = list(
-      x = "bernoulli_logit",
-      y = "bernoulli_logit"
-    ),
-    id = "id",
-    tree = tree,
-    parallel_chains = 4,
-    iter_warmup = 500,
-    iter_sampling = 500,
-    seed = 1
-  )
+  # load model
+  m <- coevolve:::coevfit_example6
+  # suppress warnings
+  SW <- suppressWarnings
   # fitted without error
-  expect_no_error(m)
+  expect_no_error(SW(m))
+  expect_no_error(SW(summary(m)))
+  expect_output(SW(print(m)))
+  expect_output(SW(print(summary(m))))
   # expect warning in summary output
-  expect_warning(
-    print(m),
-    "Rows with NAs for all coevolving variables were excluded from the model."
+  capture.output(
+    SW(
+      expect_warning(
+        print(m),
+        paste0(
+          "Rows with NAs for all coevolving variables were excluded ",
+          "from the model."
+        )
+      )
+    ),
+    file = nullfile()
     )
 })
