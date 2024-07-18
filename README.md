@@ -5,6 +5,11 @@
 
 # coevolve
 
+<!-- badges: start -->
+
+[![R-CMD-check](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian dynamic
@@ -100,14 +105,14 @@ m <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 1 finished in 33.2 seconds.
-#> Chain 4 finished in 33.4 seconds.
-#> Chain 2 finished in 33.9 seconds.
-#> Chain 3 finished in 39.9 seconds.
+#> Chain 2 finished in 36.3 seconds.
+#> Chain 4 finished in 38.1 seconds.
+#> Chain 3 finished in 38.3 seconds.
+#> Chain 1 finished in 42.8 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 35.1 seconds.
-#> Total execution time: 40.2 seconds.
+#> Mean chain execution time: 38.9 seconds.
+#> Total execution time: 43.0 seconds.
 ```
 
 The results can be investigated using:
@@ -122,28 +127,28 @@ summary(m)
 #> 
 #> Autoregressive selection effects:
 #>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x    -0.84      0.63 -2.39 -0.03 1.00     2500     1302
-#> y    -0.53      0.43 -1.58 -0.02 1.00     2653     1555
+#> x    -0.87      0.61 -2.34 -0.04 1.00     2546     1116
+#> y    -0.95      0.65 -2.47 -0.05 1.00     2575     1393
 #> 
 #> Cross selection effects:
 #>       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x ⟶ y     0.12      1.10 -2.08  2.21 1.00     2173     3174
-#> y ⟶ x     0.08      0.87 -1.69  1.75 1.00     3149     2635
+#> x ⟶ y    -0.01      0.94 -1.85  1.84 1.00     3361     2821
+#> y ⟶ x    -0.02      0.97 -1.89  1.88 1.00     3386     2837
 #> 
 #> Drift scale parameters:
 #>   Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x     0.74      0.56 0.03  2.09 1.00     3592     1951
-#> y     0.74      0.58 0.03  2.13 1.00     2612     1631
+#> x     0.75      0.58 0.03  2.12 1.00     3397     1855
+#> y     0.67      0.54 0.02  2.03 1.00     2782     1969
 #> 
 #> Continuous time intercept parameters:
 #>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x     0.12      0.96 -1.82  2.01 1.00     3300     3164
-#> y     1.05      0.86 -0.64  2.69 1.00     3973     2885
+#> x     0.12      0.93 -1.68  1.93 1.00     4443     3181
+#> y     0.42      0.77 -1.11  1.94 1.00     3252     2717
 #> 
 #> Ordinal cutpoint parameters:
 #>      Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x[1]    -1.87      1.20 -4.34  0.40 1.00     2076     2780
-#> x[2]     1.22      1.15 -0.96  3.57 1.00     2599     3161
+#> x[1]    -1.97      1.07 -4.16  0.06 1.00     2625     2016
+#> x[2]     1.09      0.97 -0.71  3.12 1.00     3943     3294
 #> Warning: There were 20 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
