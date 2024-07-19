@@ -71,8 +71,8 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
-      "'ordered_logistic', 'poisson_softplus', 'normal', 'lognormal', and ",
-      "'negative_binomial_softplus' are not yet supported."
+      "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t',",
+      "'lognormal', and 'negative_binomial_softplus' are not yet supported."
     )
   )
   expect_error(
@@ -180,6 +180,21 @@ test_that("coev_make_stancode() produces expected errors", {
       "Variables following the 'normal' response distribution ",
       "must be numeric in the data."
       )
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        w = "student_t", # not numeric
+        y = "student_t"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Variables following the 'student_t' response distribution ",
+      "must be numeric in the data."
+    )
   )
   expect_error(
     coev_make_stancode(
@@ -443,7 +458,7 @@ test_that("coev_make_stancode() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'Q_diag', 'c', 'phi', 'sigma_dist', and 'rho_dist'"
+      "'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', and 'rho_dist'"
     )
   )
   expect_error(
