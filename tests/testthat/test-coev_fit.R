@@ -477,12 +477,18 @@ test_that("coev_fit() produces expected errors", {
 
 test_that("coev_fit() fits the model without error", {
   # load models
-  m1 <- coevolve:::coevfit_example1
-  m2 <- coevolve:::coevfit_example2
-  m3 <- coevolve:::coevfit_example3
-  m4 <- coevolve:::coevfit_example4
-  m5 <- coevolve:::coevfit_example5
-  m6 <- coevolve:::coevfit_example6
+  m1 <- readRDS(test_path("fixtures", "coevfit_example1.rds"))
+  m2 <- readRDS(test_path("fixtures", "coevfit_example2.rds"))
+  m3 <- readRDS(test_path("fixtures", "coevfit_example3.rds"))
+  m4 <- readRDS(test_path("fixtures", "coevfit_example4.rds"))
+  m5 <- readRDS(test_path("fixtures", "coevfit_example5.rds"))
+  m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
+  m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
+  m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
+  m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
+  m4 <- reload_fit(m4, filename = "coevfit_example4-1.csv")
+  m5 <- reload_fit(m5, filename = "coevfit_example5-1.csv")
+  m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # expect no errors for model fitting or summaries
@@ -509,7 +515,8 @@ test_that("coev_fit() fits the model without error", {
 
 test_that("effects_mat argument to coev_fit() works as expected", {
   # load model
-  m <- coevolve:::coevfit_example5
+  m <- readRDS(test_path("fixtures", "coevfit_example5.rds"))
+  m <- reload_fit(m, filename = "coevfit_example5-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # expect no errors for model fitting or summaries
@@ -539,7 +546,8 @@ test_that("effects_mat argument to coev_fit() works as expected", {
 
 test_that("coev_fit() works with missing data", {
   # load model
-  m <- coevolve:::coevfit_example6
+  m <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
+  m <- reload_fit(m, filename = "coevfit_example6-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # fitted without error

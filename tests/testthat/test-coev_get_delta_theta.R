@@ -1,6 +1,7 @@
 test_that("coev_get_delta_theta() produces expected errors and output", {
   # load model
-  m <- coevolve:::coevfit_example1
+  m <- readRDS(test_path("fixtures", "coevfit_example1.rds"))
+  m <- reload_fit(m, filename = "coevfit_example1-1.csv")
   # expect the following errors
   expect_error(
     coev_get_delta_theta(object = "fail"),

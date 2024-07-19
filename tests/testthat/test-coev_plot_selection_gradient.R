@@ -1,6 +1,7 @@
 test_that("coev_plot_selection_gradient() produces expected errors and output", {
   # load model
-  m <- coevolve:::coevfit_example1
+  m <- readRDS(test_path("fixtures", "coevfit_example1.rds"))
+  m <- reload_fit(m, filename = "coevfit_example1-1.csv")
   # expect the following errors
   expect_error(
     coev_plot_selection_gradient(object = "fail", var1 = "x", var2 = "y"),

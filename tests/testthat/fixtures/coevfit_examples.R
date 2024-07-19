@@ -134,7 +134,7 @@ coevfit_example6 <-
 # update cmdstanr file locations
 update_file_location <- function(coevfit) {
   coevfit$fit$save_output_files(
-    dir = "./tests/coevfit_examples",
+    dir = "./tests/testthat/fixtures",
     basename = deparse(substitute(coevfit)),
     timestamp = FALSE,
     random = FALSE
@@ -149,14 +149,20 @@ suppressMessages({
   update_file_location(coevfit_example6)
 })
 
-# save as internal data
-usethis::use_data(
-  coevfit_example1,
-  coevfit_example2,
-  coevfit_example3,
-  coevfit_example4,
-  coevfit_example5,
-  coevfit_example6,
-  internal = TRUE,
-  overwrite = TRUE
-)
+# save coevfit objects as rds files
+save_coevfit_rds <- function(coevfit) {
+  saveRDS(
+    coevfit,
+    file = paste0(
+      "./tests/testthat/fixtures/",
+      deparse(substitute(coevfit)),
+      ".rds"
+      )
+    )
+}
+save_coevfit_rds(coevfit_example1)
+save_coevfit_rds(coevfit_example2)
+save_coevfit_rds(coevfit_example3)
+save_coevfit_rds(coevfit_example4)
+save_coevfit_rds(coevfit_example5)
+save_coevfit_rds(coevfit_example6)
