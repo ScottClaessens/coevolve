@@ -24,13 +24,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   }
   # stop if response distributions are not valid
   if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic",
-                                "poisson_softplus", "normal", "lognormal",
-                                "negative_binomial_softplus"))) {
+                                "poisson_softplus", "normal", "student_t",
+                                "lognormal", "negative_binomial_softplus"))) {
     stop2(
       paste0(
         "Response distributions other than 'bernoulli_logit', ",
-        "'ordered_logistic', 'poisson_softplus', 'normal', 'lognormal', and ",
-        "'negative_binomial_softplus' are not yet supported."
+        "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
+        "'lognormal', and 'negative_binomial_softplus' are not yet supported."
         )
       )
   }
@@ -116,6 +116,17 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         )
     }
   }
+  # stop if any student t variables are not numeric
+  for (i in 1:length(distributions)) {
+    if (distributions[i] == "student_t" & !is.numeric(data[,variables[i]])) {
+      stop2(
+        paste0(
+          "Variables following the 'student_t' response distribution must be ",
+          "numeric in the data."
+        )
+      )
+    }
+  }
   # stop if any lognormal variables are not numeric or are
   # equal to or less than zero
   for (i in 1:length(distributions)) {
@@ -187,7 +198,7 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       }
     }
   }
-  # if user entered a geographic distance matrix
+  # if user entered a distance matrix
   if (!is.null(dist_mat)) {
     # stop if dist_mat is not a matrix
     if (!methods::is(dist_mat, "matrix")) {
@@ -234,13 +245,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     }
     # stop if prior names not allowed
     if (!all(names(prior) %in% c("b", "eta_anc", "A_offdiag", "A_diag",
-                                 "Q_diag", "c", "phi", "sigma_dist",
+                                 "Q_diag", "c", "phi", "nu", "sigma_dist",
                                  "rho_dist"))) {
       stop2(
         paste0(
           "Argument 'prior' list contains names that are not allowed. Please ",
           "use only the following names: 'b', 'eta_anc', 'A_offdiag', ",
-          "'A_diag', 'Q_diag', 'c', 'phi', 'sigma_dist', and 'rho_dist'"
+          "'A_diag', 'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', and 'rho_dist'"
           )
         )
     }

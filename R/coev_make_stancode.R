@@ -8,8 +8,8 @@
 #'   Must identify at least two variables. Variable names must refer to valid
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{normal}, \code{lognormal}, and
-#'   \code{negative_binomial_softplus}.
+#'   \code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal},
+#'   and \code{negative_binomial_softplus}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -35,6 +35,7 @@
 #'   continuous time intercepts (\code{b}), the ancestral states for the traits
 #'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 #'   overdispersion parameters for negative binomial variables (\code{phi}),
+#'   the degrees of freedom parameters for Student t variables (\code{nu}),
 #'   the sigma parameters for Gaussian Processes over locations
 #'   (\code{sigma_dist}), and the rho parameter for Gaussian Processes over
 #'   locations (\code{rho_dist}). These must be entered with valid prior
@@ -86,6 +87,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       A_diag     = "std_normal()",
       Q_diag     = "std_normal()",
       c          = "normal(0, 2)",
+      nu         = "gamma(2, 0.1)",
       sigma_dist = "exponential(1)",
       rho_dist   = "exponential(1)"
     )
@@ -268,6 +270,15 @@ coev_make_stancode <- function(data, variables, id, tree,
           "// cut points for variable ", i, "\n"
           )
     }
+    # add degrees of freedom for student_t distributions
+    if (distributions[i] == "student_t") {
+      sc_parameters <-
+        paste0(
+          sc_parameters,
+          "  real<lower=1> nu", i, "; ",
+          "// student t degrees of freedom for variable ", i, "\n"
+          )
+    }
     # add overdispersion parameters for negative_binomial_softplus distributions
     if (distributions[i] == "negative_binomial_softplus") {
       sc_parameters <-
@@ -417,6 +428,12 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_model <- paste0(sc_model, "  c", j, " ~ ", priors$c, ";\n")
     }
   }
+  # add priors for any degrees of freedom
+  for (j in 1:length(distributions)) {
+    if (distributions[j] == "student_t") {
+      sc_model <- paste0(sc_model, "  nu", j, " ~ ", priors$nu, ";\n")
+    }
+  }
   # add priors for any overdispersion parameters
   for (j in 1:length(distributions)) {
     if (distributions[j] == "negative_binomial_softplus") {
@@ -483,6 +500,14 @@ coev_make_stancode <- function(data, variables, id, tree,
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         ", sigma_tips[i,", j, "]);\n"
         )
+    } else if (distributions[j] == "student_t") {
+      sc_model <- paste0(
+        sc_model,
+        "        if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
+        "student_t(nu", j, ", eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        ", sigma_tips[i,", j, "]);\n"
+      )
     } else if (distributions[j] == "lognormal") {
       sc_model <- paste0(
         sc_model,
@@ -565,6 +590,18 @@ coev_make_stancode <- function(data, variables, id, tree,
         ", sigma_tips[i,", j, "]);\n",
         "      yrep_temp[i,", j, "] = ",
         "normal_rng(eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        ", sigma_tips[i,", j, "]);\n"
+      )
+    } else if (distributions[j] == "student_t") {
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
+        "student_t_lpdf(y[i,", j, "] | nu", j, ", eta[i,", j, "]",
+        ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
+        ", sigma_tips[i,", j, "]);\n",
+        "      yrep_temp[i,", j, "] = ",
+        "student_t_rng(nu", j, ", eta[i,", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[i,", j, "]"), ""),
         ", sigma_tips[i,", j, "]);\n"
       )
