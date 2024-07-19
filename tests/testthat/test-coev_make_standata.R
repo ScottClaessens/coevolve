@@ -71,8 +71,8 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
-      "'ordered_logistic', 'poisson_softplus', 'normal', 'lognormal', and ",
-      "'negative_binomial_softplus' are not yet supported."
+      "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
+      "'lognormal', and 'negative_binomial_softplus' are not yet supported."
     )
   )
   expect_error(
@@ -180,6 +180,21 @@ test_that("coev_make_standata() produces expected errors", {
       "Variables following the 'normal' response distribution ",
       "must be numeric in the data."
       )
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        w = "student_t", # not numeric
+        y = "student_t"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Variables following the 'student_t' response distribution ",
+      "must be numeric in the data."
+    )
   )
   expect_error(
     coev_make_standata(
@@ -443,7 +458,7 @@ test_that("coev_make_standata() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'Q_diag', 'c', 'phi', 'sigma_dist', and 'rho_dist'"
+      "'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', and 'rho_dist'"
     )
   )
   expect_error(
@@ -482,8 +497,12 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
+      u = rnorm(n),
+      v = as.integer(rnbinom(n, mu = 4, size = 1)),
+      w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
-      y = ordered(sample(1:4, size = n, replace = TRUE))
+      y = ordered(sample(1:4, size = n, replace = TRUE)),
+      z = rpois(n, 3)
     )
   })
   # make stan data
@@ -491,8 +510,12 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     coev_make_standata(
       data = d,
       variables = list(
+        u = "student_t",
+        v = "negative_binomial_softplus",
+        w = "normal",
         x = "bernoulli_logit",
-        y = "ordered_logistic"
+        y = "ordered_logistic",
+        z = "poisson_softplus"
       ),
       id = "id",
       tree = tree

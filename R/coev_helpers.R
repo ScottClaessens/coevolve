@@ -29,7 +29,7 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     stop2(
       paste0(
         "Response distributions other than 'bernoulli_logit', ",
-        "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t',",
+        "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
         "'lognormal', and 'negative_binomial_softplus' are not yet supported."
         )
       )

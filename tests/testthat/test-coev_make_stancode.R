@@ -71,7 +71,7 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
-      "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t',",
+      "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
       "'lognormal', and 'negative_binomial_softplus' are not yet supported."
     )
   )
@@ -525,6 +525,9 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
+      u = rnorm(n),
+      v = as.integer(rnbinom(n, mu = 4, size = 1)),
+      w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
       y = ordered(sample(1:4, size = n, replace = TRUE)),
       z = rpois(n, 3)
@@ -535,6 +538,9 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     coev_make_stancode(
       data = d,
       variables = list(
+          u = "student_t",
+          v = "negative_binomial_softplus",
+          w = "normal",
           x = "bernoulli_logit",
           y = "ordered_logistic",
           z = "poisson_softplus"
