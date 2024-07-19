@@ -8,8 +8,8 @@
 #'   Must identify at least two variables. Variable names must refer to valid
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal}, and
-#'   \code{negative_binomial_softplus}.
+#'   \code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal},
+#'   and \code{negative_binomial_softplus}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
