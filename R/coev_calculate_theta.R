@@ -1,12 +1,46 @@
-#' Calculate optimal trait values (theta) given a fitted \code{coevfit} object and a vector of "intervention" trait values x-hat, which are assumed to be held constant.
+#' Calculate optimal trait values (theta) for a fitted \code{coevfit} object
 #'
 #' @param object An object of class \code{coevfit}
-#' @param x_hat A numeric vector of intervention values where the elements correspond to the varibables of the coevfit. If an element is NA, then
+#' @param intervention_values A named list of variables and associated
+#'   intervention values for calculating optimal trait values. All coevolving
+#'   variables must be declared separately in the named list without repetition.
+#'   If the intervention value for a particular variable is set to NA, this
+#'   variable is treated as a free variable. Otherwise, if the intervention
+#'   value for a particular variable is specified, the variable is held
+#'   constant at this trait value in the calculation. At least one variable must
+#'   be declared as a free variable (e.g., \code{list(var1 = NA, var2 = 0)}).
 #'
 #' @return Posterior samples in matrix format
 #' @export
 #'
-
+#' @examples
+#' \dontrun{
+#' # simulate data
+#' n <- 20
+#' tree <- ape::rcoal(n)
+#' d <- data.frame(
+#'   id = tree$tip.label,
+#'   x = rbinom(n, size = 1, prob = 0.5),
+#'   y = ordered(sample(1:4, size = n, replace = TRUE))
+#' )
+#' # fit dynamic coevolutionary model
+#' m <- coev_fit(
+#'   data = d,
+#'   variables = list(
+#'     x = "bernoulli_logit",
+#'     y = "ordered_logistic"
+#'   ),
+#'   id = "id",
+#'   tree = tree,
+#'   # additional arguments for cmdstanr::sample()
+#'   chains = 4,
+#'   parallel_chains = 4,
+#'   iter_warmup = 500,
+#'   seed = 1
+#' )
+#' # calculate theta given intervention values
+#' coev_calculate_theta(m, list(x = NA, y = 0))
+#' }
 coev_calculate_theta <- function(object, x_hat) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {

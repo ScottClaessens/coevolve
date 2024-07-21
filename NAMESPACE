@@ -3,6 +3,7 @@
 S3method(print,coevfit)
 S3method(print,coevsummary)
 S3method(summary,coevfit)
+export(coev_calculate_theta)
 export(coev_fit)
 export(coev_get_delta_theta)
 export(coev_make_stancode)
