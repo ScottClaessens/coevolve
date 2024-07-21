@@ -8,7 +8,8 @@
 #'   variable is treated as a free variable. Otherwise, if the intervention
 #'   value for a particular variable is specified, the variable is held
 #'   constant at this trait value in the calculation. At least one variable must
-#'   be declared as a free variable (e.g., \code{list(var1 = NA, var2 = 0)}).
+#'   be declared as a free variable and at least one variable must be held
+#'   constant (e.g., \code{list(var1 = NA, var2 = 0)}).
 #'
 #' @return Posterior samples in matrix format
 #' @export
@@ -41,60 +42,96 @@
 #' # calculate theta given intervention values
 #' coev_calculate_theta(m, list(x = NA, y = 0))
 #' }
-coev_calculate_theta <- function(object, x_hat) {
+coev_calculate_theta <- function(object, intervention_values) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
-    stop2("Argument 'object' must be a fitted coevolutionary model of class coevfit.")
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "of class coevfit."
+        )
+      )
   }
-
-  # stop if all variables are held constant
-  if (mean(is.na(x_hat)) == 0) {
-      stop2("Argument 'x_hat' must have at least one NA value, signifying a free variable. If all variables held constant, the system is already at equilibrium--nothing to compute!.")
+  # stop if intervention_values argument is not a named list
+  if (!is.list(intervention_values) | is.null(names(intervention_values))) {
+    stop2("Argument 'intervention_values' is not a named list.")
   }
-
-   # warn all variables are free
-   if (mean(is.na(x_hat)) == 1) {
-    warnings("Argument 'x_hat' has no variables held constant (i.e., all values are NA), is this what you intended?")
-   }
-
+  # stop if intervention_list contains variables not included in the model
+  if (!all(names(intervention_values) %in% names(object$variables))) {
+    stop2(
+      paste0(
+        "At least one variable in 'intervention_values' is not included in ",
+        "the fitted model."
+      )
+    )
+  }
+  # stop if any coevolving variables are not listed in intervention_values
+  if (any(!(names(object$variables) %in% names(intervention_values)))) {
+    stop2(
+      paste0(
+        "At least one coevolving variable in the model is not included in ",
+        "argument 'intervention_values'."
+        )
+      )
+  }
+  # stop if repetition in intervention_values
+  if (any(duplicated(names(intervention_values)))) {
+    stop2("Argument 'intervention_values' contains duplicated variable names.")
+  }
+  # stop if all variables are held constant in intervention_list
+  if (mean(is.na(intervention_values)) == 0) {
+    stop2(
+      paste0(
+        "Argument 'intervention_values' must have at least one NA value ",
+        "declaring a free variable. If all variables are held constant, the ",
+        "system is already at equilibrium and there is nothing to compute."
+        )
+      )
+  }
+  # stop if all variables in intervention_values are free
+  if (mean(is.na(intervention_values)) == 1) {
+    stop2(
+      paste0(
+        "Argument 'intervention_values' must have at least one variable ",
+        "held constant (i.e., all values are NA)."
+        )
+      )
+  }
+  # construct intervention values x_hat
+  x_hat <- unlist(intervention_values[names(object$variables)])
   # extract posterior draws
   post <- posterior::as_draws_rvars(object$fit$draws(variables = c("A", "b")))
-
   A <- posterior::draws_of(post$A)
   b <- posterior::draws_of(post$b)
-
-  # stop if object if not enough x_hat values specified
-  if (dim(A)[2] != length(x_hat)) {
-    stop2("Argument 'x_hat' must be the same length as the number of variables in the fit model.")
+  # partition the matrices
+  held_indices <- which(!is.na(x_hat))
+  free_indices <- which(is.na(x_hat))
+  A_free_free  <- A[,free_indices, free_indices, drop = FALSE]
+  A_free_held  <- A[,free_indices, held_indices, drop = FALSE]
+  b_free       <- b[,free_indices, drop = FALSE]
+  # construct theta matrix
+  theta <- matrix(NA, nrow = posterior::ndraws(post), ncol = length(x_hat))
+  for (i in 1:posterior::ndraws(post)) {
+    # compute the equilibrium for the free variables
+    if (length(held_indices) == 1) {
+      equilibrium_free <-
+        -solve( A_free_free[i,,] ) %*%
+        (b_free[i,] + as.matrix(A_free_held[i,,]) %*% x_hat[!is.na(x_hat)])
+    } else {
+      equilibrium_free <-
+        -solve( A_free_free[i,,] ) %*%
+        (b_free[i,] + A_free_held[i,,] %*% x_hat[!is.na(x_hat)])
+    }
+    # initialize the equilibrium vector
+    equilibrium <- rep(NA, length(x_hat))
+    # fill in the computed equilibrium values for free variables
+    equilibrium[free_indices] <- equilibrium_free
+    # fill in the constant values for held variables
+    equilibrium[held_indices] <- x_hat[!is.na(x_hat)]
+    # add to theta matrix
+    theta[i,] = equilibrium
   }
-
-# Partition the matrices
-held_indices <- which(!is.na(x_hat))
-free_indices <- which(is.na(x_hat))
-A_ff <- A[,free_indices, free_indices, drop = F]
-b_f <- b[,free_indices, drop = F]
-A_fc <- A[,free_indices, held_indices, drop = F]
-
-theta <- matrix(NA, nrow = ndraws(post), ncol = length(x_hat))
-
-for (i in 1:ndraws(post)) {
-  # Compute the equilibrium for the free variables
-  if (length(held_indices) == 1) equilibrium_f <- -solve( A_ff[i,,] ) %*% (b_f[i,] + as.matrix(A_fc[i,,]) %*% x_hat[!is.na(x_hat)])
-  else equilibrium_f <- -solve( A_ff[i,,] ) %*% (b_f[i,] + A_fc[i,,] %*% x_hat[!is.na(x_hat)])
-
-  # Initialize the equilibrium vector
-  equilibrium <- rep(NA, length(x_hat))
-
-  # Fill in the computed equilibrium values for free variables
-  equilibrium[free_indices] <- equilibrium_f
-
-  # Fill in the constant values for held variables
-  equilibrium[held_indices] <- x_hat[!is.na(x_hat)]
-
-  theta[i,] = equilibrium
+  # add column names to theta matrix
+  colnames(theta) <- names(object$variables)
+  return(theta)
 }
-
-return( theta )
-}
-
-

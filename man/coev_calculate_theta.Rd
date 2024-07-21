@@ -4,7 +4,7 @@
 \alias{coev_calculate_theta}
 \title{Calculate optimal trait values (theta) for a fitted \code{coevfit} object}
 \usage{
-coev_calculate_theta(object, x_hat)
+coev_calculate_theta(object, intervention_values)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}}
@@ -16,7 +16,8 @@ If the intervention value for a particular variable is set to NA, this
 variable is treated as a free variable. Otherwise, if the intervention
 value for a particular variable is specified, the variable is held
 constant at this trait value in the calculation. At least one variable must
-be declared as a free variable (e.g., \code{list(var1 = NA, var2 = 0)}).}
+be declared as a free variable and at least one variable must be held
+constant (e.g., \code{list(var1 = NA, var2 = 0)}).}
 }
 \value{
 Posterior samples in matrix format
