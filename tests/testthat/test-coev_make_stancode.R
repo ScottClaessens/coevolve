@@ -71,8 +71,8 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
-      "'ordered_logistic', 'poisson_softplus', 'normal', 'lognormal', and ",
-      "'negative_binomial_softplus' are not yet supported."
+      "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
+      "'lognormal', and 'negative_binomial_softplus' are not yet supported."
     )
   )
   expect_error(
@@ -185,6 +185,21 @@ test_that("coev_make_stancode() produces expected errors", {
     coev_make_stancode(
       data = d,
       variables = list(
+        w = "student_t", # not numeric
+        y = "student_t"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Variables following the 'student_t' response distribution ",
+      "must be numeric in the data."
+    )
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
         x = "bernoulli_logit",
         y = "ordered_logistic"
       ),
@@ -248,21 +263,6 @@ test_that("coev_make_stancode() produces expected errors", {
       )
     },
     "The id variable in the data must not contain NAs."
-  )
-  expect_error(
-    {
-      d2 <- d; d2$y[1] <- NA
-      coev_make_stancode(
-        data = d2,
-        variables = list(
-          x = "bernoulli_logit",
-          y = "ordered_logistic"
-        ),
-        id = "id",
-        tree = tree
-      )
-    },
-    "Coevolving variables in the data must not contain NAs."
   )
   expect_error(
     coev_make_stancode(
@@ -458,7 +458,7 @@ test_that("coev_make_stancode() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'Q_diag', 'c', 'phi', 'sigma_dist', and 'rho_dist'"
+      "'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', and 'rho_dist'"
     )
   )
   expect_error(
@@ -525,6 +525,9 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
+      u = rnorm(n),
+      v = as.integer(rnbinom(n, mu = 4, size = 1)),
+      w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
       y = ordered(sample(1:4, size = n, replace = TRUE)),
       z = rpois(n, 3)
@@ -535,6 +538,9 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     coev_make_stancode(
       data = d,
       variables = list(
+          u = "student_t",
+          v = "negative_binomial_softplus",
+          w = "normal",
           x = "bernoulli_logit",
           y = "ordered_logistic",
           z = "poisson_softplus"
@@ -656,5 +662,40 @@ test_that("coev_make_stancode() produces neg binomial priors as expected", {
       tree = tree,
       prior = list(phi = "std_normal()")
     )
+  )
+})
+
+test_that("coev_make_stancode() works with missing data", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = rbinom(n, size = 1, prob = 0.5)
+    )
+  })
+  # some data are missing
+  d$x[c(1,2)] <- NA
+  d$y[c(1,3)] <- NA
+  # get stan code
+  sc <- coev_make_stancode(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree
+  )
+  # runs without error
+  expect_no_error(sc)
+  # syntactically correct
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
   )
 })

@@ -107,6 +107,13 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
     rownames(phi) <- names(object$variables)[readr::parse_number(phi$variable)]
     phi <- phi[,2:ncol(phi)]
   }
+  # summarise degrees of freedom parameters
+  nu <- NULL
+  if ("student_t" %in% object$variables) {
+    nu <- s[stringr::str_starts(s$variable, "nu"),]
+    rownames(nu) <- names(object$variables)[readr::parse_number(nu$variable)]
+    nu <- nu[,2:ncol(nu)]
+  }
   # summarise gaussian process parameters
   gpterms <- NULL
   if (!is.null(object$dist_mat)) {
@@ -122,9 +129,10 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   # create summary list
   out <-
     list(
+      data           = object$data,
       variables      = object$variables,
       data_name      = object$data_name,
-      nobs           = nrow(object$data),
+      nobs           = object$stan_data$N_tips,
       chains         = object$fit$num_chains(),
       iter           = object$fit$metadata()$iter_sampling,
       warmup         = object$fit$metadata()$iter_sampling,
@@ -135,6 +143,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       sde_intercepts = sde_intercepts,
       cutpoints      = cutpoints,
       phi            = phi,
+      nu             = nu,
       gpterms        = gpterms,
       num_divergent  = sum(
         object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent
@@ -212,6 +221,12 @@ print.coevsummary <- function(x, digits = 2, ...) {
     cat("Overdispersion parameters:\n")
     print_format(x$phi, digits = digits)
   }
+  # print degrees of freedom parameters
+  if (!is.null(x$nu)) {
+    cat("\n")
+    cat("Degrees of freedom parameters:\n")
+    print_format(x$nu, digits = digits)
+  }
   # print gaussian process parameters
   if (!is.null(x$gpterms)) {
     cat("\n")
@@ -239,6 +254,17 @@ print.coevsummary <- function(x, digits = 2, ...) {
     )
     cat("\n")
   }
+  # warnings if data excluded
+  if (nrow(x$data) != x$nobs) {
+    warning2(
+      paste0(
+        "Rows with NAs for all coevolving variables were ",
+        "excluded from the model."
+      )
+    )
+    cat("\n")
+  }
+  # return
   invisible(x)
 }
 

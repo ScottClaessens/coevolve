@@ -1,27 +1,7 @@
 test_that("coev_plot_flowfield() produces expected errors and output", {
-  # simulate data
-  withr::with_seed(1, {
-    n <- 5
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rbinom(n, size = 1, prob = 0.5),
-      y = rbinom(n, size = 1, prob = 0.5)
-    )
-  })
-  m <- coev_fit(
-    data = d,
-    variables = list(
-      x = "bernoulli_logit",
-      y = "bernoulli_logit"
-    ),
-    id = "id",
-    tree = tree,
-    parallel_chains = 4,
-    iter_warmup = 500,
-    iter_sampling = 500,
-    seed = 1
-  )
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example1.rds"))
+  m <- reload_fit(m, filename = "coevfit_example1-1.csv")
   # expect the following errors
   expect_error(
     coev_plot_flowfield(object = "fail", var1 = "x", var2 = "y"),
@@ -48,10 +28,18 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
     "Argument 'var1' and 'var2' must refer to different variables."
   )
   expect_error(
-    coev_plot_flowfield(object = m, var1 = "x", var2 = "y", nullclines = "hello"),
+    coev_plot_flowfield(
+      object = m, var1 = "x", var2 = "y", nullclines = "hello"
+      ),
     "Argument 'nullclines' must be logical."
   )
+  # suppress warnings
+  SW <- suppressWarnings
   # should run without error
-  expect_no_error(coev_plot_flowfield(m, var1 = "x", var2 = "y"))
-  expect_no_error(coev_plot_flowfield(m, var1 = "x", var2 = "y", nullclines = TRUE))
+  expect_no_error(
+    SW(coev_plot_flowfield(m, var1 = "x", var2 = "y"))
+    )
+  expect_no_error(
+    SW(coev_plot_flowfield(m, var1 = "x", var2 = "y", nullclines = TRUE))
+    )
 })

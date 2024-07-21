@@ -24,13 +24,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   }
   # stop if response distributions are not valid
   if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic",
-                                "poisson_softplus", "normal", "lognormal",
-                                "negative_binomial_softplus"))) {
+                                "poisson_softplus", "normal", "student_t",
+                                "lognormal", "negative_binomial_softplus"))) {
     stop2(
       paste0(
         "Response distributions other than 'bernoulli_logit', ",
-        "'ordered_logistic', 'poisson_softplus', 'normal', 'lognormal', and ",
-        "'negative_binomial_softplus' are not yet supported."
+        "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
+        "'lognormal', and 'negative_binomial_softplus' are not yet supported."
         )
       )
   }
@@ -42,7 +42,7 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   for (i in 1:length(distributions)) {
     if (distributions[i] == "bernoulli_logit" &
         (!is.integer(data[,variables[i]]) |
-         !all(data[,variables[i]] %in% 0:1))) {
+         !all(data[,variables[i]] %in% c(0, 1, NA)))) {
       stop2(
         paste0(
           "Variables following the 'bernoulli_logit' response distribution ",
@@ -66,7 +66,9 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   # stop if any count variables are not integers greater than or equal to 0
   for (i in 1:length(distributions)) {
     if (distributions[i] == "poisson_softplus" &
-        (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
+        (!is.integer(data[,variables[i]]) |
+         !all(data[,variables[i]] >= 0 | is.na(data[,variables[i]])))
+        ) {
       stop2(
         paste0(
           "Variables following the 'poisson_softplus' response distribution ",
@@ -75,7 +77,9 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         )
     }
     if (distributions[i] == "negative_binomial_softplus" &
-        (!is.integer(data[,variables[i]]) | !all(data[,variables[i]] >= 0))) {
+        (!is.integer(data[,variables[i]]) |
+         !all(data[,variables[i]] >= 0 | is.na(data[,variables[i]])))
+        ) {
       stop2(
         paste0(
           "Variables following the 'negative_binomial_softplus' response ",
@@ -112,11 +116,24 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         )
     }
   }
+  # stop if any student t variables are not numeric
+  for (i in 1:length(distributions)) {
+    if (distributions[i] == "student_t" & !is.numeric(data[,variables[i]])) {
+      stop2(
+        paste0(
+          "Variables following the 'student_t' response distribution must be ",
+          "numeric in the data."
+        )
+      )
+    }
+  }
   # stop if any lognormal variables are not numeric or are
   # equal to or less than zero
   for (i in 1:length(distributions)) {
-    if (distributions[i] == "lognormal" & (!is.numeric(data[,variables[i]]) |
-                                           any(data[,variables[i]] <= 0))) {
+    if (distributions[i] == "lognormal" &
+        (!is.numeric(data[,variables[i]]) |
+         !all(data[,variables[i]] > 0 | is.na(data[,variables[i]])))
+        ) {
       stop2(
         paste0(
           "Variables following the 'lognormal' response distribution must be ",
@@ -144,10 +161,6 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   # stop if id in data contains missing values
   if (any(is.na(data[,id]))) {
     stop2("The id variable in the data must not contain NAs.")
-  }
-  # stop if coevolving variables contain missing data
-  if (any(is.na(data[,variables]))) {
-    stop2("Coevolving variables in the data must not contain NAs.")
   }
   # if user entered an effects matrix
   if (!is.null(effects_mat)) {
@@ -185,7 +198,7 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       }
     }
   }
-  # if user entered a geographic distance matrix
+  # if user entered a distance matrix
   if (!is.null(dist_mat)) {
     # stop if dist_mat is not a matrix
     if (!methods::is(dist_mat, "matrix")) {
@@ -232,13 +245,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     }
     # stop if prior names not allowed
     if (!all(names(prior) %in% c("b", "eta_anc", "A_offdiag", "A_diag",
-                                 "Q_diag", "c", "phi", "sigma_dist",
+                                 "Q_diag", "c", "phi", "nu", "sigma_dist",
                                  "rho_dist"))) {
       stop2(
         paste0(
           "Argument 'prior' list contains names that are not allowed. Please ",
           "use only the following names: 'b', 'eta_anc', 'A_offdiag', ",
-          "'A_diag', 'Q_diag', 'c', 'phi', 'sigma_dist', and 'rho_dist'"
+          "'A_diag', 'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', and 'rho_dist'"
           )
         )
     }

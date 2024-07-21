@@ -22,6 +22,10 @@ knitr::opts_chunk$set(
 
 # coevolve
 
+<!-- badges: start -->
+  [![R-CMD-check](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian dynamic coevolutionary
