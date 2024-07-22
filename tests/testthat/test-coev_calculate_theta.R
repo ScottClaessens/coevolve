@@ -35,6 +35,20 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_error(
     coev_calculate_theta(
       object = m,
+      intervention_values = list(y = c(NA, NA), z = 0)
+    ),
+    "Values in 'intervention_values' must each be of length one."
+  )
+  expect_error(
+    coev_calculate_theta(
+      object = m,
+      intervention_values = list(y = "fail", z = 0)
+    ),
+    "Values in 'intervention_values' must each be NA or numeric."
+  )
+  expect_error(
+    coev_calculate_theta(
+      object = m,
       intervention_values = list(y = 0, z = 0)
     ),
     paste0(
