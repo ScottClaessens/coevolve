@@ -1,8 +1,10 @@
-#' Extract delta theta from a fitted \code{coevfit} object
+#' Calculate delta theta from a fitted \code{coevfit} object
 #'
 #' @param object An object of class \code{coevfit}
-#' @param response A character string equal to one of the coevolving variables in the model
-#' @param predictor A character string equal to one of the coevolving variables in the model
+#' @param response A character string equal to one of the coevolving variables
+#'   in the model
+#' @param predictor A character string equal to one of the coevolving variables
+#'   in the model
 #'
 #' @return Posterior samples in the draws_array format
 #' @export
@@ -33,30 +35,41 @@
 #'   seed = 1
 #' )
 #' # get delta theta
-#' coev_get_delta_theta(m, response = "y", predictor = "x")
+#' coev_calculate_delta_theta(m, response = "y", predictor = "x")
 #' }
-coev_get_delta_theta <- function(object, response, predictor) {
+coev_calculate_delta_theta <- function(object, response, predictor) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
-    stop2("Argument 'object' must be a fitted coevolutionary model of class coevfit.")
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "of class coevfit."
+        )
+      )
   }
   if (!is.character(response) | length(response) != 1) {
     # stop if response not character string of length one
     stop2("Argument 'response' must be a character string of length one.")
   } else if (!(response %in% names(object$variables))) {
     # stop if response not included in model
-    stop2("Argument 'response' must be a variable included in the fitted model.")
+    stop2(
+      "Argument 'response' must be a variable included in the fitted model."
+      )
   }
   if (!is.character(predictor) | length(predictor) != 1) {
     # stop if predictor not character string of length one
     stop2("Argument 'predictor' must be a character string of length one.")
   } else if (!(predictor %in% names(object$variables))) {
     # stop if predictor not included in model
-    stop2("Argument 'predictor' must be a variable included in the fitted model.")
+    stop2(
+      "Argument 'predictor' must be a variable included in the fitted model."
+      )
   }
   # stop if response and predictor are the same variable
   if (response == predictor) {
-    stop2("Argument 'response' and 'predictor' must refer to different variables.")
+    stop2(
+      "Argument 'response' and 'predictor' must refer to different variables."
+      )
   }
   # extract posterior draws
   draws <- posterior::as_draws_rvars(object$fit$draws())
