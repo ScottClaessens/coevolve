@@ -99,8 +99,8 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
   dd <- dplyr::group_by(d, .data$response, .data$predictor)
   dd <- dplyr::summarise(
     dd,
-    lower = stats::quantile(.data$delta_theta, 0.02),
-    upper = stats::quantile(.data$delta_theta, 0.98),
+    lower = stats::quantile(.data$delta_theta, 0.025),
+    upper = stats::quantile(.data$delta_theta, 0.975),
     .groups = "drop"
     )
   # plot
@@ -124,7 +124,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       ymin = -Inf, ymax = Inf
     ) +
     ggplot2::facet_grid(
-      .data$response ~ .data$predictor,
+      .data$predictor ~ .data$response,
       switch = "y"
       ) +
     ggplot2::labs(
