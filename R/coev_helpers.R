@@ -93,7 +93,7 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   for (i in 1:length(distributions)) {
     if (distributions[i] == "negative_binomial_softplus") {
       # if variance <= mean
-      if (sd(data[,variables[i]])^2 <= mean(data[,variables[i]])) {
+      if (stats::sd(data[,variables[i]])^2 <= mean(data[,variables[i]])) {
         stop2(
           paste0(
             "No overdispersion or potentially underdispersion for ",
