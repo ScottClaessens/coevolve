@@ -73,29 +73,40 @@ coev_calculate_delta_theta <- function(object, response, predictor) {
   }
   # extract posterior draws
   draws <- posterior::as_draws_rvars(object$fit$draws())
-  # get variables
-  A <- draws$A
-  b <- draws$b
   # ids for response and predictor
   id_resp <- which(response  == names(object$variables))
   id_pred <- which(predictor == names(object$variables))
-  # medians and median absolute deviations for both variables
-  eta_resp <- draws$eta[1:nrow(object$data), id_resp]
-  eta_pred <- draws$eta[1:nrow(object$data), id_pred]
-  med_resp <- posterior::rvar_median(eta_resp)
-  med_pred <- posterior::rvar_median(eta_pred)
-  diff_resp <- posterior::rvar_mad(eta_resp)
-  diff_pred <- posterior::rvar_mad(eta_pred)
-  # calculate theta for response given value of predictor
-  calculate_theta <- function(pred_value) {
-    -( pred_value * A[id_resp,id_pred] + b[id_resp] ) / A[id_resp,id_resp]
+  # medians and median absolute deviations for all variables
+  eta  <- draws$eta[1:nrow(object$data),]
+  med  <- apply(eta, 2, posterior::rvar_median)
+  diff <- apply(eta, 2, posterior::rvar_mad)
+  # construct intervention values list
+  values1 <- list()
+  values2 <- list()
+  for (j in 1:length(names(object$variables))) {
+    variables <- names(object$variables)
+    if (j == id_resp) {
+      # if variable is response, set to NA
+      values1[[variables[j]]] <- NA
+      values2[[variables[j]]] <- NA
+    } else if (j == id_pred) {
+      # else if variable is predictor, set to median and median+mad
+      values1[[variables[j]]] <- stats::median(med[[j]])
+      values2[[variables[j]]] <- stats::median(med[[j]] + diff[[j]])
+    } else {
+      # else for all other variables, set to median
+      values1[[variables[j]]] <- stats::median(med[[j]])
+      values2[[variables[j]]] <- stats::median(med[[j]])
+    }
   }
   # calculate delta theta (change in theta with +1 mad increase in predictor)
-  med_theta  <- calculate_theta(med_pred)
-  diff_theta <- calculate_theta(med_pred + diff_pred)
-  delta_theta <- (diff_theta - med_theta) / diff_resp
+  # all other variables are held at their median values
+  theta1 <- coev_calculate_theta(object, intervention_values = values1)
+  theta2 <- coev_calculate_theta(object, intervention_values = values2)
+  delta_theta <-
+    (theta2[,id_resp] - theta1[,id_resp]) / stats::median(diff[[id_resp]])
   # save as draws array for output
-  delta_theta <- posterior::as_draws_array(delta_theta)
+  delta_theta <- posterior::as_draws_array(as.matrix(delta_theta))
   dimnames(delta_theta)$variable <- "delta_theta"
   return( delta_theta )
 }
