@@ -78,6 +78,19 @@ coev_calculate_theta <- function(object, intervention_values) {
   if (any(duplicated(names(intervention_values)))) {
     stop2("Argument 'intervention_values' contains duplicated variable names.")
   }
+  # stop if any values in intervention_list are not of length one
+  # or if any values are not NA and not numeric
+  if (any(unlist(lapply(intervention_values, length)) != 1) |
+      any(unlist(lapply(intervention_values,
+                        function(x) !is.na(x) & !is.numeric(x))))
+      ) {
+    stop2(
+      paste0(
+        "Values in 'intervention_values' must either be NA or a ",
+        "numeric value of length one."
+        )
+    )
+  }
   # stop if all variables are held constant in intervention_list
   if (mean(is.na(intervention_values)) == 0) {
     stop2(
