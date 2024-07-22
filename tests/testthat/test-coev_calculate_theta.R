@@ -1,7 +1,7 @@
 test_that("coev_calculate_theta() produces expected errors and output", {
   # load model
   m <- readRDS(test_path("fixtures", "coevfit_example4.rds"))
-  m <- reload_fit(m, filename = "coevfit_example1-4.csv")
+  m <- reload_fit(m, filename = "coevfit_example4-1.csv")
   # expect the following errors
   expect_error(
     coev_calculate_theta(object = "fail"),
@@ -51,7 +51,8 @@ test_that("coev_calculate_theta() produces expected errors and output", {
     paste0(
       "Argument 'intervention_values' must have at least one variable ",
       "held constant (i.e., all values are NA)."
-    )
+    ),
+    fixed = TRUE
   )
   # should run without error
   theta1 <-
@@ -69,7 +70,10 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   # output should be matrix of posterior draws
   expect_true(methods::is(theta1, "matrix"))
   expect_true(methods::is(theta2, "matrix"))
+  # output column names should be equal to variable names
+  expect_true(identical(colnames(theta1), names(m$variables)))
+  expect_true(identical(colnames(theta2), names(m$variables)))
   # variables should be correctly held constant in output
-  expect_true(unique(theta1[,"y"]) == 0)
-  expect_true(unique(theta1[,"z"]) == 0)
+  expect_true(all(theta1[,"y"] == 0))
+  expect_true(all(theta2[,"z"] == 0))
 })
