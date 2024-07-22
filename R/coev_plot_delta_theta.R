@@ -40,7 +40,12 @@
 coev_plot_delta_theta <- function(object, variables = NULL, ...) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
-    stop2("Argument 'object' must be a fitted coevolutionary model of class coevfit.")
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "of class coevfit."
+        )
+      )
   }
   # if user specifies variables argument:
   if (!is.null(variables)) {
@@ -52,7 +57,9 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       stop2("Argument 'variables' must be of length > 1.")
     } else if (!all(variables %in% names(object$variables))) {
       # stop if variables not included in model
-      stop2("Some variables in 'variables' are not included in the fitted model.")
+      stop2(
+        "Some variables in 'variables' are not included in the fitted model."
+        )
     } else if (any(duplicated(variables))) {
       # stop if variables contains duplicates
       stop2("Argument 'variables' contains duplicates.")
@@ -75,7 +82,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       .x = .data$response,
       .y = .data$predictor,
       .f = function(x, y) as.numeric(
-        coev_get_delta_theta(
+        coev_calculate_delta_theta(
           object,
           response = x,
           predictor = y
