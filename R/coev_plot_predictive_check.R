@@ -7,7 +7,7 @@
 #' @param ndraws An integer indicating the number of draws to return. The
 #'   default and maximum number of draws is the size of the posterior sample.
 #'
-#' @return A list of plots
+#' @return A list of \code{ggplot} objects
 #' @export
 #'
 #' @examples
