@@ -11,7 +11,7 @@
 #' @export
 #'
 #' @examples
-#' #' \dontrun{
+#' \dontrun{
 #' # simulate data
 #' n <- 20
 #' tree <- ape::rcoal(n)

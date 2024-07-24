@@ -25,6 +25,7 @@ Suggests:
 Config/testthat/edition: 3
 Imports: 
     ape,
+    bayesplot,
     cmdstanr,
     colorspace,
     dplyr,
