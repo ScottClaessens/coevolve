@@ -86,7 +86,6 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   } else {
     draws_ids <- sample(1:nrow(object$fit$draws()), size = ndraws)
   }
-  draws_ids <-
   # function for choosing plot type
   choose_plot_type <- function(variable) {
     # response distribution
@@ -107,18 +106,33 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   }
   for (variable in variables) {
     # variable index
-    variable_index <- which(names(object$variables) == variable)
+    var_id <- which(names(object$variables) == variable)
+    # get y and yrep
+    y <- object$data[[variable]]
+    yrep <- posterior::as_draws_matrix(post$yrep[,var_id])[draws_ids,]
+    # remove data if missing for all coevolving variables
+    all_missing <- apply(
+      object$data[,names(object$variables)], 1, function(x) all(is.na(x))
+      )
+    y <- y[!all_missing]
+    # remove missing data for this variable only
+    if (any(is.na(y))) {
+      yrep <- yrep[,!is.na(y)]
+      y <- y[!is.na(y)]
+    }
     # posterior predictive check
     pp <-
       bayesplot::pp_check(
-        object = as.numeric(object$data[[variable]]),
-        yrep = posterior::as_draws_matrix(
-          post$yrep[,variable_index]
-          )[draws_ids,],
+        object = as.numeric(y),
+        yrep = yrep,
         choose_plot_type(variable)
       ) +
-      ggplot2::ggtitle(paste0("Variable = '", variable, "'")) +
-      ggplot2::theme(panel.grid = ggplot2::element_blank())
+      ggplot2::ggtitle(
+        paste0("Variable = '", variable, "'")
+        ) +
+      ggplot2::theme(
+        panel.grid = ggplot2::element_blank()
+        )
     # add to plot list
     out[[variable]] <- pp
   }
