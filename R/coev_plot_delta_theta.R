@@ -99,8 +99,8 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
   dd <- dplyr::group_by(d, .data$response, .data$predictor)
   dd <- dplyr::summarise(
     dd,
-    lower = stats::quantile(.data$delta_theta, 0.025),
-    upper = stats::quantile(.data$delta_theta, 0.975),
+    lower = stats::quantile(.data$delta_theta, 0.05),
+    upper = stats::quantile(.data$delta_theta, 0.95),
     .groups = "drop"
     )
   # plot
@@ -108,7 +108,10 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
     data = d,
     mapping = ggplot2::aes(x = .data$delta_theta)
     ) +
-    ggdist::stat_slabinterval() +
+    ggdist::stat_slabinterval(
+      .width = c(0.5, 0.89), # 50% and 89% credible intervals
+      n = 1e4                # increased resolution
+      ) +
     ggplot2::geom_vline(
       xintercept = 0,
       linetype = "dashed"
@@ -132,7 +135,9 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       y = "From this variable...",
       title = "... to this variable."
       ) +
-    ggplot2::xlim(c(min(dd$lower), max(dd$upper))) +
+    ggplot2::coord_cartesian(
+      xlim = c(min(dd$lower), max(dd$upper))
+      ) +
     ggplot2::theme(
       axis.text.y = ggplot2::element_blank(),
       axis.ticks.y = ggplot2::element_blank(),
