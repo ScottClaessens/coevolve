@@ -110,7 +110,8 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
     ) +
     ggdist::stat_slabinterval(
       .width = c(0.5, 0.89), # 50% and 89% credible intervals
-      n = 1e4                # increased resolution
+      n = 1e4,               # increased resolution
+      ...
       ) +
     ggplot2::geom_vline(
       xintercept = 0,
