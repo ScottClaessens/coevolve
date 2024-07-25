@@ -87,6 +87,8 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
   # ornstein uhlenbeck sde function for response and predictor variable
   # this currently assumes that values for all other traits are set to zero
   OU_sde <- function(resp_value, pred_value, resp_id, pred_id) {
+    # get median absolute deviation to scale by
+    mad_scale <- ifelse(resp_id == id_var1, mad_var1, mad_var2)
     # autoregressive selection effect
     ((A[resp_id, resp_id] * resp_value +
         # cross-lagged selection effect
@@ -94,9 +96,9 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
         # sde intercept
         b[resp_id]
       # scaled by mad
-      ) / c(mad_var1, mad_var2)[resp_id]) /
+      ) / mad_scale) /
     # divided by sigma, scaled by mad
-    (Q_diag[resp_id] / c(mad_var1, mad_var2)[resp_id])
+    (Q_diag[resp_id] / mad_scale)
   }
   # get predictions for different levels of traits
   preds <-
