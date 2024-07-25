@@ -69,48 +69,52 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
   id_var2 <- which(names(object$variables) == var2)
   # get posterior draws
   draws <- posterior::as_draws_rvars(object$fit)
-  # medians and median absolute deviations for both variables
-  eta_var1 <- posterior::rvar_median(draws$eta[1:nrow(object$data), id_var1])
-  eta_var2 <- posterior::rvar_median(draws$eta[1:nrow(object$data), id_var2])
-  med_var1 <- stats::median(eta_var1)
-  med_var2 <- stats::median(eta_var2)
-  mad_var1 <- stats::mad(eta_var1)
-  mad_var2 <- stats::mad(eta_var2)
-  lower_var1 <- med_var1 - 2.5*mad_var1
-  lower_var2 <- med_var2 - 2.5*mad_var2
-  upper_var1 <- med_var1 + 2.5*mad_var1
-  upper_var2 <- med_var2 + 2.5*mad_var2
+  # medians and median absolute deviations for all variables
+  eta  <- apply(draws$eta[1:nrow(object$data),], 2, posterior::rvar_median)
+  meds <- unlist(lapply(eta, stats::median))
+  mads <- unlist(lapply(eta, stats::mad))
+  lowers <- meds - 2.5*mads
+  uppers <- meds + 2.5*mads
   # get median parameter values for A, b, and Q_diag
   A <- stats::median(draws$A)
   b <- stats::median(draws$b)
   Q_diag <- stats::median(draws$Q_diag)
   # ornstein uhlenbeck sde function for response and predictor variable
-  # this currently assumes that values for all other traits are set to zero
   OU_sde <- function(resp_value, pred_value, resp_id, pred_id) {
-    # get median absolute deviation to scale by
-    mad_scale <- ifelse(resp_id == id_var1, mad_var1, mad_var2)
-    # autoregressive selection effect
-    ((A[resp_id, resp_id] * resp_value +
-        # cross-lagged selection effect
-        A[resp_id, pred_id] * pred_value +
-        # sde intercept
-        b[resp_id]
-      # scaled by mad
-      ) / mad_scale) /
-    # divided by sigma, scaled by mad
-    (Q_diag[resp_id] / mad_scale)
+    # sde intercept
+    out <- b[resp_id]
+    # selection effects
+    for (j in 1:length(names(object$variables))) {
+      if (j == resp_id) {
+        # autoregressive selection effect (response -> response)
+        out <- out + A[resp_id,j] * resp_value
+      } else if (j == pred_id) {
+        # cross-lagged selection effect for predictor -> response
+        out <- out + A[resp_id,j] * pred_value
+      } else {
+        # cross-lagged selection effects for any remaining variables
+        # held at their median trait values
+        out <- out + A[resp_id,j] * meds[j]
+      }
+    }
+    # scale by mad for response variable
+    out <- out / mads[resp_id]
+    # divide by sigma scaled by mad for response variable
+    sigma <- Q_diag[resp_id] / mads[resp_id]
+    out <- out / sigma
+    return(out)
   }
   # get predictions for different levels of traits
   preds <-
     expand.grid(
       var1_value = seq(
-        from = lower_var1,
-        to = upper_var1,
+        from = lowers[id_var1],
+        to = uppers[id_var1],
         length.out = 20
         ),
       var2_value = seq(
-        from = lower_var2,
-        to = upper_var2,
+        from = lowers[id_var2],
+        to = uppers[id_var2],
         length.out = 20
         ),
       var1_delta_sigma = NA,
@@ -154,8 +158,8 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
     ggplot2::ggplot(
       data = out,
       mapping = ggplot2::aes(
-        x = (.data$var1_value - med_var1) / mad_var1,
-        y = (.data$var2_value - med_var2) / mad_var2
+        x = (.data$var1_value - meds[id_var1]) / mads[id_var1],
+        y = (.data$var2_value - meds[id_var2]) / mads[id_var2]
       )
     ) +
     ggplot2::facet_wrap(
