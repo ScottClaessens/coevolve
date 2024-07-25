@@ -69,34 +69,55 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   id_var2 <- which(names(object$variables) == var2)
   # get posterior draws
   draws <- posterior::as_draws_rvars(object$fit)
-  # medians and median absolute deviations for both variables
-  eta_var1 <- posterior::rvar_median(draws$eta[1:nrow(object$data), id_var1])
-  eta_var2 <- posterior::rvar_median(draws$eta[1:nrow(object$data), id_var2])
-  med_var1 <- stats::median(eta_var1)
-  med_var2 <- stats::median(eta_var2)
-  mad_var1 <- stats::mad(eta_var1)
-  mad_var2 <- stats::mad(eta_var2)
-  lower_var1 <- med_var1 - 2.5*mad_var1
-  lower_var2 <- med_var2 - 2.5*mad_var2
-  upper_var1 <- med_var1 + 2.5*mad_var1
-  upper_var2 <- med_var2 + 2.5*mad_var2
+  # medians and median absolute deviations for all variables
+  eta  <- apply(draws$eta[1:nrow(object$data),], 2, posterior::rvar_median)
+  meds <- unlist(lapply(eta, stats::median))
+  mads <- unlist(lapply(eta, stats::mad))
+  lowers <- meds - 2.5*mads
+  uppers <- meds + 2.5*mads
   # get median parameter values for A and b
   A <- stats::median(draws$A)
   b <- stats::median(draws$b)
   # function for flow field diagram
   OU <- function(t, y, parameters) {
     dy <- numeric(2)
-    dy[1] <- y[1]*A[id_var1,id_var1] + y[2]*A[id_var1,id_var2] + b[id_var1]
-    dy[2] <- y[2]*A[id_var2,id_var2] + y[1]*A[id_var2,id_var1] + b[id_var2]
-    list(dy)
+    # variable 1
+    dy[1] <- b[id_var1]
+    for (j in 1:length(names(object$variables))) {
+      if (j == id_var1) {
+        # autoregressive effect
+        dy[1] <- dy[1] + A[id_var1,j]*y[1]
+      } else if (j == id_var2) {
+        # cross-lagged effect of predictor
+        dy[1] <- dy[1] + A[id_var1,j]*y[2]
+      } else {
+        # cross-lagged effects of other variables held at their median values
+        dy[1] <- dy[1] + A[id_var1,j]*meds[j]
+      }
+    }
+    # variable 2
+    dy[2] <- b[id_var2]
+    for (j in 1:length(names(object$variables))) {
+      if (j == id_var2) {
+        # autoregressive effect
+        dy[2] <- dy[2] + A[id_var2,j]*y[2]
+      } else if (j == id_var1) {
+        # cross-lagged effect of predictor
+        dy[2] <- dy[2] + A[id_var2,j]*y[1]
+      } else {
+        # cross-lagged effects of other variables held at their median values
+        dy[2] <- dy[2] + A[id_var2,j]*meds[j]
+      }
+    }
+    return(list(dy))
   }
   # create flow field diagram
   suppressWarnings({
     OU.flowField <-
       phaseR::flowField(
         OU,
-        xlim = c(lower_var1, upper_var1),
-        ylim = c(lower_var2, upper_var2),
+        xlim = c(lowers[id_var1], uppers[id_var1]),
+        ylim = c(lowers[id_var2], uppers[id_var2]),
         parameters = NA,
         add = FALSE,
         xlab = "",
@@ -117,7 +138,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   graphics::mtext(
     side = 1,
     text = paste0(var1, " (z-score)"),
-    at = med_var1,
+    at = meds[id_var1],
     line = 2.5,
     cex = 1.3
   )
@@ -125,7 +146,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   graphics::mtext(
     side = 2,
     text = paste0(var2, " (z-score)"),
-    at = med_var2,
+    at = meds[id_var2],
     line = 2.5,
     cex = 1.3
   )
@@ -135,8 +156,8 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
       nc <-
         phaseR::nullclines(
           OU,
-          xlim = c(lower_var1, upper_var1),
-          ylim = c(lower_var2, upper_var2),
+          xlim = c(lowers[id_var1], uppers[id_var1]),
+          ylim = c(lowers[id_var2], uppers[id_var2]),
           parameters = NA,
           points = 20,
           axes = FALSE,
@@ -149,12 +170,16 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   # add axes
   graphics::axis(
     side = 1,
-    at = c(lower_var1, med_var1, upper_var1),
-    labels = (c(lower_var1, med_var1, upper_var1) - med_var1) / mad_var1
+    at = c(lowers[id_var1], meds[id_var1], uppers[id_var1]),
+    labels =
+      (c(lowers[id_var1], meds[id_var1], uppers[id_var1]) - meds[id_var1]) /
+      mads[id_var1]
   )
   graphics::axis(
     side = 2,
-    at = c(lower_var2, med_var2, upper_var2),
-    labels = (c(lower_var2, med_var2, upper_var2) - med_var2) / mad_var2
+    at = c(lowers[id_var2], meds[id_var2], uppers[id_var2]),
+    labels =
+      (c(lowers[id_var2], meds[id_var2], uppers[id_var2]) - meds[id_var2]) /
+      mads[id_var2]
   )
 }
