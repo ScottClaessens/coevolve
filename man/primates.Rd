@@ -49,8 +49,8 @@ m <-
   coev_fit(
     data = primates$data,
     variables = list(
-      brain_size = "lognormal",
-      body_size = "lognormal"
+      brain_weight = "lognormal",
+      body_weight = "lognormal"
     ),
     id = "species",
     tree = primates$phylogeny,
