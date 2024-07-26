@@ -14,7 +14,7 @@ variables:
 society}
 \item{political_authority}{An ordered factor indicating whether political
 authority is absent, sublocal, local, or supralocal in each society}
-\item{riligious_authority}{An ordered factor indicating whether religious
+\item{religious_authority}{An ordered factor indicating whether religious
 authority is absent, sublocal, local, or supralocal in each society}
 }
 }

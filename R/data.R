@@ -19,7 +19,7 @@
 #'    society}
 #'  \item{political_authority}{An ordered factor indicating whether political
 #'    authority is absent, sublocal, local, or supralocal in each society}
-#'  \item{riligious_authority}{An ordered factor indicating whether religious
+#'  \item{religious_authority}{An ordered factor indicating whether religious
 #'    authority is absent, sublocal, local, or supralocal in each society}
 #' }
 #'
@@ -53,3 +53,60 @@
 #' }
 #'
 "authority"
+
+#' Brain weight, body weight, diet, and sociality in primates
+#'
+#' @description This dataset and associated phylogeny describes brain weights,
+#'   body weights, dietary categories, social systems, mating systems, and group
+#'   sizes for 143 primate species. These data were originally compiled in
+#'   DeCasien et al. (2017). The phylogeny is a 50% majority rule consensus
+#'   tree from the 10k Trees website.
+#'
+#' @format A list containing a dataset and an associated phylogeny. The
+#'   phylogeny is a pruned consensus tree for 143 species of primate (excluding
+#'   humans). The dataset is a data frame with 143 observations and 11
+#'   variables:
+#' \describe{
+#'  \item{species}{The name of the primate species}
+#'  \item{brain_weight}{Average brain weight, in grams}
+#'  \item{body_weight}{Average body weight, in grams}
+#'  \item{diet}{A factor with four levels indicating whether the species'
+#'    dietary category is folivore, frugivore, frugivore/folivore, or omnivore}
+#'  \item{percent_fruit}{Percentage of fruit in diet}
+#'  \item{social_system}{A factor with four levels indicating whether the
+#'    species' social system is solitary, pair-living, harem polygyny, or
+#'    polygynandry}
+#'  \item{mating_system}{A factor with five levels indicating whether the
+#'    species' mating system is spatial polygyny, monogamy, polyandry, harem
+#'    polygyny, or polygynandry}
+#'  \item{group_size}{Average group size}
+#' }
+#'
+#' @source DeCasien, A. R., Williams, S. A., & Higham, J. P. (2017). Primate
+#'   brain size is predicted by diet but not sociality. \emph{Nature Ecology &
+#'   Evolution}, \emph{1}(5), 0112.
+#' @source https://10ktrees.nunn-lab.org/Primates/index.html
+#'
+#' @examples
+#' \dontrun{
+#' # fit model to primates data
+#' m <-
+#'   coev_fit(
+#'     data = primates$data,
+#'     variables = list(
+#'       brain_weight = "lognormal",
+#'       body_weight = "lognormal"
+#'     ),
+#'     id = "species",
+#'     tree = primates$phylogeny,
+#'     # arguments to cmdstanr::sample()
+#'     parallel_chains = 4,
+#'     seed = 1
+#'   )
+#' # print model summary
+#' summary(m)
+#' # plot delta theta
+#' coev_plot_delta_theta(m)
+#' }
+#'
+"primates"
