@@ -1,6 +1,8 @@
+library(tidyverse)
+
 # load dataset for political authority from github
 political_authority <-
-  readr::read_tsv(
+  read_tsv(
     file = paste0(
       "https://raw.githubusercontent.com/ScottClaessens/phyloAuthority/main/",
       "data/political_authority_20_09_21.txt"
@@ -10,20 +12,12 @@ political_authority <-
 
 # load dataset for religious authority from github
 religious_authority <-
-  readr::read_tsv(
+  read_tsv(
     file = paste0(
       "https://raw.githubusercontent.com/ScottClaessens/phyloAuthority/main/",
       "data/religious_authority_20_09_21.txt"
     ),
     col_types = "cd"
-  )
-
-# join datasets
-data <-
-  dplyr::left_join(
-    political_authority,
-    religious_authority,
-    by = "Language"
   )
 
 # get ordered authority levels
@@ -35,17 +29,21 @@ authority_levels <-
     ordered = TRUE
   )
 
-# rename and mutate variables in dataset
+# join datasets
 data <-
-  dplyr::transmute(
-    data,
+  left_join(
+    political_authority,
+    religious_authority,
+    by = "Language"
+  ) %>%
+  # rename and mutate variables in dataset
+  transmute(
     language = Language,
     political_authority = authority_levels[`Political Authority` + 1],
     religious_authority = authority_levels[`Religious Authority` + 1]
-  )
-
-# get dataset as data frame
-data <- as.data.frame(data)
+  ) %>%
+  # get dataset as data frame
+  as.data.frame()
 
 # load phylogenetic samples from github
 trees <-
