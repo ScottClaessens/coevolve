@@ -9,17 +9,18 @@ coev_simulate_coevolution(n, variables, selection_matrix, drift, prob_split)
 \arguments{
 \item{n}{Number of data points in the resulting data frame.}
 
-\item{variables}{A character vector of variable names (e.g., \code{c("x","y")})}
+\item{variables}{A character vector of variable names (e.g.,
+\code{c("x","y")})}
 
-\item{selection_matrix}{A numeric matrix determining the strength of selection
-between variables. The matrix must have a number of rows and columns equal
-to the number of variables and its row and column names must contain all
-specified variables. Each cell determines the strength of selection from
-the column variable to the row variable. For example, the cell on the "x"
-column and the "x" row indicates how much previous values of x influence
-future values of x (autocorrelation). By contrast, the cell on the "x"
-column and the "y" row indicates how much previous values of x influence
-future values of y (cross-lagged effect).}
+\item{selection_matrix}{A numeric matrix determining the strength of
+selection between variables. The matrix must have a number of rows and
+columns equal to the number of variables and its row and column names must
+contain all specified variables. Each cell determines the strength of
+selection from the column variable to the row variable. For example, the
+cell on the "x" column and the "x" row indicates how much previous values
+of x influence future values of x (autocorrelation). By contrast, the cell
+on the "x" column and the "y" row indicates how much previous values of x
+influence future values of y (cross-lagged effect).}
 
 \item{drift}{A named numeric vector specifying the strength of drift for
 different variables. Names must include all specified variables.}

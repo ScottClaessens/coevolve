@@ -59,7 +59,7 @@ continuous time intercepts (\code{b}), the ancestral states for the traits
 overdispersion parameters for negative binomial variables (\code{phi}),
 the degrees of freedom parameters for Student t variables (\code{nu}),
 the sigma parameters for Gaussian Processes over locations
-(\code{sigma_dist}), and the rho parameter for Gaussian Processes over
+(\code{sigma_dist}), and the rho parameters for Gaussian Processes over
 locations (\code{rho_dist}). These must be entered with valid prior
 strings, e.g. \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior
 strings will throw an error when the function internally checks the syntax
@@ -77,22 +77,14 @@ model in \pkg{Stan}.
 Make Stan data for dynamic coevolutionary model
 }
 \examples{
-# simulate data
-n <- 20
-tree <- ape::rcoal(n)
-d <- data.frame(
-   id = tree$tip.label,
-   x = rbinom(n, size = 1, prob = 0.5),
-   y = ordered(sample(1:4, size = n, replace = TRUE))
-)
-# make stan code
+# make stan data
 coev_make_standata(
-   data = d,
-   variables = list(
-       x = "bernoulli_logit",
-       y = "ordered_logistic"
-   ),
-   id = "id",
-   tree = tree
-)
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny
+  )
 }

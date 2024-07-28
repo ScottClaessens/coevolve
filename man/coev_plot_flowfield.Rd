@@ -2,52 +2,54 @@
 % Please edit documentation in R/coev_plot_flowfield.R
 \name{coev_plot_flowfield}
 \alias{coev_plot_flowfield}
-\title{Plot flowfield of expected evolutionary change from a fitted \code{coevfit} object}
+\title{Plot flowfield of expected evolutionary change from a fitted \code{coevfit}
+object}
 \usage{
 coev_plot_flowfield(object, var1, var2, nullclines = FALSE)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}}
 
-\item{var1}{A character string equal to one of the coevolving variables in the model}
+\item{var1}{A character string equal to one of the coevolving variables in
+the model}
 
-\item{var2}{A character string equal to one of the coevolving variables in the model}
+\item{var2}{A character string equal to one of the coevolving variables in
+the model}
 
-\item{nullclines}{Logical (defaults to FALSE); whether to show coloured nullclines
-to indicate where each variable is at equilibrium, depending on the state of the other}
+\item{nullclines}{Logical (defaults to FALSE); whether to show coloured
+nullclines
+to indicate where each variable is at equilibrium, depending on the state of
+the other}
 }
 \value{
 A flowfield plot drawn directly to the device
 }
 \description{
-Plot flowfield of expected evolutionary change from a fitted \code{coevfit} object
+Plot flowfield of expected evolutionary change from a fitted \code{coevfit}
+object
 }
 \examples{
 \dontrun{
-# simulate data
-n <- 20
-tree <- ape::rcoal(n)
-d <- data.frame(
-  id = tree$tip.label,
-  x = rbinom(n, size = 1, prob = 0.5),
-  y = ordered(sample(1:4, size = n, replace = TRUE))
-)
 # fit dynamic coevolutionary model
-m <- coev_fit(
-  data = d,
+fit <- coev_fit(
+  data = authority$data,
   variables = list(
-    x = "bernoulli_logit",
-    y = "ordered_logistic"
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
   ),
-  id = "id",
-  tree = tree,
+  id = "language",
+  tree = authority$phylogeny,
   # additional arguments for cmdstanr::sample()
   chains = 4,
   parallel_chains = 4,
-  iter_warmup = 500,
   seed = 1
-)
-# plot flowfield
-coev_plot_flowfield(m)
+  )
+
+# plot flow field
+coev_plot_flowfield(
+  object = fit,
+  var1 = "political_authority",
+  var2 = "religious_authority"
+  )
 }
 }
