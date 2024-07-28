@@ -155,7 +155,7 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     stop2("Argument 'tree' must be an phylogenetic tree object of class phylo.")
   }
   # stop if id in data does not match tree tip labels exactly
-  if (!identical(sort(data[,id]), sort(tree$tip.label))) {
+  if (!identical(sort(unique(data[,id])), sort(tree$tip.label))) {
     stop2("The id variable in the data does not match tree tip labels exactly.")
   }
   # stop if id in data contains missing values
@@ -223,8 +223,8 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       stop2("Argument 'dist_mat' does not have valid row or column names.")
     }
     # stop if row and column names do not match tip labels exactly
-    if (!identical(sort(data[,id]), sort(rownames(dist_mat))) |
-        !identical(sort(data[,id]), sort(colnames(dist_mat)))) {
+    if (!identical(sort(unique(data[,id])), sort(rownames(dist_mat))) |
+        !identical(sort(unique(data[,id])), sort(colnames(dist_mat)))) {
       stop2(
         paste0(
           "Row and column names for argument 'dist_mat' do not match tree ",
