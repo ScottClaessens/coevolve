@@ -67,7 +67,7 @@ coev_calculate_theta <- function(object, intervention_values) {
   if (any(!(names(object$variables) %in% names(intervention_values)))) {
     stop2(
       paste0(
-        "At least one coevolving variable in the model is not included in ",
+        "All coevolving variables must be included in ",
         "argument 'intervention_values'."
         )
       )

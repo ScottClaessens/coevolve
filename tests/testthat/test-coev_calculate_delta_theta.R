@@ -41,3 +41,21 @@ test_that("coev_calculate_delta_theta() produces expected errors and output", {
     )
   )
 })
+
+test_that("coev_calculate_delta_theta() works with repeated observations", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
+  m <- reload_fit(m, filename = "coevfit_example7-1.csv")
+  # suppress warnings
+  SW <- suppressWarnings
+  # should run without error and produce draws_array object
+  expect_no_error(
+    SW(coev_calculate_delta_theta(m, response = "w", predictor = "x"))
+  )
+  expect_true(
+    methods::is(
+      SW(coev_calculate_delta_theta(m, response = "w", predictor = "x")),
+      "draws_array"
+    )
+  )
+})
