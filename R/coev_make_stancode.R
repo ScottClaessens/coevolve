@@ -571,7 +571,19 @@ coev_make_stancode <- function(data, variables, id, tree,
     paste0(
       "generated quantities{\n",
       "  vector[N_obs*J] log_lik; // log-likelihood\n",
-      "  matrix[N_obs,J] yrep; // predictive checks\n",
+      "  matrix[N_obs,J] yrep; // predictive checks\n"
+      )
+  if (any(duplicated(data[,id]))) {
+    sc_generated_quantities <-
+      paste0(
+        sc_generated_quantities,
+        "  matrix[J,J] cor_group; // group-level correlations\n",
+        "  cor_group = multiply_lower_tri_self_transpose(L_group);\n"
+      )
+  }
+  sc_generated_quantities <-
+    paste0(
+      sc_generated_quantities,
       "  {\n",
       "    matrix[N_obs,J] log_lik_temp = rep_matrix(0, N_obs, J);\n",
       "    matrix[N_obs,J] yrep_temp;\n",
