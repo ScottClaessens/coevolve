@@ -72,8 +72,12 @@ coev_make_standata <- function(data, variables, id, tree,
   data <- data[!all_missing,]
   # prune tree to updated dataset
   tree <- ape::keep.tip(tree, data[,id])
-  # match data to tree tip label ordering
-  data <- data[match(tree$tip.label, data[,id]),]
+  # match data ordering to tree tip label ordering
+  matched_data <- data.frame()
+  for (tip in tree$tip.label) {
+    matched_data <- rbind(matched_data, data[data[,id] == tip,])
+  }
+  data <- matched_data
   # match distance matrix to tree tip label ordering
   if (!is.null(dist_mat)) dist_mat <- dist_mat[tree$tip.label,tree$tip.label]
   # create effects matrix if not specified
@@ -87,9 +91,12 @@ coev_make_standata <- function(data, variables, id, tree,
   # convert effects_mat to integer matrix (unary conversion +)
   effects_mat <- +effects_mat
   # stop for internal mismatches
-  if (!identical(tree$tip.label, data[,id])) {
+  if (!identical(tree$tip.label, unique(data[,id]))) {
     stop2("Data and phylogeny tips do not match.")
-  } else if (!is.null(dist_mat) & !identical(tree$tip.label, data[,id])) {
+  } else if (!is.null(dist_mat) & (
+    !identical(tree$tip.label, rownames(dist_mat)) |
+    !identical(tree$tip.label, colnames(dist_mat))
+    )) {
     stop2("Distance matrix and phylogeny tips do not match.")
   } else if (!identical(names(variables), rownames(effects_mat)) |
              !identical(names(variables), colnames(effects_mat))) {
@@ -131,9 +138,12 @@ coev_make_standata <- function(data, variables, id, tree,
   y[miss == 1] <- -9999
   # normalise distance matrix so that maximum distance = 1
   if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
+  # match tip ids
+  tip_id <- match(data[,id], tree$tip.label)
   # data list for stan
   sd <- list(
     N_tips = length(tree$tip.label), # number of tips
+    N_obs = nrow(y),                 # number of observations
     J = length(variables),           # number of variables
     N_seg = N_seg,                   # number of segments in the tree
     node_seq = node_seq,             # sequence of nodes
@@ -143,7 +153,8 @@ coev_make_standata <- function(data, variables, id, tree,
     effects_mat = effects_mat,       # which effects should be estimated?
     num_effects = sum(effects_mat),  # number of effects being estimated
     y = y,                           # observed data
-    miss = miss                      # are data points missing?
+    miss = miss,                     # are data points missing?
+    tip_id = tip_id                  # tip ids
   )
   # add distance matrix if specified
   if (!is.null(dist_mat)) sd[["dist_mat"]] <- dist_mat
