@@ -218,35 +218,41 @@ coev_make_stancode <- function(data, variables, id, tree,
       "  int prior_only; // should the likelihood be ignored?\n}"
       )
   # write transformed data block
-  sc_transformed_data <- NULL
-  if ("negative_binomial_softplus" %in% distributions & is.null(priors$phi)) {
-    # if negative binomial distribution included and default prior used
-    sc_transformed_data <- "transformed data{\n"
-    for (j in 1:length(distributions)) {
-      if (distributions[j] == "negative_binomial_softplus") {
-        sc_transformed_data <-
-          paste0(
-            sc_transformed_data,
-            "  real inv_overdisp", j, "; // best guess for phi", j, "\n",
-            "  vector [to_int(N_obs - sum(col(miss, ", j,
-            ")))] obs", j, "; // observed data for variable ", j, "\n"
-          )
-      }
-    }
-    for (j in 1:length(distributions)) {
-      if (distributions[j] == "negative_binomial_softplus") {
-        sc_transformed_data <-
-          paste0(
-            sc_transformed_data,
-            "  obs", j, " = col(y, ", j,
-            ")[which_equal(col(miss, ", j, "), 0)];\n",
-            "  inv_overdisp", j, " = (mean(obs", j, ")^2) / ",
-            "(sd(obs", j, ")^2 - mean(obs", j, "));\n"
-          )
-      }
-    }
-    sc_transformed_data <- paste0(sc_transformed_data, "}")
+  sc_transformed_data <- "transformed data{\n"
+  for (j in 1:length(distributions)) {
+    sc_transformed_data <- paste0(
+      sc_transformed_data,
+      "  vector[to_int(N_obs - sum(col(miss, ", j,
+      ")))] obs", j, "; // observed data for variable ", j, "\n"
+    )
   }
+  for (j in 1:length(distributions)) {
+    if (distributions[j] == "negative_binomial_softplus" & is.null(priors$phi)){
+      sc_transformed_data <-
+        paste0(
+          sc_transformed_data,
+          "  real inv_overdisp", j, "; // best guess for phi", j, "\n"
+        )
+    }
+  }
+  for (j in 1:length(distributions)) {
+    sc_transformed_data <- paste0(
+      sc_transformed_data,
+      "  obs", j, " = col(y, ", j,
+      ")[which_equal(col(miss, ", j, "), 0)];\n"
+    )
+  }
+  for (j in 1:length(distributions)) {
+    if (distributions[j] == "negative_binomial_softplus" & is.null(priors$phi)){
+      sc_transformed_data <-
+        paste0(
+          sc_transformed_data,
+          "  inv_overdisp", j, " = (mean(obs", j, ")^2) / ",
+          "(sd(obs", j, ")^2 - mean(obs", j, "));\n"
+        )
+    }
+  }
+  sc_transformed_data <- paste0(sc_transformed_data, "}")
   # write parameters block
   sc_parameters <- paste0(
     "parameters{\n",
@@ -517,7 +523,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_model <- paste0(
         sc_model,
         "        if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "poisson(mean(y[,", j, "]) * log1p_exp(eta[tip_id[i],", j, "]",
+        "poisson(mean(obs", j, ") * log1p_exp(eta[tip_id[i],", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
         ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
         " + drift_tips[tip_id[i],", j, "]));\n"
@@ -553,7 +559,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_model <- paste0(
         sc_model,
         "        if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "neg_binomial_2(mean(y[,", j, "]) * log1p_exp(eta[tip_id[i],", j, "]",
+        "neg_binomial_2(mean(obs", j, ") * log1p_exp(eta[tip_id[i],", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
         ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
         " + drift_tips[tip_id[i],", j, "]), phi", j, ");\n"
@@ -622,13 +628,13 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
-        "poisson_lpmf(to_int(y[i,", j, "]) | mean(y[,", j,
-        "]) * log1p_exp(eta[tip_id[i],", j, "]",
+        "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
+        ") * log1p_exp(eta[tip_id[i],", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
         ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
         " + drift_tips[tip_id[i],", j, "]));\n",
         "      yrep_temp[i,", j, "] = ",
-        "poisson_rng(mean(y[,", j, "]) * log1p_exp(eta[tip_id[i],", j, "]",
+        "poisson_rng(mean(obs", j, ") * log1p_exp(eta[tip_id[i],", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
         ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
         " + drift_tips[tip_id[i],", j, "]));\n"
@@ -679,13 +685,13 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
-        "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(y[,", j,
-        "]) * log1p_exp(eta[tip_id[i],", j, "]",
+        "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
+        ") * log1p_exp(eta[tip_id[i],", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
         ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
         " + drift_tips[tip_id[i],", j, "]), phi", j, ");\n",
         "      yrep_temp[i,", j, "] = ",
-        "neg_binomial_2_rng(mean(y[,", j, "]) * log1p_exp(eta[tip_id[i],", j, "]",
+        "neg_binomial_2_rng(mean(obs", j, ") * log1p_exp(eta[tip_id[i],", j, "]",
         ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
         ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
         " + drift_tips[tip_id[i],", j, "]), phi", j, ");\n"
