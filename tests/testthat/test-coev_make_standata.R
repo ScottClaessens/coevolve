@@ -458,7 +458,8 @@ test_that("coev_make_standata() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', and 'rho_dist'"
+      "'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', 'sigma_group', ",
+      "and 'L_group'"
     )
   )
   expect_error(

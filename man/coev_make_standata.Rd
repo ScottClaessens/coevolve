@@ -59,11 +59,12 @@ continuous time intercepts (\code{b}), the ancestral states for the traits
 overdispersion parameters for negative binomial variables (\code{phi}),
 the degrees of freedom parameters for Student t variables (\code{nu}),
 the sigma parameters for Gaussian Processes over locations
-(\code{sigma_dist}), and the rho parameters for Gaussian Processes over
-locations (\code{rho_dist}). These must be entered with valid prior
-strings, e.g. \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior
-strings will throw an error when the function internally checks the syntax
-of resulting Stan code.}
+(\code{sigma_dist}), the rho parameters for Gaussian Processes over
+locations (\code{rho_dist}), the standard deviation parameters for
+non-phylogenetic group-level varying effects (\code{sigma_group}), and the
+Cholesky factor for the non-phylogenetic group-level correlation matrix
+(\code{L_group}). These must be entered with valid prior strings, e.g.
+\code{list(A_offdiag = "normal(0, 2)")}.}
 
 \item{prior_only}{Logical. If \code{FALSE} (default), the model is fitted to
 the data and returns a posterior distribution. If \code{TRUE}, the model
