@@ -133,6 +133,27 @@ coevfit_example6 <-
     seed = 1
     )
 
+# fit model with repeated observations
+d <- data.frame(
+  id = rep(tree$tip.label, each = 3),
+  w = rbinom(n*3, size = 1, prob = 0.5),
+  x = ordered(sample(1:4, size = n*3, replace = TRUE))
+)
+coevfit_example7 <-
+  coev_fit(
+    data = d,
+    variables = list(
+      w = "bernoulli_logit",
+      x = "ordered_logistic"
+    ),
+    id = "id",
+    tree = tree,
+    chains = chains,
+    iter_warmup = warmup,
+    iter_sampling = iter,
+    seed = 1
+  )
+
 # update cmdstanr file locations
 update_file_location <- function(coevfit) {
   coevfit$fit$save_output_files(
@@ -149,6 +170,7 @@ suppressMessages({
   update_file_location(coevfit_example4)
   update_file_location(coevfit_example5)
   update_file_location(coevfit_example6)
+  update_file_location(coevfit_example7)
 })
 
 # save coevfit objects as rds files
@@ -168,3 +190,4 @@ save_coevfit_rds(coevfit_example3)
 save_coevfit_rds(coevfit_example4)
 save_coevfit_rds(coevfit_example5)
 save_coevfit_rds(coevfit_example6)
+save_coevfit_rds(coevfit_example7)
