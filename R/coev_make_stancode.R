@@ -302,7 +302,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     sc_parameters <- paste0(
       sc_parameters,
       "  matrix[J,N_tips] group_z;\n",
-      "  vector[J] sigma_group;\n",
+      "  vector<lower=0>[J] sigma_group;\n",
       "  cholesky_factor_corr[J] L_group;\n"
     )
   }
