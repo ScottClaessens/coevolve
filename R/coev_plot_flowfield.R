@@ -71,7 +71,9 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   # get posterior draws
   draws <- posterior::as_draws_rvars(object$fit)
   # medians and median absolute deviations for all variables
-  eta  <- apply(draws$eta[1:nrow(object$data),], 2, posterior::rvar_median)
+  eta  <- apply(
+    draws$eta[1:object$stan_data$N_tips,], 2, posterior::rvar_median
+    )
   meds <- unlist(lapply(eta, stats::median))
   mads <- unlist(lapply(eta, stats::mad))
   lowers <- meds - 2.5*mads
