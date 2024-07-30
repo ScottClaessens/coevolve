@@ -8,8 +8,8 @@
 #'   Must identify at least two variables. Variable names must refer to valid
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{normal}, \code{lognormal}, and
-#'   \code{negative_binomial_softplus}.
+#'   \code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal},
+#'   and \code{negative_binomial_softplus}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -35,12 +35,14 @@
 #'   continuous time intercepts (\code{b}), the ancestral states for the traits
 #'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 #'   overdispersion parameters for negative binomial variables (\code{phi}),
+#'   the degrees of freedom parameters for Student t variables (\code{nu}),
 #'   the sigma parameters for Gaussian Processes over locations
-#'   (\code{sigma_dist}), and the rho parameter for Gaussian Processes over
-#'   locations (\code{rho_dist}). These must be entered with valid prior
-#'   strings, e.g. \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior
-#'   strings will throw an error when the function internally checks the syntax
-#'   of resulting Stan code.
+#'   (\code{sigma_dist}), the rho parameters for Gaussian Processes over
+#'   locations (\code{rho_dist}), the standard deviation parameters for
+#'   non-phylogenetic group-level varying effects (\code{sigma_group}), and the
+#'   Cholesky factor for the non-phylogenetic group-level correlation matrix
+#'   (\code{L_group}). These must be entered with valid prior strings, e.g.
+#'   \code{list(A_offdiag = "normal(0, 2)")}.
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
@@ -50,32 +52,33 @@
 #' @export
 #'
 #' @examples
-#' # simulate data
-#' n <- 20
-#' tree <- ape::rcoal(n)
-#' d <- data.frame(
-#'    id = tree$tip.label,
-#'    x = rbinom(n, size = 1, prob = 0.5),
-#'    y = ordered(sample(1:4, size = n, replace = TRUE))
-#' )
-#' # make stan code
+#' # make stan data
 #' coev_make_standata(
-#'    data = d,
-#'    variables = list(
-#'        x = "bernoulli_logit",
-#'        y = "ordered_logistic"
-#'    ),
-#'    id = "id",
-#'    tree = tree
-#' )
+#'   data = authority$data,
+#'   variables = list(
+#'     political_authority = "ordered_logistic",
+#'     religious_authority = "ordered_logistic"
+#'   ),
+#'   id = "language",
+#'   tree = authority$phylogeny
+#'   )
 coev_make_standata <- function(data, variables, id, tree,
                                effects_mat = NULL, dist_mat = NULL,
                                prior = NULL, prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat,
              dist_mat, prior, prior_only)
-  # match data to tree tip label ordering
-  data <- data[match(tree$tip.label, data[,id]),]
+  # remove data rows where all coevolving variables are NA
+  all_missing <- apply(data[,names(variables)], 1, function(x) all(is.na(x)))
+  data <- data[!all_missing,]
+  # prune tree to updated dataset
+  tree <- ape::keep.tip(tree, data[,id])
+  # match data ordering to tree tip label ordering
+  matched_data <- data.frame()
+  for (tip in tree$tip.label) {
+    matched_data <- rbind(matched_data, data[data[,id] == tip,])
+  }
+  data <- matched_data
   # match distance matrix to tree tip label ordering
   if (!is.null(dist_mat)) dist_mat <- dist_mat[tree$tip.label,tree$tip.label]
   # create effects matrix if not specified
@@ -89,9 +92,12 @@ coev_make_standata <- function(data, variables, id, tree,
   # convert effects_mat to integer matrix (unary conversion +)
   effects_mat <- +effects_mat
   # stop for internal mismatches
-  if (!identical(tree$tip.label, data[,id])) {
+  if (!identical(tree$tip.label, unique(data[,id]))) {
     stop2("Data and phylogeny tips do not match.")
-  } else if (!is.null(dist_mat) & !identical(tree$tip.label, data[,id])) {
+  } else if (!is.null(dist_mat) & (
+    !identical(tree$tip.label, rownames(dist_mat)) |
+    !identical(tree$tip.label, colnames(dist_mat))
+    )) {
     stop2("Distance matrix and phylogeny tips do not match.")
   } else if (!identical(names(variables), rownames(effects_mat)) |
              !identical(names(variables), colnames(effects_mat))) {
@@ -122,16 +128,23 @@ coev_make_standata <- function(data, variables, id, tree,
   # indicate whether a node in the seq is a tip
   tip <- ifelse(node_seq > length(tree$tip.label), 0, 1)
   # get data matrix
-  obs <- list()
+  y <- list()
   for (j in 1:length(variables)) {
-    obs[[names(variables)[j]]] <- as.numeric(data[,names(variables)[j]])
+    y[[names(variables)[j]]] <- as.numeric(data[,names(variables)[j]])
   }
-  obs <- as.matrix(as.data.frame(obs))
+  y <- as.matrix(as.data.frame(y))
+  # get missing matrix
+  miss <- ifelse(is.na(y), 1, 0)
+  # replace y with -9999 if missing
+  y[miss == 1] <- -9999
   # normalise distance matrix so that maximum distance = 1
   if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
+  # match tip ids
+  tip_id <- match(data[,id], tree$tip.label)
   # data list for stan
   sd <- list(
     N_tips = length(tree$tip.label), # number of tips
+    N_obs = nrow(y),                 # number of observations
     J = length(variables),           # number of variables
     N_seg = N_seg,                   # number of segments in the tree
     node_seq = node_seq,             # sequence of nodes
@@ -140,7 +153,9 @@ coev_make_standata <- function(data, variables, id, tree,
     tip = tip,                       # is tip?
     effects_mat = effects_mat,       # which effects should be estimated?
     num_effects = sum(effects_mat),  # number of effects being estimated
-    y = obs                          # observed data
+    y = y,                           # observed data
+    miss = miss,                     # are data points missing?
+    tip_id = tip_id                  # tip ids
   )
   # add distance matrix if specified
   if (!is.null(dist_mat)) sd[["dist_mat"]] <- dist_mat

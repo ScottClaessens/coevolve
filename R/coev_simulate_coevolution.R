@@ -1,16 +1,17 @@
 #' Simulate the coevolution of multiple variables in discrete time steps
 #'
 #' @param n Number of data points in the resulting data frame.
-#' @param variables A character vector of variable names (e.g., \code{c("x","y")})
-#' @param selection_matrix A numeric matrix determining the strength of selection
-#'   between variables. The matrix must have a number of rows and columns equal
-#'   to the number of variables and its row and column names must contain all
-#'   specified variables. Each cell determines the strength of selection from
-#'   the column variable to the row variable. For example, the cell on the "x"
-#'   column and the "x" row indicates how much previous values of x influence
-#'   future values of x (autocorrelation). By contrast, the cell on the "x"
-#'   column and the "y" row indicates how much previous values of x influence
-#'   future values of y (cross-lagged effect).
+#' @param variables A character vector of variable names (e.g.,
+#'   \code{c("x","y")})
+#' @param selection_matrix A numeric matrix determining the strength of
+#'   selection between variables. The matrix must have a number of rows and
+#'   columns equal to the number of variables and its row and column names must
+#'   contain all specified variables. Each cell determines the strength of
+#'   selection from the column variable to the row variable. For example, the
+#'   cell on the "x" column and the "x" row indicates how much previous values
+#'   of x influence future values of x (autocorrelation). By contrast, the cell
+#'   on the "x" column and the "y" row indicates how much previous values of x
+#'   influence future values of y (cross-lagged effect).
 #' @param drift A named numeric vector specifying the strength of drift for
 #'   different variables. Names must include all specified variables.
 #' @param prob_split A numeric probability of a species split in any given

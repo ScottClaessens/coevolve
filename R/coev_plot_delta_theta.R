@@ -11,36 +11,33 @@
 #'
 #' @examples
 #' \dontrun{
-#' # simulate data
-#' n <- 20
-#' tree <- ape::rcoal(n)
-#' d <- data.frame(
-#'   id = tree$tip.label,
-#'   x = rbinom(n, size = 1, prob = 0.5),
-#'   y = ordered(sample(1:4, size = n, replace = TRUE))
-#' )
 #' # fit dynamic coevolutionary model
-#' m <- coev_fit(
-#'   data = d,
+#' fit <- coev_fit(
+#'   data = authority$data,
 #'   variables = list(
-#'     x = "bernoulli_logit",
-#'     y = "ordered_logistic"
+#'     political_authority = "ordered_logistic",
+#'     religious_authority = "ordered_logistic"
 #'   ),
-#'   id = "id",
-#'   tree = tree,
+#'   id = "language",
+#'   tree = authority$phylogeny,
 #'   # additional arguments for cmdstanr::sample()
 #'   chains = 4,
 #'   parallel_chains = 4,
-#'   iter_warmup = 500,
 #'   seed = 1
-#' )
+#'   )
+#'
 #' # plot delta theta values for all effects
-#' coev_plot_delta_theta(m)
+#' coev_plot_delta_theta(fit)
 #' }
 coev_plot_delta_theta <- function(object, variables = NULL, ...) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
-    stop2("Argument 'object' must be a fitted coevolutionary model of class coevfit.")
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "of class coevfit."
+        )
+      )
   }
   # if user specifies variables argument:
   if (!is.null(variables)) {
@@ -52,7 +49,9 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       stop2("Argument 'variables' must be of length > 1.")
     } else if (!all(variables %in% names(object$variables))) {
       # stop if variables not included in model
-      stop2("Some variables in 'variables' are not included in the fitted model.")
+      stop2(
+        "Some variables in 'variables' are not included in the fitted model."
+        )
     } else if (any(duplicated(variables))) {
       # stop if variables contains duplicates
       stop2("Argument 'variables' contains duplicates.")
@@ -75,7 +74,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       .x = .data$response,
       .y = .data$predictor,
       .f = function(x, y) as.numeric(
-        coev_get_delta_theta(
+        coev_calculate_delta_theta(
           object,
           response = x,
           predictor = y
@@ -92,8 +91,8 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
   dd <- dplyr::group_by(d, .data$response, .data$predictor)
   dd <- dplyr::summarise(
     dd,
-    lower = stats::quantile(.data$delta_theta, 0.02),
-    upper = stats::quantile(.data$delta_theta, 0.98),
+    lower = stats::quantile(.data$delta_theta, 0.05),
+    upper = stats::quantile(.data$delta_theta, 0.95),
     .groups = "drop"
     )
   # plot
@@ -101,7 +100,11 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
     data = d,
     mapping = ggplot2::aes(x = .data$delta_theta)
     ) +
-    ggdist::stat_slabinterval() +
+    ggdist::stat_slabinterval(
+      .width = c(0.5, 0.89), # 50% and 89% credible intervals
+      n = 1e4,               # increased resolution
+      ...
+      ) +
     ggplot2::geom_vline(
       xintercept = 0,
       linetype = "dashed"
@@ -117,7 +120,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       ymin = -Inf, ymax = Inf
     ) +
     ggplot2::facet_grid(
-      .data$response ~ .data$predictor,
+      .data$predictor ~ .data$response,
       switch = "y"
       ) +
     ggplot2::labs(
@@ -125,7 +128,9 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       y = "From this variable...",
       title = "... to this variable."
       ) +
-    ggplot2::xlim(c(min(dd$lower), max(dd$upper))) +
+    ggplot2::coord_cartesian(
+      xlim = c(min(dd$lower), max(dd$upper))
+      ) +
     ggplot2::theme(
       axis.text.y = ggplot2::element_blank(),
       axis.ticks.y = ggplot2::element_blank(),

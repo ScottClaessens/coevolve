@@ -1,6 +1,6 @@
 Package: coevolve
 Title: Fit Bayesian Dynamic Coevolutionary Models using 'Stan'
-Version: 0.0.0.9006
+Version: 0.0.0.9009
 Authors@R: 
     c(person("Scott", "Claessens", , "scott.claessens@gmail.com", 
              role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3562-6981")),
@@ -25,6 +25,7 @@ Suggests:
 Config/testthat/edition: 3
 Imports: 
     ape,
+    bayesplot,
     cmdstanr,
     colorspace,
     dplyr,
@@ -42,3 +43,4 @@ Imports:
 VignetteBuilder: knitr
 Depends: 
     R (>= 3.5.0)
+LazyData: true

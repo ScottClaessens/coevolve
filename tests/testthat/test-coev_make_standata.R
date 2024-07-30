@@ -71,8 +71,8 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
-      "'ordered_logistic', 'poisson_softplus', 'normal', 'lognormal', and ",
-      "'negative_binomial_softplus' are not yet supported."
+      "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
+      "'lognormal', and 'negative_binomial_softplus' are not yet supported."
     )
   )
   expect_error(
@@ -185,6 +185,21 @@ test_that("coev_make_standata() produces expected errors", {
     coev_make_standata(
       data = d,
       variables = list(
+        w = "student_t", # not numeric
+        y = "student_t"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Variables following the 'student_t' response distribution ",
+      "must be numeric in the data."
+    )
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
         x = "bernoulli_logit",
         y = "ordered_logistic"
       ),
@@ -248,21 +263,6 @@ test_that("coev_make_standata() produces expected errors", {
       )
     },
     "The id variable in the data must not contain NAs."
-  )
-  expect_error(
-    {
-      d2 <- d; d2$y[1] <- NA
-      coev_make_standata(
-        data = d2,
-        variables = list(
-          x = "bernoulli_logit",
-          y = "ordered_logistic"
-        ),
-        id = "id",
-        tree = tree
-      )
-    },
-    "Coevolving variables in the data must not contain NAs."
   )
   expect_error(
     coev_make_standata(
@@ -458,7 +458,8 @@ test_that("coev_make_standata() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'Q_diag', 'c', 'phi', 'sigma_dist', and 'rho_dist'"
+      "'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', 'sigma_group', ",
+      "and 'L_group'"
     )
   )
   expect_error(
@@ -497,8 +498,12 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
+      u = rnorm(n),
+      v = as.integer(rnbinom(n, mu = 4, size = 1)),
+      w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
-      y = ordered(sample(1:4, size = n, replace = TRUE))
+      y = ordered(sample(1:4, size = n, replace = TRUE)),
+      z = rpois(n, 3)
     )
   })
   # make stan data
@@ -506,8 +511,12 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     coev_make_standata(
       data = d,
       variables = list(
+        u = "student_t",
+        v = "negative_binomial_softplus",
+        w = "normal",
         x = "bernoulli_logit",
-        y = "ordered_logistic"
+        y = "ordered_logistic",
+        z = "poisson_softplus"
       ),
       id = "id",
       tree = tree
@@ -515,9 +524,11 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   # expect list with correct names and prior_only = 0
   expect_no_error(sd1)
   expect_type(sd1, "list")
-  expect_equal(names(sd1), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
-                            "tip", "effects_mat", "num_effects", "y",
-                            "prior_only"))
+  expect_equal(
+    names(sd1),
+    c("N_tips", "N_obs", "J", "N_seg", "node_seq", "parent", "ts", "tip",
+      "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
+    )
   expect_equal(sd1$prior_only, 0)
   # include distance matrix
   withr::with_seed(1, {
@@ -538,9 +549,12 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   # expect list with correct names and prior_only = 0
   expect_no_error(sd2)
   expect_type(sd2, "list")
-  expect_equal(names(sd2), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
-                             "tip", "effects_mat", "num_effects", "y",
-                             "dist_mat", "prior_only"))
+  expect_equal(
+    names(sd2),
+    c("N_tips", "N_obs", "J", "N_seg", "node_seq", "parent", "ts", "tip",
+      "effects_mat", "num_effects", "y", "miss", "tip_id", "dist_mat",
+      "prior_only")
+  )
   expect_equal(sd2$prior_only, 0)
   # set prior only
   sd3 <-
@@ -556,8 +570,89 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     )
   expect_no_error(sd3)
   expect_type(sd3, "list")
-  expect_equal(names(sd3), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
-                             "tip", "effects_mat", "num_effects",
-                             "y", "prior_only"))
+  expect_equal(
+    names(sd3),
+    c("N_tips", "N_obs", "J", "N_seg", "node_seq", "parent", "ts", "tip",
+      "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
+  )
   expect_equal(sd3$prior_only, 1)
+})
+
+test_that("coev_make_standata() works with missing data", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = ordered(sample(1:4, size = n, replace = TRUE))
+    )
+  })
+  # some data are missing
+  # row 1 missing both x and y
+  # row 2 missing x only
+  # row 3 missing y only
+  d$x[c(1,2)] <- NA
+  d$y[c(1,3)] <- NA
+  # make stan data
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    )
+  # runs without error
+  expect_no_error(sd)
+  # N_tips = 19 because one row removed
+  expect_equal(sd$N_tips, 19)
+  expect_equal(nrow(sd$y), 19)
+  expect_equal(nrow(sd$miss), 19)
+  # missing matrix correct
+  d <- d[-1,c("x","y")]
+  miss <- as.matrix(ifelse(is.na(d), 1, 0))
+  rownames(miss) <- NULL
+  expect_identical(sd$miss, miss)
+  # dataset correct
+  d$x <- ifelse(is.na(d$x), -9999, d$x)
+  d$y <- ifelse(is.na(d$y), -9999, d$y)
+  d <- as.matrix(d, rownames.force = FALSE)
+  expect_identical(sd$y, d)
+})
+
+test_that("coev_make_standata() works with repeated observations", {
+  # simulate data with repeated observations
+  withr::with_seed(1, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = rep(tree$tip.label, each = 10),
+      x = rnorm(n*10),
+      y = rnorm(n*10)
+    )
+  })
+  # make stan data
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree
+    )
+  # run without error
+  expect_no_error(sd)
+  # expect correct output
+  expect_true(sd$N_tips == 10)
+  expect_true(sd$N_obs == 100)
+  expect_true(sum(sd$tip) == 10)
+  expect_true(nrow(sd$y) == 100)
+  expect_true(nrow(sd$miss) == 100)
+  expect_true(identical(sd$tip_id, match(d$id, tree$tip.label)))
 })
