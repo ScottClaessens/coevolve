@@ -93,7 +93,8 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   # summarise ordinal cutpoints
   cutpoints <- NULL
   if ("ordered_logistic" %in% object$variables) {
-    cutpoints <- s[stringr::str_starts(s$variable, "c"),]
+    cutpoints <- s[stringr::str_starts(s$variable, "c") &
+                     !stringr::str_starts(s$variable, "cor_group"),]
     rownames(cutpoints) <- paste0(
       names(object$variables)[readr::parse_number(cutpoints$variable)],
       stringr::str_extract(cutpoints$variable, pattern = "\\[\\d+\\]")
@@ -126,6 +127,51 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
     )
     gpterms <- gpterms[,2:ncol(gpterms)]
   }
+  # summarise group-level hyperparameters
+  sd_group <- NULL
+  cor_group <- NULL
+  if (any(duplicated(object$data[,object$id]))) {
+    # sd parameters
+    sd_group <- s[stringr::str_starts(s$variable, "sigma_group"),]
+    rownames(sd_group) <- paste0(
+      "sd(",
+      names(object$variables)[readr::parse_number(sd_group$variable)],
+      ")"
+      )
+    sd_group <- sd_group[,2:ncol(sd_group)]
+    # correlation parameters
+    cor_group <- s[stringr::str_starts(s$variable, "cor_group"),]
+    for (i in 1:length(object$variables)) {
+      for (j in 1:length(object$variables)) {
+        if (i >= j) {
+          var <- paste0("cor_group[", i, ",", j, "]")
+          cor_group <- cor_group[cor_group$variable != var,]
+        }
+      }
+    }
+    rownames(cor_group) <- paste0(
+      "cor(",
+      names(object$variables)[
+        readr::parse_number(
+          stringr::str_extract(
+            cor_group$variable,
+            pattern = "cor\\_group\\[(\\d+)\\,"
+          )
+        )
+      ],
+      ",",
+      names(object$variables)[
+        readr::parse_number(
+          stringr::str_extract(
+            cor_group$variable,
+            pattern = "\\,(\\d+)\\]"
+          )
+        )
+      ],
+      ")"
+    )
+    cor_group <- cor_group[,2:ncol(cor_group)]
+  }
   # create summary list
   out <-
     list(
@@ -145,6 +191,8 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       phi            = phi,
       nu             = nu,
       gpterms        = gpterms,
+      sd_group       = sd_group,
+      cor_group      = cor_group,
       num_divergent  = sum(
         object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent
         ),
@@ -232,6 +280,12 @@ print.coevsummary <- function(x, digits = 2, ...) {
     cat("\n")
     cat("Gaussian Process parameters for distances:\n")
     print_format(x$gpterms, digits = digits)
+  }
+  # print group-level hyperparameters
+  if (!is.null(x$sd_group) & !is.null(x$cor_group)) {
+    cat("\n")
+    cat("Group-level hyperparameters:\n")
+    print_format(rbind(x$sd_group, x$cor_group), digits = digits)
   }
   # warnings for high rhats or divergences
   if (max(x$rhats, na.rm = TRUE) > 1.05) {
