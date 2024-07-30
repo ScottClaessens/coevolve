@@ -523,9 +523,11 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   # expect list with correct names and prior_only = 0
   expect_no_error(sd1)
   expect_type(sd1, "list")
-  expect_equal(names(sd1), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
-                            "tip", "effects_mat", "num_effects", "y",
-                            "miss", "prior_only"))
+  expect_equal(
+    names(sd1),
+    c("N_tips", "N_obs", "J", "N_seg", "node_seq", "parent", "ts", "tip",
+      "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
+    )
   expect_equal(sd1$prior_only, 0)
   # include distance matrix
   withr::with_seed(1, {
@@ -546,9 +548,12 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   # expect list with correct names and prior_only = 0
   expect_no_error(sd2)
   expect_type(sd2, "list")
-  expect_equal(names(sd2), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
-                             "tip", "effects_mat", "num_effects", "y",
-                             "miss", "dist_mat", "prior_only"))
+  expect_equal(
+    names(sd2),
+    c("N_tips", "N_obs", "J", "N_seg", "node_seq", "parent", "ts", "tip",
+      "effects_mat", "num_effects", "y", "miss", "tip_id", "dist_mat",
+      "prior_only")
+  )
   expect_equal(sd2$prior_only, 0)
   # set prior only
   sd3 <-
@@ -564,9 +569,11 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     )
   expect_no_error(sd3)
   expect_type(sd3, "list")
-  expect_equal(names(sd3), c("N_tips", "J", "N_seg", "node_seq", "parent", "ts",
-                             "tip", "effects_mat", "num_effects",
-                             "y", "miss", "prior_only"))
+  expect_equal(
+    names(sd3),
+    c("N_tips", "N_obs", "J", "N_seg", "node_seq", "parent", "ts", "tip",
+      "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
+  )
   expect_equal(sd3$prior_only, 1)
 })
 
@@ -614,4 +621,37 @@ test_that("coev_make_standata() works with missing data", {
   d$y <- ifelse(is.na(d$y), -9999, d$y)
   d <- as.matrix(d, rownames.force = FALSE)
   expect_identical(sd$y, d)
+})
+
+test_that("coev_make_standata() works with repeated observations", {
+  # simulate data with repeated observations
+  withr::with_seed(1, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = rep(tree$tip.label, each = 10),
+      x = rnorm(n*10),
+      y = rnorm(n*10)
+    )
+  })
+  # make stan data
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree
+    )
+  # run without error
+  expect_no_error(sd)
+  # expect correct output
+  expect_true(sd$N_tips == 10)
+  expect_true(sd$N_obs == 100)
+  expect_true(sum(sd$tip) == 10)
+  expect_true(nrow(sd$y) == 100)
+  expect_true(nrow(sd$miss) == 100)
+  expect_true(identical(sd$tip_id, match(d$id, tree$tip.label)))
 })
