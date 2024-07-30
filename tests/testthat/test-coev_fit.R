@@ -584,3 +584,16 @@ test_that("coev_fit() works with missing data", {
     file = nullfile()
     )
 })
+
+test_that("coev_fit() works with repeated observations", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
+  m <- reload_fit(m, filename = "coevfit_example7-1.csv")
+  # suppress warnings
+  SW <- suppressWarnings
+  # fitted without error
+  expect_no_error(SW(m))
+  expect_no_error(SW(summary(m)))
+  expect_output(SW(print(m)))
+  expect_output(SW(print(summary(m))))
+})
