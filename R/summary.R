@@ -178,7 +178,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       data           = object$data,
       variables      = object$variables,
       data_name      = object$data_name,
-      nobs           = object$stan_data$N_tips,
+      nobs           = object$stan_data$N_obs,
       chains         = object$fit$num_chains(),
       iter           = object$fit$metadata()$iter_sampling,
       warmup         = object$fit$metadata()$iter_warmup,
