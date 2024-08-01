@@ -35,141 +35,140 @@ package (see full installation instructions here:
 install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
 ```
 
-You can then install the development version of `coevolve` with:
+You can then install the development version of **coevolve** with:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("ScottClaessens/coevolve")
 ```
 
-## Example
-
-We can simulate a phylogenetic tree with some data to see how the
-package works. First, simulate a phylogenetic tree.
+## How to use coevolve
 
 ``` r
-# set the random seed
-set.seed(1)
-# number of taxa
-n <- 10
-# random tree
-tree <- ape::rcoal(n)
-```
-
-Then, simulate data for an ordinal trait and a count trait.
-
-``` r
-# simulate data
-d <- 
-  data.frame(
-    # id to match dataset to tree tips
-    id = tree$tip.label,
-    # simulate variables
-    x = ordered(sample(1:3, size = n, replace = TRUE)),
-    y = rpois(n, 2)
-  )
-
-head(d)
-#>   id x y
-#> 1 t6 1 3
-#> 2 t4 3 0
-#> 3 t9 2 4
-#> 4 t8 2 1
-#> 5 t2 3 3
-#> 6 t7 3 1
-```
-
-We can then fit our Bayesian dynamic coevolutionary model in `cmdstanr`
-with the `coev_fit()` function. We declare both variables and set the
-response distributions for ordinal and count variables as
-`ordered_logistic` and `poisson_softplus` respectively.
-
-``` r
-# load the coevolve package
 library(coevolve)
+```
 
-# fit model
-m <-
+As an example, we analyse the coevolution of political and religious
+authority in 97 Austronesian societies. These data were compiled and
+analysed in [Sheehan et
+al. (2023)](https://www.nature.com/articles/s41562-022-01471-y). Both
+variables are four-level ordinal variables reflecting increasing levels
+of authority. We use a phylogeny of Austronesian languages to assess
+patterns of coevolution.
+
+``` r
+fit <-
   coev_fit(
-    data = d,
+    data = authority$data,
     variables = list(
-      x = "ordered_logistic",
-      y = "poisson_softplus"
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
     ),
-    id = "id",
-    tree = tree,
-    # additional arguments for cmdstanr
+    id = "language",
+    tree = authority$phylogeny,
+    # manually set prior
+    prior = list(A_offdiag = "normal(0, 2)"),
+    # arguments for cmdstanr
     parallel_chains = 4,
+    iter_sampling = 500,
     refresh = 0,
     seed = 1
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 2 finished in 36.3 seconds.
-#> Chain 4 finished in 38.1 seconds.
-#> Chain 3 finished in 38.3 seconds.
-#> Chain 1 finished in 42.8 seconds.
+#> Chain 4 finished in 4944.0 seconds.
+#> Chain 3 finished in 5209.1 seconds.
+#> Chain 2 finished in 5267.9 seconds.
+#> Chain 1 finished in 5364.4 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 38.9 seconds.
-#> Total execution time: 43.0 seconds.
+#> Mean chain execution time: 5196.4 seconds.
+#> Total execution time: 5364.8 seconds.
+#> Warning: 14 of 2000 (1.0%) transitions ended with a divergence.
+#> See https://mc-stan.org/misc/warnings for details.
 ```
 
 The results can be investigated using:
 
 ``` r
-summary(m)
-#> Variables: x = ordered_logistic 
-#>            y = poisson_softplus 
-#>      Data: d (Number of observations: 10)
-#>     Draws: 4 chains, each with iter = 1000; warmup = 1000; thin = 1
-#>            total post-warmup draws = 4000
+summary(fit)
+#> Variables: political_authority = ordered_logistic 
+#>            religious_authority = ordered_logistic 
+#>      Data: authority$data (Number of observations: 97)
+#>     Draws: 4 chains, each with iter = 500; warmup = 1000; thin = 1
+#>            total post-warmup draws = 2000
 #> 
 #> Autoregressive selection effects:
-#>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x    -0.87      0.61 -2.34 -0.04 1.00     2546     1116
-#> y    -0.95      0.65 -2.47 -0.05 1.00     2575     1393
+#>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> political_authority    -0.64      0.51 -1.90 -0.02 1.00     1720     1149
+#> religious_authority    -0.67      0.52 -1.97 -0.03 1.00     1334     1183
 #> 
 #> Cross selection effects:
-#>       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x ⟶ y    -0.01      0.94 -1.85  1.84 1.00     3361     2821
-#> y ⟶ x    -0.02      0.97 -1.89  1.88 1.00     3386     2837
+#>                                           Estimate Est.Error 2.5% 97.5% Rhat
+#> political_authority ⟶ religious_authority     2.85      1.08 0.82  5.12 1.00
+#> religious_authority ⟶ political_authority     2.56      1.06 0.54  4.73 1.00
+#>                                           Bulk_ESS Tail_ESS
+#> political_authority ⟶ religious_authority      780      889
+#> religious_authority ⟶ political_authority      846     1032
 #> 
 #> Drift scale parameters:
-#>   Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x     0.75      0.58 0.03  2.12 1.00     3397     1855
-#> y     0.67      0.54 0.02  2.03 1.00     2782     1969
+#>                     Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> political_authority     1.47      0.78 0.11  3.14 1.00      811      733
+#> religious_authority     1.20      0.74 0.06  2.81 1.00      675      661
 #> 
 #> Continuous time intercept parameters:
-#>   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x     0.12      0.93 -1.68  1.93 1.00     4443     3181
-#> y     0.42      0.77 -1.11  1.94 1.00     3252     2717
+#>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> political_authority     0.11      0.95 -1.74  2.00 1.01     3925     1345
+#> religious_authority     0.14      0.94 -1.74  2.00 1.00     3321     1421
 #> 
 #> Ordinal cutpoint parameters:
-#>      Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> x[1]    -1.97      1.07 -4.16  0.06 1.00     2625     2016
-#> x[2]     1.09      0.97 -0.71  3.12 1.00     3943     3294
-#> Warning: There were 20 divergent transitions after warmup.
+#>                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> political_authority[1]    -1.00      0.85 -2.61  0.66 1.00     2427     1263
+#> political_authority[2]    -0.31      0.84 -1.88  1.32 1.00     2406     1263
+#> political_authority[3]     1.64      0.86 -0.01  3.30 1.00     2171     1532
+#> religious_authority[1]    -1.33      0.88 -3.03  0.39 1.00     2391     1467
+#> religious_authority[2]    -0.69      0.88 -2.44  1.03 1.00     2508     1317
+#> religious_authority[3]     1.59      0.91 -0.15  3.42 1.00     2336     1398
+#> Warning: There were 14 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
-We can infer whether these traits influence one another in their
-evolution by plotting $\Delta\theta_{z}$, the expected change in the
-equilibrium trait value of one variable from an absolute deviation
+The summary provides general information about the model and details on
+the posterior draws for the model parameters. In particular, the output
+shows the autoregressive selection effects (i.e., the effect of a
+variable on itself in the future), the cross selection effects (i.e.,
+the effect of a variable on another variable in the future), the amount
+of drift, continuous time intercept parameters for the schocastic
+differential equation, and cutpoints for the ordinal variables.
+
+While this summary output is useful as a first glance, it is difficult
+to interpret these parameters directly to infer directions of
+coevolution. Another approach is to “intervene” in the system. We can
+hold variables of interest at their average values and then increase one
+variable by a standardised amount to see how this affects the optimal
+trait value for another variable.
+
+The `coev_plot_delta_theta()` function allows us to visualise
+$\Delta\theta_{z}$ for all variable pairs in the model.
+$\Delta\theta_{z}$ is defined as the change in the optimal trait value
+of one variable which results from a one median absolute deviation
 increase in another variable.
 
 ``` r
-coev_plot_delta_theta(m)
+coev_plot_delta_theta(fit)
 ```
 
-<img src="man/figures/README-plot_delta_theta-1.png" width="60%" style="display: block; margin: auto;" />
+<img src="man/figures/README-authority-delta-theta-1.png" width="60%" style="display: block; margin: auto;" />
 
-This plot suggests that these variables do not coevolve over
+This plot suggests that both variables influence one another in their
+coevolution. A standardised increase in political authority results in
+an increase in the optimal trait value for religious authority, and vice
+versa. In other words, these two variables reciprocally coevolve over
 evolutionary time.
 
 ## Citing coevolve
 
-When using the coevolve package, please cite the following papers:
+When using the **coevolve** package, please cite the following papers:
 
 - Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic
   methods reveal that resource-use intensification drives the evolution
