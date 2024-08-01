@@ -122,8 +122,8 @@
 #'   is a data frame with 100 observations and 3 variables:
 #' \describe{
 #'  \item{species}{The name of the species}
-#'  \item{y}{An example continuous variable}
 #'  \item{x}{An example continuous variable}
+#'  \item{y}{An example continuous variable}
 #' }
 #'
 #' @source de Villemeruil P. & Nakagawa, S. (2014). General quantitative genetic
@@ -138,8 +138,8 @@
 #'   coev_fit(
 #'     data = repeated$data,
 #'     variables = list(
-#'       y = "normal",
-#'       x = "normal"
+#'       x = "normal",
+#'       y = "normal"
 #'     ),
 #'     id = "species",
 #'     tree = repeated$phylogeny,

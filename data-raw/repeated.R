@@ -13,8 +13,8 @@ data <-
   # rename variables
   transmute(
     species = species,
-    y = phen,
-    x = cofactor
+    x = cofactor,
+    y = phen
   ) %>%
   # only include species 1-20
   filter(species %in% paste0("sp_", 1:20))
