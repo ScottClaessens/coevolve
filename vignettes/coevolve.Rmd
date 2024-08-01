@@ -1,6 +1,10 @@
 ---
 title: "Introduction to the coevolve package"
-output: rmarkdown::html_vignette
+output:
+  rmarkdown::html_vignette:
+    toc: true
+date: "2024-07-31"
+author: "Scott Claessens"
 vignette: >
   %\VignetteIndexEntry{Introduction to the coevolve package}
   %\VignetteEngine{knitr::rmarkdown}
@@ -13,9 +17,10 @@ vignette: >
 
 This vignette provides an introduction to the **coevolve** package. It briefly
 describes the class of dynamic coevolutionary model that the package is designed
-to fit. Then it runs through a working example, simulating data and showing that
-the model can reconstruct the true coevolutionary process that generated the
-data.
+to fit. It then runs through several working examples to showcase features of
+the package, including models with different response distributions, models with
+more than two variables, missing data, controls for spatial location, and
+repeated observations.
 
 ## The dynamic coevolutionary model
 
@@ -36,157 +41,330 @@ upon all other latent variables in the model and themselves, allowing users to
 assess the directional influence of one variable on future change in another
 variable.
 
-Similar coevolutionary models are offered in programs like BayesTraits
-(see [here](http://www.evolution.reading.ac.uk/BayesTraitsV4.1.1/BayesTraitsV4.1.1.html)).
+Similar coevolutionary models are offered in programs like BayesTraits (see
+[here](http://www.evolution.reading.ac.uk/BayesTraitsV4.1.1/BayesTraitsV4.1.1.html)).
 However, these models are limited to a small number of discrete traits. The
 **coevolve** package goes beyond these models by allowing the user to estimate
 coevolutionary effects between any number of variables and a much wider range of
 response distributions, including continuous, binary, ordinal, and count
 distributions.
 
-## Proof-of-concept simulation
+## A working example
 
-To show the model in action, we can first simulate a dataset where we know the
-true directional influence between variables. In the following simulation
-(code not shown here for space reasons), we simulate the coevolution between two
-continuous variables *x* and *y*, where changes in *x* influence future changes
-in *y* but not vice versa.
-
-
-
-
-```r
-sim <- simulate_coevolution(seed = 1)
-```
-
-We can plot the phylogenetic tree tracking the evolution of different species
-in this simulation.
-
-<img src="tree-1.jpeg" width="100%" style="display: block; margin: auto;" />
-
-We can also plot how the variables *x* and *y* coevolved over time. It is clear
-from this that *x* does indeed have a large directional influence on *y* --
-even a small decrease in *x* results in a large subsequent decrease in *y*, and
-then when *x* begins to climb again, so does *y*.
-
-<img src="coevolution-1.jpeg" width="60%" style="display: block; margin: auto;" />
-
-We then end up with the following observed data for *x* and *y* at the tips of
-the tree.
+To show the model in action, we will use data on political and religious
+authority among 97 Austronesian societies. Political and religious authority are
+both four-level ordinal variables representing whether each type of authority is
+absent (not present above the household level), sublocal (incorporating a group
+larger than the household but smaller than the local community), local
+(incorporating the local community) and supralocal (incorporating more than one
+local community). These data were compiled by Sheehan et al. (2023).
 
 
-```r
-glimpse(sim$data)
-```
-
-```
-Rows: 109
-Columns: 3
-$ species <chr> "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t102", "t9", "t10", "t11",…
-$ x       <dbl> 1.89644400, 0.55655060, 0.27149439, 0.64883493, -2.32384628, 2.20387164, -0…
-$ y       <dbl> 1.50080870, -0.26959519, 0.69695012, 0.17260053, -1.07087054, 2.00995784, 0…
-```
-
-We can fit our dynamic coevolutionary model to this dataset. We specify that *x*
-and *y* are both continuous variables, feed in our simulated data and phylogeny,
-and indicate which column in the dataset matches the tip labels on the tree. We
-also define additional arguments for running the model in `cmdstanr`, which
-happens behind the scenes.
-
-
-```r
+``` r
+# load the coevolve package
 library(coevolve)
 
-fit <-
+# view the data
+head(authority$data)
+```
+
+```
+        language political_authority religious_authority
+1          Aiwoo            Sublocal            Sublocal
+2          Alune          Supralocal          Supralocal
+3 AnejomAneityum          Supralocal          Supralocal
+4          Anuta               Local               Local
+5          Atoni          Supralocal          Supralocal
+6          Baree               Local               Local
+```
+
+Each society is on a separate row and is linked to a different Austronesian
+language. These languages can be represented on a linguistic phylogeny (see
+`authority$phylogeny`). We are interested in using this phylogeny to understand
+how political and religious authority have coevolved over the past 5000 years
+of Austronesian cultural evolution.
+
+To fit the dynamic coevolutionary model, we use the `coev_fit()` function.
+Internally, this function builds the Stan code, builds a data list, and then
+compiles and fits the model using the [cmdstanr](https://mc-stan.org/cmdstanr/)
+package. Users can run these steps one-by-one using the `coev_make_stancode()`
+and `coev_make_standata()` functions, but for now we just use the `coev_fit()`
+function.
+
+
+``` r
+# fit the dynamic coevolutionary model
+fit1 <-
   coev_fit(
-    data = sim$data,
+    data = authority$data,
     variables = list(
-      x = "normal",
-      y = "normal"
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
     ),
-    id = "species",
-    tree = sim$tree,
+    id = "language",
+    tree = authority$phylogeny,
+    # set manual prior
+    prior = list(A_offdiag = "normal(0, 2)"),
     # additional arguments for cmdstanr
     parallel_chains = 4,
-    iter_warmup = 1000,
-    iter_sampling = 1000,
     refresh = 0,
     seed = 1
   )
 ```
 
+```
+Running MCMC with 4 parallel chains...
+
+Chain 4 finished in 6515.4 seconds.
+Chain 3 finished in 6908.3 seconds.
+Chain 2 finished in 6988.3 seconds.
+Chain 1 finished in 6996.0 seconds.
+
+All 4 chains finished successfully.
+Mean chain execution time: 6852.0 seconds.
+Total execution time: 6996.5 seconds.
+```
+
+The function takes several arguments, including a dataset, a named list of
+variables that we would like to coevolve in the model (along with their
+associated response distributions), the column in the dataset that links to
+the phylogeny tip labels, and a phylogeny of class `phylo`. The model sets
+priors for the parameters by default, but it is possible for the user to
+manually set these priors. The user can also pass additional arguments to
+cmdstanr's `sample()` function which runs under the hood.
+
+Once the model has fitted, we can print a summary of the parameters.
 
 
-We can then inspect the model results.
-
-
-```r
-summary(fit)
+``` r
+summary(fit1)
 ```
 
 ```
-Variables: x = normal 
-           y = normal 
-     Data: sim$data (Number of observations: 109)
+Variables: political_authority = ordered_logistic 
+           religious_authority = ordered_logistic 
+     Data: authority$data (Number of observations: 97)
     Draws: 4 chains, each with iter = 1000; warmup = 1000; thin = 1
            total post-warmup draws = 4000
 
 Autoregressive selection effects:
-  Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x    -0.45      0.77 -2.14  0.91 1.00     1532      787
-y    -1.03      0.69 -2.57  0.18 1.00     3261     1906
+                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority    -0.64      0.51 -1.92 -0.02 1.00     3170     2226
+religious_authority    -0.67      0.53 -1.99 -0.02 1.00     2660     2529
 
 Cross selection effects:
-      Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x ⟶ y     3.81      1.09  1.70  5.87 1.00      811     1354
-y ⟶ x     0.68      0.81 -0.90  2.32 1.00     1538     1940
+                                          Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS
+political_authority ⟶ religious_authority     2.85      1.05 0.90  5.07 1.00     1700
+religious_authority ⟶ political_authority     2.54      1.06 0.49  4.71 1.00     1794
+                                          Tail_ESS
+political_authority ⟶ religious_authority     2022
+religious_authority ⟶ political_authority     2221
 
 Drift scale parameters:
-  Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x     0.62      0.05 0.53  0.72 1.00     2415     2776
-y     0.43      0.05 0.33  0.52 1.00      831      952
+                    Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority     1.48      0.76 0.15  3.12 1.00     1933     1759
+religious_authority     1.19      0.75 0.07  2.83 1.00     1572     1580
 
 Continuous time intercept parameters:
-  Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x     0.08      0.50 -0.92  1.05 1.00     1967      741
-y    -0.06      0.83 -1.67  1.65 1.00     1511      699
+                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority     0.10      0.94 -1.75  1.95 1.00     7703     2711
+religious_authority     0.15      0.94 -1.73  1.99 1.00     6868     2765
+
+Ordinal cutpoint parameters:
+                       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority[1]    -1.01      0.85 -2.64  0.65 1.00     4937     2852
+political_authority[2]    -0.33      0.84 -1.91  1.30 1.00     5065     2896
+political_authority[3]     1.63      0.87  0.01  3.35 1.00     4344     3269
+religious_authority[1]    -1.33      0.88 -3.05  0.40 1.00     5193     3044
+religious_authority[2]    -0.69      0.87 -2.38  1.03 1.00     5282     2994
+religious_authority[3]     1.59      0.90 -0.10  3.42 1.00     4851     2965
 ```
 
-The model confirms the true coevolutionary relationship. We correctly infer that
-changes in *x* precede changes in *y*, but not vice versa.
+We can see a printed summary of the model parameters, including the
+autoregressive effects (i.e., the effects of variables on themselves in the
+future), the cross effects (i.e., the effects of variables on the other
+variables in the future), the amount of drift, the continuous time intercepts
+for the stochastic differential equation, and the ordinal cutpoints for both
+variables.
 
-We can visualise the posterior densities for the two cross-effects.
+While this summary output is useful, it is difficult to interpret these
+parameters directly to make inferences about coevolutionary patterns. An
+alternative approach is to directly "intervene" in the system. By doing this,
+we can better understand how increases or decreases in a variable change the
+optimal trait values of other variables in the system. For example, we can hold
+one variable at its average value and then increase it by a standardised amount
+to see how the optimal value for the other trait changes.
+
+The function `coev_calculate_delta_theta()` allows the user to calculate
+$\Delta\theta_{z}$, which is defined as the change in the optimal trait value
+for one variable which results in a median absolute deviation increase in
+another variable. This function returns a posterior distribution, which we can
+easily visualise for all cross effects using the function
+`coev_plot_delta_theta()`.
 
 
-```r
-coev_plot_delta_theta(fit)
+``` r
+coev_plot_delta_theta(fit1)
 ```
 
-<img src="plot_cross-1.jpeg" width="60%" style="display: block; margin: auto;" />
+<img src="authority-delta-theta-1.jpeg" width="60%" style="display: block; margin: auto;" />
 
-We can also visualise the coevolutionary dynamics with a selection gradient
-heatmap, where increasing green indicates positive selection, increasing red
-indicates negative selection, and the area between the white contour lines
-indicates where deterministic selection on a trait is weaker than stochastic
-drift.
+This plot shows the posterior distribution, the posterior median, and the 50%
+and 89% credible intervals for $\Delta\theta_{z}$. We can conclude that
+political and religious authority both influence each other in their evolution.
+A one median absolute deviation increase in political authority results in an
+increase in the optimal trait value for religious authority, and vice versa. In
+other words, these two variables coevolve reciprocally over time.
+
+One way of visualising this runaway coevolutionary process is by plotting a flow
+field of evolutionary change. This plot visualises the strength and direction
+of evolutionary change at different locations in trait space.
 
 
-```r
-coev_plot_selection_gradient(fit, var1 = "x", var2 = "y", contour = TRUE)
+``` r
+coev_plot_flowfield(
+  object = fit1,
+  var1 = "political_authority",
+  var2 = "religious_authority"
+  )
 ```
 
-<img src="plot_heatmap-1.jpeg" width="60%" style="display: block; margin: auto;" />
+<img src="authority-flowfield-1.jpeg" width="60%" style="display: block; margin: auto;" />
 
-Finally, we can visualise the coevolutionary dynamics with a flowfield, with
-arrows indicating the direction of evolutionary change at different combinations
-of *x* and *y*.
+The arrows in this plot tend to point towards the upper right-hand corner,
+suggesting that political and religious authority evolve towards higher levels
+in a runaway coevolutionary process.
+
+Another way of visualising coevolutionary dynamics is with a selection gradient
+plot. This heatmap shows how selection acts on both variables at different
+locations in trait space.
 
 
-```r
-coev_plot_flowfield(fit, var1 = "x", var2 = "y")
+``` r
+coev_plot_selection_gradient(
+  object = fit1,
+  var1 = "political_authority",
+  var2 = "religious_authority"
+)
 ```
 
-<img src="plot_flowfield-1.jpeg" width="60%" style="display: block; margin: auto;" />
+<img src="authority-selection-gradient-1.jpeg" width="60%" style="display: block; margin: auto;" />
 
-These visualisations confirm our inference that changes in *x* precede changes
-in *y*, but not vice versa.
+We can see from this plot that as each variable increases, the selection on the
+other variable increases.
+
+## Available response distributions
+
+In the above example, both variables were ordinal. As such, we declared both of
+them to follow the "ordered_logistic" response distribution. But the
+**coevolve** supports several more response distributions.
+
+
+| Response distribution      | Data type       | Link function  |
+|----------------------------|-----------------|----------------|
+| bernoulli_logit            | Binary          | Logit          |
+| ordered_logistic           | Ordinal         | Logit          |
+| poisson_softplus           | Count           | Softplus       |
+| negative_binomial_softplus | Count           | Softplus       |
+| normal                     | Continuous real | -              |
+| student_t                  | Continuous real | -              |
+| lognormal                  | Positive real   | -              |
+
+Different variables need not follow the same response distribution. This can be
+useful when users would like to assess the coevolution between variables of
+different types.
+
+## Handling missing data
+
+Often in real comparative datasets, data will be missing for some taxa. Rather
+than remove taxa if they have any missing data, the `coev_fit()` function will
+remove only taxa if they have missing data for *all* coevolving variables. If
+data are missing for some variables and not others, the function will impute the
+missing values in the coevolutionary process.
+
+We show this by modelling the coevolutionary relationships between body weight,
+brain weight, and group size across 143 primate species. These data were
+compiled by DeCasien et al. (2017).
+
+
+``` r
+# view the data
+head(primates$data[, c("species","body_weight","brain_weight","group_size")])
+```
+
+```
+             species body_weight brain_weight group_size
+1    Alouatta_caraya    5596.653     52.71988   6.683333
+2  Alouatta_palliata    6358.997     50.90798  15.548438
+3     Alouatta_pigra    8940.000     52.96550   5.933333
+4 Alouatta_seniculus    6247.360     56.57013   6.965000
+5       Aotus_azarai    1073.190     21.41265   3.000000
+6    Aotus_lemurinus     869.980     16.78196   3.500000
+```
+
+All three variables are positive reals and are lognormally distributed. While
+there are no missing data for the body weight and brain weight variables, some
+data are missing for the group size variable.
+
+
+``` r
+# proportion of observed data
+mean(!is.na(primates$data$group_size))
+```
+
+```
+[1] 0.972028
+```
+
+In this case, the model will retain all available data and impute the missing
+group size values.
+
+
+``` r
+# fit the dynamic coevolutionary model
+fit2 <-
+  coev_fit(
+    data = primates$data,
+    variables = list(
+      brain_size = "lognormal",
+      body_size = "lognormal",
+      body_size = "lognormal"
+    ),
+    id = "species",
+    tree = primates$phylogeny,
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    refresh = 0,
+    seed = 1
+  )
+```
+
+```
+Error: Some variable names are not valid column names in the data.
+```
+
+``` r
+summary(fit2)
+```
+
+```
+Error in summary(fit2): object 'fit2' not found
+```
+
+Notice that the number of observations is still 143 in the summary output,
+informing us that all observations were retained and missing data were imputed.
+
+## Repeated observations per taxa
+
+## Controlling for spatial location
+
+## Model comparison
+
+## References
+
+DeCasien, A. R., Williams, S. A., & Higham, J. P. (2017). Primate brain size is
+predicted by diet but not sociality. *Nature Ecology & Evolution*, *1*(5), 0112.
+
+Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen, E. J.,
+& Atkinson, Q. D. (2023). Coevolution of religious and political authority in
+Austronesian societies. *Nature Human Behaviour*, *7*(1), 38-45.
