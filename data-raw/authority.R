@@ -1,3 +1,5 @@
+library(ape)
+library(phangorn)
 library(tidyverse)
 
 # load dataset for political authority from github
@@ -47,7 +49,7 @@ data <-
 
 # load phylogenetic samples from github
 trees <-
-  ape::read.nexus(
+  read.nexus(
     file = paste0(
       "https://raw.githubusercontent.com/ScottClaessens/phyloAuthority/main/",
       "data/authority_97_20_09_21.trees"
@@ -55,7 +57,7 @@ trees <-
   )
 
 # get maximum clade credibility tree
-phylogeny <- phangorn::mcc(trees)
+phylogeny <- mcc(trees)
 
 # put together list
 authority <- list(
