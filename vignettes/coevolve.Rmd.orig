@@ -32,9 +32,8 @@ library(pander)
 This vignette provides an introduction to the **coevolve** package. It briefly
 describes the class of dynamic coevolutionary model that the package is designed
 to fit. It then runs through several working examples to showcase features of
-the package, including models with different response distributions, models with
-more than two variables, missing data, controls for spatial location, and
-repeated observations.
+the package, including models with different response distributions, missing
+data, repeated observations, and controls for spatial location.
 
 ## The dynamic coevolutionary model
 
@@ -76,10 +75,7 @@ larger than the household but smaller than the local community), local
 local community). These data were compiled by Sheehan et al. (2023).
 
 ```{r authority-data}
-# load the coevolve package
 library(coevolve)
-
-# view the data
 head(authority$data)
 ```
 
@@ -97,7 +93,6 @@ and `coev_make_standata()` functions, but for now we just use the `coev_fit()`
 function.
 
 ```{r authority-fit}
-# fit the dynamic coevolutionary model
 fit1 <-
   coev_fit(
     data = authority$data,
@@ -125,7 +120,14 @@ priors for the parameters by default, but it is possible for the user to
 manually set these priors. The user can also pass additional arguments to
 cmdstanr's `sample()` function which runs under the hood.
 
-Once the model has fitted, we can print a summary of the parameters.
+Once the model has fitted, we can plot some posterior predictive checks to
+ensure that our model is fitting to the data well.
+
+```{r authority-post-pred}
+coev_plot_predictive_check(fit1)
+```
+
+We can then print a summary of the parameters.
 
 ```{r authority-summary}
 summary(fit1)
@@ -138,7 +140,7 @@ variables in the future), the amount of drift, the continuous time intercepts
 for the stochastic differential equation, and the ordinal cutpoints for both
 variables.
 
-While this summary output is useful, it is difficult to interpret these
+While the summary output is useful, it is difficult to interpret the
 parameters directly to make inferences about coevolutionary patterns. An
 alternative approach is to directly "intervene" in the system. By doing this,
 we can better understand how increases or decreases in a variable change the
@@ -222,7 +224,7 @@ different types.
 
 ## Handling missing data
 
-Often in real comparative datasets, data will be missing for some taxa. Rather
+Often in comparative datasets, data will be missing for some taxa. Rather
 than remove cases if they have any missing data, the `coev_fit()` function will
 only remove cases if they have missing data for *all* coevolving variables. If
 data are missing for some variables and not others, the function will impute the
@@ -232,8 +234,7 @@ We show this by modelling the coevolutionary relationships between body weight,
 brain weight, and group size across 143 primate species. These data were
 compiled by DeCasien et al. (2017).
 
-```{r primate-data}
-# view the data
+```{r primates-data}
 head(primates$data[, c("species","body_weight","brain_weight","group_size")])
 ```
 
@@ -241,7 +242,7 @@ All three variables are positive reals and are lognormally distributed. While
 there are no missing data for the body weight and brain weight variables, some
 data are missing for the group size variable.
 
-```{r primate-missing}
+```{r primates-missing}
 # proportion of observed data
 mean(!is.na(primates$data$group_size))
 ```
@@ -250,7 +251,6 @@ In this case, the model will retain all available data and impute the missing
 group size values.
 
 ```{r primates-fit}
-# fit the dynamic coevolutionary model
 fit2 <-
   coev_fit(
     data = primates$data,
@@ -272,7 +272,8 @@ summary(fit2)
 ```
 
 Notice that the number of observations is still 143 in the summary output,
-informing us that all observations were retained and missing data were imputed.
+informing us that all observations were retained and any missing data were
+imputed.
 
 We can then use plotting functions as usual.
 
@@ -282,14 +283,150 @@ coev_plot_delta_theta(fit2)
 
 ## Repeated observations per taxa
 
+Another common feature of comparative datasets is repeated observations. In the
+previous examples, we had only one observation per taxa. But often there will
+be more than one observation for each taxa, such as when we have observed
+multiple individuals of the same species. In these cases, it can be useful to
+include all of these observations in the model and estimate the between-taxa
+variation that is not due to the coevolutionary process.
+
+We show this using an example dataset from de Villemeruil & Nakagawa (2014).
+Suppose we have measured two continuous variables (x and y) for 20 species,
+with five observations for each species.
+
+```{r repeated-data}
+head(repeated$data)
+```
+
+We can fit the dynamic coevolutionary model to this dataset.
+
+```{r repeated-fit}
+fit3 <-
+  coev_fit(
+    data = repeated$data,
+    variables = list(
+      x = "normal",
+      y = "normal"
+    ),
+    id = "species",
+    tree = repeated$phylogeny,
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_sampling = 500,
+    refresh = 0,
+    seed = 1
+  )
+
+summary(fit3)
+```
+
+In the model output, we can see that `coev_fit()` detected the presence of
+repeated observations and has consequently modelled additional standard
+deviation and correlation parameters for x and y. These parameters represent
+the between-taxa variation and correlation that remains after accounting for
+the coevolutionary process.
+
 ## Controlling for spatial location
 
+If we have data on the spatial or geographic location of taxa, sometimes it is
+useful to control for this spatial location to ensure that our model is
+capturing deep ancestral relationships rather than more recent diffusion among
+neighbours. For example, when studying the coevolution of political and
+religious authority in Austronesian societies, we would like to ensure that our
+results are due to coevolution over deep cultural time rather than more recent
+borrowing.
+
+The `dist_mat` argument in the `coev_fit()` function allows us to easily control
+for spatial proximity. This argument takes a distance matrix between all taxa in
+the phylogeny. If the distance matrix is specified by the user, the function
+includes in the Stan code a separate Gaussian Process over spatial location for
+each variable in the model.
+
+Here is the geographic distance matrix (measured in metres) for the first five
+Austronesian societies:
+
+```{r authority-distance-matrix}
+authority$distance_matrix[1:5, 1:5]
+```
+
+We can include this distance matrix in the model. The matrix is standardised to
+vary between 0 and 1 under the hood to improve model sampling.
+
+```{r authority-fit-with-distance}
+fit4 <-
+  coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    dist_mat = authority$distance_matrix,
+    # set manual prior
+    prior = list(A_offdiag = "normal(0, 2)"),
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_sampling = 500,
+    refresh = 0,
+    seed = 1
+  )
+
+summary(fit4)
+```
+
+The summary output shows that the model has estimated the parameters for two
+Gaussian Process functions over geographic locations, one for each variable.
+
+Plotting $\Delta\theta_{z}$ shows that our inferences are robust to controlling
+for geographic location.
+
+```{r authority-delta-theta-with-distance}
+coev_plot_delta_theta(fit4)
+```
+
 ## Model comparison
+
+Since the underlying Stan code for these models returns a log likelihood vector
+for all observations, it is possible to compare different models using methods
+like approximate leave-one-out cross-validation. For example, we can use the
+`loo_compare()` function from the [loo](https://mc-stan.org/loo/index.html)
+package to see whether adding the distance matrix in the previous example
+improved our out-of-sample predictive accuracy.
+
+```{r model-comparison}
+library(loo)
+loo_compare(
+  list(
+    fit1 = fit1$fit$loo(), # model without distance matrix
+    fit4 = fit4$fit$loo()  # model with distance matrix
+  )
+)
+```
+
+This model comparison approach may also be useful for comparing models with
+different cross selection effects constrained to zero (see the `effects_mat`
+argument in the `coev_fit()` function). However, currently it is not possible
+to compare models that include different coevolving variables, as the datasets
+and resulting log likelihood vectors vary between models.
+
+## Conclusion
+
+We hope that this package is a useful addition to the phylogenetic comparative
+methods toolkit. If you have any questions about the package, please feel free
+to email Scott Claessens (scott.claessens@gmail.com) or Erik Ringen
+(erikjacob.ringen@uzh.ch) or raise an issue over on GitHub:
+https://github.com/ScottClaessens/coevolve/issues
 
 ## References
 
 DeCasien, A. R., Williams, S. A., & Higham, J. P. (2017). Primate brain size is
 predicted by diet but not sociality. *Nature Ecology & Evolution*, *1*(5), 0112.
+
+de Villemeruil P. & Nakagawa, S. (2014). General quantitative genetic methods
+for comparative biology. In L. Garamszegi (Ed.), *Modern phylogenetic
+comparative methods and their application in evolutionary biology: concepts and
+practice* (pp. 287-303). Springer, New York.
 
 Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen, E. J.,
 & Atkinson, Q. D. (2023). Coevolution of religious and political authority in
