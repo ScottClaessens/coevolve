@@ -10,9 +10,11 @@
 #'   local (coextensive with the local community), or supralocal (consisting of
 #'   more than one local community).
 #'
-#' @format A list containing a dataset and an associated language phylogeny. The
-#'   phylogeny is a pruned maximum clade credibility tree for 97 Austronesian
-#'   languages. The dataset is a data frame with 97 observations and three
+#' @format A list containing a dataset, an associated language phylogeny, and
+#'   an associated distance matrix. The phylogeny is a pruned maximum clade
+#'   credibility tree for 97 Austronesian languages. The distance matrix is a
+#'   matrix with distances (in metres) between each of the 97 Austronesian
+#'   societies. The dataset is a data frame with 97 observations and three
 #'   variables:
 #' \describe{
 #'  \item{language}{The name of the Austronesian language linked to each
@@ -127,9 +129,9 @@
 #' }
 #'
 #' @source de Villemeruil P. & Nakagawa, S. (2014). General quantitative genetic
-#'   methods for comparative biology. In L. Garamszegi (Ed.), *Modern
+#'   methods for comparative biology. In L. Garamszegi (Ed.), \emph{Modern
 #'   phylogenetic comparative methods and their application in evolutionary
-#'   biology: concepts and practice* (pp. 287-303). Springer, New York.
+#'   biology: concepts and practice} (pp. 287-303). Springer, New York.
 #'
 #' @examples
 #' \dontrun{
