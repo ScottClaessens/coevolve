@@ -69,7 +69,8 @@
 #'   humans). The dataset is a data frame with 143 observations and 11
 #'   variables:
 #' \describe{
-#'  \item{species}{The name of the primate species}
+#'  \item{species}{The primate species}
+#'  \item{clade}{The clade of the primate species}
 #'  \item{brain_weight}{Average brain weight, in grams}
 #'  \item{body_weight}{Average body weight, in grams}
 #'  \item{diet}{A factor with four levels indicating whether the species'
@@ -87,6 +88,9 @@
 #' @source DeCasien, A. R., Williams, S. A., & Higham, J. P. (2017). Primate
 #'   brain size is predicted by diet but not sociality. \emph{Nature Ecology &
 #'   Evolution}, \emph{1}(5), 0112.
+#' @source Arnold, C., Matthews, L. J., & Nunn, C. L. (2010). The 10kTrees
+#'   website: a new online resource for primate phylogeny. \emph{Evolutionary
+#'   Anthropology}, \emph{19}(3), 114-118.
 #' @source https://10ktrees.nunn-lab.org/Primates/index.html
 #'
 #' @examples
@@ -135,7 +139,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # fit model to primates data
+#' # fit model to repeated data
 #' m <-
 #'   coev_fit(
 #'     data = repeated$data,

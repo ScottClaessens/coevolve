@@ -5,9 +5,11 @@
 \alias{authority}
 \title{Political and religious authority in Austronesian societies}
 \format{
-A list containing a dataset and an associated language phylogeny. The
-phylogeny is a pruned maximum clade credibility tree for 97 Austronesian
-languages. The dataset is a data frame with 97 observations and three
+A list containing a dataset, an associated language phylogeny, and
+an associated distance matrix. The phylogeny is a pruned maximum clade
+credibility tree for 97 Austronesian languages. The distance matrix is a
+matrix with distances (in metres) between each of the 97 Austronesian
+societies. The dataset is a data frame with 97 observations and three
 variables:
 \describe{
 \item{language}{The name of the Austronesian language linked to each
