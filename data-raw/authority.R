@@ -1,3 +1,6 @@
+library(ape)
+library(geosphere)
+library(phangorn)
 library(tidyverse)
 
 # load dataset for political authority from github
@@ -47,7 +50,7 @@ data <-
 
 # load phylogenetic samples from github
 trees <-
-  ape::read.nexus(
+  read.nexus(
     file = paste0(
       "https://raw.githubusercontent.com/ScottClaessens/phyloAuthority/main/",
       "data/authority_97_20_09_21.trees"
@@ -55,12 +58,31 @@ trees <-
   )
 
 # get maximum clade credibility tree
-phylogeny <- phangorn::mcc(trees)
+phylogeny <- mcc(trees)
+
+# load longitude and latitude values
+lon_lat <-
+  read_tsv(
+    file = paste0(
+      "https://raw.githubusercontent.com/ScottClaessens/phyloAuthority/main/",
+      "data/authority_coordinates.txt"
+    ),
+    col_types = "cd"
+  ) %>%
+  dplyr::select(Language, Longitude, Latitude) %>%
+  column_to_rownames(var = "Language") %>%
+  as.matrix()
+
+# convert to geographic distance matrix
+dist_mat <- distm(lon_lat)
+rownames(dist_mat) <- rownames(lon_lat)
+colnames(dist_mat) <- rownames(lon_lat)
 
 # put together list
 authority <- list(
   data = data,
-  phylogeny = phylogeny
+  phylogeny = phylogeny,
+  distance_matrix = dist_mat
   )
 
 # save

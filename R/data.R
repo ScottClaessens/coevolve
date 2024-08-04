@@ -10,9 +10,11 @@
 #'   local (coextensive with the local community), or supralocal (consisting of
 #'   more than one local community).
 #'
-#' @format A list containing a dataset and an associated language phylogeny. The
-#'   phylogeny is a pruned maximum clade credibility tree for 97 Austronesian
-#'   languages. The dataset is a data frame with 97 observations and three
+#' @format A list containing a dataset, an associated language phylogeny, and
+#'   an associated distance matrix. The phylogeny is a pruned maximum clade
+#'   credibility tree for 97 Austronesian languages. The distance matrix is a
+#'   matrix with distances (in metres) between each of the 97 Austronesian
+#'   societies. The dataset is a data frame with 97 observations and three
 #'   variables:
 #' \describe{
 #'  \item{language}{The name of the Austronesian language linked to each
@@ -67,7 +69,8 @@
 #'   humans). The dataset is a data frame with 143 observations and 11
 #'   variables:
 #' \describe{
-#'  \item{species}{The name of the primate species}
+#'  \item{species}{The primate species}
+#'  \item{clade}{The clade of the primate species}
 #'  \item{brain_weight}{Average brain weight, in grams}
 #'  \item{body_weight}{Average body weight, in grams}
 #'  \item{diet}{A factor with four levels indicating whether the species'
@@ -85,6 +88,9 @@
 #' @source DeCasien, A. R., Williams, S. A., & Higham, J. P. (2017). Primate
 #'   brain size is predicted by diet but not sociality. \emph{Nature Ecology &
 #'   Evolution}, \emph{1}(5), 0112.
+#' @source Arnold, C., Matthews, L. J., & Nunn, C. L. (2010). The 10kTrees
+#'   website: a new online resource for primate phylogeny. \emph{Evolutionary
+#'   Anthropology}, \emph{19}(3), 114-118.
 #' @source https://10ktrees.nunn-lab.org/Primates/index.html
 #'
 #' @examples
@@ -110,3 +116,47 @@
 #' }
 #'
 "primates"
+
+#' Example dataset with repeated observations
+#'
+#' @description This example dataset and associated phylogeny are used as an
+#'   example of repeated observations in phylogenetic modelling. The data are
+#'   adapted from de Villemeruil & Nakagawa (2014) to include only the first
+#'   twenty species.
+#'
+#' @format A list containing a dataset and an associated phylogeny. The dataset
+#'   is a data frame with 100 observations and 3 variables:
+#' \describe{
+#'  \item{species}{The name of the species}
+#'  \item{x}{An example continuous variable}
+#'  \item{y}{An example continuous variable}
+#' }
+#'
+#' @source de Villemeruil P. & Nakagawa, S. (2014). General quantitative genetic
+#'   methods for comparative biology. In L. Garamszegi (Ed.), \emph{Modern
+#'   phylogenetic comparative methods and their application in evolutionary
+#'   biology: concepts and practice} (pp. 287-303). Springer, New York.
+#'
+#' @examples
+#' \dontrun{
+#' # fit model to repeated data
+#' m <-
+#'   coev_fit(
+#'     data = repeated$data,
+#'     variables = list(
+#'       x = "normal",
+#'       y = "normal"
+#'     ),
+#'     id = "species",
+#'     tree = repeated$phylogeny,
+#'     # arguments to cmdstanr::sample()
+#'     parallel_chains = 4,
+#'     seed = 1
+#'   )
+#' # print model summary
+#' summary(m)
+#' # plot delta theta
+#' coev_plot_delta_theta(m)
+#' }
+#'
+"repeated"
