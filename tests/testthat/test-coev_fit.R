@@ -536,6 +536,23 @@ test_that("coev_fit() fits the model without error", {
   expect_true(SW(methods::is(extract_samples(m2), "list")))
   expect_true(SW(methods::is(extract_samples(m3), "list")))
   expect_true(SW(methods::is(extract_samples(m4), "list")))
+  # expect no error for stancode and standata methods
+  expect_no_error(SW(stancode(m1)))
+  expect_no_error(SW(stancode(m2)))
+  expect_no_error(SW(stancode(m3)))
+  expect_no_error(SW(stancode(m4)))
+  expect_no_error(SW(standata(m1)))
+  expect_no_error(SW(standata(m2)))
+  expect_no_error(SW(standata(m3)))
+  expect_no_error(SW(standata(m4)))
+  expect_output(SW(stancode(m1)))
+  expect_output(SW(stancode(m2)))
+  expect_output(SW(stancode(m3)))
+  expect_output(SW(stancode(m4)))
+  expect_true(SW(methods::is(standata(m1), "list")))
+  expect_true(SW(methods::is(standata(m2), "list")))
+  expect_true(SW(methods::is(standata(m3), "list")))
+  expect_true(SW(methods::is(standata(m4), "list")))
 })
 
 test_that("effects_mat argument to coev_fit() works as expected", {
@@ -552,6 +569,11 @@ test_that("effects_mat argument to coev_fit() works as expected", {
   # expect no errors for extract_samples method
   expect_no_error(SW(extract_samples(m)))
   expect_true(SW(methods::is(extract_samples(m), "list")))
+  # expect no errors for stancode or standata methods
+  expect_no_error(SW(stancode(m)))
+  expect_no_error(SW(standata(m)))
+  expect_output(SW(stancode(m)))
+  expect_true(SW(methods::is(standata(m), "list")))
   # expect effects_mat correct in model output
   effects_mat <- matrix(
     c(TRUE, TRUE,
@@ -586,6 +608,11 @@ test_that("coev_fit() works with missing data", {
   # expect no errors for extract_samples method
   expect_no_error(SW(extract_samples(m)))
   expect_true(SW(methods::is(extract_samples(m), "list")))
+  # expect no errors for stancode or standata methods
+  expect_no_error(SW(stancode(m)))
+  expect_no_error(SW(standata(m)))
+  expect_output(SW(stancode(m)))
+  expect_true(SW(methods::is(standata(m), "list")))
   # expect warning in summary output
   capture.output(
     SW(
@@ -612,4 +639,9 @@ test_that("coev_fit() works with repeated observations", {
   expect_no_error(SW(summary(m)))
   expect_output(SW(print(m)))
   expect_output(SW(print(summary(m))))
+  # expect no errors for stancode or standata methods
+  expect_no_error(SW(stancode(m)))
+  expect_no_error(SW(standata(m)))
+  expect_output(SW(stancode(m)))
+  expect_true(SW(methods::is(standata(m), "list")))
 })
