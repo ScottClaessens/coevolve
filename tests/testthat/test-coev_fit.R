@@ -527,6 +527,15 @@ test_that("coev_fit() fits the model without error", {
   # expect error if prob for summary is outside of range 0 - 1
   expect_error(SW(summary(m1, prob = -0.01)))
   expect_error(SW(summary(m1, prob =  1.01)))
+  # expect no errors for extract_samples method
+  expect_no_error(SW(extract_samples(m1)))
+  expect_no_error(SW(extract_samples(m2)))
+  expect_no_error(SW(extract_samples(m3)))
+  expect_no_error(SW(extract_samples(m4)))
+  expect_true(SW(methods::is(extract_samples(m1), "list")))
+  expect_true(SW(methods::is(extract_samples(m2), "list")))
+  expect_true(SW(methods::is(extract_samples(m3), "list")))
+  expect_true(SW(methods::is(extract_samples(m4), "list")))
 })
 
 test_that("effects_mat argument to coev_fit() works as expected", {
@@ -540,6 +549,9 @@ test_that("effects_mat argument to coev_fit() works as expected", {
   expect_no_error(SW(summary(m)))
   expect_output(SW(print(m)))
   expect_output(SW(print(summary(m))))
+  # expect no errors for extract_samples method
+  expect_no_error(SW(extract_samples(m)))
+  expect_true(SW(methods::is(extract_samples(m), "list")))
   # expect effects_mat correct in model output
   effects_mat <- matrix(
     c(TRUE, TRUE,
@@ -571,6 +583,9 @@ test_that("coev_fit() works with missing data", {
   expect_no_error(SW(summary(m)))
   expect_output(SW(print(m)))
   expect_output(SW(print(summary(m))))
+  # expect no errors for extract_samples method
+  expect_no_error(SW(extract_samples(m)))
+  expect_true(SW(methods::is(extract_samples(m), "list")))
   # expect warning in summary output
   capture.output(
     SW(
