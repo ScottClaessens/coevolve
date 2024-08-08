@@ -203,11 +203,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       "  int<lower=0,upper=1> prior_only; // should the likelihood be ignored?\n}"
       )
   # write transformed data block
-  sc_transformed_data <-
-    paste0(
-      "transformed data{\n",
-      "  vector[J*J - J] Q_offdiag = rep_vector(0.0, J*J - J);\n"
-      )
+  sc_transformed_data <- "transformed data{\n"
   for (j in 1:length(distributions)) {
     sc_transformed_data <- paste0(
       sc_transformed_data,
@@ -250,7 +246,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  vector<lower=0>[J] Q_diag; // self-drift terms\n",
     "  vector[J] b; // SDE intercepts\n",
     "  vector[J] eta_anc; // ancestral states\n",
-    "  array[N_seg - 1] vector[J] z_drift; // stochastic drift, unscaled and uncorrelated\n"
+    "  matrix[N_seg - 1,J] z_drift; // stochastic drift, unscaled and uncorrelated\n"
   )
   for (i in 1:length(distributions)) {
     # add cut points for ordinal_logistic distributions
@@ -287,7 +283,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   if (!is.null(dist_mat)) {
     sc_parameters <- paste0(
       sc_parameters,
-      "  array[J] vector[N_tips] dist_z; // spatial covariance random effects, unscaled and uncorrelated\n",
+      "  matrix[N_tips,J] dist_z; // spatial covariance random effects, unscaled and uncorrelated\n",
       "  vector<lower=0>[J] rho_dist; // how quickly does covariance decline with distance\n",
       "  vector<lower=0>[J] sigma_dist; // maximum covariance due to spatial location\n"
     )
@@ -307,7 +303,8 @@ coev_make_stancode <- function(data, variables, id, tree,
     "transformed parameters{\n",
     "  matrix[N_seg,J] eta;\n",
     "  matrix[J,J] Q; // drift matrix\n",
-    "  matrix[J,J] A; // selection matrix\n"
+    "  matrix[J,J] A; // selection matrix\n",
+    "  vector[J*J - J] Q_offdiag = rep_vector(0.0, J*J - J);\n"
   )
   # add distance random effects if distance matrix specified by user
   if (!is.null(dist_mat)) {
@@ -415,7 +412,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       "    for ( q in 1:N_tips )\n",
       "      dist_cov[q,q] = sigma_dist[j] + 0.01;\n",
       "    L_dist_cov = cholesky_decompose(dist_cov);\n",
-      "    dist_v[,j] = L_dist_cov * dist_z[j];\n",
+      "    dist_v[,j] = L_dist_cov * dist_z[,j];\n",
       "  }\n"
     )
   }
@@ -425,7 +422,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "model{\n",
     "  b ~ ", priors$b, ";\n",
     "  eta_anc ~ ", priors$eta_anc, ";\n",
-    "  for (i in 2:N_seg) z_drift[i] ~ std_normal();\n",
+    "  to_vector(z_drift) ~ std_normal();\n",
     "  A_offdiag ~ ", priors$A_offdiag, ";\n",
     "  A_diag ~ ", priors$A_diag, ";\n",
     "  Q_diag ~ ", priors$Q_diag, ";\n"
@@ -464,7 +461,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   if (!is.null(dist_mat)) {
     sc_model <- paste0(
       sc_model,
-      "  for (j in 1:J) dist_z[j] ~ std_normal();\n",
+      "  to_vector(dist_z) ~ std_normal();\n",
       "  sigma_dist ~ ", priors$sigma_dist, ";\n",
       "  rho_dist ~ ", priors$rho_dist, ";\n"
     )
