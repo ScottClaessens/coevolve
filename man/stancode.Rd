@@ -2,13 +2,16 @@
 % Please edit documentation in R/stancode.R
 \name{stancode}
 \alias{stancode}
-\title{Expose the stancode of a fitted model represented by a \code{coevfit} object}
+\title{Expose the Stan code of a fitted model represented by a \code{coevfit} object}
 \usage{
 stancode(object)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}.}
 }
+\value{
+Printed Stan code
+}
 \description{
-Expose the stancode of a fitted model represented by a \code{coevfit} object
+Expose the Stan code of a fitted model represented by a \code{coevfit} object
 }
