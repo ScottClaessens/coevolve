@@ -174,19 +174,19 @@ coev_make_stancode <- function(data, variables, id, tree,
   # write data block
   sc_data <- paste0(
     "data{\n",
-    "  int N_tips; // number of tips\n",
-    "  int N_obs; // number of observations\n",
-    "  int J; // number of response traits\n",
-    "  int N_seg; // total number of segments in the tree\n",
-    "  array[N_seg] int node_seq; // index of tree nodes\n",
-    "  array[N_seg] int parent; // index of the parent node of each descendent\n",
+    "  int<lower=1> N_tips; // number of tips\n",
+    "  int<lower=1> N_obs; // number of observations\n",
+    "  int<lower=2> J; // number of response traits\n",
+    "  int<lower=1> N_seg; // total number of segments in the tree\n",
+    "  array[N_seg] int<lower=1> node_seq; // index of tree nodes\n",
+    "  array[N_seg] int<lower=0> parent; // index of the parent node of each descendent\n",
     "  array[N_seg] real ts; // time since parent\n",
-    "  array[N_seg] int tip; // indicator of whether a given segment ends in a tip\n",
-    "  array[J,J] int effects_mat; // which effects should be estimated?\n",
-    "  int num_effects; // number of effects being estimated\n",
+    "  array[N_seg] int<lower=0,upper=1> tip; // indicator of whether a given segment ends in a tip\n",
+    "  array[J,J] int<lower=0,upper=1> effects_mat; // which effects should be estimated?\n",
+    "  int<lower=4> num_effects; // number of effects being estimated\n",
     "  matrix[N_obs,J] y; // observed data\n",
     "  matrix[N_obs,J] miss; // are data points missing?\n",
-    "  array[N_obs] int tip_id; // index between 1 and N_tips that gives the group id\n"
+    "  array[N_obs] int<lower=1> tip_id; // index between 1 and N_tips that gives the group id\n"
     )
   # add distance matrix if user has defined one
   if (!is.null(dist_mat)) {
@@ -200,7 +200,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_data <-
     paste0(
       sc_data,
-      "  int prior_only; // should the likelihood be ignored?\n}"
+      "  int<lower=0,upper=1> prior_only; // should the likelihood be ignored?\n}"
       )
   # write transformed data block
   sc_transformed_data <- "transformed data{\n"
