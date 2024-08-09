@@ -76,15 +76,15 @@ fit <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 4 finished in 4944.0 seconds.
-#> Chain 3 finished in 5209.1 seconds.
-#> Chain 2 finished in 5267.9 seconds.
-#> Chain 1 finished in 5364.4 seconds.
+#> Chain 4 finished in 1223.3 seconds.
+#> Chain 3 finished in 1464.1 seconds.
+#> Chain 2 finished in 1510.5 seconds.
+#> Chain 1 finished in 1517.7 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 5196.4 seconds.
-#> Total execution time: 5364.8 seconds.
-#> Warning: 14 of 2000 (1.0%) transitions ended with a divergence.
+#> Mean chain execution time: 1428.9 seconds.
+#> Total execution time: 1518.0 seconds.
+#> Warning: 61 of 2000 (3.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
 
@@ -100,36 +100,36 @@ summary(fit)
 #> 
 #> Autoregressive selection effects:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority    -0.64      0.51 -1.90 -0.02 1.00     1720     1149
-#> religious_authority    -0.67      0.52 -1.97 -0.03 1.00     1334     1183
+#> political_authority    -0.61      0.51 -1.91 -0.03 1.01     1589      964
+#> religious_authority    -0.68      0.53 -1.98 -0.03 1.01     1170      665
 #> 
 #> Cross selection effects:
 #>                                           Estimate Est.Error 2.5% 97.5% Rhat
-#> political_authority ⟶ religious_authority     2.85      1.08 0.82  5.12 1.00
-#> religious_authority ⟶ political_authority     2.56      1.06 0.54  4.73 1.00
+#> political_authority ⟶ religious_authority     2.99      1.20 0.84  5.58 1.02
+#> religious_authority ⟶ political_authority     2.43      1.08 0.65  4.88 1.01
 #>                                           Bulk_ESS Tail_ESS
-#> political_authority ⟶ religious_authority      780      889
-#> religious_authority ⟶ political_authority      846     1032
+#> political_authority ⟶ religious_authority      189       74
+#> religious_authority ⟶ political_authority      666      833
 #> 
 #> Drift scale parameters:
 #>                     Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority     1.47      0.78 0.11  3.14 1.00      811      733
-#> religious_authority     1.20      0.74 0.06  2.81 1.00      675      661
+#> political_authority     1.52      0.74 0.23  3.05 1.01      772      685
+#> religious_authority     1.18      0.71 0.09  2.72 1.01      668      972
 #> 
 #> Continuous time intercept parameters:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority     0.11      0.95 -1.74  2.00 1.01     3925     1345
-#> religious_authority     0.14      0.94 -1.74  2.00 1.00     3321     1421
+#> political_authority     0.14      0.93 -1.61  1.91 1.01     2427     1288
+#> religious_authority     0.15      0.91 -1.69  1.93 1.01     2063     1300
 #> 
 #> Ordinal cutpoint parameters:
 #>                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority[1]    -1.00      0.85 -2.61  0.66 1.00     2427     1263
-#> political_authority[2]    -0.31      0.84 -1.88  1.32 1.00     2406     1263
-#> political_authority[3]     1.64      0.86 -0.01  3.30 1.00     2171     1532
-#> religious_authority[1]    -1.33      0.88 -3.03  0.39 1.00     2391     1467
-#> religious_authority[2]    -0.69      0.88 -2.44  1.03 1.00     2508     1317
-#> religious_authority[3]     1.59      0.91 -0.15  3.42 1.00     2336     1398
-#> Warning: There were 14 divergent transitions after warmup.
+#> political_authority[1]    -1.03      0.84 -2.67  0.73 1.00     1590     1088
+#> political_authority[2]    -0.33      0.83 -1.95  1.42 1.00     1693     1288
+#> political_authority[3]     1.63      0.86  0.02  3.40 1.01     1640     1397
+#> religious_authority[1]    -1.32      0.87 -3.00  0.35 1.00     1428     1415
+#> religious_authority[2]    -0.68      0.84 -2.23  0.94 1.00     1479     1532
+#> religious_authority[3]     1.64      0.92 -0.09  3.44 1.01      770      714
+#> Warning: There were 61 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
@@ -170,12 +170,12 @@ evolutionary time.
 
 When using the **coevolve** package, please cite the following papers:
 
-- Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic
-  methods reveal that resource-use intensification drives the evolution
-  of “complex” societies. *EcoEvoRXiv*.
-  <https://doi.org/10.32942/osf.io/wfp95>
-- Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S.,
-  Ringen, E. J., & Atkinson, Q. D. (2023). Coevolution of religious and
-  political authority in Austronesian societies. *Nature Human
-  Behaviour*, *7*(1), 38-45.
-  <https://doi.org/10.1038/s41562-022-01471-y>
+-   Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic
+    methods reveal that resource-use intensification drives the
+    evolution of “complex” societies. *EcoEvoRXiv*.
+    <https://doi.org/10.32942/osf.io/wfp95>
+-   Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S.,
+    Ringen, E. J., & Atkinson, Q. D. (2023). Coevolution of religious
+    and political authority in Austronesian societies. *Nature Human
+    Behaviour*, *7*(1), 38-45.
+    <https://doi.org/10.1038/s41562-022-01471-y>
