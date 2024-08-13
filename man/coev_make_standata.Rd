@@ -12,6 +12,7 @@ coev_make_standata(
   effects_mat = NULL,
   dist_mat = NULL,
   prior = NULL,
+  scale = TRUE,
   prior_only = FALSE
 )
 }
@@ -65,6 +66,14 @@ non-phylogenetic group-level varying effects (\code{sigma_group}), and the
 Cholesky factor for the non-phylogenetic group-level correlation matrix
 (\code{L_group}). These must be entered with valid prior strings, e.g.
 \code{list(A_offdiag = "normal(0, 2)")}.}
+
+\item{scale}{Logical. If \code{TRUE} (default), continuous and positive real
+variables following the \code{normal}, \code{student_t}, and
+\code{lognormal} response distributions are standardised before fitting the
+model. This approach is recommended when using default priors to improve
+efficiency and ensure accurate inferences. If \code{FALSE}, variables are
+left unstandardised for model fitting. In this case, users should take care
+to set sensible priors on variables.}
 
 \item{prior_only}{Logical. If \code{FALSE} (default), the model is fitted to
 the data and returns a posterior distribution. If \code{TRUE}, the model

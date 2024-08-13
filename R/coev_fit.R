@@ -45,6 +45,13 @@
 #'   \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
 #'   an error when the function internally checks the syntax of resulting Stan
 #'   code.
+#' @param scale Logical. If \code{TRUE} (default), continuous and positive real
+#'   variables following the \code{normal}, \code{student_t}, and
+#'   \code{lognormal} response distributions are standardised before fitting the
+#'   model. This approach is recommended when using default priors to improve
+#'   efficiency and ensure accurate inferences. If \code{FALSE}, variables are
+#'   left unstandardised for model fitting. In this case, users should take care
+#'   to set sensible priors on variables.
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
@@ -75,16 +82,16 @@
 #' }
 coev_fit <- function(data, variables, id, tree,
                      effects_mat = NULL, dist_mat = NULL,
-                     prior = NULL, prior_only = FALSE, ...) {
+                     prior = NULL, scale = TRUE, prior_only = FALSE, ...) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat,
-             dist_mat, prior, prior_only)
+             dist_mat, prior, scale, prior_only)
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
-                           dist_mat, prior, prior_only)
+                           dist_mat, prior, scale, prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
-                           dist_mat, prior, prior_only)
+                           dist_mat, prior, scale, prior_only)
   # fit model
   model <-
     cmdstanr::cmdstan_model(
@@ -108,6 +115,7 @@ coev_fit <- function(data, variables, id, tree,
       stan_data = sd,
       effects_mat = sd$effects_mat,
       dist_mat = sd$dist_mat,
+      scale = scale,
       prior_only = prior_only
     )
   class(out) <- "coevfit"

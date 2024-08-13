@@ -1,6 +1,6 @@
 # helper function for checking arguments
 run_checks <- function(data, variables, id, tree, effects_mat,
-                       dist_mat, prior, prior_only) {
+                       dist_mat, prior, scale, prior_only) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
@@ -260,6 +260,10 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     if (length(unique(names(prior))) != length(names(prior))) {
       stop2("Argument 'prior' contains duplicate names.")
     }
+  }
+  # stop if scale is not logical
+  if (!is.logical(scale)) {
+    stop2("Argument 'scale' is not logical.")
   }
   # stop if prior_only is not logical
   if (!is.logical(prior_only)) {

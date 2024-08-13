@@ -43,6 +43,13 @@
 #'   Cholesky factor for the non-phylogenetic group-level correlation matrix
 #'   (\code{L_group}). These must be entered with valid prior strings, e.g.
 #'   \code{list(A_offdiag = "normal(0, 2)")}.
+#' @param scale Logical. If \code{TRUE} (default), continuous and positive real
+#'   variables following the \code{normal}, \code{student_t}, and
+#'   \code{lognormal} response distributions are standardised before fitting the
+#'   model. This approach is recommended when using default priors to improve
+#'   efficiency and ensure accurate inferences. If \code{FALSE}, variables are
+#'   left unstandardised for model fitting. In this case, users should take care
+#'   to set sensible priors on variables.
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
@@ -64,10 +71,20 @@
 #'   )
 coev_make_standata <- function(data, variables, id, tree,
                                effects_mat = NULL, dist_mat = NULL,
-                               prior = NULL, prior_only = FALSE) {
+                               prior = NULL, scale = TRUE, prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat,
-             dist_mat, prior, prior_only)
+             dist_mat, prior, scale, prior_only)
+  # warning if scale = FALSE
+  if (!scale) {
+    warning2(
+      paste0(
+        "When scale = FALSE, continuous and positive real variables are left ",
+        "unstandardised in the Stan data list. Users should take care to set ",
+        "sensible priors for model fitting, rather than use default priors."
+      )
+    )
+  }
   # remove data rows where all coevolving variables are NA
   all_missing <- apply(data[,names(variables)], 1, function(x) all(is.na(x)))
   data <- data[!all_missing,]
@@ -130,7 +147,17 @@ coev_make_standata <- function(data, variables, id, tree,
   # get data matrix
   y <- list()
   for (j in 1:length(variables)) {
-    y[[names(variables)[j]]] <- as.numeric(data[,names(variables)[j]])
+    if (scale & variables[[j]] %in% c("normal", "student_t")) {
+      # standardised continuous variables
+      y[[names(variables)[j]]] <- as.numeric(scale(data[,names(variables)[j]]))
+    } else if (scale & variables[[j]] == "lognormal") {
+      # standardised positive reals
+      y[[names(variables)[j]]] <-
+        as.numeric(exp(scale(log(data[,names(variables)[j]]))))
+    } else {
+      # unstandardised and binary/ordered/count variables
+      y[[names(variables)[j]]] <- as.numeric(data[,names(variables)[j]])
+    }
   }
   y <- as.matrix(as.data.frame(y))
   # get missing matrix

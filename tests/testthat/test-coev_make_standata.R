@@ -477,6 +477,19 @@ test_that("coev_make_standata() produces expected errors", {
     "Argument 'prior' contains duplicate names."
   )
   expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      scale = "testing"
+    ),
+    "Argument 'scale' is not logical."
+  )
+  expect_error(
     coev_make_standata(
       data = d,
       variables = list(
@@ -655,4 +668,64 @@ test_that("coev_make_standata() works with repeated observations", {
   expect_true(nrow(sd$y) == 100)
   expect_true(nrow(sd$miss) == 100)
   expect_true(identical(sd$tip_id, match(d$id, tree$tip.label)))
+})
+
+test_that("coev_make_stancode() scales data correctly", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      w = rnorm(n, 10, 0.5),
+      x = as.integer(rnbinom(n, mu = 4, size = 1)),
+      y = rnorm(n, 5, 2),
+      z = rlnorm(n, 1, 1.5)
+    )
+  })
+  # check stan data is the same as real data when scale = FALSE
+  expect_warning(
+    {sd1 <-
+      coev_make_standata(
+        data = d,
+        variables = list(
+          w = "normal",
+          x = "negative_binomial_softplus",
+          y = "student_t",
+          z = "lognormal"
+        ),
+        id = "id",
+        tree = tree,
+        scale = FALSE
+      )},
+    paste0(
+      "When scale = FALSE, continuous and positive real variables are left ",
+      "unstandardised in the Stan data list. Users should take care to set ",
+      "sensible priors for model fitting, rather than use default priors."
+      )
+    )
+  expect_identical(sd1$y[,"w"], as.numeric(d$w))
+  expect_identical(sd1$y[,"x"], as.numeric(d$x))
+  expect_identical(sd1$y[,"y"], as.numeric(d$y))
+  expect_identical(sd1$y[,"z"], as.numeric(d$z))
+  # check stan data is correctly standardised when scale = TRUE
+  expect_no_warning(
+    {sd2 <-
+      coev_make_standata(
+        data = d,
+        variables = list(
+          w = "normal",
+          x = "negative_binomial_softplus",
+          y = "student_t",
+          z = "lognormal"
+        ),
+        id = "id",
+        tree = tree,
+        scale = TRUE
+      )}
+    )
+  expect_identical(sd2$y[,"w"], as.numeric(scale(d$w)))
+  expect_identical(sd2$y[,"x"], as.numeric(d$x))
+  expect_identical(sd2$y[,"y"], as.numeric(scale(d$y)))
+  expect_identical(sd2$y[,"z"], as.numeric(exp(scale(log(d$z)))))
 })

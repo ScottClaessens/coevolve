@@ -485,6 +485,19 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      scale = "testing"
+    ),
+    "Argument 'scale' is not logical."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       prior_only = "testing"
     ),
     "Argument 'prior_only' is not logical."

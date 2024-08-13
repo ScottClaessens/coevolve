@@ -100,7 +100,7 @@ coev_plot_predictive_check <- function(object, variables = NULL,
     # variable index
     var_id <- which(names(object$variables) == variable)
     # get y and yrep
-    y <- object$data[[variable]]
+    y <- object$stan_data$y[,variable]
     yrep <- posterior::as_draws_matrix(post$yrep[,var_id])[draws_ids,]
     # remove data if missing for all coevolving variables
     all_missing <- apply(

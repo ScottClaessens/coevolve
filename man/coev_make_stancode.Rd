@@ -12,6 +12,7 @@ coev_make_stancode(
   effects_mat = NULL,
   dist_mat = NULL,
   prior = NULL,
+  scale = TRUE,
   prior_only = FALSE
 )
 }
@@ -67,6 +68,14 @@ Cholesky factor for the non-phylogenetic group-level correlation matrix
 \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
 an error when the function internally checks the syntax of resulting Stan
 code.}
+
+\item{scale}{Logical. If \code{TRUE} (default), continuous and positive real
+variables following the \code{normal}, \code{student_t}, and
+\code{lognormal} response distributions are standardised before fitting the
+model. This approach is recommended when using default priors to improve
+efficiency and ensure accurate inferences. If \code{FALSE}, variables are
+left unstandardised for model fitting. In this case, users should take care
+to set sensible priors on variables.}
 
 \item{prior_only}{Logical. If \code{FALSE} (default), the model is fitted to
 the data and returns a posterior distribution. If \code{TRUE}, the model
