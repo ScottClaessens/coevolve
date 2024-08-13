@@ -61,8 +61,6 @@ coevolutionary effects between any number of variables and a much wider range of
 response distributions, including continuous, binary, ordinal, and count
 distributions.
 
-Note that the models in this vignette will take a few hours to fit.
-
 ## A working example
 
 To show the model in action, we will use data on political and religious

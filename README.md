@@ -76,14 +76,14 @@ fit <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 4 finished in 1223.3 seconds.
-#> Chain 3 finished in 1464.1 seconds.
-#> Chain 2 finished in 1510.5 seconds.
-#> Chain 1 finished in 1517.7 seconds.
+#> Chain 4 finished in 1165.9 seconds.
+#> Chain 3 finished in 1551.9 seconds.
+#> Chain 2 finished in 1591.5 seconds.
+#> Chain 1 finished in 1601.1 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 1428.9 seconds.
-#> Total execution time: 1518.0 seconds.
+#> Mean chain execution time: 1477.6 seconds.
+#> Total execution time: 1601.3 seconds.
 #> Warning: 61 of 2000 (3.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
