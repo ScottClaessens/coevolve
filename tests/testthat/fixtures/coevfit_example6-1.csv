@@ -1,8 +1,8 @@
 # stan_version_major = 2
 # stan_version_minor = 34
 # stan_version_patch = 1
-# model = model_5caa36b63f071e70dad1155510c970b5_model
-# start_datetime = 2024-08-09 20:08:41 UTC
+# model = model_cc618c70ae89771a3b1fc058eab77829_model
+# start_datetime = 2024-08-13 11:35:43 UTC
 # method = sample (Default)
 #   sample
 #     num_samples = 50
@@ -31,20 +31,20 @@
 #     num_chains = 1 (Default)
 # id = 1 (Default)
 # data
-#   file = C:/Users/scla896/AppData/Local/Temp/RtmpkhVljh/standata-5150cbe4e4b.json
+#   file = C:/Users/scla896/AppData/Local/Temp/RtmpWS7joQ/standata-379c274024b7.json
 # init = 2 (Default)
 # random
 #   seed = 1
 # output
-#   file = C:/Users/scla896/AppData/Local/Temp/RtmpkhVljh/model_5caa36b63f071e70dad1155510c970b5-202408092108-1-598c68.csv
+#   file = C:/Users/scla896/AppData/Local/Temp/RtmpWS7joQ/model_cc618c70ae89771a3b1fc058eab77829-202408131235-1-56ea2f.csv
 #   diagnostic_file =  (Default)
 #   refresh = 100 (Default)
 #   sig_figs = -1 (Default)
-#   profile_file = C:/Users/scla896/AppData/Local/Temp/RtmpkhVljh/model_5caa36b63f071e70dad1155510c970b5-profile-202408092108-1-7a4e24.csv
+#   profile_file = C:/Users/scla896/AppData/Local/Temp/RtmpWS7joQ/model_cc618c70ae89771a3b1fc058eab77829-profile-202408131235-1-8e302e.csv
 #   save_cmdstan_config = 0 (Default)
 # num_threads = 1 (Default)
 # stanc_version = stanc3 v2.34.0
-# stancflags = --name=model_5caa36b63f071e70dad1155510c970b5_model
+# stancflags = --name=model_cc618c70ae89771a3b1fc058eab77829_model
 lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_diag.1,A_diag.2,A_offdiag.1,A_offdiag.2,Q_diag.1,Q_diag.2,b.1,b.2,eta_anc.1,eta_anc.2,z_drift.1.1,z_drift.2.1,z_drift.3.1,z_drift.4.1,z_drift.5.1,z_drift.6.1,z_drift.1.2,z_drift.2.2,z_drift.3.2,z_drift.4.2,z_drift.5.2,z_drift.6.2,c2.1,eta.1.1,eta.2.1,eta.3.1,eta.4.1,eta.5.1,eta.6.1,eta.7.1,eta.1.2,eta.2.2,eta.3.2,eta.4.2,eta.5.2,eta.6.2,eta.7.2,A.1.1,A.2.1,A.1.2,A.2.2,Q.1.1,Q.2.1,Q.1.2,Q.2.2,Q_inf.1.1,Q_inf.2.1,Q_inf.1.2,Q_inf.2.2,drift_tips.1.1,drift_tips.2.1,drift_tips.3.1,drift_tips.4.1,drift_tips.5.1,drift_tips.6.1,drift_tips.7.1,drift_tips.1.2,drift_tips.2.2,drift_tips.3.2,drift_tips.4.2,drift_tips.5.2,drift_tips.6.2,drift_tips.7.2,sigma_tips.1.1,sigma_tips.2.1,sigma_tips.3.1,sigma_tips.4.1,sigma_tips.5.1,sigma_tips.6.1,sigma_tips.7.1,sigma_tips.1.2,sigma_tips.2.2,sigma_tips.3.2,sigma_tips.4.2,sigma_tips.5.2,sigma_tips.6.2,sigma_tips.7.2,log_lik.1,log_lik.2,log_lik.3,log_lik.4,log_lik.5,log_lik.6,log_lik.7,log_lik.8,yrep.1.1,yrep.2.1,yrep.3.1,yrep.4.1,yrep.1.2,yrep.2.2,yrep.3.2,yrep.4.2
 # Adaptation terminated
 # Step size = 0.332181
@@ -101,7 +101,7 @@ lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_di
 -15.8905,0.954746,0.332181,4,15,0,24.1141,-0.29933,-0.289057,-1.70906,0.180283,0.989481,1.18107,-1.06456,-0.311914,1.2777,0.369142,-0.826036,1.12494,-1.82354,-0.183798,-1.62008,-1.38651,0.164957,-1.23021,-0.706933,0.190306,0.700544,0.449731,-0.00986007,0.594596,0.594596,-0.368527,-0.368527,1.2777,1.40671,1.19122,-0.274416,-0.274416,0.0639579,0.0639579,0.369142,-0.216807,0.383702,-0.29933,0.180283,-1.70906,-0.289057,0.989481,0,0,1.18107,8.44732,-1.19001,-1.19001,1.30077,-1.90371,-0.191879,-1.89575,-1.62243,-99,-99,-99,0.257293,0.22216,1.32314,1.01723,-99,-99,-99,0.989481,0.989481,0.989481,0.989481,-99,-99,-99,1.18107,1.18107,1.18107,1.18107,-99,-99,-99,0,-0.511926,-0.0988542,-0.128011,-0.696785,0,-0.221019,-1.38063,0,0,0,0,1,2,2,2
 -21.6193,0.83874,0.332181,4,15,0,30.4373,-0.0998401,-0.108738,1.78778,-0.820386,0.483006,0.737017,1.38588,-0.49349,-1.72497,-0.214729,0.783372,-1.1874,2.50746,0.614789,1.20079,-0.736776,-0.203712,1.27126,0.842246,0.120298,-1.14589,-0.251328,-1.26477,0.120408,0.120408,-0.159771,-0.159771,-1.72497,-1.85421,-1.66909,0.425911,0.425911,0.052859,0.052859,-0.214729,0.281374,-0.222473,-0.0998401,-0.820386,1.78778,-0.108738,0.483006,0,0,0.737017,4.98895,0.143527,0.143527,2.30611,1.97338,0.48384,1.06053,-0.650719,-99,-99,-99,1.18763,0.237049,-0.42058,-0.364884,-99,-99,-99,0.483006,0.483006,0.483006,0.483006,-99,-99,-99,0.737017,0.737017,0.737017,0.737017,-99,-99,-99,0,-0.435985,-1.24169,-0.36786,-0.0547059,0,-0.342008,-1.27894,1,0,1,0,2,2,2,2
 # 
-#  Elapsed Time: 0.08 seconds (Warm-up)
-#                0.095 seconds (Sampling)
-#                0.175 seconds (Total)
+#  Elapsed Time: 0.082 seconds (Warm-up)
+#                0.102 seconds (Sampling)
+#                0.184 seconds (Total)
 # 
