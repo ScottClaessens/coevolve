@@ -101,69 +101,73 @@ coev_make_stancode <- function(data, variables, id, tree,
   # write functions block
   sc_functions <- paste0(
     "functions {\n",
-    "  // returns the Kronecker Product\n",
-    "  matrix kronecker_prod(matrix A, matrix B) {\n",
-    "    matrix[rows(A) * rows(B), cols(A) * cols(B)] C;\n",
-    "    int m;\n",
-    "    int n;\n",
-    "    int p;\n",
-    "    int q;\n",
-    "    m = rows(A);\n",
-    "    n = cols(A);\n",
-    "    p = rows(B);\n",
-    "    q = cols(B);\n",
-    "    for (i in 1:m)\n",
-    "      for (j in 1:n)\n",
-    "        for (k in 1:p)\n",
-    "          for (l in 1:q)\n",
-    "            C[p*(i-1)+k,q*(j-1)+l] = A[i,j]*B[k,l];\n",
-    "    return C;\n",
-    "  }\n",
-    "  \n",
-    "  // expected auto and cross effects over a discrete time t\n",
-    "  matrix A_dt(matrix A, real t) {\n",
-    "    return( matrix_exp(A * t) );\n",
-    "  }\n",
-    "  \n",
-    "  // calculate A sharp matrix\n",
-    "  matrix A_sharp(matrix A) {\n",
-    "    matrix[rows(A) * rows(A), cols(A) * cols(A)] A_temp;\n",
-    "    matrix[rows(A),cols(A)] I; // identity matrix\n",
-    "    I = diag_matrix(rep_vector(1,rows(A)));\n",
-    "    A_temp = kronecker_prod(A,I) + kronecker_prod(I,A);\n",
-    "    return(A_temp);\n",
-    "  }\n",
-    "  \n",
-    "  // solve SDE\n",
-    "  matrix cov_drift(matrix A, matrix Q, real ts) {\n",
-    "    matrix[rows(A) * rows(A), cols(A) * cols(A)] A_sharp_temp;\n",
-    "    matrix[rows(A) * rows(A), cols(A) * cols(A)] I; // identity matrix\n",
-    "    vector[rows(Q)*cols(Q)] row_Q;\n",
-    "    vector[rows(A)*cols(A)] irow_vec;\n",
-    "    matrix[rows(A),cols(A)] irow_mat;\n",
-    "    I = diag_matrix(rep_vector(1,rows(A_sharp_temp)));\n",
-    "    A_sharp_temp = A_sharp(A);\n",
-    "    // row operation takes elements of a matrix rowwise and puts them into a column vector\n",
-    "    for (i in 1:rows(Q))\n",
-    "      for (j in 1:cols(Q)) {\n",
-    "        row_Q[i + (j-1)*rows(Q)] = Q[j,i];\n",
-    "      }\n",
-    "    irow_vec = inverse(A_sharp_temp) * (matrix_exp(A_sharp_temp * ts) - I) * row_Q;\n",
-    "    // irow takes elements of a column vector and puts them in a matrix rowwise\n",
-    "    {\n",
-    "      int row_size = rows(A);\n",
-    "      int row_ticker = 1;\n",
-    "      int col_ticker = 0;\n",
-    "      for (i in 1:num_elements(irow_vec)) {\n",
-    "        col_ticker += 1;\n",
-    "        if (col_ticker > row_size) {\n",
-    "          row_ticker += 1;\n",
-    "          col_ticker = 1;\n",
+    "  // Charles Driver's optimized way of solving for the asymptotic Q matrix\n",
+    "  matrix ksolve (matrix A, matrix Q) {\n",
+    "    int d = rows(A);\n",
+    "    int d2 = (d * d - d) %/% 2;\n",
+    "    matrix [d + d2, d + d2] O;\n",
+    "    vector [d + d2] triQ;\n",
+    "    matrix[d,d] AQ;\n",
+    "    int z = 0;         // z is row of output\n",
+    "    for (j in 1:d) {   // for column reference of solution vector\n",
+    "      for (i in 1:j) { // and row reference...\n",
+    "        if (j >= i) {  // if i and j denote a covariance parameter (from upper tri)\n",
+    "          int y = 0;   // start new output row\n",
+    "          z += 1;      // shift current output row down\n",
+    "          for (ci in 1:d) {   // for columns and\n",
+    "            for (ri in 1:d) { // rows of solution\n",
+    "              if (ci >= ri) { // when in upper tri (inc diag)\n",
+    "                y += 1;       // move to next column of output\n",
+    "                if (i == j) { // if output row is for a diagonal element\n",
+    "                  if (ri == i) O[z, y] = 2 * A[ri, ci];\n",
+    "                  if (ci == i) O[z, y] = 2 * A[ci, ri];\n",
+    "                }\n",
+    "                if (i != j) { // if output row is not for a diagonal element\n",
+    "                  //if column of output matches row of output, sum both A diags\n",
+    "                  if (y == z) O[z, y] = A[ri, ri] + A[ci, ci];\n",
+    "                  if (y != z) { // otherwise...\n",
+    "                    // if solution element we refer to is related to output row...\n",
+    "                    if (ci == ri) { // if solution element is a variance\n",
+    "                      // if variance of solution corresponds to row of our output\n",
+    "                      if (ci == i) O[z, y] = A[j, ci];\n",
+    "                      // if variance of solution corresponds to col of our output\n",
+    "                      if (ci == j) O[z, y] = A[i, ci];\n",
+    "                    }\n",
+    "                    //if solution element is a related covariance\n",
+    "                    if (ci != ri && (ri == i || ri == j || ci == i || ci == j )) {\n",
+    "                      // for row 1,2 / 2,1 of output, if solution row ri 1 (match)\n",
+    "                      // and column ci 3, we need A[2,3]\n",
+    "                      if (ri == i) O[z, y] = A[j, ci];\n",
+    "                      if (ri == j) O[z, y] = A[i, ci];\n",
+    "                      if (ci == i) O[z, y] = A[j, ri];\n",
+    "                      if (ci == j) O[z, y] = A[i, ri];\n",
+    "                    }\n",
+    "                  }\n",
+    "                }\n",
+    "                if (is_nan(O[z, y])) O[z, y] = 0;\n",
+    "              }\n",
+    "            }\n",
+    "          }\n",
     "        }\n",
-    "        irow_mat[row_ticker,col_ticker] = irow_vec[i];\n",
     "      }\n",
     "    }\n",
-    "    return(irow_mat);\n",
+    "    z = 0; // get upper tri of Q\n",
+    "    for (j in 1:d) {\n",
+    "      for (i in 1:j) {\n",
+    "        z += 1;\n",
+    "        triQ[z] = Q[i, j];\n",
+    "      }\n",
+    "    }\n",
+    "    triQ = -O \\ triQ; // get upper tri of asymQ\n",
+    "    z = 0; // put upper tri of asymQ into matrix\n",
+    "    for (j in 1:d) {\n",
+    "      for (i in 1:j) {\n",
+    "        z += 1;\n",
+    "        AQ[i, j] = triQ[z];\n",
+    "        if (i != j) AQ[j, i] = triQ[z];\n",
+    "      }\n",
+    "    }\n",
+    "    return AQ;\n",
     "  }\n",
     "  \n",
     "  // return number of matches of y in vector x\n",
@@ -192,19 +196,19 @@ coev_make_stancode <- function(data, variables, id, tree,
   # write data block
   sc_data <- paste0(
     "data{\n",
-    "  int N_tips; // number of tips\n",
-    "  int N_obs; // number of observations\n",
-    "  int J; // number of response traits\n",
-    "  int N_seg; // total number of segments in the tree\n",
-    "  array[N_seg] int node_seq; // index of tree nodes\n",
-    "  array[N_seg] int parent; // index of the parent node of each descendent\n",
+    "  int<lower=1> N_tips; // number of tips\n",
+    "  int<lower=1> N_obs; // number of observations\n",
+    "  int<lower=2> J; // number of response traits\n",
+    "  int<lower=1> N_seg; // total number of segments in the tree\n",
+    "  array[N_seg] int<lower=1> node_seq; // index of tree nodes\n",
+    "  array[N_seg] int<lower=0> parent; // index of the parent node of each descendent\n",
     "  array[N_seg] real ts; // time since parent\n",
-    "  array[N_seg] int tip; // indicator of whether a given segment ends in a tip\n",
-    "  array[J,J] int effects_mat; // which effects should be estimated?\n",
-    "  int num_effects; // number of effects being estimated\n",
+    "  array[N_seg] int<lower=0,upper=1> tip; // indicator of whether a given segment ends in a tip\n",
+    "  array[J,J] int<lower=0,upper=1> effects_mat; // which effects should be estimated?\n",
+    "  int<lower=2> num_effects; // number of effects being estimated\n",
     "  matrix[N_obs,J] y; // observed data\n",
     "  matrix[N_obs,J] miss; // are data points missing?\n",
-    "  array[N_obs] int tip_id; // index between 1 and N_tips that gives the group id\n"
+    "  array[N_obs] int<lower=1> tip_id; // index between 1 and N_tips that gives the group id\n"
     )
   # add distance matrix if user has defined one
   if (!is.null(dist_mat)) {
@@ -218,7 +222,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_data <-
     paste0(
       sc_data,
-      "  int prior_only; // should the likelihood be ignored?\n}"
+      "  int<lower=0,upper=1> prior_only; // should the likelihood be ignored?\n}"
       )
   # write transformed data block
   sc_transformed_data <- "transformed data{\n"
@@ -264,7 +268,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  vector<lower=0>[J] Q_diag; // self-drift terms\n",
     "  vector[J] b; // SDE intercepts\n",
     "  vector[J] eta_anc; // ancestral states\n",
-    "  matrix[N_seg - 1,J] z_drift; // stochastic drift, unscaled and uncorrelated\n"
+    "  array[N_seg - 1] vector[J] z_drift; // stochastic drift, unscaled and uncorrelated\n"
   )
   for (i in 1:length(distributions)) {
     # add cut points for ordinal_logistic distributions
@@ -319,11 +323,12 @@ coev_make_stancode <- function(data, variables, id, tree,
   # write transformed parameters block
   sc_transformed_parameters <- paste0(
     "transformed parameters{\n",
-    "  matrix[N_seg,J] eta;\n",
-    "  matrix[J,J] Q; // drift matrix\n",
-    "  matrix[J,J] I; // identity matrix\n",
-    "  matrix[J,J] A; // selection matrix\n",
-    "  vector[J*J - J] Q_offdiag = rep_vector(0.0, J*J - J);\n"
+    "  array[N_seg] vector[J] eta;\n",
+    "  matrix[J,J] A = diag_matrix(A_diag); // selection matrix\n",
+    "  matrix[J,J] Q = diag_matrix(Q_diag); // drift matrix\n",
+    "  matrix[J,J] Q_inf; // asymptotic covariance matrix\n",
+    "  array[N_seg] vector[J] drift_tips; // terminal drift parameters\n",
+    "  array[N_seg] vector[J] sigma_tips; // terminal drift parameters\n"
   )
   # add distance random effects if distance matrix specified by user
   if (!is.null(dist_mat)) {
@@ -343,77 +348,52 @@ coev_make_stancode <- function(data, variables, id, tree,
   }
   sc_transformed_parameters <- paste0(
     sc_transformed_parameters,
-    "  matrix[N_seg,J] drift_tips; // terminal drift parameters\n",
-    "  matrix[N_seg,J] sigma_tips; // terminal drift parameters\n",
-    "  // fill A matrix //////////\n",
+    "  // fill off diagonal of A matrix\n",
     "  {\n",
     "    int ticker = 1;\n",
-    "    // fill upper triangle of matrix\n",
-    "    for (i in 1:(J-1)) {\n",
-    "      for (j in (i+1):J) {\n",
-    "        if (effects_mat[i,j] == 1) {\n",
-    "          A[i,j] = A_offdiag[ticker];\n",
-    "          ticker += 1;\n",
-    "        } else if (effects_mat[i,j] == 0) {\n",
-    "          A[i,j] = 0;\n",
+    "    for (i in 1:J) {\n",
+    "      for (j in 1:J) {\n",
+    "        if (i != j) {\n",
+    "          if (effects_mat[i,j] == 1) {\n",
+    "            A[i,j] = A_offdiag[ticker];\n",
+    "            ticker += 1;\n",
+    "          } else if (effects_mat[i,j] == 0) {\n",
+    "            A[i,j] = 0;\n",
+    "          }\n",
     "        }\n",
     "      }\n",
     "    }\n",
-    "    // fill lower triangle of matrix\n",
-    "    for (i in 1:(J-1)) {\n",
-    "      for (j in (i+1):J) {\n",
-    "        if (effects_mat[j,i] == 1) {\n",
-    "          A[j,i] = A_offdiag[ticker];\n",
-    "          ticker += 1;\n",
-    "        } else if (effects_mat[j,i] == 0) {\n",
-    "          A[j,i] = 0;\n",
-    "        }\n",
-    "      }\n",
-    "    }\n",
-    "    // fill diag of matrix\n",
-    "    for (j in 1:J) A[j,j] = A_diag[j];\n",
     "  }\n",
-    "  // fill Q matrix //////////\n",
-    "  {\n",
-    "    int ticker = 1;\n",
-    "    for (i in 1:(J-1))\n",
-    "      for (j in (i+1):J) {\n",
-    "        Q[i,j] = Q_offdiag[ticker];\n",
-    "        Q[j,i] = Q[i,j]; // symmetry of covariance\n",
-    "        ticker += 1;\n",
-    "      }\n",
-    "    for (j in 1:J) Q[j,j] = Q_diag[j];\n",
-    "  }\n",
-    "  // identity matrix\n",
-    "  I = diag_matrix(rep_vector(1,J));\n",
+    "  // calculate asymptotic covariance\n",
+    "  Q_inf = ksolve(A, Q);\n",
     "  // setting ancestral states and placeholders\n",
     "  for (j in 1:J) {\n",
-    "    eta[node_seq[1],j] = eta_anc[j];\n",
-    "    drift_tips[node_seq[1],j] = -99;\n",
-    "    sigma_tips[node_seq[1],j] = -99;\n",
+    "    eta[node_seq[1]][j] = eta_anc[j];\n",
+    "    drift_tips[node_seq[1]][j] = -99;\n",
+    "    sigma_tips[node_seq[1]][j] = -99;\n",
     "  }\n",
     "  for (i in 2:N_seg) {\n",
     "    matrix[J,J] A_delta; // amount of deterministic change (selection)\n",
     "    matrix[J,J] VCV; // variance-covariance matrix of stochastic change (drift)\n",
     "    vector[J] drift_seg; // accumulated drift over the segment\n",
-    "    A_delta = A_dt(A, ts[i]);\n",
-    "    VCV = cov_drift(A, Q, ts[i]);\n",
-    "    drift_seg = cholesky_decompose(VCV) * to_vector( z_drift[i-1,] );\n",
+    "    A_delta = matrix_exp(A * ts[i]);\n",
+    "    VCV = Q_inf - quad_form_sym(Q_inf, A_delta');\n",
+    "    drift_seg = cholesky_decompose(VCV) * z_drift[i-1];\n",
     "    // if not a tip, add the drift parameter\n",
     "    if (tip[i] == 0) {\n",
-    "      eta[node_seq[i],] = to_row_vector(\n",
-    "        A_delta * to_vector(eta[parent[i],]) + (inverse(A) * (A_delta - I) * b) + drift_seg\n",
+    "      eta[node_seq[i]] = to_vector(\n",
+    "        A_delta * eta[parent[i]] + ((A \\ add_diag(A_delta, -1)) * b) + drift_seg\n",
     "      );\n",
-    "      drift_tips[node_seq[i],] = to_row_vector(rep_vector(-99, J));\n",
-    "      sigma_tips[node_seq[i],] = to_row_vector(rep_vector(-99, J));\n",
+    "      drift_tips[node_seq[i]] = rep_vector(-99, J);\n",
+    "      sigma_tips[node_seq[i]] = rep_vector(-99, J);\n",
     "    }\n",
     "    // if is a tip, omit, we'll deal with it in the model block;\n",
     "    else {\n",
-    "      eta[node_seq[i],] = to_row_vector(\n",
-    "        A_delta * to_vector(eta[parent[i],]) + (inverse(A) * (A_delta - I) * b)\n",
+    "      eta[node_seq[i]] = to_vector(\n",
+    "        A_delta * eta[parent[i]] + ((A \\ add_diag(A_delta, -1)) * b)\n",
     "      );\n",
-    "      drift_tips[node_seq[i],] = to_row_vector(drift_seg);\n",
-    "      sigma_tips[node_seq[i],] = to_row_vector(diagonal(Q));\n",
+    "      drift_tips[node_seq[i]] = drift_seg;\n",
+    "      sigma_tips[node_seq[i]] = diagonal(Q);\n",
     "    }\n",
     "  }\n"
   )
@@ -443,7 +423,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "model{\n",
     "  b ~ ", priors$b, ";\n",
     "  eta_anc ~ ", priors$eta_anc, ";\n",
-    "  to_vector(z_drift) ~ std_normal();\n",
+    "  for (i in 1:(N_seg - 1)) z_drift[i] ~ std_normal();\n",
     "  A_offdiag ~ ", priors$A_offdiag, ";\n",
     "  A_diag ~ ", priors$A_diag, ";\n",
     "  Q_diag ~ ", priors$Q_diag, ";\n"
@@ -503,69 +483,71 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  if (!prior_only) {\n",
     "    for (i in 1:N_obs) {\n"
     )
+  # function to get linear model
+  lmod <- function(j) {
+    paste0(
+      "eta[tip_id[i]][", j, "]",
+      ifelse(
+        !is.null(dist_mat),
+        paste0(" + dist_v[tip_id[i],", j, "]"),
+        ""
+      ),
+      ifelse(
+        any(duplicated(data[,id])),
+        paste0(" + group_v[tip_id[i],", j, "]"),
+        ""
+      )
+    )
+  }
   for (j in 1:length(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "bernoulli_logit(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "]);\n"
+        "      if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
+        "bernoulli_logit(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "]);\n"
         )
     } else if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "ordered_logistic(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "], c", j, ");\n"
+        "      if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
+        "ordered_logistic(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "], c", j, ");\n"
         )
     } else if (distributions[j] == "poisson_softplus") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "poisson(mean(obs", j, ") * log1p_exp(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "]));\n"
+        "      if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
+        "poisson(mean(obs", j, ") * log1p_exp(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "]));\n"
         )
     } else if (distributions[j] == "normal") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
-        "normal(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        ", sigma_tips[tip_id[i],", j, "]);\n"
+        "      if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
+        "normal(", lmod(j),
+        ", sigma_tips[tip_id[i]][", j, "]);\n"
         )
     } else if (distributions[j] == "student_t") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
-        "student_t(nu", j, ", eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        ", sigma_tips[tip_id[i],", j, "]);\n"
+        "      if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
+        "student_t(nu", j, ", ", lmod(j),
+        ", sigma_tips[tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "lognormal") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
-        "lognormal(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        ", sigma_tips[tip_id[i],", j, "]);\n"
+        "      if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
+        "lognormal(", lmod(j),
+        ", sigma_tips[tip_id[i]][", j, "]);\n"
         )
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "neg_binomial_2(mean(obs", j, ") * log1p_exp(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "]), phi", j, ");\n"
+        "      if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
+        "neg_binomial_2(mean(obs", j, ") * log1p_exp(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "]), phi", j, ");\n"
         )
     }
   }
@@ -603,101 +585,73 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
-        "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "]);\n",
+        "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "]);\n",
         "      yrep_temp[i,", j, "] = ",
-        "bernoulli_logit_rng(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "]);\n"
+        "bernoulli_logit_rng(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "ordered_logistic") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
-        "ordered_logistic_lpmf(to_int(y[i,", j, "]) | eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "], c", j, ");\n",
+        "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "], c", j, ");\n",
         "      yrep_temp[i,", j, "] = ",
-        "ordered_logistic_rng(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "], c", j, ");\n"
+        "ordered_logistic_rng(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "], c", j, ");\n"
       )
     } else if (distributions[j] == "poisson_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
         "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
-        ") * log1p_exp(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "]));\n",
+        ") * log1p_exp(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "]));\n",
         "      yrep_temp[i,", j, "] = ",
-        "poisson_rng(mean(obs", j, ") * log1p_exp(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "]));\n"
+        "poisson_rng(mean(obs", j, ") * log1p_exp(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "]));\n"
       )
     } else if (distributions[j] == "normal") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
-        "normal_lpdf(y[i,", j, "] | eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        ", sigma_tips[tip_id[i],", j, "]);\n",
+        "normal_lpdf(y[i,", j, "] | ", lmod(j),
+        ", sigma_tips[tip_id[i]][", j, "]);\n",
         "      yrep_temp[i,", j, "] = ",
-        "normal_rng(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        ", sigma_tips[tip_id[i],", j, "]);\n"
+        "normal_rng(", lmod(j),
+        ", sigma_tips[tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "student_t") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
-        "student_t_lpdf(y[i,", j, "] | nu", j, ", eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        ", sigma_tips[tip_id[i],", j, "]);\n",
+        "student_t_lpdf(y[i,", j, "] | nu", j, ", ", lmod(j),
+        ", sigma_tips[tip_id[i]][", j, "]);\n",
         "      yrep_temp[i,", j, "] = ",
-        "student_t_rng(nu", j, ", eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        ", sigma_tips[tip_id[i],", j, "]);\n"
+        "student_t_rng(nu", j, ", ", lmod(j),
+        ", sigma_tips[tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "lognormal") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
-        "lognormal_lpdf(y[i,", j, "] | eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        ", sigma_tips[tip_id[i],", j, "]);\n",
+        "lognormal_lpdf(y[i,", j, "] | ", lmod(j),
+        ", sigma_tips[tip_id[i]][", j, "]);\n",
         "      yrep_temp[i,", j, "] = ",
-        "lognormal_rng(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        ", sigma_tips[tip_id[i],", j, "]);\n"
+        "lognormal_rng(", lmod(j),
+        ", sigma_tips[tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
         "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
-        ") * log1p_exp(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "]), phi", j, ");\n",
+        ") * log1p_exp(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "]), phi", j, ");\n",
         "      yrep_temp[i,", j, "] = ",
-        "neg_binomial_2_rng(mean(obs", j, ") * log1p_exp(eta[tip_id[i],", j, "]",
-        ifelse(!is.null(dist_mat), paste0(" + dist_v[tip_id[i],", j, "]"), ""),
-        ifelse(any(duplicated(data[,id])), paste0(" + group_v[tip_id[i],", j, "]"), ""),
-        " + drift_tips[tip_id[i],", j, "]), phi", j, ");\n"
+        "neg_binomial_2_rng(mean(obs", j, ") * log1p_exp(", lmod(j),
+        " + drift_tips[tip_id[i]][", j, "]), phi", j, ");\n"
       )
     }
   }
