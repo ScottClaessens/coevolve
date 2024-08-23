@@ -150,9 +150,14 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   if (!(id %in% colnames(data))) {
     stop2("Argument 'id' is not a valid column name in the data.")
   }
-  # stop if tree is not a phylo object
-  if (!methods::is(tree, "phylo")) {
-    stop2("Argument 'tree' must be an phylogenetic tree object of class phylo.")
+  # stop if tree is not a phylo or multiPhylo object
+  if (!(methods::is(tree, "phylo") | methods::is(tree, "multiPhylo"))) {
+    stop2(
+      paste0(
+        "Argument 'tree' must be an phylogenetic tree object of class phylo ",
+        "or multiPhylo."
+        )
+      )
   }
   # stop if id in data does not match tree tip labels exactly
   if (!identical(sort(unique(data[,id])), sort(tree$tip.label))) {
