@@ -205,13 +205,14 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_data <- paste0(
     "data{\n",
     "  int<lower=1> N_tips; // number of tips\n",
+    "  int<lower=1> N_tree; // number of trees\n",
     "  int<lower=1> N_obs; // number of observations\n",
     "  int<lower=2> J; // number of response traits\n",
-    "  int<lower=1> N_seg; // total number of segments in the tree\n",
-    "  array[N_seg] int<lower=1> node_seq; // index of tree nodes\n",
-    "  array[N_seg] int<lower=0> parent; // index of the parent node of each descendent\n",
-    "  array[N_seg] real ts; // time since parent\n",
-    "  array[N_seg] int<lower=0,upper=1> tip; // indicator of whether a given segment ends in a tip\n",
+    "  int<lower=1> N_seg; // total number of segments in the trees\n",
+    "  array[N_tree, N_seg] int<lower=1> node_seq; // index of tree nodes\n",
+    "  array[N_tree, N_seg] int<lower=0> parent; // index of the parent node of each descendent\n",
+    "  array[N_tree, N_seg] real ts; // time since parent\n",
+    "  array[N_tree, N_seg] int<lower=0,upper=1> tip; // indicator of whether a given segment ends in a tip\n",
     "  array[J,J] int<lower=0,upper=1> effects_mat; // which effects should be estimated?\n",
     "  int<lower=2> num_effects; // number of effects being estimated\n",
     "  matrix[N_obs,J] y; // observed data\n",
@@ -275,8 +276,8 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  vector[num_effects - J] A_offdiag; // cross-lagged terms of A\n",
     "  vector<lower=0>[J] Q_diag; // self-drift terms\n",
     "  vector[J] b; // SDE intercepts\n",
-    "  vector[J] eta_anc; // ancestral states\n",
-    "  array[N_seg - 1] vector[J] z_drift; // stochastic drift, unscaled and uncorrelated\n"
+    "  array[N_tree] vector[J] eta_anc; // ancestral states\n",
+    "  array[N_tree, N_seg - 1] vector[J] z_drift; // stochastic drift, unscaled and uncorrelated\n"
   )
   for (i in 1:length(distributions)) {
     # add cut points for ordinal_logistic distributions
@@ -331,12 +332,12 @@ coev_make_stancode <- function(data, variables, id, tree,
   # write transformed parameters block
   sc_transformed_parameters <- paste0(
     "transformed parameters{\n",
-    "  array[N_seg] vector[J] eta;\n",
+    "  array[N_tree, N_seg] vector[J] eta;\n",
     "  matrix[J,J] A = diag_matrix(A_diag); // selection matrix\n",
     "  matrix[J,J] Q = diag_matrix(Q_diag); // drift matrix\n",
     "  matrix[J,J] Q_inf; // asymptotic covariance matrix\n",
-    "  array[N_seg] vector[J] drift_tips; // terminal drift parameters\n",
-    "  array[N_seg] vector[J] sigma_tips; // terminal drift parameters\n"
+    "  array[N_tree, N_seg] vector[J] drift_tips; // terminal drift parameters\n",
+    "  array[N_tree, N_seg] vector[J] sigma_tips; // terminal drift parameters\n"
   )
   # add distance random effects if distance matrix specified by user
   if (!is.null(dist_mat)) {
@@ -374,34 +375,35 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  }\n",
     "  // calculate asymptotic covariance\n",
     "  Q_inf = ksolve(A, Q);\n",
-    "  // setting ancestral states and placeholders\n",
-    "  for (j in 1:J) {\n",
-    "    eta[node_seq[1]][j] = eta_anc[j];\n",
-    "    drift_tips[node_seq[1]][j] = -99;\n",
-    "    sigma_tips[node_seq[1]][j] = -99;\n",
-    "  }\n",
-    "  for (i in 2:N_seg) {\n",
-    "    matrix[J,J] A_delta; // amount of deterministic change (selection)\n",
-    "    matrix[J,J] VCV; // variance-covariance matrix of stochastic change (drift)\n",
-    "    vector[J] drift_seg; // accumulated drift over the segment\n",
-    "    A_delta = matrix_exp(A * ts[i]);\n",
-    "    VCV = Q_inf - quad_form_sym(Q_inf, A_delta');\n",
-    "    drift_seg = cholesky_decompose(VCV) * z_drift[i-1];\n",
-    "    // if not a tip, add the drift parameter\n",
-    "    if (tip[i] == 0) {\n",
-    "      eta[node_seq[i]] = to_vector(\n",
-    "        A_delta * eta[parent[i]] + ((A \\ add_diag(A_delta, -1)) * b) + drift_seg\n",
-    "      );\n",
-    "      drift_tips[node_seq[i]] = rep_vector(-99, J);\n",
-    "      sigma_tips[node_seq[i]] = rep_vector(-99, J);\n",
-    "    }\n",
-    "    // if is a tip, omit, we'll deal with it in the model block;\n",
-    "    else {\n",
-    "      eta[node_seq[i]] = to_vector(\n",
-    "        A_delta * eta[parent[i]] + ((A \\ add_diag(A_delta, -1)) * b)\n",
-    "      );\n",
-    "      drift_tips[node_seq[i]] = drift_seg;\n",
-    "      sigma_tips[node_seq[i]] = diagonal(Q);\n",
+    "  // loop over phylogenetic trees\n",
+    "  for (t in 1:N_tree) {\n",
+    "    // setting ancestral states and placeholders\n",
+    "    eta[t, node_seq[t, 1]] = eta_anc[t];\n",
+    "    drift_tips[t, node_seq[t, 1]] = rep_vector(-99, J);\n",
+    "    sigma_tips[t, node_seq[t, 1]] = rep_vector(-99, J);\n",
+    "    for (i in 2:N_seg) {\n",
+    "      matrix[J,J] A_delta; // amount of deterministic change (selection)\n",
+    "      matrix[J,J] VCV; // variance-covariance matrix of stochastic change (drift)\n",
+    "      vector[J] drift_seg; // accumulated drift over the segment\n",
+    "      A_delta = matrix_exp(A * ts[t, i]);\n",
+    "      VCV = Q_inf - quad_form_sym(Q_inf, A_delta');\n",
+    "      drift_seg = cholesky_decompose(VCV) * z_drift[t, i-1];\n",
+    "      // if not a tip, add the drift parameter\n",
+    "      if (tip[t, i] == 0) {\n",
+    "        eta[t, node_seq[t, i]] = to_vector(\n",
+    "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1)) * b) + drift_seg\n",
+    "        );\n",
+    "        drift_tips[t, node_seq[t, i]] = rep_vector(-99, J);\n",
+    "        sigma_tips[t, node_seq[t, i]] = rep_vector(-99, J);\n",
+    "      }\n",
+    "      // if is a tip, omit, we'll deal with it in the model block;\n",
+    "      else {\n",
+    "        eta[t, node_seq[t, i]] = to_vector(\n",
+    "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1)) * b)\n",
+    "        );\n",
+    "        drift_tips[t, node_seq[t, i]] = drift_seg;\n",
+    "        sigma_tips[t, node_seq[t, i]] = diagonal(Q);\n",
+    "      }\n",
     "    }\n",
     "  }\n"
   )
@@ -430,8 +432,10 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_model <- paste0(
     "model{\n",
     "  b ~ ", priors$b, ";\n",
-    "  eta_anc ~ ", priors$eta_anc, ";\n",
-    "  for (i in 1:(N_seg - 1)) z_drift[i] ~ std_normal();\n",
+    "  for (t in 1:N_tree) {\n",
+    "    eta_anc[t] ~ ", priors$eta_anc, ";\n",
+    "    for (i in 1:(N_seg - 1)) z_drift[t, i] ~ std_normal();\n",
+    "  }\n",
     "  A_offdiag ~ ", priors$A_offdiag, ";\n",
     "  A_diag ~ ", priors$A_diag, ";\n",
     "  Q_diag ~ ", priors$Q_diag, ";\n"
@@ -489,12 +493,14 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_model <- paste0(
     sc_model,
     "  if (!prior_only) {\n",
-    "    for (i in 1:N_obs) {\n"
+    "    for (i in 1:N_obs) {\n",
+    "      array[N_tree,J] real lp = rep_array(log(1.0 / N_tree), N_tree, J);\n",
+    "      for (t in 1:N_tree) {\n"
     )
   # function to get linear model
   lmod <- function(j) {
     paste0(
-      "eta[tip_id[i]][", j, "]",
+      "eta[t,tip_id[i]][", j, "]",
       ifelse(
         !is.null(dist_mat),
         paste0(" + dist_v[tip_id[i],", j, "]"),
@@ -511,56 +517,59 @@ coev_make_stancode <- function(data, variables, id, tree,
     if (distributions[j] == "bernoulli_logit") {
       sc_model <- paste0(
         sc_model,
-        "      if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "bernoulli_logit(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "]);\n"
+        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
+        " + drift_tips[t,tip_id[i]][", j, "]);\n"
         )
     } else if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(
         sc_model,
-        "      if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "ordered_logistic(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "], c", j, ");\n"
+        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
+        " + drift_tips[t,tip_id[i]][", j, "], c", j, ");\n"
         )
     } else if (distributions[j] == "poisson_softplus") {
       sc_model <- paste0(
         sc_model,
-        "      if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "poisson(mean(obs", j, ") * log1p_exp(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "]));\n"
+        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j, ") * log1p_exp(",
+        lmod(j), " + drift_tips[t,tip_id[i]][", j, "]));\n"
         )
     } else if (distributions[j] == "normal") {
       sc_model <- paste0(
         sc_model,
-        "      if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
-        "normal(", lmod(j),
-        ", sigma_tips[tip_id[i]][", j, "]);\n"
+        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "normal_lpdf(y[i,", j, "] | ", lmod(j),
+        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
         )
     } else if (distributions[j] == "student_t") {
       sc_model <- paste0(
         sc_model,
-        "      if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
-        "student_t(nu", j, ", ", lmod(j),
-        ", sigma_tips[tip_id[i]][", j, "]);\n"
+        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "student_t_lpdf(y[i,", j, "] | nu", j, ", ", lmod(j),
+        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "lognormal") {
       sc_model <- paste0(
         sc_model,
-        "      if (miss[i,", j, "] == 0) y[i,", j, "] ~ ",
-        "lognormal(", lmod(j),
-        ", sigma_tips[tip_id[i]][", j, "]);\n"
+        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "lognormal_lpdf(y[i,", j, "] | ", lmod(j),
+        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
         )
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_model <- paste0(
         sc_model,
-        "      if (miss[i,", j, "] == 0) to_int(y[i,", j, "]) ~ ",
-        "neg_binomial_2(mean(obs", j, ") * log1p_exp(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "]), phi", j, ");\n"
+        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "neg_binomial_2_lpmf(to_int(y[i,", j,
+        "]) | mean(obs", j, ") * log1p_exp(", lmod(j),
+        " + drift_tips[t,tip_id[i]][", j, "]), phi", j, ");\n"
         )
     }
   }
   sc_model <- paste0(
     sc_model,
+    "      }\n",
+    "      for (j in 1:J) target += log_sum_exp(lp[,j]);\n",
     "    }\n",
     "  }\n",
     "}"
