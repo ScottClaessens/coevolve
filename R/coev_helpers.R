@@ -160,8 +160,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       )
   }
   # stop if id in data does not match tree tip labels exactly
-  if (!identical(sort(unique(data[,id])), sort(tree$tip.label))) {
-    stop2("The id variable in the data does not match tree tip labels exactly.")
+  tree <- phytools::as.multiPhylo(tree)
+  for (t in 1:length(tree)) {
+    if (!identical(sort(unique(data[,id])), sort(tree[[t]]$tip.label))) {
+      stop2(
+        "The id variable in the data does not match tree tip labels exactly."
+        )
+    }
   }
   # stop if id in data contains missing values
   if (any(is.na(data[,id]))) {
