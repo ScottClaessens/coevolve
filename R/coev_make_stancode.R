@@ -579,7 +579,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     paste0(
       "generated quantities{\n",
       "  vector[N_obs*J] log_lik; // log-likelihood\n",
-      "  matrix[N_obs,J] yrep; // predictive checks\n"
+      "  array[N_tree,N_obs,J] real yrep; // predictive checks\n"
       )
   if (any(duplicated(data[,id]))) {
     sc_generated_quantities <-
@@ -594,89 +594,91 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_generated_quantities,
       "  {\n",
       "    matrix[N_obs,J] log_lik_temp = rep_matrix(0, N_obs, J);\n",
-      "    matrix[N_obs,J] yrep_temp;\n",
-      "    for (i in 1:N_obs) {\n"
+      "    for (i in 1:N_obs) {\n",
+      "      array[N_tree,N_obs,J] real lp = rep_array(log(1.0 / N_tree), N_tree, N_obs, J);\n",
+      "      for (t in 1:N_tree) {\n"
       )
   for (j in 1:length(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
         "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "]);\n",
-        "      yrep_temp[i,", j, "] = ",
+        " + drift_tips[t,tip_id[i]][", j, "]);\n",
+        "        yrep[t,i,", j, "] = ",
         "bernoulli_logit_rng(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "]);\n"
+        " + drift_tips[t,tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "ordered_logistic") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
         "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "], c", j, ");\n",
-        "      yrep_temp[i,", j, "] = ",
+        " + drift_tips[t,tip_id[i]][", j, "], c", j, ");\n",
+        "        yrep[t,i,", j, "] = ",
         "ordered_logistic_rng(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "], c", j, ");\n"
+        " + drift_tips[t,tip_id[i]][", j, "], c", j, ");\n"
       )
     } else if (distributions[j] == "poisson_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
         "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
         ") * log1p_exp(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "]));\n",
-        "      yrep_temp[i,", j, "] = ",
+        " + drift_tips[t,tip_id[i]][", j, "]));\n",
+        "        yrep[t,i,", j, "] = ",
         "poisson_rng(mean(obs", j, ") * log1p_exp(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "]));\n"
+        " + drift_tips[t,tip_id[i]][", j, "]));\n"
       )
     } else if (distributions[j] == "normal") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
         "normal_lpdf(y[i,", j, "] | ", lmod(j),
-        ", sigma_tips[tip_id[i]][", j, "]);\n",
-        "      yrep_temp[i,", j, "] = ",
+        ", sigma_tips[t,tip_id[i]][", j, "]);\n",
+        "        yrep[t,i,", j, "] = ",
         "normal_rng(", lmod(j),
-        ", sigma_tips[tip_id[i]][", j, "]);\n"
+        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "student_t") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
         "student_t_lpdf(y[i,", j, "] | nu", j, ", ", lmod(j),
-        ", sigma_tips[tip_id[i]][", j, "]);\n",
-        "      yrep_temp[i,", j, "] = ",
+        ", sigma_tips[t,tip_id[i]][", j, "]);\n",
+        "        yrep[t,i,", j, "] = ",
         "student_t_rng(nu", j, ", ", lmod(j),
-        ", sigma_tips[tip_id[i]][", j, "]);\n"
+        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "lognormal") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
         "lognormal_lpdf(y[i,", j, "] | ", lmod(j),
-        ", sigma_tips[tip_id[i]][", j, "]);\n",
-        "      yrep_temp[i,", j, "] = ",
+        ", sigma_tips[t,tip_id[i]][", j, "]);\n",
+        "        yrep[t,i,", j, "] = ",
         "lognormal_rng(", lmod(j),
-        ", sigma_tips[tip_id[i]][", j, "]);\n"
+        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
       )
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "      if (miss[i,", j, "] == 0) log_lik_temp[i,", j, "] = ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
         "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
         ") * log1p_exp(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "]), phi", j, ");\n",
-        "      yrep_temp[i,", j, "] = ",
+        " + drift_tips[t,tip_id[i]][", j, "]), phi", j, ");\n",
+        "        yrep[t,i,", j, "] = ",
         "neg_binomial_2_rng(mean(obs", j, ") * log1p_exp(", lmod(j),
-        " + drift_tips[tip_id[i]][", j, "]), phi", j, ");\n"
+        " + drift_tips[t,tip_id[i]][", j, "]), phi", j, ");\n"
       )
     }
   }
   sc_generated_quantities <-
     paste0(
       sc_generated_quantities,
+      "      }\n",
+      "    for (j in 1:J) log_lik_temp[i,j] += log_sum_exp(lp[,i,j]);\n",
       "    }\n",
-      "  yrep = yrep_temp;\n",
       "  log_lik = to_vector(log_lik_temp);\n",
       "  }\n",
       "}"
