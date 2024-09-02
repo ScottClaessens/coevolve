@@ -89,16 +89,22 @@ coev_make_standata <- function(data, variables, id, tree,
   # remove data rows where all coevolving variables are NA
   all_missing <- apply(data[,names(variables)], 1, function(x) all(is.na(x)))
   data <- data[!all_missing,]
+  # coerce tree object to multiPhylo
+  tree <- phytools::as.multiPhylo(tree)
+  # ensure that all trees have same tip labels
+  tree <- ape::.compressTipLabel(tree)
   # prune tree to updated dataset
-  tree <- ape::keep.tip(tree, data[,id])
+  tree <- ape::keep.tip.multiPhylo(tree, data[,id])
   # match data ordering to tree tip label ordering
   matched_data <- data.frame()
-  for (tip in tree$tip.label) {
+  for (tip in tree[[1]]$tip.label) {
     matched_data <- rbind(matched_data, data[data[,id] == tip,])
   }
   data <- matched_data
   # match distance matrix to tree tip label ordering
-  if (!is.null(dist_mat)) dist_mat <- dist_mat[tree$tip.label,tree$tip.label]
+  if (!is.null(dist_mat)) {
+    dist_mat <- dist_mat[tree[[1]]$tip.label, tree[[1]]$tip.label]
+  }
   # create effects matrix if not specified
   if (is.null(effects_mat)) {
     effects_mat <-
@@ -110,41 +116,56 @@ coev_make_standata <- function(data, variables, id, tree,
   # convert effects_mat to integer matrix (unary conversion +)
   effects_mat <- +effects_mat
   # stop for internal mismatches
-  if (!identical(tree$tip.label, unique(data[,id]))) {
+  if (!identical(tree[[1]]$tip.label, unique(data[,id]))) {
     stop2("Data and phylogeny tips do not match.")
   } else if (!is.null(dist_mat) & (
-    !identical(tree$tip.label, rownames(dist_mat)) |
-    !identical(tree$tip.label, colnames(dist_mat))
+    !identical(tree[[1]]$tip.label, rownames(dist_mat)) |
+    !identical(tree[[1]]$tip.label, colnames(dist_mat))
     )) {
     stop2("Distance matrix and phylogeny tips do not match.")
   } else if (!identical(names(variables), rownames(effects_mat)) |
              !identical(names(variables), colnames(effects_mat))) {
     stop2("Effects matrix and variable names do not match.")
   }
-  # cut up tree into segments
-  times <- ape::node.depth.edgelength(tree)
-  # line up date of each node with the split points in the tree
-  split_points <- sort(unique(times))
-  node_time <- match(times, split_points)
-  # create a sequence of nodes, respecting temporal order
-  node_seq <- seq(from = 1, to = length(node_time))
-  node_seq <- node_seq[order(node_time)]
-  # find the "parent" node for each node and tip of the tree
-  parent <- phangorn::Ancestors(tree, node_seq, type = "parent")
-  # parent time indicates amount of time since the parent node
-  # scaled by the total depth of the tree
-  parent_time <- rep(NA, length(node_seq))
-  parent_time[1] <- -99 # placeholder for ancestral state
-  for (i in 2:length(parent_time)) {
-    parent_time[i] <-
-      (ape::node.depth.edgelength(tree)[node_seq[i]] -
-         ape::node.depth.edgelength(tree)[parent[i]]) /
-      max(ape::node.depth.edgelength(tree))
+  # get number of trees
+  N_tree <- length(tree)
+  # get number of segements in trees
+  N_seg <- length(ape::node.depth(tree[[1]]))
+  # initialise tree variables for stan
+  stan_node_seq <- matrix(NA, N_tree, N_seg)
+  stan_parent <- matrix(NA, N_tree, N_seg)
+  stan_ts <- matrix(NA, N_tree, N_seg)
+  stan_tip <- matrix(NA, N_tree, N_seg)
+  # loop over phylogenetic trees
+  for (t in 1:length(tree)) {
+    # cut up tree into segments
+    times <- ape::node.depth.edgelength(tree[[t]])
+    # line up date of each node with the split points in the tree
+    split_points <- sort(unique(times))
+    node_time <- match(times, split_points)
+    # create a sequence of nodes, respecting temporal order
+    node_seq <- seq(from = 1, to = length(node_time))
+    node_seq <- node_seq[order(node_time)]
+    # find the "parent" node for each node and tip of the tree
+    parent <- phangorn::Ancestors(tree[[t]], node_seq, type = "parent")
+    # parent time indicates amount of time since the parent node
+    # scaled by the total depth of the tree
+    parent_time <- rep(NA, length(node_seq))
+    parent_time[1] <- -99 # placeholder for ancestral state
+    for (i in 2:length(parent_time)) {
+      parent_time[i] <-
+        (ape::node.depth.edgelength(tree[[t]])[node_seq[i]] -
+           ape::node.depth.edgelength(tree[[t]])[parent[i]]) /
+        max(ape::node.depth.edgelength(tree[[t]]))
+    }
+    # indicate whether a node in the seq is a tip
+    tip <- ifelse(node_seq > length(tree[[t]]$tip.label), 0, 1)
+    # save variables for stan
+    stan_node_seq[t,] <- node_seq
+    stan_parent[t,] <- parent
+    stan_ts[t,] <- parent_time
+    stan_tip[t,] <- tip
   }
-  # get total num segments in the tree
-  N_seg <- length(node_seq)
-  # indicate whether a node in the seq is a tip
-  tip <- ifelse(node_seq > length(tree$tip.label), 0, 1)
   # get data matrix
   y <- list()
   for (j in 1:length(variables)) {
@@ -168,22 +189,23 @@ coev_make_standata <- function(data, variables, id, tree,
   # normalise distance matrix so that maximum distance = 1
   if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
   # match tip ids
-  tip_id <- match(data[,id], tree$tip.label)
+  tip_id <- match(data[,id], tree[[1]]$tip.label)
   # data list for stan
   sd <- list(
-    N_tips = length(tree$tip.label), # number of tips
-    N_obs = nrow(y),                 # number of observations
-    J = length(variables),           # number of variables
-    N_seg = N_seg,                   # number of segments in the tree
-    node_seq = node_seq,             # sequence of nodes
-    parent = parent,                 # parent node for each node
-    ts = parent_time,                # amount of time since parent node
-    tip = tip,                       # is tip?
-    effects_mat = effects_mat,       # which effects should be estimated?
-    num_effects = sum(effects_mat),  # number of effects being estimated
-    y = y,                           # observed data
-    miss = miss,                     # are data points missing?
-    tip_id = tip_id                  # tip ids
+    N_tips = length(tree[[1]]$tip.label), # number of tips
+    N_tree = N_tree,                      # number of tips
+    N_obs = nrow(y),                      # number of observations
+    J = length(variables),                # number of variables
+    N_seg = N_seg,                        # number of segments in the tree
+    node_seq = stan_node_seq,             # sequence of nodes
+    parent = stan_parent,                 # parent node for each node
+    ts = stan_ts,                         # amount of time since parent node
+    tip = stan_tip,                       # is tip?
+    effects_mat = effects_mat,            # which effects should be estimated?
+    num_effects = sum(effects_mat),       # number of effects being estimated
+    y = y,                                # observed data
+    miss = miss,                          # are data points missing?
+    tip_id = tip_id                       # tip ids
   )
   # add distance matrix if specified
   if (!is.null(dist_mat)) sd[["dist_mat"]] <- dist_mat
