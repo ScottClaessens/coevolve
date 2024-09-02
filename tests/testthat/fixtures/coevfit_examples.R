@@ -154,6 +154,28 @@ coevfit_example7 <-
     seed = 1
   )
 
+# fit model with multiPhylo object
+tree <- c(tree, ape::rcoal(n))
+d <- data.frame(
+  id = tree[[1]]$tip.label,
+  x = rbinom(n, 1, 0.5),
+  y = rbinom(n, 1, 0.5)
+)
+coevfit_example8 <-
+  coev_fit(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree,
+    chains = chains,
+    iter_warmup = warmup,
+    iter_sampling = iter,
+    seed = 1
+  )
+
 # update cmdstanr file locations
 update_file_location <- function(coevfit) {
   coevfit$fit$save_output_files(
@@ -171,6 +193,7 @@ suppressMessages({
   update_file_location(coevfit_example5)
   update_file_location(coevfit_example6)
   update_file_location(coevfit_example7)
+  update_file_location(coevfit_example8)
 })
 
 # save coevfit objects as rds files
@@ -191,3 +214,4 @@ save_coevfit_rds(coevfit_example4)
 save_coevfit_rds(coevfit_example5)
 save_coevfit_rds(coevfit_example6)
 save_coevfit_rds(coevfit_example7)
+save_coevfit_rds(coevfit_example8)

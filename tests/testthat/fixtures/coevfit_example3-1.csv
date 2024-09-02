@@ -1,8 +1,8 @@
 # stan_version_major = 2
 # stan_version_minor = 34
 # stan_version_patch = 1
-# model = model_cc618c70ae89771a3b1fc058eab77829_model
-# start_datetime = 2024-08-13 11:33:41 UTC
+# model = model_b165acd4f6df8c41c1cc2fa8b60abb69_model
+# start_datetime = 2024-09-02 14:46:51 UTC
 # method = sample (Default)
 #   sample
 #     num_samples = 50
@@ -31,21 +31,21 @@
 #     num_chains = 1 (Default)
 # id = 1 (Default)
 # data
-#   file = C:/Users/scla896/AppData/Local/Temp/RtmpWS7joQ/standata-379c73a4210f.json
+#   file = C:/Users/scla896/AppData/Local/Temp/Rtmpg7yjI7/standata-3e286d1d6aa1.json
 # init = 2 (Default)
 # random
 #   seed = 1
 # output
-#   file = C:/Users/scla896/AppData/Local/Temp/RtmpWS7joQ/model_cc618c70ae89771a3b1fc058eab77829-202408131233-1-1e869e.csv
+#   file = C:/Users/scla896/AppData/Local/Temp/Rtmpg7yjI7/model_b165acd4f6df8c41c1cc2fa8b60abb69-202409021546-1-1e8d2a.csv
 #   diagnostic_file =  (Default)
 #   refresh = 100 (Default)
 #   sig_figs = -1 (Default)
-#   profile_file = C:/Users/scla896/AppData/Local/Temp/RtmpWS7joQ/model_cc618c70ae89771a3b1fc058eab77829-profile-202408131233-1-65c991.csv
+#   profile_file = C:/Users/scla896/AppData/Local/Temp/Rtmpg7yjI7/model_b165acd4f6df8c41c1cc2fa8b60abb69-profile-202409021546-1-65d01d.csv
 #   save_cmdstan_config = 0 (Default)
 # num_threads = 1 (Default)
 # stanc_version = stanc3 v2.34.0
-# stancflags = --name=model_cc618c70ae89771a3b1fc058eab77829_model
-lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_diag.1,A_diag.2,A_offdiag.1,A_offdiag.2,Q_diag.1,Q_diag.2,b.1,b.2,eta_anc.1,eta_anc.2,z_drift.1.1,z_drift.2.1,z_drift.3.1,z_drift.4.1,z_drift.5.1,z_drift.6.1,z_drift.7.1,z_drift.8.1,z_drift.1.2,z_drift.2.2,z_drift.3.2,z_drift.4.2,z_drift.5.2,z_drift.6.2,z_drift.7.2,z_drift.8.2,c2.1,eta.1.1,eta.2.1,eta.3.1,eta.4.1,eta.5.1,eta.6.1,eta.7.1,eta.8.1,eta.9.1,eta.1.2,eta.2.2,eta.3.2,eta.4.2,eta.5.2,eta.6.2,eta.7.2,eta.8.2,eta.9.2,A.1.1,A.2.1,A.1.2,A.2.2,Q.1.1,Q.2.1,Q.1.2,Q.2.2,Q_inf.1.1,Q_inf.2.1,Q_inf.1.2,Q_inf.2.2,drift_tips.1.1,drift_tips.2.1,drift_tips.3.1,drift_tips.4.1,drift_tips.5.1,drift_tips.6.1,drift_tips.7.1,drift_tips.8.1,drift_tips.9.1,drift_tips.1.2,drift_tips.2.2,drift_tips.3.2,drift_tips.4.2,drift_tips.5.2,drift_tips.6.2,drift_tips.7.2,drift_tips.8.2,drift_tips.9.2,sigma_tips.1.1,sigma_tips.2.1,sigma_tips.3.1,sigma_tips.4.1,sigma_tips.5.1,sigma_tips.6.1,sigma_tips.7.1,sigma_tips.8.1,sigma_tips.9.1,sigma_tips.1.2,sigma_tips.2.2,sigma_tips.3.2,sigma_tips.4.2,sigma_tips.5.2,sigma_tips.6.2,sigma_tips.7.2,sigma_tips.8.2,sigma_tips.9.2,log_lik.1,log_lik.2,log_lik.3,log_lik.4,log_lik.5,log_lik.6,log_lik.7,log_lik.8,log_lik.9,log_lik.10,yrep.1.1,yrep.2.1,yrep.3.1,yrep.4.1,yrep.5.1,yrep.1.2,yrep.2.2,yrep.3.2,yrep.4.2,yrep.5.2
+# stancflags = --name=model_b165acd4f6df8c41c1cc2fa8b60abb69_model
+lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_diag.1,A_diag.2,A_offdiag.1,A_offdiag.2,Q_diag.1,Q_diag.2,b.1,b.2,eta_anc.1.1,eta_anc.1.2,z_drift.1.1.1,z_drift.1.2.1,z_drift.1.3.1,z_drift.1.4.1,z_drift.1.5.1,z_drift.1.6.1,z_drift.1.7.1,z_drift.1.8.1,z_drift.1.1.2,z_drift.1.2.2,z_drift.1.3.2,z_drift.1.4.2,z_drift.1.5.2,z_drift.1.6.2,z_drift.1.7.2,z_drift.1.8.2,c2.1,eta.1.1.1,eta.1.2.1,eta.1.3.1,eta.1.4.1,eta.1.5.1,eta.1.6.1,eta.1.7.1,eta.1.8.1,eta.1.9.1,eta.1.1.2,eta.1.2.2,eta.1.3.2,eta.1.4.2,eta.1.5.2,eta.1.6.2,eta.1.7.2,eta.1.8.2,eta.1.9.2,A.1.1,A.2.1,A.1.2,A.2.2,Q.1.1,Q.2.1,Q.1.2,Q.2.2,Q_inf.1.1,Q_inf.2.1,Q_inf.1.2,Q_inf.2.2,drift_tips.1.1.1,drift_tips.1.2.1,drift_tips.1.3.1,drift_tips.1.4.1,drift_tips.1.5.1,drift_tips.1.6.1,drift_tips.1.7.1,drift_tips.1.8.1,drift_tips.1.9.1,drift_tips.1.1.2,drift_tips.1.2.2,drift_tips.1.3.2,drift_tips.1.4.2,drift_tips.1.5.2,drift_tips.1.6.2,drift_tips.1.7.2,drift_tips.1.8.2,drift_tips.1.9.2,sigma_tips.1.1.1,sigma_tips.1.2.1,sigma_tips.1.3.1,sigma_tips.1.4.1,sigma_tips.1.5.1,sigma_tips.1.6.1,sigma_tips.1.7.1,sigma_tips.1.8.1,sigma_tips.1.9.1,sigma_tips.1.1.2,sigma_tips.1.2.2,sigma_tips.1.3.2,sigma_tips.1.4.2,sigma_tips.1.5.2,sigma_tips.1.6.2,sigma_tips.1.7.2,sigma_tips.1.8.2,sigma_tips.1.9.2,log_lik.1,log_lik.2,log_lik.3,log_lik.4,log_lik.5,log_lik.6,log_lik.7,log_lik.8,log_lik.9,log_lik.10,yrep.1.1.1,yrep.1.2.1,yrep.1.3.1,yrep.1.4.1,yrep.1.5.1,yrep.1.1.2,yrep.1.2.2,yrep.1.3.2,yrep.1.4.2,yrep.1.5.2
 # Adaptation terminated
 # Step size = 0.359451
 # Diagonal elements of inverse mass matrix:
@@ -101,7 +101,7 @@ lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_di
 -21.7374,0.830826,0.359451,4,15,0,34.3069,-0.910344,-0.157629,-1.23413,-2.33538,0.317537,0.856417,0.178575,-0.746723,1.42536,-0.837998,0.139992,1.48969,0.497665,0.568252,-1.29438,0.140582,-1.52127,-0.114903,0.0950831,0.798444,-1.26936,-1.00519,2.06381,1.70124,2.75377,0.401444,0.0680107,3.50184,3.66392,3.66392,3.62297,3.62297,1.42536,3.01904,3.05051,3.13833,-6.01065,-6.31264,-6.31264,-6.11224,-6.11224,-0.837998,-5.03573,-5.01911,-5.35988,-0.910344,-2.33538,-1.23413,-0.157629,0.317537,0,0,0.856417,-0.0756707,0.184466,0.184466,-0.0164367,0.464386,-0.246238,0.0267437,-0.31142,-0.0235219,-99,-99,-99,-99,-1.35763,0.742914,0.531799,1.06745,0.146699,-99,-99,-99,-99,0.317537,0.317537,0.317537,0.317537,0.317537,-99,-99,-99,-99,0.856417,0.856417,0.856417,0.856417,0.856417,-99,-99,-99,-99,-3.985,-0.0322621,-0.024649,-3.34736,-3.62642,-0.000589296,-5.64129,-5.85173,-5.1188,-0.00239409,1,1,1,1,1,1,1,1,1,1
 -16.4812,0.991341,0.359451,4,15,0,35.9353,-0.832069,-0.652699,1.77711,-0.75318,0.158054,1.37504,-0.36084,0.306941,-0.826306,0.560809,0.0966838,-1.74117,-1.19342,-1.60898,1.05384,-0.0206111,-0.666369,-0.00485963,0.415214,-0.38892,0.878615,0.148702,-1.8315,-0.999193,-2.31576,0.346571,-2.14013,0.195189,0.276862,0.276862,0.287473,0.287473,-0.826306,0.158854,0.13741,0.114791,0.625394,1.00545,1.00545,0.861854,0.861854,0.560809,0.940227,0.924623,1.06935,-0.832069,-0.75318,1.77711,-0.652699,0.158054,0,0,1.37504,0.842481,0.349992,0.349992,0.649479,-1.08484,0.148226,-0.00289902,-0.102252,-0.000745692,-99,-99,-99,-99,-0.73351,-0.57562,-0.37997,-1.01554,0.137887,-99,-99,-99,-99,0.158054,0.158054,0.158054,0.158054,0.158054,-99,-99,-99,-99,1.37504,1.37504,1.37504,1.37504,1.37504,-99,-99,-99,-99,-0.344156,-0.503023,-0.565518,-0.79004,-0.846752,-2.15518,-0.0737511,-0.0610367,-0.128554,-3.18225,1,1,1,1,1,2,2,2,2,2
 # 
-#  Elapsed Time: 0.101 seconds (Warm-up)
-#                0.095 seconds (Sampling)
-#                0.196 seconds (Total)
+#  Elapsed Time: 0.184 seconds (Warm-up)
+#                0.38 seconds (Sampling)
+#                0.564 seconds (Total)
 # 
