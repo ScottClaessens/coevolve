@@ -4,7 +4,12 @@
 \alias{coev_plot_predictive_check}
 \title{Plot posterior predictive check from a fitted \code{coevfit} object}
 \usage{
-coev_plot_predictive_check(object, variables = NULL, ndraws = NULL)
+coev_plot_predictive_check(
+  object,
+  variables = NULL,
+  ndraws = NULL,
+  tree_id = 1L
+)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}}
@@ -15,6 +20,9 @@ declaring the variables to be included in the list of plots.}
 
 \item{ndraws}{An integer indicating the number of draws to return. The
 default and maximum number of draws is the size of the posterior sample.}
+
+\item{tree_id}{An integer indicating the tree ID to use when making
+posterior predictions. Set to 1 by default.}
 }
 \value{
 A list of \code{ggplot} objects
