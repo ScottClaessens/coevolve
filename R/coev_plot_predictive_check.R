@@ -6,6 +6,8 @@
 #'   declaring the variables to be included in the list of plots.
 #' @param ndraws An integer indicating the number of draws to return. The
 #'   default and maximum number of draws is the size of the posterior sample.
+#' @param tree_id An integer indicating the tree ID to use when making
+#'   posterior predictions. Set to 1 by default.
 #'
 #' @return A list of \code{ggplot} objects
 #' @export
@@ -31,7 +33,7 @@
 #' coev_plot_predictive_check(fit)
 #' }
 coev_plot_predictive_check <- function(object, variables = NULL,
-                                       ndraws = NULL) {
+                                       ndraws = NULL, tree_id = 1L) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
     stop2(
@@ -70,6 +72,16 @@ coev_plot_predictive_check <- function(object, variables = NULL,
         )
     }
   }
+  # stop if tree_id is not a single positive integer less than total num trees
+  if (!is.integer(tree_id) | length(tree_id) != 1 |
+      tree_id > object$stan_data$N_tree) {
+    stop2(
+      paste0(
+        "Argument 'tree_id' must be a single positive integer and less than ",
+        "the total number of trees."
+        )
+      )
+  }
   # get posterior predictions
   post <- posterior::as_draws_rvars(object$fit$draws(variables = "yrep"))
   # get draws ids
@@ -101,7 +113,7 @@ coev_plot_predictive_check <- function(object, variables = NULL,
     var_id <- which(names(object$variables) == variable)
     # get y and yrep
     y <- object$stan_data$y[,variable]
-    yrep <- posterior::as_draws_matrix(post$yrep[,var_id])[draws_ids,]
+    yrep <- posterior::as_draws_matrix(post$yrep[tree_id,,var_id])[draws_ids,]
     # remove data if missing for all coevolving variables
     all_missing <- apply(
       object$data[,names(object$variables)], 1, function(x) all(is.na(x))

@@ -69,7 +69,7 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
   draws <- posterior::as_draws_rvars(object$fit)
   # medians and median absolute deviations for all variables
   eta  <- apply(
-    draws$eta[1:object$stan_data$N_tips,], 2, posterior::rvar_median
+    draws$eta[,1:object$stan_data$N_tips,], 3, posterior::rvar_median
     )
   meds <- unlist(lapply(eta, stats::median))
   mads <- unlist(lapply(eta, stats::mad))

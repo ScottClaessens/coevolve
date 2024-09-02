@@ -73,9 +73,9 @@ coev_calculate_delta_theta <- function(object, response, predictor) {
   id_resp <- which(response  == names(object$variables))
   id_pred <- which(predictor == names(object$variables))
   # medians and median absolute deviations for all variables
-  eta  <- draws$eta[1:object$stan_data$N_tips,]
-  med  <- apply(eta, 2, posterior::rvar_median)
-  diff <- apply(eta, 2, posterior::rvar_mad)
+  eta  <- draws$eta[,1:object$stan_data$N_tips,]
+  med  <- apply(eta, 3, posterior::rvar_median)
+  diff <- apply(eta, 3, posterior::rvar_mad)
   # construct intervention values list
   values1 <- list()
   values2 <- list()
