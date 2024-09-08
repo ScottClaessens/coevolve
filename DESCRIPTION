@@ -21,6 +21,7 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
+    tibble,
     withr
 Config/testthat/edition: 3
 Imports: 

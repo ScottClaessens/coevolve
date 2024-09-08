@@ -81,6 +81,8 @@ coev_make_stancode <- function(data, variables, id, tree,
   # check arguments
   run_checks(data, variables, id, tree, effects_mat,
              dist_mat, prior, scale, prior_only)
+  # coerce data argument to data frame
+  data <- as.data.frame(data)
   # extract distributions and variable names from named list
   distributions <- as.character(variables)
   variables <- names(variables)

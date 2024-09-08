@@ -76,6 +76,8 @@ coev_make_standata <- function(data, variables, id, tree,
   # check arguments
   run_checks(data, variables, id, tree, effects_mat,
              dist_mat, prior, scale, prior_only)
+  # coerce data argument to data frame
+  data <- as.data.frame(data)
   # warning if scale = FALSE
   if (!scale) {
     warning2(

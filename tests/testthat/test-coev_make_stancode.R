@@ -757,3 +757,31 @@ test_that("coev_make_stancode() works with repeated observations", {
     )$check_syntax(quiet = TRUE)
   )
 })
+
+test_that("coev_make_stancode() works with tibbles", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- tibble::tibble(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = ordered(sample(1:4, size = n, replace = TRUE))
+    )
+  })
+  # make stan code
+  sc <-
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    )
+  # expect string of length one
+  expect_no_error(sc)
+  expect_type(sc, "character")
+  expect_length(sc, 1)
+})
