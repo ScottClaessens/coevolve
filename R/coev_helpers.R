@@ -154,6 +154,10 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   if (!methods::is(tree, "phylo")) {
     stop2("Argument 'tree' must be an phylogenetic tree object of class phylo.")
   }
+  # stop if tree does not have branch length information
+  if (is.null(tree$edge.length)) {
+    stop2("Argument 'tree' does not include branch lengths.")
+  }
   # stop if id in data does not match tree tip labels exactly
   if (!identical(sort(unique(data[,id])), sort(tree$tip.label))) {
     stop2("The id variable in the data does not match tree tip labels exactly.")

@@ -233,6 +233,18 @@ test_that("coev_fit() produces expected errors", {
     "Argument 'tree' must be an phylogenetic tree object of class phylo."
   )
   expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = ape::rtree(n, br = NULL)
+    ),
+    "Argument 'tree' does not include branch lengths."
+  )
+  expect_error(
     {
       d2 <- d
       d2$id <- rep("test", n) # not correct tip labels
