@@ -46,7 +46,8 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       stop2(
         paste0(
           "Variables following the 'bernoulli_logit' response distribution ",
-          "must be integers with values of 0/1 in the data."
+          "must be integers with values of 0/1 in the data. Try using the ",
+          "as.integer() function to convert variables to integers."
           )
         )
     }
@@ -58,7 +59,8 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       stop2(
         paste0(
           "Variables following the 'ordered_logistic' response distribution ",
-          "must be ordered factors in the data."
+          "must be ordered factors in the data. Try using the as.ordered() ",
+          "function to convert variables to ordered factors."
           )
         )
     }
@@ -72,7 +74,8 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       stop2(
         paste0(
           "Variables following the 'poisson_softplus' response distribution ",
-          "must be integers greater than or equal to zero in the data."
+          "must be integers greater than or equal to zero in the data. Try ",
+          "using the as.integer() function to convert variables to integers."
           )
         )
     }
@@ -84,7 +87,8 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         paste0(
           "Variables following the 'negative_binomial_softplus' response ",
           "distribution must be integers greater than or equal to zero in ",
-          "the data."
+          "the data. Try using the as.integer() function to convert variables ",
+          "to integers."
         )
       )
     }

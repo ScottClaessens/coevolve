@@ -99,8 +99,10 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     paste0(
       "Variables following the 'bernoulli_logit' response distribution ",
-      "must be integers with values of 0/1 in the data."
-      )
+      "must be integers with values of 0/1 in the data. Try using the ",
+      "as.integer() function to convert variables to integers."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_stancode(
@@ -114,8 +116,10 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     paste0(
       "Variables following the 'ordered_logistic' response distribution ",
-      "must be ordered factors in the data."
-      )
+      "must be ordered factors in the data. Try using the as.ordered() ",
+      "function to convert variables to ordered factors."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_stancode(
@@ -129,8 +133,10 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     paste0(
       "Variables following the 'poisson_softplus' response distribution ",
-      "must be integers greater than or equal to zero in the data."
-      )
+      "must be integers greater than or equal to zero in the data. Try ",
+      "using the as.integer() function to convert variables to integers."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_stancode(
@@ -145,8 +151,10 @@ test_that("coev_make_stancode() produces expected errors", {
     paste0(
       "Variables following the 'negative_binomial_softplus' response ",
       "distribution must be integers greater than or equal to zero in ",
-      "the data."
-    )
+      "the data. Try using the as.integer() function to convert variables ",
+      "to integers."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_stancode(
