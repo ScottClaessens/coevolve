@@ -19,7 +19,7 @@
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo}. The tree must
-#'   include branch lengths.
+#'   be rooted and must include branch lengths.
 #' @param effects_mat (optional) A boolean matrix with row and column names
 #'   exactly matching the variables declared for the model. If not specified,
 #'   all cross-lagged effects will be estimated in the model. If specified, the

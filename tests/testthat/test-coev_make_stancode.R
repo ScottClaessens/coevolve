@@ -248,9 +248,21 @@ test_that("coev_make_stancode() produces expected errors", {
         y = "ordered_logistic"
       ),
       id = "id",
-      tree = ape::rtree(n, br = NULL)
+      tree = ape::rtree(n, br = NULL) # no branch lengths
     ),
     "Argument 'tree' does not include branch lengths."
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = ape::unroot(tree) # unrooted
+    ),
+    "Argument 'tree' must be a rooted tree."
   )
   expect_error(
     {

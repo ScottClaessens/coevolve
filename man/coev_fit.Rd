@@ -35,7 +35,7 @@ links rows to tips on the phylogeny. Must refer to a valid column name in
 the data. The id column must exactly match the tip labels in the phylogeny.}
 
 \item{tree}{A phylogenetic tree object of class \code{phylo}. The tree must
-include branch lengths.}
+be rooted and must include branch lengths.}
 
 \item{effects_mat}{(optional) A boolean matrix with row and column names
 exactly matching the variables declared for the model. If not specified,
@@ -95,8 +95,7 @@ inference. The model allows users to assess causal directionality
 types are supported, including binary, ordinal, count, continuous, and
 positive real variables. The model can additionally account for missing data,
 repeated observations, and controls for spatial proximity. Model fit can be
-assessed and compared with posterior predictive checks and approximate
-cross-validation indices.
+assessed and compared with posterior predictive checks and cross-validation.
 }
 \details{
 The \code{coev_fit} function generates the \pkg{Stan} code for the model,
