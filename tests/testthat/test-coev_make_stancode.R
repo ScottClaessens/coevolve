@@ -794,7 +794,7 @@ test_that("coev_make_stancode() works with repeated observations", {
       tree = tree
     ),
     paste0(
-      "Note: Repeated observations detected. Taxa-level random effects ",
+      "Note: Repeated observations detected. Group-level varying effects ",
       "have been included for each variable in the model."
     )
   )

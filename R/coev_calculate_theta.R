@@ -1,18 +1,42 @@
-#' Calculate optimal trait values (theta) for a fitted \code{coevfit} object
+#' Calculate equilibrium trait values (theta) for a fitted \code{coevfit} object
+#'
+#' Calculate equilibrium trait values \eqn{\theta} for one or more traits given
+#' a set of intervention values for other traits from a fitted \code{coevfit}
+#' object.
 #'
 #' @param object An object of class \code{coevfit}
 #' @param intervention_values A named list of variables and associated
-#'   intervention values for calculating optimal trait values. All coevolving
-#'   variables must be declared separately in the named list without repetition.
-#'   If the intervention value for a particular variable is set to NA, this
-#'   variable is treated as a free variable. Otherwise, if the intervention
-#'   value for a particular variable is specified, the variable is held
-#'   constant at this trait value in the calculation. At least one variable must
-#'   be declared as a free variable and at least one variable must be held
+#'   intervention values for calculating equilibrium trait values. All
+#'   coevolving variables must be declared separately in the named list without
+#'   repetition. If the intervention value for a particular variable is set to
+#'   NA, this variable is treated as a free variable. Otherwise, if the
+#'   intervention value for a particular variable is specified, the variable is
+#'   held constant at this trait value in the calculation. At least one variable
+#'   must be declared as a free variable and at least one variable must be held
 #'   constant (e.g., \code{list(var1 = NA, var2 = 0)}).
 #'
 #' @return Posterior samples in matrix format
-#' @export
+#'
+#' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
+#'   \email{erikjacob.ringen@@uzh.ch}
+#'
+#' @details The equilibrium trait value for a free trait \eqn{\eta_i} is
+#'   calculated using the following formula:
+#'   \deqn{\theta_{\eta_i} = \frac{-(\sum_{j \neq i}\textbf{A}[i,j]\eta_j) +
+#'   \textbf{b}_i}{\textbf{A}[i,i]}}
+#'
+#' @references
+#' Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
+#' reveal that resource-use intensification drives the evolution of "complex"
+#' societies. \emph{EcoEvoRXiv}. \code{doi:10.32942/osf.io/wfp95}
+#'
+#' Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen,
+#' E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political
+#' authority in Austronesian societies. \emph{Nature Human Behaviour},
+#' \emph{7}(1), 38-45. \code{10.1038/s41562-022-01471-y}
+#'
+#' @seealso \code{\link{coev_calculate_delta_theta}},
+#'   \code{\link{coev_plot_delta_theta}}
 #'
 #' @examples
 #' \dontrun{
@@ -40,6 +64,8 @@
 #'     )
 #'   )
 #' }
+#'
+#' @export
 coev_calculate_theta <- function(object, intervention_values) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {

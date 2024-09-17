@@ -1,4 +1,7 @@
-#' Plot posterior predictive check from a fitted \code{coevfit} object
+#' Plot predictive check from a fitted \code{coevfit} object
+#'
+#' Plot posterior (or prior) predictive checks for variables from a fitted
+#' \code{coevfit} object, with help from the \pkg{bayesplot} package.
 #'
 #' @param object An object of class \code{coevfit}
 #' @param variables If NULL (default), the function returns a list of plots for
@@ -8,7 +11,9 @@
 #'   default and maximum number of draws is the size of the posterior sample.
 #'
 #' @return A list of \code{ggplot} objects
-#' @export
+#'
+#' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
+#'   \email{erikjacob.ringen@@uzh.ch}
 #'
 #' @examples
 #' \dontrun{
@@ -30,6 +35,8 @@
 #' # plot predictive checks for all variables
 #' coev_plot_predictive_check(fit)
 #' }
+#'
+#' @export
 coev_plot_predictive_check <- function(object, variables = NULL,
                                        ndraws = NULL) {
   # stop if object is not of class coevfit

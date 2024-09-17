@@ -284,7 +284,7 @@ multiple individuals of the same species. In these cases, it can be useful to
 include all of these observations in the model and estimate the between-taxa
 variation that is not due to the coevolutionary process.
 
-We show this using an example dataset from de Villemeruil & Nakagawa (2014).
+We show this using an example dataset from de Villemereuil & Nakagawa (2014).
 Suppose we have measured two continuous variables ($x$ and $y$) for 20 species,
 with five observations for each species.
 
@@ -434,7 +434,7 @@ https://github.com/ScottClaessens/coevolve/issues
 DeCasien, A. R., Williams, S. A., & Higham, J. P. (2017). Primate brain size is
 predicted by diet but not sociality. *Nature Ecology & Evolution*, *1*(5), 0112.
 
-de Villemeruil P. & Nakagawa, S. (2014). General quantitative genetic methods
+de Villemereuil P. & Nakagawa, S. (2014). General quantitative genetic methods
 for comparative biology. In L. Garamszegi (Ed.), *Modern phylogenetic
 comparative methods and their application in evolutionary biology: concepts and
 practice* (pp. 287-303). Springer, New York.
