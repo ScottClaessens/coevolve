@@ -612,6 +612,24 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
       compile = FALSE
     )$check_syntax(quiet = TRUE)
   )
+  # expect message when distance matrix included
+  expect_message(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic",
+        z = "poisson_softplus"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = dist_mat
+    ),
+    paste0(
+      "Note: Distance matrix detected. Gaussian processes over spatial ",
+      "distances have been included for each variable in the model."
+    )
+  )
 })
 
 test_that("Setting manual priors in coev_make_stancode() works as expected", {
@@ -763,6 +781,22 @@ test_that("coev_make_stancode() works with repeated observations", {
       stan_file = cmdstanr::write_stan_file(sc),
       compile = FALSE
     )$check_syntax(quiet = TRUE)
+  )
+  # expect message with repeated observations
+  expect_message(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "bernoulli_logit"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Note: Repeated observations detected. Taxa-level random effects ",
+      "have been included for each variable in the model."
+    )
   )
 })
 
