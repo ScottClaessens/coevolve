@@ -695,6 +695,23 @@ coev_make_stancode <- function(data, variables, id, tree,
     stan_file = cmdstanr::write_stan_file(sc),
     compile = FALSE
   )$check_syntax(quiet = TRUE)
+  # produce warnings for gaussian processes and/or random effects
+  if (!is.null(dist_mat)) {
+    message(
+      paste0(
+        "Note: Distance matrix detected. Gaussian processes over spatial ",
+        "distances have been included for each variable in the model."
+        )
+    )
+  }
+  if (any(duplicated(data[,id]))) {
+    message(
+      paste0(
+        "Note: Repeated observations detected. Taxa-level random effects ",
+        "have been included for each variable in the model."
+      )
+    )
+  }
   # return stan code
   return(sc)
 }
