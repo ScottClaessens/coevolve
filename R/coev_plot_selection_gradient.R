@@ -10,6 +10,8 @@
 #'   the model
 #' @param contour Logical (defaults to FALSE); whether to show white contour
 #'   lines to indicate where selection is stronger than drift
+#' @param limits A numeric vector of length 2 (defaults to \code{c(-2.5, 2.5)});
+#'   specifying the lower limit and the upper limit of the x and y axes.
 #'
 #' @return A \code{ggplot} object
 #'
@@ -64,7 +66,9 @@
 #' }
 #'
 #' @export
-coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
+coev_plot_selection_gradient <- function(object, var1, var2,
+                                         contour = FALSE,
+                                         limits = c(-2.5, 2.5)) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
     stop2(
@@ -96,6 +100,10 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
   if (!is.logical(contour)) {
     stop2("Argument 'contour' must be logical.")
   }
+  # stop if limits is not a numeric vector of length 2
+  if (!(is.numeric(limits) & is.vector(limits) & length(limits) == 2)) {
+    stop2("Argument 'limits' must be a numeric vector of length 2.")
+  }
   # get IDs for variables
   id_var1 <- which(names(object$variables) == var1)
   id_var2 <- which(names(object$variables) == var2)
@@ -107,8 +115,8 @@ coev_plot_selection_gradient <- function(object, var1, var2, contour = FALSE) {
     )
   meds <- unlist(lapply(eta, stats::median))
   mads <- unlist(lapply(eta, stats::mad))
-  lowers <- meds - 2.5*mads
-  uppers <- meds + 2.5*mads
+  lowers <- meds + limits[1]*mads
+  uppers <- meds + limits[2]*mads
   # get median parameter values for A, b, and Q_diag
   A <- stats::median(draws$A)
   b <- stats::median(draws$b)

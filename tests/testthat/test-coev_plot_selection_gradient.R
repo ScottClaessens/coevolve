@@ -45,9 +45,17 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
       ),
     "Argument 'contour' must be logical."
   )
+  expect_error(
+    coev_plot_selection_gradient(
+      object = m1, var1 = "x", var2 = "y", limits = "hello"
+    ),
+    "Argument 'limits' must be a numeric vector of length 2."
+  )
   # should run without error and produce ggplot object
-  fun <- function(model, var1, var2, contour = FALSE) {
-    suppressWarnings(coev_plot_selection_gradient(model, var1, var2, contour))
+  fun <- function(model, var1, var2, contour = FALSE, limits = c(-2.5, 2.5)) {
+    suppressWarnings(
+      coev_plot_selection_gradient(model, var1, var2, contour, limits)
+      )
   }
   expect_no_error(fun(m1, "x", "y"))
   expect_no_error(fun(m2, "w", "x"))
@@ -63,6 +71,13 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   expect_no_error(fun(m5, "w", "x", contour = TRUE))
   expect_no_error(fun(m6, "w", "x", contour = TRUE))
   expect_no_error(fun(m7, "w", "x", contour = TRUE))
+  expect_no_error(fun(m1, "x", "y", limits = c(-3, 3)))
+  expect_no_error(fun(m2, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m3, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m4, "y", "z", limits = c(-3, 3)))
+  expect_no_error(fun(m5, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m6, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m7, "w", "x", limits = c(-3, 3)))
   expect_true(methods::is(fun(m1, "x", "y"), "ggplot"))
   expect_true(methods::is(fun(m2, "w", "x"), "ggplot"))
   expect_true(methods::is(fun(m3, "w", "x"), "ggplot"))

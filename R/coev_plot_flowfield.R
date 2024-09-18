@@ -10,9 +10,10 @@
 #' @param var2 A character string equal to one of the coevolving variables in
 #'   the model
 #' @param nullclines Logical (defaults to FALSE); whether to show coloured
-#'   nullclines
-#' to indicate where each variable is at equilibrium, depending on the state of
-#'   the other
+#'   nullclines to indicate where each variable is at equilibrium, depending on
+#'   the state of the other
+#' @param limits A numeric vector of length 2 (defaults to \code{c(-2.5, 2.5)});
+#'   specifying the lower limit and the upper limit of the x and y axes.
 #'
 #' @return A flowfield plot drawn directly to the device
 #'
@@ -65,7 +66,8 @@
 #' }
 #'
 #' @export
-coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
+coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
+                                limits = c(-2.5, 2.5)) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
     stop2("Argument 'object' must be a fitted coevolutionary model of class coevfit.")
@@ -92,6 +94,10 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
   if (!is.logical(nullclines)) {
     stop2("Argument 'nullclines' must be logical.")
   }
+  # stop if limits is not a numeric vector of length 2
+  if (!(is.numeric(limits) & is.vector(limits) & length(limits) == 2)) {
+    stop2("Argument 'limits' must be a numeric vector of length 2.")
+  }
   # get IDs for variables
   id_var1 <- which(names(object$variables) == var1)
   id_var2 <- which(names(object$variables) == var2)
@@ -103,8 +109,8 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     )
   meds <- unlist(lapply(eta, stats::median))
   mads <- unlist(lapply(eta, stats::mad))
-  lowers <- meds - 2.5*mads
-  uppers <- meds + 2.5*mads
+  lowers <- meds + limits[1]*mads
+  uppers <- meds + limits[2]*mads
   # get median parameter values for A and b
   A <- stats::median(draws$A)
   b <- stats::median(draws$b)
@@ -169,7 +175,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     side = 1,
     text = paste0(var1, " (z-score)"),
     at = meds[id_var1],
-    line = 2.5,
+    line = (limits[2] - limits[1]) / 2,
     cex = 1.3
   )
   # var 2 label
@@ -177,7 +183,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE) {
     side = 2,
     text = paste0(var2, " (z-score)"),
     at = meds[id_var2],
-    line = 2.5,
+    line = (limits[2] - limits[1]) / 2,
     cex = 1.3
   )
   # add nullclines to phase plane
