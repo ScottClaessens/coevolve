@@ -28,6 +28,10 @@
 #'   more traits were included in the model, other traits are held at their
 #'   median values during these computations.
 #'
+#'   If the plot does not look right, the user might try zooming out from the
+#'   default parameter space by setting wider limits. For some variables (e.g.,
+#'   continuous and count variables), the default limits may not be suitable.
+#'
 #' @references
 #' Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
 #' reveal that resource-use intensification drives the evolution of "complex"

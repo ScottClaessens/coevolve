@@ -5,7 +5,13 @@
 \title{Plot flowfield of expected evolutionary change from a fitted \code{coevfit}
 object}
 \usage{
-coev_plot_flowfield(object, var1, var2, nullclines = FALSE)
+coev_plot_flowfield(
+  object,
+  var1,
+  var2,
+  nullclines = FALSE,
+  limits = c(-2.5, 2.5)
+)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}}
@@ -17,9 +23,11 @@ the model}
 the model}
 
 \item{nullclines}{Logical (defaults to FALSE); whether to show coloured
-nullclines
-to indicate where each variable is at equilibrium, depending on the state of
-the other}
+nullclines to indicate where each variable is at equilibrium, depending on
+the state of the other}
+
+\item{limits}{A numeric vector of length 2 (defaults to \code{c(-2.5, 2.5)});
+specifying the lower limit and the upper limit of the x and y axes.}
 }
 \value{
 A flowfield plot drawn directly to the device
@@ -36,6 +44,10 @@ included, they represent the parameter combinations where each trait is
 at equilibrium, depending on the state of the other trait If three or
 more traits were included in the model, other traits are held at their
 median values during these computations.
+
+If the plot does not look right, the user might try zooming out from the
+default parameter space by setting wider limits. For some variables (e.g.,
+continuous and count variables), the default limits may not be suitable.
 }
 \examples{
 \dontrun{

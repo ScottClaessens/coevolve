@@ -4,7 +4,13 @@
 \alias{coev_plot_selection_gradient}
 \title{Plot selection gradient heatmap from a fitted \code{coevfit} object}
 \usage{
-coev_plot_selection_gradient(object, var1, var2, contour = FALSE)
+coev_plot_selection_gradient(
+  object,
+  var1,
+  var2,
+  contour = FALSE,
+  limits = c(-2.5, 2.5)
+)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}}
@@ -17,6 +23,9 @@ the model}
 
 \item{contour}{Logical (defaults to FALSE); whether to show white contour
 lines to indicate where selection is stronger than drift}
+
+\item{limits}{A numeric vector of length 2 (defaults to \code{c(-2.5, 2.5)});
+specifying the lower limit and the upper limit of the x and y axes.}
 }
 \value{
 A \code{ggplot} object
@@ -35,6 +44,10 @@ values greater than 1 (or less than -1) indicate parameter space where
 positive (or negative) selection is stronger than drift. If three or more
 traits were included in the model, other traits are held at their median
 values during these computations.
+
+If the plot does not look right, the user might try zooming out from the
+default parameter space by setting wider limits. For some variables (e.g.,
+continuous and count variables), the default limits may not be suitable.
 }
 \examples{
 \dontrun{
