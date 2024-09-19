@@ -175,7 +175,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
     side = 1,
     text = paste0(var1, " (z-score)"),
     at = meds[id_var1],
-    line = (limits[2] - limits[1]) / 2,
+    line = 2.5,
     cex = 1.3
   )
   # var 2 label
@@ -183,7 +183,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
     side = 2,
     text = paste0(var2, " (z-score)"),
     at = meds[id_var2],
-    line = (limits[2] - limits[1]) / 2,
+    line = 2.5,
     cex = 1.3
   )
   # add nullclines to phase plane
