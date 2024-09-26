@@ -158,7 +158,7 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   if (!(methods::is(tree, "phylo") | methods::is(tree, "multiPhylo"))) {
     stop2(
       paste0(
-        "Argument 'tree' must be an phylogenetic tree object of class phylo ",
+        "Argument 'tree' must be a phylogenetic tree object of class phylo ",
         "or multiPhylo."
         )
       )

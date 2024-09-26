@@ -238,7 +238,11 @@ test_that("coev_make_standata() produces expected errors", {
       id = "id",
       tree = "testing" # not of class phylo
     ),
-    "Argument 'tree' must be an phylogenetic tree object of class phylo."
+    paste0(
+      "Argument 'tree' must be a phylogenetic tree object of class phylo or ",
+      "multiPhylo."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_standata(
