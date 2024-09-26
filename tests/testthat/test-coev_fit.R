@@ -23,7 +23,8 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Argument 'data' must be coercible to a data.frame."
+    "Argument 'data' must be coercible to a data.frame.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -35,7 +36,8 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Argument 'data' does not contain observations."
+    "Argument 'data' does not contain observations.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -44,7 +46,8 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Argument 'variables' is not a named list."
+    "Argument 'variables' is not a named list.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -57,7 +60,8 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Some variable names are not valid column names in the data."
+    "Some variable names are not valid column names in the data.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -73,7 +77,8 @@ test_that("coev_fit() produces expected errors", {
       "Response distributions other than 'bernoulli_logit', ",
       "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
       "'lognormal', and 'negative_binomial_softplus' are not yet supported."
-    )
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -85,7 +90,8 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree
     ),
-    "Must be at least two coevolving variables."
+    "Must be at least two coevolving variables.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -187,7 +193,8 @@ test_that("coev_fit() produces expected errors", {
     paste0(
       "Variables following the 'normal' response distribution ",
       "must be numeric in the data."
-      )
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -202,7 +209,8 @@ test_that("coev_fit() produces expected errors", {
     paste0(
       "Variables following the 'student_t' response distribution ",
       "must be numeric in the data."
-    )
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -214,7 +222,8 @@ test_that("coev_fit() produces expected errors", {
       id = c(1, 2), # not character of length one
       tree = tree
     ),
-    "Argument 'id' must be a character of length one."
+    "Argument 'id' must be a character of length one.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -226,7 +235,8 @@ test_that("coev_fit() produces expected errors", {
       id = "testing", # incorrect id
       tree = tree
     ),
-    "Argument 'id' is not a valid column name in the data."
+    "Argument 'id' is not a valid column name in the data.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -254,7 +264,8 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = ape::rtree(n, br = NULL) # no branch lengths
     ),
-    "All trees in 'tree' argument must include branch lengths."
+    "All trees in 'tree' argument must include branch lengths.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -266,7 +277,8 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = ape::unroot(tree) # unrooted
     ),
-    "All trees in 'tree' argument must be rooted."
+    "All trees in 'tree' argument must be rooted.",
+    fixed = TRUE
   )
   expect_error(
     {
@@ -282,7 +294,8 @@ test_that("coev_fit() produces expected errors", {
         tree = tree
       )
     },
-    "The id variable in the data does not match tree tip labels exactly."
+    "The id variable in the data does not match tree tip labels exactly.",
+    fixed = TRUE
   )
   expect_error(
     {
@@ -298,7 +311,8 @@ test_that("coev_fit() produces expected errors", {
         tree = tree2
       )
     },
-    "The id variable in the data must not contain NAs."
+    "The id variable in the data must not contain NAs.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -311,7 +325,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       effects_mat = "testing" # not of class matrix
     ),
-    "Argument 'effects_mat' must be a matrix."
+    "Argument 'effects_mat' must be a matrix.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -324,7 +339,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       effects_mat = matrix(1) # not boolean matrix
     ),
-    "Argument 'effects_mat' must be a boolean matrix."
+    "Argument 'effects_mat' must be a boolean matrix.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -337,7 +353,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       effects_mat = matrix(TRUE) # no row/col names
     ),
-    "Argument 'effects_mat' does not have valid row or column names."
+    "Argument 'effects_mat' does not have valid row or column names.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -353,7 +370,8 @@ test_that("coev_fit() produces expected errors", {
     paste0(
       "Row and column names for argument 'effects_mat' do not match ",
       "variable names exactly."
-    )
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -368,7 +386,8 @@ test_that("coev_fit() produces expected errors", {
       effects_mat = matrix(c(T,T,T,F), ncol = 2, nrow = 2, byrow = TRUE,
                            dimnames = list(c("x","y"),c("x","y")))
     ),
-    "Argument 'effects_mat' must specify TRUE for all autoregressive effects."
+    "Argument 'effects_mat' must specify TRUE for all autoregressive effects.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -381,7 +400,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       dist_mat = "testing" # not of class matrix
     ),
-    "Argument 'dist_mat' must be a matrix."
+    "Argument 'dist_mat' must be a matrix.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -394,7 +414,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       dist_mat = matrix(letters) # matrix not numeric
     ),
-    "Argument 'dist_mat' must be a numeric matrix."
+    "Argument 'dist_mat' must be a numeric matrix.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -407,7 +428,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       dist_mat = matrix(1:100, nrow = 10) # matrix not symmetric
     ),
-    "Argument 'dist_mat' must be a symmetric matrix."
+    "Argument 'dist_mat' must be a symmetric matrix.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -421,7 +443,8 @@ test_that("coev_fit() produces expected errors", {
       # matrix symmetric but diagonal not zero
       dist_mat = matrix(rep(1, 100), nrow = 10)
     ),
-    "Argument 'dist_mat' must have zeroes on the diagonal of the matrix."
+    "Argument 'dist_mat' must have zeroes on the diagonal of the matrix.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -434,7 +457,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       dist_mat = matrix(0) # no row/col names
     ),
-    "Argument 'dist_mat' does not have valid row or column names."
+    "Argument 'dist_mat' does not have valid row or column names.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -452,7 +476,8 @@ test_that("coev_fit() produces expected errors", {
     paste0(
       "Row and column names for argument 'dist_mat' do not ",
       "match tree tip labels exactly."
-      )
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -465,7 +490,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       prior = "testing" # not a list
     ),
-    "Argument 'prior' is not a list."
+    "Argument 'prior' is not a list.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -478,7 +504,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       prior = list("testing") # not a named list
     ),
-    "Argument 'prior' is not a named list."
+    "Argument 'prior' is not a named list.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -496,7 +523,8 @@ test_that("coev_fit() produces expected errors", {
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
       "'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', 'sigma_group', ",
       "and 'L_group'"
-    )
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -510,7 +538,8 @@ test_that("coev_fit() produces expected errors", {
       # duplicate names
       prior = list(A_diag = "normal(0,2)", A_diag = "normal(0,2)")
     ),
-    "Argument 'prior' contains duplicate names."
+    "Argument 'prior' contains duplicate names.",
+    fixed = TRUE
   )
   expect_error(
     coev_fit(
@@ -523,7 +552,8 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       prior_only = "testing"
     ),
-    "Argument 'prior_only' is not logical."
+    "Argument 'prior_only' is not logical.",
+    fixed = TRUE
   )
 })
 
