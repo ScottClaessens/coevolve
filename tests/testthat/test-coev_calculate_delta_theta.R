@@ -59,3 +59,21 @@ test_that("coev_calculate_delta_theta() works with repeated observations", {
     )
   )
 })
+
+test_that("coev_calculate_delta_theta() works with multiPhylo object", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
+  m <- reload_fit(m, filename = "coevfit_example8-1.csv")
+  # suppress warnings
+  SW <- suppressWarnings
+  # should run without error and produce draws_array object
+  expect_no_error(
+    SW(coev_calculate_delta_theta(m, response = "x", predictor = "y"))
+  )
+  expect_true(
+    methods::is(
+      SW(coev_calculate_delta_theta(m, response = "x", predictor = "y")),
+      "draws_array"
+    )
+  )
+})

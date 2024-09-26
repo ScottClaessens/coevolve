@@ -250,7 +250,7 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = ape::rtree(n, br = NULL) # no branch lengths
     ),
-    "Argument 'tree' does not include branch lengths."
+    "All trees in 'tree' argument must include branch lengths."
   )
   expect_error(
     coev_fit(
@@ -262,7 +262,7 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = ape::unroot(tree) # unrooted
     ),
-    "Argument 'tree' must be a rooted tree."
+    "All trees in 'tree' argument must be rooted."
   )
   expect_error(
     {
@@ -664,6 +664,24 @@ test_that("coev_fit() works with repeated observations", {
   # load model
   m <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
   m <- reload_fit(m, filename = "coevfit_example7-1.csv")
+  # suppress warnings
+  SW <- suppressWarnings
+  # fitted without error
+  expect_no_error(SW(m))
+  expect_no_error(SW(summary(m)))
+  expect_output(SW(print(m)))
+  expect_output(SW(print(summary(m))))
+  # expect no errors for stancode or standata methods
+  expect_no_error(SW(stancode(m)))
+  expect_no_error(SW(standata(m)))
+  expect_output(SW(stancode(m)))
+  expect_true(SW(methods::is(standata(m), "list")))
+})
+
+test_that("coev_fit() works with multiPhylo object", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
+  m <- reload_fit(m, filename = "coevfit_example8-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # fitted without error

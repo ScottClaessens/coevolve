@@ -154,21 +154,31 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   if (!(id %in% colnames(data))) {
     stop2("Argument 'id' is not a valid column name in the data.")
   }
-  # stop if tree is not a phylo object
-  if (!methods::is(tree, "phylo")) {
-    stop2("Argument 'tree' must be an phylogenetic tree object of class phylo.")
+  # stop if tree is not a phylo or multiPhylo object
+  if (!(methods::is(tree, "phylo") | methods::is(tree, "multiPhylo"))) {
+    stop2(
+      paste0(
+        "Argument 'tree' must be an phylogenetic tree object of class phylo ",
+        "or multiPhylo."
+        )
+      )
   }
-  # stop if tree does not have branch length information
-  if (is.null(tree$edge.length)) {
-    stop2("Argument 'tree' does not include branch lengths.")
-  }
-  # stop if tree is not rooted
-  if (!ape::is.rooted(tree)) {
-    stop2("Argument 'tree' must be a rooted tree.")
-  }
-  # stop if id in data does not match tree tip labels exactly
-  if (!identical(sort(unique(data[,id])), sort(tree$tip.label))) {
-    stop2("The id variable in the data does not match tree tip labels exactly.")
+  tree <- phytools::as.multiPhylo(tree)
+  for (t in 1:length(tree)) {
+    # stop if tree does not have branch length information
+    if (is.null(tree[[t]]$edge.length)) {
+      stop2("All trees in 'tree' argument must include branch lengths.")
+    }
+    # stop if tree is not rooted
+    if (!ape::is.rooted(tree[[t]])) {
+      stop2("All trees in 'tree' argument must be rooted.")
+    }
+    # stop if id in data does not match tree tip labels exactly
+    if (!identical(sort(unique(data[,id])), sort(tree[[t]]$tip.label))) {
+      stop2(
+        "The id variable in the data does not match tree tip labels exactly."
+        )
+    }
   }
   # stop if id in data contains missing values
   if (any(is.na(data[,id]))) {

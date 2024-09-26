@@ -250,7 +250,7 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = ape::rtree(n, br = NULL) # no branch lengths
     ),
-    "Argument 'tree' does not include branch lengths."
+    "All trees in 'tree' argument must include branch lengths."
   )
   expect_error(
     coev_make_stancode(
@@ -262,7 +262,7 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = ape::unroot(tree) # unrooted
     ),
-    "Argument 'tree' must be a rooted tree."
+    "All trees in 'tree' argument must be rooted."
   )
   expect_error(
     {
@@ -838,4 +838,36 @@ test_that("coev_make_stancode() works with tibbles", {
   expect_no_error(sc)
   expect_type(sc, "character")
   expect_length(sc, 1)
+})
+
+test_that("coev_make_stancode() works with multiPhylo object", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 10
+    tree <- c(ape::rcoal(n), ape::rcoal(n))
+    d <- data.frame(
+      id = tree[[1]]$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = rbinom(n, size = 1, prob = 0.5)
+    )
+  })
+  # get stan code
+  sc <- coev_make_stancode(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree
+  )
+  # runs without error
+  expect_no_error(sc)
+  # syntactically correct
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
 })

@@ -7,6 +7,7 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   m5 <- readRDS(test_path("fixtures", "coevfit_example5.rds"))
   m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
   m7 <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
+  m8 <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
   m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
   m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
   m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
@@ -14,6 +15,7 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   m5 <- reload_fit(m5, filename = "coevfit_example5-1.csv")
   m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
   m7 <- reload_fit(m7, filename = "coevfit_example7-1.csv")
+  m8 <- reload_fit(m8, filename = "coevfit_example8-1.csv")
   # expect the following errors
   expect_error(
     coev_plot_delta_theta(object = "fail"),
@@ -45,6 +47,7 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   expect_no_error(SW(coev_plot_delta_theta(m5)))
   expect_no_error(SW(coev_plot_delta_theta(m6)))
   expect_no_error(SW(coev_plot_delta_theta(m7)))
+  expect_no_error(SW(coev_plot_delta_theta(m8)))
   expect_true(methods::is(SW(coev_plot_delta_theta(m1)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m2)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m3)), "ggplot"))
@@ -52,4 +55,5 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   expect_true(methods::is(SW(coev_plot_delta_theta(m5)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m6)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m7)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m8)), "ggplot"))
 })
