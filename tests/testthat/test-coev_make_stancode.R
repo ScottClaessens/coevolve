@@ -250,7 +250,7 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = ape::rtree(n, br = NULL) # no branch lengths
     ),
-    "Argument 'tree' does not include branch lengths."
+    "All trees in 'tree' argument must include branch lengths."
   )
   expect_error(
     coev_make_stancode(
@@ -262,7 +262,7 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = ape::unroot(tree) # unrooted
     ),
-    "Argument 'tree' must be a rooted tree."
+    "All trees in 'tree' argument must be rooted."
   )
   expect_error(
     {

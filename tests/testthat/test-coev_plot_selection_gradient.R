@@ -82,7 +82,7 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   expect_no_error(fun(m5, "w", "x", limits = c(-3, 3)))
   expect_no_error(fun(m6, "w", "x", limits = c(-3, 3)))
   expect_no_error(fun(m7, "w", "x", limits = c(-3, 3)))
-  expect_no_error(fun(m8, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m8, "y", "x", limits = c(-3, 3)))
   expect_true(methods::is(fun(m1, "x", "y"), "ggplot"))
   expect_true(methods::is(fun(m2, "w", "x"), "ggplot"))
   expect_true(methods::is(fun(m3, "w", "x"), "ggplot"))

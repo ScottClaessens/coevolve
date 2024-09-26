@@ -84,5 +84,5 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
   expect_no_error(fun(m5, "w", "x", limits = c(-3, 3)))
   expect_no_error(fun(m6, "w", "x", limits = c(-3, 3)))
   expect_no_error(fun(m7, "w", "x", limits = c(-3, 3)))
-  expect_no_error(fun(m8, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m8, "y", "x", limits = c(-3, 3)))
 })

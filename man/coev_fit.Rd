@@ -35,7 +35,7 @@ links rows to tips on the phylogeny. Must refer to a valid column name in
 the data. The id column must exactly match the tip labels in the phylogeny.}
 
 \item{tree}{A phylogenetic tree object of class \code{phylo} or
-\code{multiPhylo}. The tree(s) must be rooted and must include branch 
+\code{multiPhylo}. The tree(s) must be rooted and must include branch
 lengths.}
 
 \item{effects_mat}{(optional) A boolean matrix with row and column names

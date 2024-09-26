@@ -163,17 +163,17 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         )
       )
   }
-  # stop if tree does not have branch length information
-  if (is.null(tree$edge.length)) {
-    stop2("Argument 'tree' does not include branch lengths.")
-  }
-  # stop if tree is not rooted
-  if (!ape::is.rooted(tree)) {
-    stop2("Argument 'tree' must be a rooted tree.")
-  }
-  # stop if id in data does not match tree tip labels exactly
   tree <- phytools::as.multiPhylo(tree)
   for (t in 1:length(tree)) {
+    # stop if tree does not have branch length information
+    if (is.null(tree[[t]]$edge.length)) {
+      stop2("All trees in 'tree' argument must include branch lengths.")
+    }
+    # stop if tree is not rooted
+    if (!ape::is.rooted(tree[[t]])) {
+      stop2("All trees in 'tree' argument must be rooted.")
+    }
+    # stop if id in data does not match tree tip labels exactly
     if (!identical(sort(unique(data[,id])), sort(tree[[t]]$tip.label))) {
       stop2(
         "The id variable in the data does not match tree tip labels exactly."
