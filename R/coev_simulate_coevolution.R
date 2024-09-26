@@ -1,5 +1,12 @@
 #' Simulate the coevolution of multiple variables in discrete time steps
 #'
+#' This function simulates the coevolution of multiple continuous variables in
+#' discrete time steps following a simple autoregressive model. Users set the
+#' sample size, the variable names, the strength of selection and drift, and the
+#' probability of a speciation event in a given time step. The function returns
+#' a phylogeny, the results of the simulation run, and a dataset of contemporary
+#' trait values.
+#'
 #' @param n Number of data points in the resulting data frame.
 #' @param variables A character vector of variable names (e.g.,
 #'   \code{c("x","y")})
@@ -19,7 +26,23 @@
 #'
 #' @return List with dataset at final timestep (data), full simulation log
 #'   (simulation), and pruned phylogenetic tree (tree).
-#' @export
+#'
+#' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
+#'   \email{erikjacob.ringen@@uzh.ch}
+#'
+#' @details The model underlying this simulation is a simple autoregessive
+#'   model, where values of all variables at the previous timestep predict
+#'   values at the current timestep. In the case of two variables, the model is
+#'   as follows:
+#'   \deqn{Y_t = \alpha_{y,y}Y_{t-1}+\alpha_{y,x}X_{t-1} +
+#'   \mathcal{N}(0,\epsilon_{y})}
+#'   \deqn{X_t = \alpha_{x,x}X_{t-1}+\alpha_{x,y}Y_{t-1} +
+#'   \mathcal{N}(0,\epsilon_{x})}
+#'   where \eqn{\alpha} represents the selection matrix and \eqn{\epsilon}
+#'   represents the vector of drift parameters. With some probability \eqn{p},
+#'   a speciation event creates two independent evolutionary branches. This
+#'   simulation continues until the intended sample size of species has been
+#'   reached.
 #'
 #' @examples
 #' # simulate coevolution of x and y
@@ -38,8 +61,13 @@
 #' drift <- c("x" = 0.05, "y" = 0.05)
 #' prob_split <- 0.05
 #' # run simulation
-#' sim <- coev_simulate_coevolution(n, variables, selection_matrix,
-#'                                  drift, prob_split)
+#' sim <-
+#'   coev_simulate_coevolution(
+#'     n, variables, selection_matrix,
+#'     drift, prob_split
+#'   )
+#'
+#' @export
 coev_simulate_coevolution <- function(n,
                                       variables,
                                       selection_matrix,

@@ -1,6 +1,6 @@
 Package: coevolve
 Title: Fit Bayesian Dynamic Coevolutionary Models using 'Stan'
-Version: 0.0.0.9011
+Version: 0.0.0.9012
 Authors@R: 
     c(person("Scott", "Claessens", , "scott.claessens@gmail.com", 
              role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3562-6981")),
@@ -21,6 +21,7 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
+    tibble,
     withr
 Config/testthat/edition: 3
 Imports: 

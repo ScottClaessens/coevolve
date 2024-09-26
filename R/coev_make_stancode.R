@@ -1,5 +1,9 @@
 #' Make Stan code for dynamic coevolutionary model
 #'
+#' Make the \pkg{Stan} code for the Bayesian dynamic coevolutionary model.
+#' \pkg{Stan} code is generated, checked for syntactical errors, and then
+#' returned as a character string.
+#'
 #' @param data An object of class \code{data.frame} (or one that can be coerced
 #'   to that class) containing data of all variables used in the model.
 #' @param variables A named list identifying variables that should coevolve in
@@ -14,7 +18,8 @@
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo} or
-#'   \code{multiPhylo}.
+#'   \code{multiPhylo}. The tree(s) must be rooted and must include branch
+#'   lengths.
 #' @param effects_mat (optional) A boolean matrix with row and column names
 #'   exactly matching the variables declared for the model. If not specified,
 #'   all cross-lagged effects will be estimated in the model. If specified, the
@@ -59,7 +64,23 @@
 #'
 #' @return A character string containing the \pkg{Stan} code to fit the dynamic
 #'   coevolutionary model.
-#' @export
+#'
+#' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
+#'   \email{erikjacob.ringen@@uzh.ch}
+#'
+#' @details For further details, see \code{help(coev_fit)}
+#'
+#' @references
+#' Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
+#' reveal that resource-use intensification drives the evolution of "complex"
+#' societies. \emph{EcoEvoRXiv}. \code{doi:10.32942/osf.io/wfp95}
+#'
+#' Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen,
+#' E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political
+#' authority in Austronesian societies. \emph{Nature Human Behaviour},
+#' \emph{7}(1), 38-45. \code{10.1038/s41562-022-01471-y}
+#'
+#' @seealso \code{\link{coev_make_standata}}, \code{\link{coev_fit}}
 #'
 #' @examples
 #' # make stan code
@@ -75,12 +96,16 @@
 #'
 #' # print Stan code
 #' cat(stan_code)
+#'
+#' @export
 coev_make_stancode <- function(data, variables, id, tree,
                                effects_mat = NULL, dist_mat = NULL,
                                prior = NULL, scale = TRUE, prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat,
              dist_mat, prior, scale, prior_only)
+  # coerce data argument to data frame
+  data <- as.data.frame(data)
   # extract distributions and variable names from named list
   distributions <- as.character(variables)
   variables <- names(variables)
@@ -704,6 +729,23 @@ coev_make_stancode <- function(data, variables, id, tree,
     stan_file = cmdstanr::write_stan_file(sc),
     compile = FALSE
   )$check_syntax(quiet = TRUE)
+  # produce warnings for gaussian processes and/or random effects
+  if (!is.null(dist_mat)) {
+    message(
+      paste0(
+        "Note: Distance matrix detected. Gaussian processes over spatial ",
+        "distances have been included for each variable in the model."
+        )
+    )
+  }
+  if (any(duplicated(data[,id]))) {
+    message(
+      paste0(
+        "Note: Repeated observations detected. Group-level varying effects ",
+        "have been included for each variable in the model."
+      )
+    )
+  }
   # return stan code
   return(sc)
 }

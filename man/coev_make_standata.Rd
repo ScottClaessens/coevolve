@@ -34,7 +34,8 @@ links rows to tips on the phylogeny. Must refer to a valid column name in
 the data. The id column must exactly match the tip labels in the phylogeny.}
 
 \item{tree}{A phylogenetic tree object of class \code{phylo} or
-\code{multiPhylo}.}
+\code{multiPhylo}. The tree(s) must be rooted and must include branch
+lengths.}
 
 \item{effects_mat}{(optional) A boolean matrix with row and column names
 exactly matching the variables declared for the model. If not specified,
@@ -85,7 +86,13 @@ A list containing the data for fitting the dynamic coevolutionary
 model in \pkg{Stan}.
 }
 \description{
-Make Stan data for dynamic coevolutionary model
+Make the data list for the \pkg{Stan} model. The function takes a dataset,
+phylogeny, and a set of variables and performs the necessary computations
+(e.g., cutting up the tree into segments, computing branch lengths,
+determining parent and child nodes) for the \pkg{Stan} model.
+}
+\details{
+For further details, see \code{help(coev_fit)}
 }
 \examples{
 # make stan data
@@ -98,4 +105,22 @@ coev_make_standata(
   id = "language",
   tree = authority$phylogeny
   )
+
+}
+\references{
+Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
+reveal that resource-use intensification drives the evolution of "complex"
+societies. \emph{EcoEvoRXiv}. \code{doi:10.32942/osf.io/wfp95}
+
+Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen,
+E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political
+authority in Austronesian societies. \emph{Nature Human Behaviour},
+\emph{7}(1), 38-45. \code{10.1038/s41562-022-01471-y}
+}
+\seealso{
+\code{\link{coev_make_stancode}}, \code{\link{coev_fit}}
+}
+\author{
+Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
+\email{erikjacob.ringen@uzh.ch}
 }

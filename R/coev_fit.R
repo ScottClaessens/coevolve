@@ -1,5 +1,17 @@
 #' Fit Bayesian dynamic coevolutionary model in Stan
 #'
+#' Fit Bayesian dynamic coevolutionary models in \pkg{Stan} for full Bayesian
+#' inference. The model allows users to assess causal directionality
+#' (X -> Y vs. Y -> X) and contingencies (X, then Y) in evolution. Several data
+#' types are supported, including binary, ordinal, count, continuous, and
+#' positive real variables. The model can additionally account for missing data,
+#' repeated observations, and controls for spatial proximity. Model fit can be
+#' assessed and compared with posterior predictive checks and cross-validation.
+#'
+#' The \code{coev_fit} function generates the \pkg{Stan} code for the model,
+#' generates the data list, and then compiles and fits the model using the
+#' \pkg{cmdstanr} package.
+#'
 #' @param data An object of class \code{data.frame} (or one that can be coerced
 #'   to that class) containing data of all variables used in the model.
 #' @param variables A named list identifying variables that should coevolve in
@@ -14,7 +26,8 @@
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo} or
-#'   \code{multiPhylo}.
+#'   \code{multiPhylo}. The tree(s) must be rooted and must include branch
+#'   lengths.
 #' @param effects_mat (optional) A boolean matrix with row and column names
 #'   exactly matching the variables declared for the model. If not specified,
 #'   all cross-lagged effects will be estimated in the model. If specified, the
@@ -59,7 +72,88 @@
 #' @param ... Additional arguments for \pkg{cmdstanr::sampling()}.
 #'
 #' @return Fitted model of class \code{coevfit}.
-#' @export
+#'
+#' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
+#'   \email{erikjacob.ringen@@uzh.ch}
+#'
+#' @details Fit a Bayesian dynamic coevolutionary model in Stan. A general
+#'   overview is provided in the vignette \code{vignette("coevolve")}
+#'
+#'   \bold{Available response distributions}
+#'
+#'   Variables that should coevolve in the model are declared in the
+#'   \code{variables} argument, using a named list with associated response
+#'   distributions. For example: \code{list(x = "bernoulli_logit", y =
+#'   "ordered_logistic")}. Currently, the only supported response distributions
+#'   are \code{bernoulli_logit}, \code{ordered_logistic},
+#'   \code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal},
+#'   and \code{negative_binomial_softplus}.
+#'
+#'   \bold{Default prior distributions}
+#'
+#'   If priors are not explicitly declared by the user, default priors are used.
+#'   Default priors were chosen to be weakly regularising, which improves model
+#'   fitting and conservatism in parameter estimates. Default priors for Stan
+#'   parameters are as follows:
+#'
+#'   - \code{A_diag} (autoregressive effects) = \code{std_normal()}
+#'   - \code{A_offdiag} (cross effects) = \code{std_normal()}
+#'   - \code{Q_diag} (drift scale parameters) = \code{std_normal()}
+#'   - \code{b} (continuous time intercepts) = \code{std_normal()}
+#'   - \code{eta_anc} (trait ancestral states) = \code{std_normal()}
+#'   - \code{c} (ordinal cutpoints) = \code{normal(0, 2)}
+#'   - \code{nu} (Student t degrees of freedom) = \code{gamma(2, 0.1)}
+#'   - \code{sigma_dist} (sigma for Gaussian process over locations) =
+#'   \code{exponential(1)}
+#'   - \code{rho_dist} (rho for Gaussian process over locations) =
+#'   \code{exponential(1)}
+#'   - \code{sigma_group} (standard deviation for group-level varying effects) =
+#'   \code{exponential(1)}
+#'   - \code{L_group} (Cholesky factor for group-level varying effects) =
+#'   \code{lkj_corr_cholesky(2)}
+#'
+#'   The default prior for \code{phi} (the overdispersion parameter for the
+#'   negative-binomial distribution) is scaled automatically based on the
+#'   variance of the data.
+#'
+#'   We recommend that users assess the suitability of these default priors by
+#'   fitting the model with \code{prior_only = TRUE} and then plotting a prior
+#'   predictive check for all variables using the
+#'   \code{coev_plot_predictive_check()} function.
+#'
+#'   \bold{Handling missing data}
+#'
+#'   In order to retain the most information, the \code{coev_fit()} function
+#'   removes cases only when data are missing for all coevolving variables. For
+#'   cases where data are missing for some coevolving variables but not others,
+#'   the model retains these cases and averages over the missingness in the
+#'   model.
+#'
+#'   \bold{Dealing with repeated observations}
+#'
+#'   If taxa appear in the dataset multiple times (i.e., there are repeated
+#'   observations), the model will automatically include non-phylogenetic
+#'   group-level varying effects and correlations to account for this
+#'   clustering. These parameters represent the between-taxa variation and
+#'   correlation that remains after accounting for the coevolutionary process.
+#'
+#'   \bold{Controlling for spatial location}
+#'
+#'   If users declare a distance matrix with the \code{dist_mat} argument,
+#'   the model will include several Gaussian processes (one per coevolving
+#'   variable) over spatial locations.
+#'
+#' @references
+#' Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
+#' reveal that resource-use intensification drives the evolution of "complex"
+#' societies. \emph{EcoEvoRXiv}. \code{doi:10.32942/osf.io/wfp95}
+#'
+#' Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen,
+#' E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political
+#' authority in Austronesian societies. \emph{Nature Human Behaviour},
+#' \emph{7}(1), 38-45. \code{10.1038/s41562-022-01471-y}
+#'
+#' @seealso \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}
 #'
 #' @examples
 #' \dontrun{
@@ -81,6 +175,8 @@
 #' # print model summary
 #' summary(fit)
 #' }
+#'
+#' @export
 coev_fit <- function(data, variables, id, tree,
                      effects_mat = NULL, dist_mat = NULL,
                      prior = NULL, scale = TRUE, prior_only = FALSE, ...) {

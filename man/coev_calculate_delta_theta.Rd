@@ -19,7 +19,26 @@ in the model}
 Posterior samples in the draws_array format
 }
 \description{
-Calculate delta theta from a fitted \code{coevfit} object
+Calculate \eqn{\Delta\theta} from a fitted \code{coevfit} object.
+\eqn{\Delta\theta} is defined as the difference in the equilibrium value for
+a "response" trait that results from a standardised increase in the value of
+another "predictor" trait. This value can be used to assess contingencies
+and directionality between variables in the coevolutionary process.
+}
+\details{
+This function calculates \eqn{\Delta\theta}, which is defined as the
+difference in the equilibrium value for a "response" trait that results
+from a standardised increase in the value of another "predictor" trait. The
+function first calculates the equilibrium trait value for the response
+trait when the predictor trait is held at its empirical median value (the
+\code{\link{coev_calculate_theta}} function is used for this purpose, see
+\code{help(coev_calculate_theta)} for further details). The function then
+calculates the equilibrium trait value for the response variable after
+increasing the predictor trait from its median by one median absolute
+deviation. The function then returns the posterior difference between these
+values. The resulting \eqn{\Delta\theta} samples can be used to infer
+whether increases in one trait have a positive or negative selective effect
+on another trait in the model.
 }
 \examples{
 \dontrun{
@@ -45,4 +64,23 @@ coev_calculate_delta_theta(
   predictor = "religious_authority"
   )
 }
+
+}
+\references{
+Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
+reveal that resource-use intensification drives the evolution of "complex"
+societies. \emph{EcoEvoRXiv}. \code{doi:10.32942/osf.io/wfp95}
+
+Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen,
+E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political
+authority in Austronesian societies. \emph{Nature Human Behaviour},
+\emph{7}(1), 38-45. \code{10.1038/s41562-022-01471-y}
+}
+\seealso{
+\code{\link{coev_calculate_delta_theta}},
+\code{\link{coev_plot_delta_theta}}
+}
+\author{
+Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
+\email{erikjacob.ringen@uzh.ch}
 }

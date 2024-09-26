@@ -5,7 +5,13 @@
 \title{Plot flowfield of expected evolutionary change from a fitted \code{coevfit}
 object}
 \usage{
-coev_plot_flowfield(object, var1, var2, nullclines = FALSE)
+coev_plot_flowfield(
+  object,
+  var1,
+  var2,
+  nullclines = FALSE,
+  limits = c(-2.5, 2.5)
+)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}}
@@ -17,16 +23,31 @@ the model}
 the model}
 
 \item{nullclines}{Logical (defaults to FALSE); whether to show coloured
-nullclines
-to indicate where each variable is at equilibrium, depending on the state of
-the other}
+nullclines to indicate where each variable is at equilibrium, depending on
+the state of the other}
+
+\item{limits}{A numeric vector of length 2 (defaults to \code{c(-2.5, 2.5)});
+specifying the lower limit and the upper limit of the x and y axes.}
 }
 \value{
 A flowfield plot drawn directly to the device
 }
 \description{
-Plot flowfield of expected evolutionary change from a fitted \code{coevfit}
-object
+Plot a flowfield of the expected evolutionary dynamics from a fitted
+\code{coevfit} object, with help from the \pkg{phaseR} package.
+}
+\details{
+The flowfield visualises the change in two coevolving traits
+depending on their current states, with the direction and strength of
+change depicting with the direction and size of arrows. If nullclines are
+included, they represent the parameter combinations where each trait is
+at equilibrium, depending on the state of the other trait If three or
+more traits were included in the model, other traits are held at their
+median values during these computations.
+
+If the plot does not look right, the user might try zooming out from the
+default parameter space by setting wider limits. For some variables (e.g.,
+continuous and count variables), the default limits may not be suitable.
 }
 \examples{
 \dontrun{
@@ -52,4 +73,22 @@ coev_plot_flowfield(
   var2 = "religious_authority"
   )
 }
+
+}
+\references{
+Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
+reveal that resource-use intensification drives the evolution of "complex"
+societies. \emph{EcoEvoRXiv}. \code{doi:10.32942/osf.io/wfp95}
+
+Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen,
+E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political
+authority in Austronesian societies. \emph{Nature Human Behaviour},
+\emph{7}(1), 38-45. \code{10.1038/s41562-022-01471-y}
+}
+\seealso{
+\code{\link{coev_plot_selection_gradient}}
+}
+\author{
+Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
+\email{erikjacob.ringen@uzh.ch}
 }

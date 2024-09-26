@@ -19,7 +19,21 @@ declaring the variables to be included in the plot.}
 A \code{ggplot} object
 }
 \description{
-Plot delta theta values from a fitted \code{coevfit} object
+Plot delta theta values for all trait pairs from a fitted \code{coevfit}
+object. This plot can be used to visually assess contingencies and
+directionality between different variables in the coevolutionary process.
+}
+\details{
+This function repeatedly uses the
+\code{\link{coev_calculate_delta_theta}} function under the hood to
+generate a pairs plot of \eqn{\Delta\theta} for all variables in the model.
+For more details on the definition and calculation of \eqn{\Delta\theta},
+see \code{help(coev_calculate_delta_theta)}. Note that often the posterior
+distribution for \eqn{\Delta\theta} is highly skewed, meaning that the
+distribution for different traits can be difficult to visualise in a single
+pairs plot. If this plot does not produce satisfactory visualisations, the
+user should instead use the \code{\link{coev_calculate_delta_theta}}
+function directly and create their own plots.
 }
 \examples{
 \dontrun{
@@ -41,4 +55,23 @@ fit <- coev_fit(
 # plot delta theta values for all effects
 coev_plot_delta_theta(fit)
 }
+
+}
+\references{
+Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
+reveal that resource-use intensification drives the evolution of "complex"
+societies. \emph{EcoEvoRXiv}. \code{doi:10.32942/osf.io/wfp95}
+
+Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen,
+E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political
+authority in Austronesian societies. \emph{Nature Human Behaviour},
+\emph{7}(1), 38-45. \code{10.1038/s41562-022-01471-y}
+}
+\seealso{
+\code{\link{coev_calculate_delta_theta}},
+\code{\link{coev_calculate_theta}}
+}
+\author{
+Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
+\email{erikjacob.ringen@uzh.ch}
 }

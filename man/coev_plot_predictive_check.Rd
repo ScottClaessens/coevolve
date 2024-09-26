@@ -2,7 +2,7 @@
 % Please edit documentation in R/coev_plot_predictive_check.R
 \name{coev_plot_predictive_check}
 \alias{coev_plot_predictive_check}
-\title{Plot posterior predictive check from a fitted \code{coevfit} object}
+\title{Plot predictive check from a fitted \code{coevfit} object}
 \usage{
 coev_plot_predictive_check(
   object,
@@ -28,7 +28,8 @@ posterior predictions. Set to 1 by default.}
 A list of \code{ggplot} objects
 }
 \description{
-Plot posterior predictive check from a fitted \code{coevfit} object
+Plot posterior (or prior) predictive checks for variables from a fitted
+\code{coevfit} object, with help from the \pkg{bayesplot} package.
 }
 \examples{
 \dontrun{
@@ -50,4 +51,9 @@ fit <- coev_fit(
 # plot predictive checks for all variables
 coev_plot_predictive_check(fit)
 }
+
+}
+\author{
+Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
+\email{erikjacob.ringen@uzh.ch}
 }

@@ -47,9 +47,19 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
       ),
     "Argument 'nullclines' must be logical."
   )
+  expect_error(
+    coev_plot_flowfield(
+      object = m1, var1 = "x", var2 = "y", limits = "hello"
+    ),
+    "Argument 'limits' must be a numeric vector of length 2."
+  )
   # should run without error
-  fun <- function(model, var1, var2, nullclines = FALSE) {
-    suppressWarnings(coev_plot_flowfield(model, var1, var2, nullclines))
+  fun <- function(model, var1, var2,
+                  nullclines = FALSE,
+                  limits = c(-2.5, 2.5)) {
+    suppressWarnings(
+      coev_plot_flowfield(model, var1, var2, nullclines, limits)
+      )
   }
   expect_no_error(fun(m1, "x", "y"))
   expect_no_error(fun(m2, "w", "x"))
@@ -67,4 +77,12 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
   expect_no_error(fun(m6, "w", "x", nullclines = TRUE))
   expect_no_error(fun(m7, "w", "x", nullclines = TRUE))
   expect_no_error(fun(m8, "y", "x", nullclines = TRUE))
+  expect_no_error(fun(m1, "x", "y", limits = c(-3, 3)))
+  expect_no_error(fun(m2, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m3, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m4, "y", "z", limits = c(-3, 3)))
+  expect_no_error(fun(m5, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m6, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m7, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m8, "w", "x", limits = c(-3, 3)))
 })

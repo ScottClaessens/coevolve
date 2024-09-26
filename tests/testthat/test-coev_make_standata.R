@@ -99,8 +99,10 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Variables following the 'bernoulli_logit' response distribution ",
-      "must be integers with values of 0/1 in the data."
-      )
+      "must be integers with values of 0/1 in the data. Try using the ",
+      "as.integer() function to convert variables to integers."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_standata(
@@ -114,8 +116,10 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Variables following the 'ordered_logistic' response distribution ",
-      "must be ordered factors in the data."
-      )
+      "must be ordered factors in the data. Try using the as.ordered() ",
+      "function to convert variables to ordered factors."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_standata(
@@ -129,8 +133,10 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Variables following the 'poisson_softplus' response distribution ",
-      "must be integers greater than or equal to zero in the data."
-      )
+      "must be integers greater than or equal to zero in the data. Try ",
+      "using the as.integer() function to convert variables to integers."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_standata(
@@ -145,8 +151,10 @@ test_that("coev_make_standata() produces expected errors", {
     paste0(
       "Variables following the 'negative_binomial_softplus' response ",
       "distribution must be integers greater than or equal to zero in ",
-      "the data."
-    )
+      "the data. Try using the as.integer() function to convert variables ",
+      "to integers."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_make_stancode(
@@ -231,6 +239,30 @@ test_that("coev_make_standata() produces expected errors", {
       tree = "testing" # not of class phylo
     ),
     "Argument 'tree' must be an phylogenetic tree object of class phylo."
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = ape::rtree(n, br = NULL) # no branch lengths
+    ),
+    "Argument 'tree' does not include branch lengths."
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = ape::unroot(tree) # unrooted
+    ),
+    "Argument 'tree' must be a rooted tree."
   )
   expect_error(
     {
@@ -728,6 +760,39 @@ test_that("coev_make_stancode() scales data correctly", {
   expect_identical(sd2$y[,"x"], as.numeric(d$x))
   expect_identical(sd2$y[,"y"], as.numeric(scale(d$y)))
   expect_identical(sd2$y[,"z"], as.numeric(exp(scale(log(d$z)))))
+})
+
+test_that("coev_make_standata() works with tibbles", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- tibble::tibble(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = ordered(sample(1:4, size = n, replace = TRUE))
+    )
+  })
+  # make stan data
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    )
+  # expect list with correct names and prior_only = 0
+  expect_no_error(sd)
+  expect_type(sd, "list")
+  expect_equal(
+    names(sd),
+    c("N_tips", "N_obs", "J", "N_seg", "node_seq", "parent", "ts", "tip",
+      "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
+  )
+  expect_equal(sd$prior_only, 0)
 })
 
 test_that("coev_make_standata() works with multiPhylo object", {
