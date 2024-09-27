@@ -282,6 +282,23 @@ test_that("coev_fit() produces expected errors", {
   )
   expect_error(
     {
+      tree2 <- tree
+      tree2$edge.length[25] <- 0
+      coev_fit(
+        data = d,
+        variables = list(
+          x = "bernoulli_logit",
+          y = "ordered_logistic"
+        ),
+        id = "id",
+        tree = tree2
+      )
+    },
+    "All trees in 'tree' argument must have positive non-zero branch lengths.",
+    fixed = TRUE
+  )
+  expect_error(
+    {
       d2 <- d
       d2$id <- rep("test", n) # not correct tip labels
       coev_fit(

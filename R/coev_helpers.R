@@ -173,6 +173,15 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     if (!ape::is.rooted(tree[[t]])) {
       stop2("All trees in 'tree' argument must be rooted.")
     }
+    # stop if tree contains any branch lengths not > 0
+    if (!all(tree[[t]]$edge.length > 0)) {
+      stop2(
+        paste0(
+          "All trees in 'tree' argument must have positive non-zero branch ",
+          "lengths."
+          )
+        )
+    }
     # stop if id in data does not match tree tip labels exactly
     if (!identical(sort(unique(data[,id])), sort(tree[[t]]$tip.label))) {
       stop2(
