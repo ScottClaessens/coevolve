@@ -77,4 +77,16 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
   expect_no_error(SW(coev_plot_predictive_check(m7, ndraws = 1L)))
   expect_no_error(SW(coev_plot_predictive_check(m8, ndraws = 1L)))
   expect_no_error(SW(coev_plot_predictive_check(m8, tree_id = 2L)))
+  # should work as expected with missing data
+  # lower limit of plot should not be -9999.45
+  expect_false(
+    isTRUE(
+      all.equal(
+        ggplot2::layer_scales(
+          SW(coev_plot_predictive_check(m6, variables = "x"))[[1]]
+          )$x$range$range[1],
+        -9999.45
+        )
+      )
+    )
 })

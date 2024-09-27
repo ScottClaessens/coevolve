@@ -120,6 +120,8 @@ coev_plot_predictive_check <- function(object, variables = NULL,
     var_id <- which(names(object$variables) == variable)
     # get y and yrep
     y <- object$stan_data$y[,variable]
+    miss <- object$stan_data$miss[,variable]
+    y[miss == 1] <- NA
     yrep <- posterior::as_draws_matrix(post$yrep[tree_id,,var_id])[draws_ids,]
     # remove data if missing for all coevolving variables
     all_missing <- apply(
