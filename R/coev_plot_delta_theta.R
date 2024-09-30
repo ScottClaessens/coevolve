@@ -8,7 +8,13 @@
 #' @param variables If NULL (default), the plot includes all coevolving
 #'   variables from the model. Otherwise, a character vector of length >= 2
 #'   declaring the variables to be included in the plot.
-#' @param ... Additional arguments passed to \code{ggdist::stat_slabinterval}
+#' @param prob Probability mass to include in the inner interval. Default is
+#'   0.66 (66% interval).
+#' @param prob_outer Probability mass to include in the outer interval. Default
+#'   is 0.95 (95% interval).
+#' @param limits If NULL (default), limits are scaled automatically to include
+#'   all posterior samples. Otherwise, a numeric vector of length 2 specifying
+#'   the lower and upper limits for the x-axis.
 #'
 #' @return A \code{ggplot} object
 #'
@@ -20,11 +26,11 @@
 #'   generate a pairs plot of \eqn{\Delta\theta} for all variables in the model.
 #'   For more details on the definition and calculation of \eqn{\Delta\theta},
 #'   see \code{help(coev_calculate_delta_theta)}. Note that often the posterior
-#'   distribution for \eqn{\Delta\theta} is highly skewed, meaning that the
+#'   distribution for \eqn{\Delta\theta} has long tails, meaning that the
 #'   distribution for different traits can be difficult to visualise in a single
 #'   pairs plot. If this plot does not produce satisfactory visualisations, the
-#'   user should instead use the \code{\link{coev_calculate_delta_theta}}
-#'   function directly and create their own plots.
+#'   user should either specify narrower limits for the x-axis or use the
+#'   \code{\link{coev_calculate_delta_theta}} function to create plots manually.
 #'
 #' @references
 #' Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
@@ -61,7 +67,8 @@
 #' }
 #'
 #' @export
-coev_plot_delta_theta <- function(object, variables = NULL, ...) {
+coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
+                                  prob_outer = 0.95, limits = NULL) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
     stop2(
@@ -92,6 +99,39 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
     # otherwise, default is to include all variables in order
     variables <- names(object$variables)
   }
+  if (!methods::is(prob, "numeric")) {
+    # stop if prob not numeric
+    stop2("Argument 'prob' must be numeric.")
+  } else if (length(prob) != 1) {
+    # stop if prob not == length 1
+    stop2("Argument 'prob' must be of length 1.")
+  } else if (prob <= 0 | prob >= 1) {
+    # stop if prob not between 0 and 1
+    stop2("Argument 'prob' must be between 0 and 1.")
+  }
+  if (!methods::is(prob_outer, "numeric")) {
+    # stop if prob_outer not numeric
+    stop2("Argument 'prob_outer' must be numeric.")
+  } else if (length(prob_outer) != 1) {
+    # stop if prob_outer not == length 1
+    stop2("Argument 'prob_outer' must be of length 1.")
+  } else if (prob_outer <= 0 | prob_outer >= 1) {
+    # stop if prob_outer not between 0 and 1
+    stop2("Argument 'prob_outer' must be between 0 and 1.")
+  } else if (prob_outer <= prob) {
+    # stop if prob is greater than or equal to prob_outer
+    stop2("Argument 'prob_outer' must be greater than argument 'prob'.")
+  }
+  # if user specifies limits argument
+  if (!is.null(limits)) {
+    if (!methods::is(limits, "numeric")) {
+      # stop if limits not numeric vector
+      stop2("Argument 'limits' must be a numeric vector.")
+    } else if (!(length(limits) == 2)) {
+      # stop if limits not == length 2
+      stop2("Argument 'limits' must be of length 2.")
+    }
+  }
   # prepare data for plot
   d <- tidyr::expand_grid(
     response = variables,
@@ -119,24 +159,44 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
   # response and predictor as factors
   d$response  <- factor(d$response, levels = variables)
   d$predictor <- factor(d$predictor, levels = variables)
-  # get range for plotting
+  # get median and lower/upper
   dd <- dplyr::group_by(d, .data$response, .data$predictor)
   dd <- dplyr::summarise(
     dd,
-    lower = stats::quantile(.data$delta_theta, 0.05),
-    upper = stats::quantile(.data$delta_theta, 0.95),
+    med = stats::median(.data$delta_theta),
+    lower = stats::quantile(.data$delta_theta, 0.5 - (prob / 2)),
+    upper = stats::quantile(.data$delta_theta, 0.5 + (prob / 2)),
+    lower_outer = stats::quantile(.data$delta_theta, 0.5 - (prob_outer / 2)),
+    upper_outer = stats::quantile(.data$delta_theta, 0.5 + (prob_outer / 2)),
     .groups = "drop"
-    )
+  )
   # plot
-  ggplot2::ggplot(
-    data = d,
-    mapping = ggplot2::aes(x = .data$delta_theta)
+  p <-
+    ggplot2::ggplot() +
+    ggplot2::geom_density(
+      data = d,
+      mapping = ggplot2::aes(x = .data$delta_theta),
+      colour = NA,
+      fill = "darkgrey"
     ) +
-    ggdist::stat_slabinterval(
-      .width = c(0.5, 0.89), # 50% and 89% credible intervals
-      n = 1e4,               # increased resolution
-      ...
-      ) +
+    ggplot2::geom_linerange(
+      data = dd,
+      mapping = ggplot2::aes(
+        y = 0,
+        xmin = .data$lower_outer,
+        xmax = .data$upper_outer
+      )
+    ) +
+    ggplot2::geom_pointrange(
+      data = dd,
+      mapping = ggplot2::aes(
+        x = .data$med,
+        y = 0,
+        xmin = .data$lower,
+        xmax = .data$upper
+        ),
+      linewidth = 1
+    ) +
     ggplot2::geom_vline(
       xintercept = 0,
       linetype = "dashed"
@@ -160,9 +220,6 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       y = "From this variable...",
       title = "... to this variable."
       ) +
-    ggplot2::coord_cartesian(
-      xlim = c(min(dd$lower), max(dd$upper))
-      ) +
     ggplot2::theme(
       axis.text.y = ggplot2::element_blank(),
       axis.ticks.y = ggplot2::element_blank(),
@@ -172,4 +229,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, ...) {
       axis.title.x = ggplot2::element_text(size = 12),
       plot.title = ggplot2::element_text(hjust = 0.5, size = 11)
     )
+  # if limits specified by user
+  if (!is.null(limits)) p <- p + ggplot2::xlim(limits)
+  return(p)
 }

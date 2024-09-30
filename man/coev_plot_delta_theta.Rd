@@ -4,7 +4,13 @@
 \alias{coev_plot_delta_theta}
 \title{Plot delta theta values from a fitted \code{coevfit} object}
 \usage{
-coev_plot_delta_theta(object, variables = NULL, ...)
+coev_plot_delta_theta(
+  object,
+  variables = NULL,
+  prob = 0.66,
+  prob_outer = 0.95,
+  limits = NULL
+)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}}
@@ -13,7 +19,15 @@ coev_plot_delta_theta(object, variables = NULL, ...)
 variables from the model. Otherwise, a character vector of length >= 2
 declaring the variables to be included in the plot.}
 
-\item{...}{Additional arguments passed to \code{ggdist::stat_slabinterval}}
+\item{prob}{Probability mass to include in the inner interval. Default is
+0.66 (66\% interval).}
+
+\item{prob_outer}{Probability mass to include in the outer interval. Default
+is 0.95 (95\% interval).}
+
+\item{limits}{If NULL (default), limits are scaled automatically to include
+all posterior samples. Otherwise, a numeric vector of length 2 specifying
+the lower and upper limits for the x-axis.}
 }
 \value{
 A \code{ggplot} object
@@ -29,11 +43,11 @@ This function repeatedly uses the
 generate a pairs plot of \eqn{\Delta\theta} for all variables in the model.
 For more details on the definition and calculation of \eqn{\Delta\theta},
 see \code{help(coev_calculate_delta_theta)}. Note that often the posterior
-distribution for \eqn{\Delta\theta} is highly skewed, meaning that the
+distribution for \eqn{\Delta\theta} has long tails, meaning that the
 distribution for different traits can be difficult to visualise in a single
 pairs plot. If this plot does not produce satisfactory visualisations, the
-user should instead use the \code{\link{coev_calculate_delta_theta}}
-function directly and create their own plots.
+user should either specify narrower limits for the x-axis or use the
+\code{\link{coev_calculate_delta_theta}} function to create plots manually.
 }
 \examples{
 \dontrun{

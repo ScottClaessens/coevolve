@@ -30,7 +30,6 @@ Imports:
     cmdstanr,
     colorspace,
     dplyr,
-    ggdist,
     ggplot2,
     methods,
     phangorn,

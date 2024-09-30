@@ -19,23 +19,73 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   # expect the following errors
   expect_error(
     coev_plot_delta_theta(object = "fail"),
-    "Argument 'object' must be a fitted coevolutionary model of class coevfit."
+    "Argument 'object' must be a fitted coevolutionary model of class coevfit.",
+    fixed = TRUE
   )
   expect_error(
     coev_plot_delta_theta(object = m1, variables = NA),
-    "Argument 'variables' must be a character vector."
+    "Argument 'variables' must be a character vector.",
+    fixed = TRUE
   )
   expect_error(
     coev_plot_delta_theta(object = m1, variables = "fail"),
-    "Argument 'variables' must be of length > 1."
+    "Argument 'variables' must be of length > 1.",
+    fixed = TRUE
   )
   expect_error(
     coev_plot_delta_theta(object = m1, variables = c("x", "y", "fail")),
-    "Some variables in 'variables' are not included in the fitted model."
+    "Some variables in 'variables' are not included in the fitted model.",
+    fixed = TRUE
   )
   expect_error(
     coev_plot_delta_theta(object = m1, variables = c("x", "y", "y")),
-    "Argument 'variables' contains duplicates."
+    "Argument 'variables' contains duplicates.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m1, prob = "fail"),
+    "Argument 'prob' must be numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m1, prob = c(0.5, 0.5)),
+    "Argument 'prob' must be of length 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m1, prob = -0.5),
+    "Argument 'prob' must be between 0 and 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m1, prob = 1.5),
+    "Argument 'prob' must be between 0 and 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m1, prob_outer = "fail"),
+    "Argument 'prob_outer' must be numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m1, prob_outer = c(0.5, 0.5)),
+    "Argument 'prob_outer' must be of length 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m1, prob_outer = -0.5),
+    "Argument 'prob_outer' must be between 0 and 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m1, prob_outer = 1.5),
+    "Argument 'prob_outer' must be between 0 and 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m1, prob = 0.5, prob_outer = 0.4),
+    "Argument 'prob_outer' must be greater than argument 'prob'.",
+    fixed = TRUE
   )
   # suppress warnings
   SW <- suppressWarnings
@@ -56,4 +106,22 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   expect_true(methods::is(SW(coev_plot_delta_theta(m6)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m7)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m8)), "ggplot"))
+  # limits work as expected
+  expect_no_error(SW(coev_plot_delta_theta(m1, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m2, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m3, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m4, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m5, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m6, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m7, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m8, limits = c(-5, 5))))
+  # prob and prob_outer work as expected
+  expect_no_error(SW(coev_plot_delta_theta(m1, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m2, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m3, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m4, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m5, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m6, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m7, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m8, prob = 0.5, prob_outer = 0.89)))
 })
