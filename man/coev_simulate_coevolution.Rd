@@ -4,7 +4,15 @@
 \alias{coev_simulate_coevolution}
 \title{Simulate the coevolution of multiple variables in discrete time steps}
 \usage{
-coev_simulate_coevolution(n, variables, selection_matrix, drift, prob_split)
+coev_simulate_coevolution(
+  n,
+  variables,
+  selection_matrix,
+  drift,
+  prob_split,
+  intercepts = NULL,
+  ancestral_states = NULL
+)
 }
 \arguments{
 \item{n}{Number of data points in the resulting data frame.}
@@ -27,6 +35,16 @@ different variables. Names must include all specified variables.}
 
 \item{prob_split}{A numeric probability of a species split in any given
 timestep.}
+
+\item{intercepts}{Intercepts for the VAR(1) model. If NULL (default),
+intercepts are set to zero for all variables. Otherwise, a named numeric
+vector specifying the intercepts for different variables. Names must
+include all specified variables.}
+
+\item{ancestral_states}{Ancestral states for different variables. If NULL
+(default), ancestral states are set to zero for all variables. Otherwise,
+a named numeric vector specifying the ancestral states for different
+variables. Names must include all specified variables.}
 }
 \value{
 List with dataset at final timestep (data), full simulation log
@@ -34,26 +52,26 @@ List with dataset at final timestep (data), full simulation log
 }
 \description{
 This function simulates the coevolution of multiple continuous variables in
-discrete time steps following a simple autoregressive model. Users set the
-sample size, the variable names, the strength of selection and drift, and the
-probability of a speciation event in a given time step. The function returns
-a phylogeny, the results of the simulation run, and a dataset of contemporary
-trait values.
+discrete time steps following a simple VAR(1) autoregressive model. Users set
+the sample size, the variable names, the strength of selection and drift, and
+the probability of a speciation event in a given time step. The function
+returns a phylogeny, the results of the simulation run, and a dataset of
+contemporary trait values.
 }
 \details{
-The model underlying this simulation is a simple autoregessive
-model, where values of all variables at the previous timestep predict
-values at the current timestep. In the case of two variables, the model is
-as follows:
-\deqn{Y_t = \alpha_{y,y}Y_{t-1}+\alpha_{y,x}X_{t-1} +
+The model underlying this simulation is a simple VAR(1)
+autoregressive model, where values of all variables at the previous
+timestep predict values at the current timestep. In the case of two
+variables, the model is as follows:
+\deqn{Y_t = \alpha_{y}+\beta_{y,y}Y_{t-1}+\beta_{y,x}X_{t-1} +
   \mathcal{N}(0,\epsilon_{y})}
-\deqn{X_t = \alpha_{x,x}X_{t-1}+\alpha_{x,y}Y_{t-1} +
+\deqn{X_t = \alpha_{x}+\beta_{x,x}X_{t-1}+\beta_{x,y}Y_{t-1} +
   \mathcal{N}(0,\epsilon_{x})}
-where \eqn{\alpha} represents the selection matrix and \eqn{\epsilon}
-represents the vector of drift parameters. With some probability \eqn{p},
-a speciation event creates two independent evolutionary branches. This
-simulation continues until the intended sample size of species has been
-reached.
+where \eqn{\alpha} represents the intercepts, \eqn{\beta} represents the
+selection matrix, and \eqn{\epsilon} represents the vector of drift
+parameters. With some probability \eqn{p}, a speciation event creates two
+independent evolutionary branches. This simulation continues until the
+intended sample size of species has been reached.
 }
 \examples{
 # simulate coevolution of x and y

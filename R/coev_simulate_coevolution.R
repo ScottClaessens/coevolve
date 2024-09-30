@@ -1,11 +1,11 @@
 #' Simulate the coevolution of multiple variables in discrete time steps
 #'
 #' This function simulates the coevolution of multiple continuous variables in
-#' discrete time steps following a simple autoregressive model. Users set the
-#' sample size, the variable names, the strength of selection and drift, and the
-#' probability of a speciation event in a given time step. The function returns
-#' a phylogeny, the results of the simulation run, and a dataset of contemporary
-#' trait values.
+#' discrete time steps following a simple VAR(1) autoregressive model. Users set
+#' the sample size, the variable names, the strength of selection and drift, and
+#' the probability of a speciation event in a given time step. The function
+#' returns a phylogeny, the results of the simulation run, and a dataset of
+#' contemporary trait values.
 #'
 #' @param n Number of data points in the resulting data frame.
 #' @param variables A character vector of variable names (e.g.,
@@ -23,6 +23,14 @@
 #'   different variables. Names must include all specified variables.
 #' @param prob_split A numeric probability of a species split in any given
 #'   timestep.
+#' @param intercepts Intercepts for the VAR(1) model. If NULL (default),
+#'   intercepts are set to zero for all variables. Otherwise, a named numeric
+#'   vector specifying the intercepts for different variables. Names must
+#'   include all specified variables.
+#' @param ancestral_states Ancestral states for different variables. If NULL
+#'   (default), ancestral states are set to zero for all variables. Otherwise,
+#'   a named numeric vector specifying the ancestral states for different
+#'   variables. Names must include all specified variables.
 #'
 #' @return List with dataset at final timestep (data), full simulation log
 #'   (simulation), and pruned phylogenetic tree (tree).
@@ -30,19 +38,19 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @details The model underlying this simulation is a simple autoregessive
-#'   model, where values of all variables at the previous timestep predict
-#'   values at the current timestep. In the case of two variables, the model is
-#'   as follows:
-#'   \deqn{Y_t = \alpha_{y,y}Y_{t-1}+\alpha_{y,x}X_{t-1} +
+#' @details The model underlying this simulation is a simple VAR(1)
+#'   autoregressive model, where values of all variables at the previous
+#'   timestep predict values at the current timestep. In the case of two
+#'   variables, the model is as follows:
+#'   \deqn{Y_t = \alpha_{y}+\beta_{y,y}Y_{t-1}+\beta_{y,x}X_{t-1} +
 #'   \mathcal{N}(0,\epsilon_{y})}
-#'   \deqn{X_t = \alpha_{x,x}X_{t-1}+\alpha_{x,y}Y_{t-1} +
+#'   \deqn{X_t = \alpha_{x}+\beta_{x,x}X_{t-1}+\beta_{x,y}Y_{t-1} +
 #'   \mathcal{N}(0,\epsilon_{x})}
-#'   where \eqn{\alpha} represents the selection matrix and \eqn{\epsilon}
-#'   represents the vector of drift parameters. With some probability \eqn{p},
-#'   a speciation event creates two independent evolutionary branches. This
-#'   simulation continues until the intended sample size of species has been
-#'   reached.
+#'   where \eqn{\alpha} represents the intercepts, \eqn{\beta} represents the
+#'   selection matrix, and \eqn{\epsilon} represents the vector of drift
+#'   parameters. With some probability \eqn{p}, a speciation event creates two
+#'   independent evolutionary branches. This simulation continues until the
+#'   intended sample size of species has been reached.
 #'
 #' @examples
 #' # simulate coevolution of x and y
@@ -72,7 +80,9 @@ coev_simulate_coevolution <- function(n,
                                       variables,
                                       selection_matrix,
                                       drift,
-                                      prob_split) {
+                                      prob_split,
+                                      intercepts = NULL,
+                                      ancestral_states = NULL) {
   # check arguments
   # stop if n is not numeric
   if (!methods::is(n, "numeric")) {
@@ -129,6 +139,53 @@ coev_simulate_coevolution <- function(n,
     stop2("Argument 'prob_split' is not numeric.")
   } else if (length(prob_split) != 1) {
     stop2("Argument 'prob_split' must be of length 1.")
+  } else if (prob_split <= 0 | prob_split >= 1) {
+    stop2("Argument 'prob_split' must be between 0 and 1.")
+  }
+  # stop if intercepts not a named numeric vector with correct dims and vars
+  if (!is.null(intercepts)) {
+    if (!methods::is(intercepts, "numeric")) {
+      stop2("Argument 'intercepts' is not numeric.")
+    } else if (length(intercepts) != length(variables)) {
+      stop2(
+        paste0(
+          "Argument 'intercepts' has length different to specified number of ",
+          "variables."
+          )
+      )
+    } else if (!all(variables %in% names(intercepts))) {
+      stop2(
+        "Argument 'intercepts' has names different to specified variable names."
+        )
+    }
+  } else {
+    # if not set, intercepts are zero for all variables by default
+    intercepts <- rep(0, length(variables))
+    names(intercepts) <- variables
+  }
+  # stop if ancestral_states not a named numeric vector with correct dims/vars
+  if (!is.null(ancestral_states)) {
+    if (!methods::is(ancestral_states, "numeric")) {
+      stop2("Argument 'ancestral_states' is not numeric.")
+    } else if (length(ancestral_states) != length(variables)) {
+      stop2(
+        paste0(
+          "Argument 'ancestral_states' has length different to specified ",
+          "number of variables."
+        )
+      )
+    } else if (!all(variables %in% names(ancestral_states))) {
+      stop2(
+        paste0(
+          "Argument 'ancestral_states' has names different to specified ",
+          "variable names."
+          )
+      )
+    }
+  } else {
+    # if not set, ancestral states are zero for all variables by default
+    ancestral_states <- rep(0, length(variables))
+    names(ancestral_states) <- variables
   }
   # ensure selection_matrix and drift vector have names
   # in the same order as "variables" vector
@@ -148,7 +205,7 @@ coev_simulate_coevolution <- function(n,
     parent = NA,
     split = FALSE
     )
-  for (i in variables) sim[i] <- 0
+  for (i in variables) sim[i] <- as.numeric(ancestral_states[i])
   # initial tree in text form
   tree <- "(t1:1);"
   # current timestep, species list, and number of species
@@ -206,7 +263,7 @@ coev_simulate_coevolution <- function(n,
         )
         # loop over outcome variables
         for (i in variables) {
-          mean <- 0
+          mean <- as.numeric(intercepts[i])
           # loop over predictor variables
           for (j in variables) mean <- mean + selection_matrix[i,j]*prev[j]
           new_values[i] <- stats::rnorm(1, mean, drift[i])
