@@ -145,8 +145,8 @@ coev_plot_selection_gradient <- function(object, var1, var2,
     }
     # scale by mad for response variable
     out <- out / mads[resp_id]
-    # divide by sigma scaled by mad for response variable
-    sigma <- Q_sigma[resp_id] / mads[resp_id]
+    # divide by sigma^2 scaled by mad for response variable
+    sigma <- Q_sigma[resp_id]^2 / mads[resp_id]
     out <- out / sigma
     return(out)
   }
