@@ -316,6 +316,25 @@ test_that("coev_make_standata() produces expected errors", {
   )
   expect_error(
     {
+      tree2 <- c(tree, ape::di2multi(tree, tol = 0.01)) # collapse internal node
+      coev_make_standata(
+        data = d,
+        variables = list(
+          x = "bernoulli_logit",
+          y = "ordered_logistic"
+        ),
+        id = "id",
+        tree = tree2
+      )
+    },
+    paste0(
+      "All trees in 'tree' argument must have the same number of ",
+      "internal nodes and branches."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    {
       d2 <- d; d2$id[1] <- NA
       tree2 <- tree; tree2$tip.label[1] <- NA
       coev_make_standata(

@@ -190,6 +190,16 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         )
     }
   }
+  # stop if trees have different numbers of internal nodes or branches
+  if (length(unique(lapply(tree, function(x) x$Nnode))) != 1 |
+      length(unique(lapply(tree, function(x) length(x$edge.length)))) != 1) {
+    stop2(
+      paste0(
+        "All trees in 'tree' argument must have the same number of ",
+        "internal nodes and branches."
+        )
+      )
+  }
   # stop if id in data contains missing values
   if (any(is.na(data[,id]))) {
     stop2("The id variable in the data must not contain NAs.")

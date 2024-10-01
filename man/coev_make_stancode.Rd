@@ -36,7 +36,8 @@ the data. The id column must exactly match the tip labels in the phylogeny.}
 
 \item{tree}{A phylogenetic tree object of class \code{phylo} or
 \code{multiPhylo}. The tree(s) must be rooted and must include positive
-non-zero branch lengths.}
+non-zero branch lengths. All trees in \code{multiPhylo} objects must have
+the same number of internal nodes and branches.}
 
 \item{effects_mat}{(optional) A boolean matrix with row and column names
 exactly matching the variables declared for the model. If not specified,
