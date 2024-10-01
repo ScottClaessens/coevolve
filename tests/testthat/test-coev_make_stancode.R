@@ -538,8 +538,8 @@ test_that("coev_make_stancode() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', 'sigma_group', ",
-      "and 'L_group'"
+      "'L_R', 'Q_sigma', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', ",
+      "'sigma_group', and 'L_group'"
     ),
     fixed = TRUE
   )
@@ -570,6 +570,20 @@ test_that("coev_make_stancode() produces expected errors", {
       scale = "testing"
     ),
     "Argument 'scale' is not logical.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      estimate_Q_offdiag = "testing"
+    ),
+    "Argument 'estimate_Q_offdiag' is not logical.",
     fixed = TRUE
   )
   expect_error(
@@ -912,6 +926,39 @@ test_that("coev_make_stancode() works with multiPhylo object", {
     ),
     id = "id",
     tree = tree
+  )
+  # runs without error
+  expect_no_error(sc)
+  # syntactically correct
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+})
+
+test_that("coev_make_stancode() works when constraining Q offdiag to zero", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = rbinom(n, size = 1, prob = 0.5)
+    )
+  })
+  # get stan code
+  sc <- coev_make_stancode(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree,
+    estimate_Q_offdiag = FALSE # Q off diagonal constrained to zero
   )
   # runs without error
   expect_no_error(sc)

@@ -8,6 +8,7 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
   m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
   m7 <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
   m8 <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
+  m9 <- readRDS(test_path("fixtures", "coevfit_example9.rds"))
   m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
   m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
   m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
@@ -16,6 +17,7 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
   m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
   m7 <- reload_fit(m7, filename = "coevfit_example7-1.csv")
   m8 <- reload_fit(m8, filename = "coevfit_example8-1.csv")
+  m9 <- reload_fit(m9, filename = "coevfit_example9-1.csv")
   # expect the following errors
   expect_error(
     coev_plot_predictive_check(object = "fail"),
@@ -60,6 +62,7 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
   expect_no_error(SW(coev_plot_predictive_check(m6)))
   expect_no_error(SW(coev_plot_predictive_check(m7)))
   expect_no_error(SW(coev_plot_predictive_check(m8)))
+  expect_no_error(SW(coev_plot_predictive_check(m9)))
   expect_no_error(SW(coev_plot_predictive_check(m1, variables = "x")))
   expect_no_error(SW(coev_plot_predictive_check(m2, variables = "w")))
   expect_no_error(SW(coev_plot_predictive_check(m3, variables = "w")))
@@ -68,6 +71,7 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
   expect_no_error(SW(coev_plot_predictive_check(m6, variables = "w")))
   expect_no_error(SW(coev_plot_predictive_check(m7, variables = "w")))
   expect_no_error(SW(coev_plot_predictive_check(m8, variables = "x")))
+  expect_no_error(SW(coev_plot_predictive_check(m9, variables = "x")))
   expect_no_error(SW(coev_plot_predictive_check(m1, ndraws = 1L)))
   expect_no_error(SW(coev_plot_predictive_check(m2, ndraws = 1L)))
   expect_no_error(SW(coev_plot_predictive_check(m3, ndraws = 1L)))
@@ -76,6 +80,8 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
   expect_no_error(SW(coev_plot_predictive_check(m6, ndraws = 1L)))
   expect_no_error(SW(coev_plot_predictive_check(m7, ndraws = 1L)))
   expect_no_error(SW(coev_plot_predictive_check(m8, ndraws = 1L)))
+  expect_no_error(SW(coev_plot_predictive_check(m9, ndraws = 1L)))
+  # should work with multiPhylo
   expect_no_error(SW(coev_plot_predictive_check(m8, tree_id = 2L)))
   # should work as expected with missing data
   # lower limit of plot should not be -9999.45

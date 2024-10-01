@@ -33,12 +33,13 @@
 #'   will additionally control for spatial location by including a separate
 #'   Gaussian Process over locations for every coevolving variable in the model.
 #' @param prior (optional) A named list of priors for the model. If not
-#'   specified, the model uses default priors (see Stan code). Alternatively,
-#'   the user can specify a named list of priors. The list must contain
-#'   non-duplicated entries for any of the following variables: the
+#'   specified, the model uses default priors (see \code{help(coev_fit)}).
+#'   Alternatively, the user can specify a named list of priors. The list must
+#'   contain non-duplicated entries for any of the following parameters: the
 #'   autoregressive effects (\code{A_diag}), the cross effects
-#'   (\code{A_offdiag}), the drift scale parameters (\code{Q_diag}), the
-#'   continuous time intercepts (\code{b}), the ancestral states for the traits
+#'   (\code{A_offdiag}), the Cholesky factor for the drift matrix (\code{L_R}),
+#'   the drift std. dev. parameters (\code{Q_sigma}), the continuous time
+#'   intercepts (\code{b}), the ancestral states for the traits
 #'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 #'   overdispersion parameters for negative binomial variables (\code{phi}),
 #'   the degrees of freedom parameters for Student t variables (\code{nu}),
@@ -58,6 +59,10 @@
 #'   efficiency and ensure accurate inferences. If \code{FALSE}, variables are
 #'   left unstandardised for model fitting. In this case, users should take care
 #'   to set sensible priors on variables.
+#' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
+#'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
+#'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
+#'   are set to zero.
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
@@ -100,10 +105,12 @@
 #' @export
 coev_make_stancode <- function(data, variables, id, tree,
                                effects_mat = NULL, dist_mat = NULL,
-                               prior = NULL, scale = TRUE, prior_only = FALSE) {
+                               prior = NULL, scale = TRUE,
+                               estimate_Q_offdiag = TRUE,
+                               prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat,
-             dist_mat, prior, scale, prior_only)
+             dist_mat, prior, scale, estimate_Q_offdiag, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # extract distributions and variable names from named list
@@ -116,7 +123,8 @@ coev_make_stancode <- function(data, variables, id, tree,
       eta_anc     = "std_normal()",
       A_offdiag   = "std_normal()",
       A_diag      = "std_normal()",
-      Q_diag      = "std_normal()",
+      L_R         = "lkj_corr_cholesky(4)",
+      Q_sigma     = "std_normal()",
       c           = "normal(0, 2)",
       nu          = "gamma(2, 0.1)",
       sigma_dist  = "exponential(1)",
@@ -298,8 +306,18 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_parameters <- paste0(
     "parameters{\n",
     "  vector<upper=0>[J] A_diag; // autoregressive terms of A\n",
-    "  vector[num_effects - J] A_offdiag; // cross-lagged terms of A\n",
-    "  vector<lower=0>[J] Q_diag; // self-drift terms\n",
+    "  vector[num_effects - J] A_offdiag; // cross-lagged terms of A\n"
+  )
+  # add cholesky factor for Q matrix if estimating Q off diagonals
+  if (estimate_Q_offdiag) {
+    sc_parameters <- paste0(
+      sc_parameters,
+      "  cholesky_factor_corr[J] L_R; // lower-tri choleksy decomp corr mat, used to construct Q mat\n"
+    )
+  }
+  sc_parameters <- paste0(
+    sc_parameters,
+    "  vector<lower=0>[J] Q_sigma; // std deviation parameters of the Q mat\n",
     "  vector[J] b; // SDE intercepts\n",
     "  array[N_tree] vector[J] eta_anc; // ancestral states\n",
     "  array[N_tree, N_seg - 1] vector[J] z_drift; // stochastic drift, unscaled and uncorrelated\n"
@@ -359,7 +377,11 @@ coev_make_stancode <- function(data, variables, id, tree,
     "transformed parameters{\n",
     "  array[N_tree, N_seg] vector[J] eta;\n",
     "  matrix[J,J] A = diag_matrix(A_diag); // selection matrix\n",
-    "  matrix[J,J] Q = diag_matrix(Q_diag); // drift matrix\n",
+    ifelse(
+      estimate_Q_offdiag,
+      "  matrix[J,J] Q = diag_matrix(Q_sigma) * (L_R * L_R') * diag_matrix(Q_sigma); // drift matrix\n",
+      "  matrix[J,J] Q = diag_matrix(Q_sigma^2); // drift matrix\n"
+    ),
     "  matrix[J,J] Q_inf; // asymptotic covariance matrix\n",
     "  array[N_tree, N_seg] vector[J] drift_tips; // terminal drift parameters\n",
     "  array[N_tree, N_seg] vector[J] sigma_tips; // terminal drift parameters\n"
@@ -463,7 +485,8 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  }\n",
     "  A_offdiag ~ ", priors$A_offdiag, ";\n",
     "  A_diag ~ ", priors$A_diag, ";\n",
-    "  Q_diag ~ ", priors$Q_diag, ";\n"
+    ifelse(estimate_Q_offdiag, paste0("  L_R ~ ", priors$L_R, ";\n"), ""),
+    "  Q_sigma ~ ", priors$Q_sigma, ";\n"
   )
   # add priors for any cut points
   for (j in 1:length(distributions)) {
@@ -606,6 +629,14 @@ coev_make_stancode <- function(data, variables, id, tree,
       "  vector[N_obs*J] log_lik; // log-likelihood\n",
       "  array[N_tree,N_obs,J] real yrep; // predictive checks\n"
       )
+  if (estimate_Q_offdiag) {
+    sc_generated_quantities <-
+      paste0(
+        sc_generated_quantities,
+        "  matrix[J,J] cor_R; // correlated drift\n",
+        "  cor_R = multiply_lower_tri_self_transpose(L_R);\n"
+      )
+  }
   if (any(duplicated(data[,id]))) {
     sc_generated_quantities <-
       paste0(

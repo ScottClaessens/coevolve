@@ -8,6 +8,7 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
   m7 <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
   m8 <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
+  m9 <- readRDS(test_path("fixtures", "coevfit_example9.rds"))
   m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
   m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
   m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
@@ -16,6 +17,7 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
   m7 <- reload_fit(m7, filename = "coevfit_example7-1.csv")
   m8 <- reload_fit(m8, filename = "coevfit_example8-1.csv")
+  m9 <- reload_fit(m9, filename = "coevfit_example9-1.csv")
   # expect the following errors
   expect_error(
     coev_plot_selection_gradient(object = "fail", var1 = "x", var2 = "y"),
@@ -67,6 +69,7 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   expect_no_error(fun(m6, "w", "x"))
   expect_no_error(fun(m7, "w", "x"))
   expect_no_error(fun(m8, "x", "y"))
+  expect_no_error(fun(m9, "x", "y"))
   expect_no_error(fun(m1, "x", "y", contour = TRUE))
   expect_no_error(fun(m2, "w", "x", contour = TRUE))
   expect_no_error(fun(m3, "w", "x", contour = TRUE))
@@ -75,6 +78,7 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   expect_no_error(fun(m6, "w", "x", contour = TRUE))
   expect_no_error(fun(m7, "w", "x", contour = TRUE))
   expect_no_error(fun(m8, "x", "y", contour = TRUE))
+  expect_no_error(fun(m9, "x", "y", contour = TRUE))
   expect_no_error(fun(m1, "x", "y", limits = c(-3, 3)))
   expect_no_error(fun(m2, "w", "x", limits = c(-3, 3)))
   expect_no_error(fun(m3, "w", "x", limits = c(-3, 3)))
@@ -83,6 +87,7 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   expect_no_error(fun(m6, "w", "x", limits = c(-3, 3)))
   expect_no_error(fun(m7, "w", "x", limits = c(-3, 3)))
   expect_no_error(fun(m8, "y", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m9, "y", "x", limits = c(-3, 3)))
   expect_true(methods::is(fun(m1, "x", "y"), "ggplot"))
   expect_true(methods::is(fun(m2, "w", "x"), "ggplot"))
   expect_true(methods::is(fun(m3, "w", "x"), "ggplot"))
@@ -92,4 +97,5 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   expect_true(methods::is(fun(m7, "w", "x"), "ggplot"))
   expect_true(methods::is(fun(m7, "w", "x"), "ggplot"))
   expect_true(methods::is(fun(m8, "x", "y"), "ggplot"))
+  expect_true(methods::is(fun(m9, "x", "y"), "ggplot"))
 })

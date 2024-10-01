@@ -538,8 +538,8 @@ test_that("coev_make_standata() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', 'sigma_group', ",
-      "and 'L_group'"
+      "'L_R', 'Q_sigma', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', ",
+      "'sigma_group', and 'L_group'"
     ),
     fixed = TRUE
   )
@@ -570,6 +570,20 @@ test_that("coev_make_standata() produces expected errors", {
       scale = "testing"
     ),
     "Argument 'scale' is not logical.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      estimate_Q_offdiag = "testing"
+    ),
+    "Argument 'estimate_Q_offdiag' is not logical.",
     fixed = TRUE
   )
   expect_error(

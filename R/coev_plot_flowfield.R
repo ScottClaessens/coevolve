@@ -24,7 +24,7 @@
 #'   depending on their current states, with the direction and strength of
 #'   change depicting with the direction and size of arrows. If nullclines are
 #'   included, they represent the parameter combinations where each trait is
-#'   at equilibrium, depending on the state of the other trait If three or
+#'   at equilibrium, depending on the state of the other trait. If three or
 #'   more traits were included in the model, other traits are held at their
 #'   median values during these computations.
 #'
@@ -74,7 +74,12 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
                                 limits = c(-2.5, 2.5)) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
-    stop2("Argument 'object' must be a fitted coevolutionary model of class coevfit.")
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model of class ",
+        "coevfit."
+        )
+      )
   }
   if (!is.character(var1) | length(var1) != 1) {
     # stop if var1 not character string of length one

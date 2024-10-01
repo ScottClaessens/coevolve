@@ -76,15 +76,15 @@ fit <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 4 finished in 1165.9 seconds.
-#> Chain 3 finished in 1551.9 seconds.
-#> Chain 2 finished in 1591.5 seconds.
-#> Chain 1 finished in 1601.1 seconds.
+#> Chain 3 finished in 910.2 seconds.
+#> Chain 1 finished in 910.8 seconds.
+#> Chain 4 finished in 917.5 seconds.
+#> Chain 2 finished in 955.5 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 1477.6 seconds.
-#> Total execution time: 1601.3 seconds.
-#> Warning: 61 of 2000 (3.0%) transitions ended with a divergence.
+#> Mean chain execution time: 923.5 seconds.
+#> Total execution time: 955.7 seconds.
+#> Warning: 30 of 2000 (2.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
 
@@ -95,41 +95,47 @@ summary(fit)
 #> Variables: political_authority = ordered_logistic 
 #>            religious_authority = ordered_logistic 
 #>      Data: authority$data (Number of observations: 97)
+#> Phylogeny: authority$phylogeny (Number of trees: 1)
 #>     Draws: 4 chains, each with iter = 500; warmup = 1000; thin = 1
 #>            total post-warmup draws = 2000
 #> 
 #> Autoregressive selection effects:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority    -0.61      0.51 -1.91 -0.03 1.01     1589      964
-#> religious_authority    -0.68      0.53 -1.98 -0.03 1.01     1170      665
+#> political_authority    -0.66      0.51 -1.90 -0.03 1.01      590      996
+#> religious_authority    -0.80      0.59 -2.15 -0.03 1.00     1315     1007
 #> 
 #> Cross selection effects:
-#>                                           Estimate Est.Error 2.5% 97.5% Rhat
-#> political_authority ⟶ religious_authority     2.99      1.20 0.84  5.58 1.02
-#> religious_authority ⟶ political_authority     2.43      1.08 0.65  4.88 1.01
+#>                                           Estimate Est.Error  2.5% 97.5% Rhat
+#> political_authority ⟶ religious_authority     2.28      1.03  0.28  4.36 1.01
+#> religious_authority ⟶ political_authority     1.76      1.10 -0.37  4.02 1.00
 #>                                           Bulk_ESS Tail_ESS
-#> political_authority ⟶ religious_authority      189       74
-#> religious_authority ⟶ political_authority      666      833
+#> political_authority ⟶ religious_authority      543      327
+#> religious_authority ⟶ political_authority      500      801
 #> 
-#> Drift scale parameters:
-#>                     Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority     1.52      0.74 0.23  3.05 1.01      772      685
-#> religious_authority     1.18      0.71 0.09  2.72 1.01      668      972
+#> Drift parameters:
+#>                                              Estimate Est.Error  2.5% 97.5%
+#> sd(political_authority)                          2.03      0.82  0.35  3.59
+#> sd(religious_authority)                          1.26      0.78  0.06  2.85
+#> cor(political_authority,religious_authority)     0.27      0.31 -0.39  0.76
+#>                                              Rhat Bulk_ESS Tail_ESS
+#> sd(political_authority)                      1.00      416      475
+#> sd(religious_authority)                      1.01      313      779
+#> cor(political_authority,religious_authority) 1.00     1235     1378
 #> 
 #> Continuous time intercept parameters:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority     0.14      0.93 -1.61  1.91 1.01     2427     1288
-#> religious_authority     0.15      0.91 -1.69  1.93 1.01     2063     1300
+#> political_authority     0.21      0.95 -1.65  2.08 1.00     2042     1491
+#> religious_authority     0.20      0.94 -1.55  2.06 1.00     2337     1365
 #> 
 #> Ordinal cutpoint parameters:
 #>                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority[1]    -1.03      0.84 -2.67  0.73 1.00     1590     1088
-#> political_authority[2]    -0.33      0.83 -1.95  1.42 1.00     1693     1288
-#> political_authority[3]     1.63      0.86  0.02  3.40 1.01     1640     1397
-#> religious_authority[1]    -1.32      0.87 -3.00  0.35 1.00     1428     1415
-#> religious_authority[2]    -0.68      0.84 -2.23  0.94 1.00     1479     1532
-#> religious_authority[3]     1.64      0.92 -0.09  3.44 1.01      770      714
-#> Warning: There were 61 divergent transitions after warmup.
+#> political_authority[1]    -1.33      0.89 -3.04  0.53 1.00     1034      241
+#> political_authority[2]    -0.56      0.87 -2.19  1.35 1.00     1023      241
+#> political_authority[3]     1.66      0.89 -0.04  3.44 1.00      979      253
+#> religious_authority[1]    -1.49      0.98 -3.42  0.54 1.00      739      226
+#> religious_authority[2]    -0.80      0.95 -2.64  1.19 1.00      752      206
+#> religious_authority[3]     1.62      0.98 -0.29  3.71 1.00     1049      209
+#> Warning: There were 30 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
@@ -155,7 +161,9 @@ of one variable which results from a one median absolute deviation
 increase in another variable.
 
 ``` r
-coev_plot_delta_theta(fit)
+coev_plot_delta_theta(fit, limits = c(-5, 50))
+#> Warning: Removed 119 rows containing non-finite outside the scale range
+#> (`stat_density()`).
 ```
 
 <img src="man/figures/README-authority-delta-theta-1.png" width="60%" style="display: block; margin: auto;" />
@@ -170,12 +178,12 @@ evolutionary time.
 
 When using the **coevolve** package, please cite the following papers:
 
--   Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic
-    methods reveal that resource-use intensification drives the
-    evolution of “complex” societies. *EcoEvoRXiv*.
-    <https://doi.org/10.32942/osf.io/wfp95>
--   Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S.,
-    Ringen, E. J., & Atkinson, Q. D. (2023). Coevolution of religious
-    and political authority in Austronesian societies. *Nature Human
-    Behaviour*, *7*(1), 38-45.
-    <https://doi.org/10.1038/s41562-022-01471-y>
+- Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic
+  methods reveal that resource-use intensification drives the evolution
+  of “complex” societies. *EcoEvoRXiv*.
+  <https://doi.org/10.32942/osf.io/wfp95>
+- Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S.,
+  Ringen, E. J., & Atkinson, Q. D. (2023). Coevolution of religious and
+  political authority in Austronesian societies. *Nature Human
+  Behaviour*, *7*(1), 38-45.
+  <https://doi.org/10.1038/s41562-022-01471-y>

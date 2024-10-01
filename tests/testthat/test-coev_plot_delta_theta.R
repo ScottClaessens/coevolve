@@ -8,6 +8,7 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
   m7 <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
   m8 <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
+  m9 <- readRDS(test_path("fixtures", "coevfit_example9.rds"))
   m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
   m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
   m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
@@ -16,6 +17,7 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
   m7 <- reload_fit(m7, filename = "coevfit_example7-1.csv")
   m8 <- reload_fit(m8, filename = "coevfit_example8-1.csv")
+  m9 <- reload_fit(m9, filename = "coevfit_example9-1.csv")
   # expect the following errors
   expect_error(
     coev_plot_delta_theta(object = "fail"),
@@ -98,6 +100,7 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   expect_no_error(SW(coev_plot_delta_theta(m6)))
   expect_no_error(SW(coev_plot_delta_theta(m7)))
   expect_no_error(SW(coev_plot_delta_theta(m8)))
+  expect_no_error(SW(coev_plot_delta_theta(m9)))
   expect_true(methods::is(SW(coev_plot_delta_theta(m1)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m2)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m3)), "ggplot"))
@@ -106,6 +109,7 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   expect_true(methods::is(SW(coev_plot_delta_theta(m6)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m7)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_delta_theta(m8)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m9)), "ggplot"))
   # limits work as expected
   expect_no_error(SW(coev_plot_delta_theta(m1, limits = c(-5, 5))))
   expect_no_error(SW(coev_plot_delta_theta(m2, limits = c(-5, 5))))
@@ -115,6 +119,7 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   expect_no_error(SW(coev_plot_delta_theta(m6, limits = c(-5, 5))))
   expect_no_error(SW(coev_plot_delta_theta(m7, limits = c(-5, 5))))
   expect_no_error(SW(coev_plot_delta_theta(m8, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m9, limits = c(-5, 5))))
   # prob and prob_outer work as expected
   expect_no_error(SW(coev_plot_delta_theta(m1, prob = 0.5, prob_outer = 0.89)))
   expect_no_error(SW(coev_plot_delta_theta(m2, prob = 0.5, prob_outer = 0.89)))
@@ -124,4 +129,5 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   expect_no_error(SW(coev_plot_delta_theta(m6, prob = 0.5, prob_outer = 0.89)))
   expect_no_error(SW(coev_plot_delta_theta(m7, prob = 0.5, prob_outer = 0.89)))
   expect_no_error(SW(coev_plot_delta_theta(m8, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m9, prob = 0.5, prob_outer = 0.89)))
 })
