@@ -121,10 +121,10 @@ coev_plot_selection_gradient <- function(object, var1, var2,
   mads <- unlist(lapply(eta, stats::mad))
   lowers <- meds + limits[1]*mads
   uppers <- meds + limits[2]*mads
-  # get median parameter values for A, b, and Q_diag
+  # get median parameter values for A, b, and Q_sigma
   A <- stats::median(draws$A)
   b <- stats::median(draws$b)
-  Q_diag <- stats::median(draws$Q_diag)
+  Q_sigma <- stats::median(draws$Q_sigma)
   # ornstein uhlenbeck sde function for response and predictor variable
   OU_sde <- function(resp_value, pred_value, resp_id, pred_id) {
     # sde intercept
@@ -145,8 +145,8 @@ coev_plot_selection_gradient <- function(object, var1, var2,
     }
     # scale by mad for response variable
     out <- out / mads[resp_id]
-    # divide by sigma scaled by mad for response variable
-    sigma <- Q_diag[resp_id] / mads[resp_id]
+    # divide by sigma^2 scaled by mad for response variable
+    sigma <- Q_sigma[resp_id]^2 / mads[resp_id]
     out <- out / sigma
     return(out)
   }

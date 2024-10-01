@@ -41,7 +41,7 @@ The flowfield visualises the change in two coevolving traits
 depending on their current states, with the direction and strength of
 change depicting with the direction and size of arrows. If nullclines are
 included, they represent the parameter combinations where each trait is
-at equilibrium, depending on the state of the other trait If three or
+at equilibrium, depending on the state of the other trait. If three or
 more traits were included in the model, other traits are held at their
 median values during these computations.
 

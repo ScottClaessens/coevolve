@@ -8,6 +8,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
   m7 <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
   m8 <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
+  m9 <- readRDS(test_path("fixtures", "coevfit_example9.rds"))
   m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
   m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
   m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
@@ -16,6 +17,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
   m7 <- reload_fit(m7, filename = "coevfit_example7-1.csv")
   m8 <- reload_fit(m8, filename = "coevfit_example8-1.csv")
+  m9 <- reload_fit(m9, filename = "coevfit_example9-1.csv")
   # expect the following errors
   expect_error(
     coev_calculate_theta(object = "fail"),
@@ -91,6 +93,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   theta6 <- coev_calculate_theta(m6, list(w = NA, x = 0))
   theta7 <- coev_calculate_theta(m7, list(w = NA, x = 0))
   theta8 <- coev_calculate_theta(m8, list(x = NA, y = 0))
+  theta9 <- coev_calculate_theta(m9, list(x = NA, y = 0))
   expect_no_error(theta1)
   expect_no_error(theta2)
   expect_no_error(theta3)
@@ -99,6 +102,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_no_error(theta6)
   expect_no_error(theta7)
   expect_no_error(theta8)
+  expect_no_error(theta9)
   # output should be matrix of posterior draws
   expect_true(methods::is(theta1, "matrix"))
   expect_true(methods::is(theta2, "matrix"))
@@ -108,6 +112,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_true(methods::is(theta6, "matrix"))
   expect_true(methods::is(theta7, "matrix"))
   expect_true(methods::is(theta8, "matrix"))
+  expect_true(methods::is(theta9, "matrix"))
   # output column names should be equal to variable names
   expect_true(identical(colnames(theta1), names(m1$variables)))
   expect_true(identical(colnames(theta2), names(m2$variables)))
@@ -117,6 +122,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_true(identical(colnames(theta6), names(m6$variables)))
   expect_true(identical(colnames(theta7), names(m7$variables)))
   expect_true(identical(colnames(theta8), names(m8$variables)))
+  expect_true(identical(colnames(theta9), names(m9$variables)))
   # variables should be correctly held constant in output
   expect_true(all(theta1[,c("v","w","x","y")] == 0))
   expect_true(all(theta2[,"x"] == 0))
@@ -126,4 +132,5 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_true(all(theta6[,"x"] == 0))
   expect_true(all(theta7[,"x"] == 0))
   expect_true(all(theta8[,"y"] == 0))
+  expect_true(all(theta9[,"y"] == 0))
 })

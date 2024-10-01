@@ -75,15 +75,53 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   cross <- cross[,2:ncol(cross)]
   # only include cross selection effects that have been estimated in summary
   cross <- cross[!is.na(cross$Rhat),]
-  # summarise drift parameters
-  drift <- s[stringr::str_starts(s$variable, pattern = "Q\\["),]
-  drift <- drift[!is.na(drift$Rhat),]
-  rownames(drift) <- names(object$variables)[
-    readr::parse_number(
-      stringr::str_extract(drift$variable, pattern = "Q\\[(\\d+)\\,")
+  # summarise drift sd parameters
+  sd_drift <- s[stringr::str_starts(s$variable, pattern = "Q_sigma\\["),]
+  rownames(sd_drift) <- paste0(
+    "sd(",
+    names(object$variables)[
+      readr::parse_number(
+        stringr::str_extract(sd_drift$variable, pattern = "Q_sigma\\[(\\d+)\\]")
       )
-    ]
-  drift <- drift[,2:ncol(drift)]
+    ],
+    ")"
+  )
+  sd_drift <- sd_drift[,2:ncol(sd_drift)]
+  # summarise drift cor parameters
+  cor_drift <- NULL
+  if (object$estimate_Q_offdiag) {
+    cor_drift <- s[stringr::str_starts(s$variable, "cor_R"),]
+    for (i in 1:length(object$variables)) {
+      for (j in 1:length(object$variables)) {
+        if (i >= j) {
+          var <- paste0("cor_R[", i, ",", j, "]")
+          cor_drift <- cor_drift[cor_drift$variable != var,]
+        }
+      }
+    }
+    rownames(cor_drift) <- paste0(
+      "cor(",
+      names(object$variables)[
+        readr::parse_number(
+          stringr::str_extract(
+            cor_drift$variable,
+            pattern = "cor\\_R\\[(\\d+)\\,"
+          )
+        )
+      ],
+      ",",
+      names(object$variables)[
+        readr::parse_number(
+          stringr::str_extract(
+            cor_drift$variable,
+            pattern = "\\,(\\d+)\\]"
+          )
+        )
+      ],
+      ")"
+    )
+    cor_drift <- cor_drift[,2:ncol(cor_drift)]
+  }
   # summarise SDE intercepts
   sde_intercepts <- s[stringr::str_starts(s$variable, "b"),]
   rownames(sde_intercepts) <- names(object$variables)[
@@ -94,7 +132,8 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   cutpoints <- NULL
   if ("ordered_logistic" %in% object$variables) {
     cutpoints <- s[stringr::str_starts(s$variable, "c") &
-                     !stringr::str_starts(s$variable, "cor_group"),]
+                     !stringr::str_starts(s$variable, "cor_group") &
+                     !stringr::str_starts(s$variable, "cor_R"),]
     rownames(cutpoints) <- paste0(
       names(object$variables)[readr::parse_number(cutpoints$variable)],
       stringr::str_extract(cutpoints$variable, pattern = "\\[\\d+\\]")
@@ -179,13 +218,16 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       variables      = object$variables,
       data_name      = object$data_name,
       nobs           = object$stan_data$N_obs,
+      ntrees         = object$stan_data$N_tree,
+      tree_name      = object$tree_name,
       chains         = object$fit$num_chains(),
       iter           = object$fit$metadata()$iter_sampling,
       warmup         = object$fit$metadata()$iter_warmup,
       thin           = object$fit$metadata()$thin,
       auto           = auto,
       cross          = cross,
-      drift          = drift,
+      sd_drift       = sd_drift,
+      cor_drift      = cor_drift,
       sde_intercepts = sde_intercepts,
       cutpoints      = cutpoints,
       phi            = phi,
@@ -234,6 +276,8 @@ print.coevsummary <- function(x, digits = 2, ...) {
   # print data name and number of observations
   cat(paste0("     Data: ", x$data_name,
              " (Number of observations: ", x$nobs, ")\n"))
+  cat(paste0("Phylogeny: ", x$tree_name,
+             " (Number of trees: ", x$ntrees, ")\n"))
   # print mcmc settings
   cat(paste0("    Draws: ", x$chains, " chains, each with iter = ",
              x$iter, "; warmup = ",
@@ -251,8 +295,8 @@ print.coevsummary <- function(x, digits = 2, ...) {
     cat("\n")
   }
   # print drift
-  cat("Drift scale parameters:\n")
-  print_format(x$drift, digits = digits)
+  cat("Drift parameters:\n")
+  print_format(rbind(x$sd_drift, x$cor_drift), digits = digits)
   cat("\n")
   # print SDE intercepts
   cat("Continuous time intercept parameters:\n")

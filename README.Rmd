@@ -113,7 +113,7 @@ in the optimal trait value of one variable which results from a one median
 absolute deviation increase in another variable.
 
 ```{r authority-delta-theta, fig.height=5, fig.width=5}
-coev_plot_delta_theta(fit)
+coev_plot_delta_theta(fit, limits = c(-5, 50))
 ```
 
 This plot suggests that both variables influence one another in their 

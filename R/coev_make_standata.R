@@ -34,12 +34,13 @@
 #'   will additionally control for spatial location by including a separate
 #'   Gaussian Process over locations for every coevolving variable in the model.
 #' @param prior (optional) A named list of priors for the model. If not
-#'   specified, the model uses default priors (see Stan code). Alternatively,
-#'   the user can specify a named list of priors. The list must contain
-#'   non-duplicated entries for any of the following variables: the
+#'   specified, the model uses default priors (see \code{help(coev_fit)}).
+#'   Alternatively, the user can specify a named list of priors. The list must
+#'   contain non-duplicated entries for any of the following parameters: the
 #'   autoregressive effects (\code{A_diag}), the cross effects
-#'   (\code{A_offdiag}), the drift scale parameters (\code{Q_diag}), the
-#'   continuous time intercepts (\code{b}), the ancestral states for the traits
+#'   (\code{A_offdiag}), the Cholesky factor for the drift matrix (\code{L_R}),
+#'   the drift std. dev. parameters (\code{Q_sigma}), the continuous time
+#'   intercepts (\code{b}), the ancestral states for the traits
 #'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 #'   overdispersion parameters for negative binomial variables (\code{phi}),
 #'   the degrees of freedom parameters for Student t variables (\code{nu}),
@@ -57,6 +58,10 @@
 #'   efficiency and ensure accurate inferences. If \code{FALSE}, variables are
 #'   left unstandardised for model fitting. In this case, users should take care
 #'   to set sensible priors on variables.
+#' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
+#'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
+#'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
+#'   are set to zero.
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
@@ -96,10 +101,12 @@
 #' @export
 coev_make_standata <- function(data, variables, id, tree,
                                effects_mat = NULL, dist_mat = NULL,
-                               prior = NULL, scale = TRUE, prior_only = FALSE) {
+                               prior = NULL, scale = TRUE,
+                               estimate_Q_offdiag = TRUE,
+                               prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat,
-             dist_mat, prior, scale, prior_only)
+             dist_mat, prior, scale, estimate_Q_offdiag, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # warning if scale = FALSE

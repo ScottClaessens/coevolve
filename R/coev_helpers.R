@@ -1,6 +1,7 @@
 # helper function for checking arguments
 run_checks <- function(data, variables, id, tree, effects_mat,
-                       dist_mat, prior, scale, prior_only) {
+                       dist_mat, prior, scale, estimate_Q_offdiag,
+                       prior_only) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
@@ -282,8 +283,8 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         paste0(
           "Argument 'prior' list contains names that are not allowed. Please ",
           "use only the following names: 'b', 'eta_anc', 'A_offdiag', ",
-          "'A_diag', 'Q_diag', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', ",
-          "'sigma_group', and 'L_group'"
+          "'A_diag', 'L_R', 'Q_sigma', 'c', 'phi', 'nu', 'sigma_dist', ",
+          "'rho_dist', 'sigma_group', and 'L_group'"
           )
         )
     }
@@ -295,6 +296,10 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   # stop if scale is not logical
   if (!is.logical(scale)) {
     stop2("Argument 'scale' is not logical.")
+  }
+  # stop if estimate_Q_offdiag is not logical
+  if (!is.logical(estimate_Q_offdiag)) {
+    stop2("Argument 'estimate_Q_offdiag' is not logical.")
   }
   # stop if prior_only is not logical
   if (!is.logical(prior_only)) {
