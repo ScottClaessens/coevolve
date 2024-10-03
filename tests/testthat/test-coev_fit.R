@@ -555,9 +555,8 @@ test_that("coev_fit() produces expected errors", {
       dist_cov = "fail"
     ),
     paste0(
-      "Argument 'dist_cov' currently only supports 'exp_quad' ",
-      "(exponentiated-quadratic kernel) and 'exponential' (exponential ",
-      "kernel)."
+      "Argument 'dist_cov' currently only supports 'exp_quad', ",
+      "'exponential', and 'matern32'."
     ),
     fixed = TRUE
   )

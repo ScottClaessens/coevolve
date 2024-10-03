@@ -35,8 +35,8 @@
 #'   Gaussian Process over locations for every coevolving variable in the model.
 #' @param dist_cov A string specifying the covariance kernel used for Gaussian
 #'   Processes over locations. Currently supported are \code{"exp_quad"}
-#'   (exponentiated-quadratic kernel; default) and \code{"exponential"}
-#'   (exponential kernel).
+#'   (exponentiated-quadratic kernel; default), \code{"exponential"}
+#'   (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).
 #' @param prior (optional) A named list of priors for the model. If not
 #'   specified, the model uses default priors (see \code{help(coev_fit)}).
 #'   Alternatively, the user can specify a named list of priors. The list must
@@ -134,7 +134,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       c           = "normal(0, 2)",
       nu          = "gamma(2, 0.1)",
       sigma_dist  = "exponential(1)",
-      rho_dist    = "exponential(2)",
+      rho_dist    = "exponential(5)",
       sigma_group = "exponential(1)",
       L_group     = "lkj_corr_cholesky(2)"
     )
@@ -462,11 +462,21 @@ coev_make_stancode <- function(data, variables, id, tree,
   )
   # get code for gaussian process kernel
   if (dist_cov == "exp_quad") {
-    dist_cov_code <-
-      "sigma_dist[j] * exp(-(square(dist_mat[i,m]) / (2.0 * rho_dist[j])))"
+    # exponentiated quadratic kernel
+    dist_cov_code <- paste0(
+      "sigma_dist[j] * exp(-(square(dist_mat[i,m]) / ",
+      "(2.0 * square(rho_dist[j]))))"
+      )
   } else if (dist_cov == "exponential") {
+    # exponential kernel
     dist_cov_code <-
       "sigma_dist[j] * exp(-(dist_mat[i,m] / rho_dist[j]))"
+  } else if (dist_cov == "matern32") {
+    # matern 3/2 kernel
+    dist_cov_code <- paste0(
+      "sigma_dist[j] * (1 + ((sqrt(3.0) * dist_mat[i,m]) / rho_dist[j])) * ",
+      "exp(-(sqrt(3.0) * dist_mat[i,m]) / rho_dist[j])"
+    )
   }
   # add gaussian process functions if dist_mat specified by user
   if (!is.null(dist_mat)) {
@@ -779,7 +789,8 @@ coev_make_stancode <- function(data, variables, id, tree,
     message(
       paste0(
         "Note: Distance matrix detected. Gaussian processes over spatial ",
-        "distances have been included for each variable in the model."
+        "distances have been included for each variable in the model ",
+        "using the '", dist_cov, "' covariance kernel."
         )
     )
   }

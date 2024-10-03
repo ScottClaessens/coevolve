@@ -555,9 +555,8 @@ test_that("coev_make_stancode() produces expected errors", {
       dist_cov = "fail"
     ),
     paste0(
-      "Argument 'dist_cov' currently only supports 'exp_quad' ",
-      "(exponentiated-quadratic kernel) and 'exponential' (exponential ",
-      "kernel)."
+      "Argument 'dist_cov' currently only supports 'exp_quad', ",
+      "'exponential', and 'matern32'."
     ),
     fixed = TRUE
   )
@@ -1072,9 +1071,21 @@ test_that("GP covariance kernels produce syntactically correct Stan code", {
     dist_mat = dist_mat,
     dist_cov = "exponential"
   )
+  sc3 <- coev_make_stancode(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree,
+    dist_mat = dist_mat,
+    dist_cov = "matern32"
+  )
   # runs without error
   expect_no_error(sc1)
   expect_no_error(sc2)
+  expect_no_error(sc3)
   # syntactically correct
   expect_true(
     cmdstanr::cmdstan_model(
@@ -1085,6 +1096,12 @@ test_that("GP covariance kernels produce syntactically correct Stan code", {
   expect_true(
     cmdstanr::cmdstan_model(
       stan_file = cmdstanr::write_stan_file(sc2),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc3),
       compile = FALSE
     )$check_syntax(quiet = TRUE)
   )

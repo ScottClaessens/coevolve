@@ -284,12 +284,11 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     stop2("Argument 'dist_cov' is not of length 1.")
   }
   # stop if specified dist_cov is not supported
-  if (!(dist_cov == "exp_quad" | dist_cov == "exponential")) {
+  if (!(dist_cov %in% c("exp_quad", "exponential", "matern32"))) {
     stop2(
       paste0(
-        "Argument 'dist_cov' currently only supports 'exp_quad' ",
-        "(exponentiated-quadratic kernel) and 'exponential' (exponential ",
-        "kernel)."
+        "Argument 'dist_cov' currently only supports 'exp_quad', ",
+        "'exponential', and 'matern32'."
         )
       )
   }

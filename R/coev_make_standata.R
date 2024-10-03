@@ -36,8 +36,8 @@
 #'   Gaussian Process over locations for every coevolving variable in the model.
 #' @param dist_cov A string specifying the covariance kernel used for Gaussian
 #'   Processes over locations. Currently supported are \code{"exp_quad"}
-#'   (exponentiated-quadratic kernel; default) and \code{"exponential"}
-#'   (exponential kernel).
+#'   (exponentiated-quadratic kernel; default), \code{"exponential"}
+#'   (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).
 #' @param prior (optional) A named list of priors for the model. If not
 #'   specified, the model uses default priors (see \code{help(coev_fit)}).
 #'   Alternatively, the user can specify a named list of priors. The list must
