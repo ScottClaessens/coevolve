@@ -159,6 +159,8 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
   # response and predictor as factors
   d$response  <- factor(d$response, levels = variables)
   d$predictor <- factor(d$predictor, levels = variables)
+  # get quantile prob for automatic plot limits
+  prob_limits <- ifelse(prob_outer < 0.99, prob_outer + 0.01, 1)
   # get median and lower/upper
   dd <- dplyr::group_by(d, .data$response, .data$predictor)
   dd <- dplyr::summarise(
@@ -168,11 +170,22 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
     upper = stats::quantile(.data$delta_theta, 0.5 + (prob / 2)),
     lower_outer = stats::quantile(.data$delta_theta, 0.5 - (prob_outer / 2)),
     upper_outer = stats::quantile(.data$delta_theta, 0.5 + (prob_outer / 2)),
+    lower_limit = stats::quantile(.data$delta_theta, 0.5 - (prob_limits / 2)),
+    upper_limit = stats::quantile(.data$delta_theta, 0.5 + (prob_limits / 2)),
     .groups = "drop"
   )
+  # set automatic plot limits
+  if (is.null(limits)) {
+    limits <- c(NA, NA)
+    # if minimum lower limit greater than zero, set to -1 to include dashed line
+    # else, set minimum lower limit
+    limits[1] <- ifelse(min(dd$lower_limit) >= 0, -1, min(dd$lower_limit))
+    # if maximum upper limit less than zero, set to 1 to include dashed line
+    # else, set maximum upper limit
+    limits[2] <- ifelse(max(dd$upper_limit) <= 0, 1, max(dd$upper_limit))
+  }
   # plot
-  p <-
-    ggplot2::ggplot() +
+  ggplot2::ggplot() +
     ggplot2::geom_density(
       data = d,
       mapping = ggplot2::aes(x = .data$delta_theta),
@@ -220,6 +233,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
       y = "From this variable...",
       title = "... to this variable."
       ) +
+    ggplot2::xlim(limits) +
     ggplot2::theme(
       axis.text.y = ggplot2::element_blank(),
       axis.ticks.y = ggplot2::element_blank(),
@@ -229,7 +243,4 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
       axis.title.x = ggplot2::element_text(size = 12),
       plot.title = ggplot2::element_text(hjust = 0.5, size = 11)
     )
-  # if limits specified by user
-  if (!is.null(limits)) p <- p + ggplot2::xlim(limits)
-  return(p)
 }
