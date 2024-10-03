@@ -11,6 +11,7 @@ coev_make_stancode(
   tree,
   effects_mat = NULL,
   dist_mat = NULL,
+  dist_cov = "exp_quad",
   prior = NULL,
   scale = TRUE,
   estimate_Q_offdiag = TRUE,
@@ -52,6 +53,11 @@ be TRUE in the matrix.}
 exactly matching the tip labels in the phylogeny. If specified, the model
 will additionally control for spatial location by including a separate
 Gaussian Process over locations for every coevolving variable in the model.}
+
+\item{dist_cov}{A string specifying the covariance kernel used for Gaussian
+Processes over locations. Currently supported are \code{"exp_quad"}
+(exponentiated-quadratic kernel; default) and \code{"exponential"}
+(exponential kernel).}
 
 \item{prior}{(optional) A named list of priors for the model. If not
 specified, the model uses default priors (see \code{help(coev_fit)}).

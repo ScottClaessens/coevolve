@@ -33,6 +33,10 @@
 #'   exactly matching the tip labels in the phylogeny. If specified, the model
 #'   will additionally control for spatial location by including a separate
 #'   Gaussian Process over locations for every coevolving variable in the model.
+#' @param dist_cov A string specifying the covariance kernel used for Gaussian
+#'   Processes over locations. Currently supported are \code{"exp_quad"}
+#'   (exponentiated-quadratic kernel; default) and \code{"exponential"}
+#'   (exponential kernel).
 #' @param prior (optional) A named list of priors for the model. If not
 #'   specified, the model uses default priors (see \code{help(coev_fit)}).
 #'   Alternatively, the user can specify a named list of priors. The list must
@@ -106,12 +110,13 @@
 #' @export
 coev_make_stancode <- function(data, variables, id, tree,
                                effects_mat = NULL, dist_mat = NULL,
+                               dist_cov = "exp_quad",
                                prior = NULL, scale = TRUE,
                                estimate_Q_offdiag = TRUE,
                                prior_only = FALSE) {
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat,
-             dist_mat, prior, scale, estimate_Q_offdiag, prior_only)
+  run_checks(data, variables, id, tree, effects_mat, dist_mat,
+             dist_cov, prior, scale, estimate_Q_offdiag, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # extract distributions and variable names from named list
@@ -129,7 +134,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       c           = "normal(0, 2)",
       nu          = "gamma(2, 0.1)",
       sigma_dist  = "exponential(1)",
-      rho_dist    = "exponential(1)",
+      rho_dist    = "exponential(2)",
       sigma_group = "exponential(1)",
       L_group     = "lkj_corr_cholesky(2)"
     )
@@ -455,6 +460,14 @@ coev_make_stancode <- function(data, variables, id, tree,
     "    }\n",
     "  }\n"
   )
+  # get code for gaussian process kernel
+  if (dist_cov == "exp_quad") {
+    dist_cov_code <-
+      "sigma_dist[j] * exp(-(square(dist_mat[i,m]) / (2.0 * rho_dist[j])))"
+  } else if (dist_cov == "exponential") {
+    dist_cov_code <-
+      "sigma_dist[j] * exp(-(dist_mat[i,m] / rho_dist[j]))"
+  }
   # add gaussian process functions if dist_mat specified by user
   if (!is.null(dist_mat)) {
     sc_transformed_parameters <- paste0(
@@ -465,7 +478,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       "    matrix[N_tips,N_tips] L_dist_cov;\n",
       "    for ( i in 1:(N_tips-1) )\n",
       "      for ( m in (i+1):N_tips ) {\n",
-      "        dist_cov[i,m] = sigma_dist[j]*exp(-(rho_dist[j]*dist_mat[i,m]));\n",
+      "        dist_cov[i,m] = ", dist_cov_code, ";\n",
       "        dist_cov[m,i] = dist_cov[i,m];\n",
       "      }\n",
       "    for ( q in 1:N_tips )\n",

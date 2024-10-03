@@ -34,6 +34,10 @@
 #'   exactly matching the tip labels in the phylogeny. If specified, the model
 #'   will additionally control for spatial location by including a separate
 #'   Gaussian Process over locations for every coevolving variable in the model.
+#' @param dist_cov A string specifying the covariance kernel used for Gaussian
+#'   Processes over locations. Currently supported are \code{"exp_quad"}
+#'   (exponentiated-quadratic kernel; default) and \code{"exponential"}
+#'   (exponential kernel).
 #' @param prior (optional) A named list of priors for the model. If not
 #'   specified, the model uses default priors (see \code{help(coev_fit)}).
 #'   Alternatively, the user can specify a named list of priors. The list must
@@ -102,12 +106,13 @@
 #' @export
 coev_make_standata <- function(data, variables, id, tree,
                                effects_mat = NULL, dist_mat = NULL,
+                               dist_cov = "exp_quad",
                                prior = NULL, scale = TRUE,
                                estimate_Q_offdiag = TRUE,
                                prior_only = FALSE) {
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat,
-             dist_mat, prior, scale, estimate_Q_offdiag, prior_only)
+  run_checks(data, variables, id, tree, effects_mat, dist_mat,
+             dist_cov, prior, scale, estimate_Q_offdiag, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # warning if scale = FALSE

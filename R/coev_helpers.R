@@ -1,7 +1,7 @@
 # helper function for checking arguments
 run_checks <- function(data, variables, id, tree, effects_mat,
-                       dist_mat, prior, scale, estimate_Q_offdiag,
-                       prior_only) {
+                       dist_mat, dist_cov, prior, scale,
+                       estimate_Q_offdiag, prior_only) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
@@ -274,6 +274,24 @@ run_checks <- function(data, variables, id, tree, effects_mat,
           )
         )
     }
+  }
+  # stop if dist_cov is not a character string
+  if (!methods::is(dist_cov, "character")) {
+    stop2("Argument 'dist_cov' is not a character string.")
+  }
+  # stop if dist_cov is not of length 1
+  if (length(dist_cov) != 1) {
+    stop2("Argument 'dist_cov' is not of length 1.")
+  }
+  # stop if specified dist_cov is not supported
+  if (!(dist_cov == "exp_quad" | dist_cov == "exponential")) {
+    stop2(
+      paste0(
+        "Argument 'dist_cov' currently only supports 'exp_quad' ",
+        "(exponentiated-quadratic kernel) and 'exponential' (exponential ",
+        "kernel)."
+        )
+      )
   }
   # if user entered a list of priors
   if (!is.null(prior)) {

@@ -524,6 +524,52 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      dist_cov = FALSE
+    ),
+    "Argument 'dist_cov' is not a character string.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_cov = c("fail","fail")
+    ),
+    "Argument 'dist_cov' is not of length 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_cov = "fail"
+    ),
+    paste0(
+      "Argument 'dist_cov' currently only supports 'exp_quad' ",
+      "(exponentiated-quadratic kernel) and 'exponential' (exponential ",
+      "kernel)."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       prior = "testing" # not a list
     ),
     "Argument 'prior' is not a list.",

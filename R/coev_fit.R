@@ -41,6 +41,10 @@
 #'   exactly matching the tip labels in the phylogeny. If specified, the model
 #'   will additionally control for spatial location by including a separate
 #'   Gaussian Process over locations for every coevolving variable in the model.
+#' @param dist_cov A string specifying the covariance kernel used for Gaussian
+#'   Processes over locations. Currently supported are \code{"exp_quad"}
+#'   (exponentiated-quadratic kernel; default) and \code{"exponential"}
+#'   (exponential kernel).
 #' @param prior (optional) A named list of priors for the model. If not
 #'   specified, the model uses default priors (see \code{help(coev_fit)}).
 #'   Alternatively, the user can specify a named list of priors. The list must
@@ -114,7 +118,7 @@
 #'   - \code{sigma_dist} (sigma for Gaussian process over locations) =
 #'   \code{exponential(1)}
 #'   - \code{rho_dist} (rho for Gaussian process over locations) =
-#'   \code{exponential(1)}
+#'   \code{exponential(2)}
 #'   - \code{sigma_group} (standard deviation for group-level varying effects) =
 #'   \code{exponential(1)}
 #'   - \code{L_group} (Cholesky factor for group-level varying effects) =
@@ -187,19 +191,20 @@
 #' @export
 coev_fit <- function(data, variables, id, tree,
                      effects_mat = NULL, dist_mat = NULL,
+                     dist_cov = "exp_quad",
                      prior = NULL, scale = TRUE,
                      estimate_Q_offdiag = TRUE,
                      prior_only = FALSE, ...) {
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat,
-             dist_mat, prior, scale, estimate_Q_offdiag, prior_only)
+  run_checks(data, variables, id, tree, effects_mat, dist_mat,
+             dist_cov, prior, scale, estimate_Q_offdiag, prior_only)
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
-                           dist_mat, prior, scale,
+                           dist_mat, dist_cov, prior, scale,
                            estimate_Q_offdiag, prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
-                           dist_mat, prior, scale,
+                           dist_mat, dist_cov, prior, scale,
                            estimate_Q_offdiag, prior_only)
   # fit model
   model <-
@@ -225,6 +230,7 @@ coev_fit <- function(data, variables, id, tree,
       stan_data = sd,
       effects_mat = sd$effects_mat,
       dist_mat = sd$dist_mat,
+      dist_cov = dist_cov,
       scale = scale,
       estimate_Q_offdiag = estimate_Q_offdiag,
       prior_only = prior_only

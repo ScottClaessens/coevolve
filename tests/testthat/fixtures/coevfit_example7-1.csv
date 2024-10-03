@@ -1,8 +1,8 @@
 # stan_version_major = 2
 # stan_version_minor = 34
 # stan_version_patch = 1
-# model = model_1f749ffaa78fae0a863a03f97f7ced82_model
-# start_datetime = 2024-09-30 21:47:38 UTC
+# model = model_4ca5dc4d0cacdd57e333ea89e934dddf_model
+# start_datetime = 2024-10-03 13:12:32 UTC
 # method = sample (Default)
 #   sample
 #     num_samples = 50
@@ -31,20 +31,20 @@
 #     num_chains = 1 (Default)
 # id = 1 (Default)
 # data
-#   file = C:/Users/scla896/AppData/Local/Temp/RtmpQ18bM6/standata-1e086b533ff6.json
+#   file = C:/Users/scla896/AppData/Local/Temp/RtmpOYpknC/standata-7c05a6e6d1c.json
 # init = 2 (Default)
 # random
 #   seed = 1
 # output
-#   file = C:/Users/scla896/AppData/Local/Temp/RtmpQ18bM6/model_1f749ffaa78fae0a863a03f97f7ced82-202409302247-1-2210ae.csv
+#   file = C:/Users/scla896/AppData/Local/Temp/RtmpOYpknC/model_4ca5dc4d0cacdd57e333ea89e934dddf-202410031412-1-21fa66.csv
 #   diagnostic_file =  (Default)
 #   refresh = 100 (Default)
 #   sig_figs = -1 (Default)
-#   profile_file = C:/Users/scla896/AppData/Local/Temp/RtmpQ18bM6/model_1f749ffaa78fae0a863a03f97f7ced82-profile-202409302247-1-334509.csv
+#   profile_file = C:/Users/scla896/AppData/Local/Temp/RtmpOYpknC/model_4ca5dc4d0cacdd57e333ea89e934dddf-profile-202410031412-1-332ec1.csv
 #   save_cmdstan_config = 0 (Default)
 # num_threads = 1 (Default)
 # stanc_version = stanc3 v2.34.0
-# stancflags = --name=model_1f749ffaa78fae0a863a03f97f7ced82_model
+# stancflags = --name=model_4ca5dc4d0cacdd57e333ea89e934dddf_model
 lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_diag.1,A_diag.2,A_offdiag.1,A_offdiag.2,L_R.1.1,L_R.2.1,L_R.1.2,L_R.2.2,Q_sigma.1,Q_sigma.2,b.1,b.2,eta_anc.1.1,eta_anc.1.2,z_drift.1.1.1,z_drift.1.2.1,z_drift.1.3.1,z_drift.1.4.1,z_drift.1.5.1,z_drift.1.6.1,z_drift.1.7.1,z_drift.1.8.1,z_drift.1.1.2,z_drift.1.2.2,z_drift.1.3.2,z_drift.1.4.2,z_drift.1.5.2,z_drift.1.6.2,z_drift.1.7.2,z_drift.1.8.2,c2.1,c2.2,c2.3,group_z.1.1,group_z.2.1,group_z.1.2,group_z.2.2,group_z.1.3,group_z.2.3,group_z.1.4,group_z.2.4,group_z.1.5,group_z.2.5,sigma_group.1,sigma_group.2,L_group.1.1,L_group.2.1,L_group.1.2,L_group.2.2,eta.1.1.1,eta.1.2.1,eta.1.3.1,eta.1.4.1,eta.1.5.1,eta.1.6.1,eta.1.7.1,eta.1.8.1,eta.1.9.1,eta.1.1.2,eta.1.2.2,eta.1.3.2,eta.1.4.2,eta.1.5.2,eta.1.6.2,eta.1.7.2,eta.1.8.2,eta.1.9.2,A.1.1,A.2.1,A.1.2,A.2.2,Q.1.1,Q.2.1,Q.1.2,Q.2.2,Q_inf.1.1,Q_inf.2.1,Q_inf.1.2,Q_inf.2.2,drift_tips.1.1.1,drift_tips.1.2.1,drift_tips.1.3.1,drift_tips.1.4.1,drift_tips.1.5.1,drift_tips.1.6.1,drift_tips.1.7.1,drift_tips.1.8.1,drift_tips.1.9.1,drift_tips.1.1.2,drift_tips.1.2.2,drift_tips.1.3.2,drift_tips.1.4.2,drift_tips.1.5.2,drift_tips.1.6.2,drift_tips.1.7.2,drift_tips.1.8.2,drift_tips.1.9.2,sigma_tips.1.1.1,sigma_tips.1.2.1,sigma_tips.1.3.1,sigma_tips.1.4.1,sigma_tips.1.5.1,sigma_tips.1.6.1,sigma_tips.1.7.1,sigma_tips.1.8.1,sigma_tips.1.9.1,sigma_tips.1.1.2,sigma_tips.1.2.2,sigma_tips.1.3.2,sigma_tips.1.4.2,sigma_tips.1.5.2,sigma_tips.1.6.2,sigma_tips.1.7.2,sigma_tips.1.8.2,sigma_tips.1.9.2,group_v.1.1,group_v.2.1,group_v.3.1,group_v.4.1,group_v.5.1,group_v.1.2,group_v.2.2,group_v.3.2,group_v.4.2,group_v.5.2,log_lik.1,log_lik.2,log_lik.3,log_lik.4,log_lik.5,log_lik.6,log_lik.7,log_lik.8,log_lik.9,log_lik.10,log_lik.11,log_lik.12,log_lik.13,log_lik.14,log_lik.15,log_lik.16,log_lik.17,log_lik.18,log_lik.19,log_lik.20,log_lik.21,log_lik.22,log_lik.23,log_lik.24,log_lik.25,log_lik.26,log_lik.27,log_lik.28,log_lik.29,log_lik.30,yrep.1.1.1,yrep.1.2.1,yrep.1.3.1,yrep.1.4.1,yrep.1.5.1,yrep.1.6.1,yrep.1.7.1,yrep.1.8.1,yrep.1.9.1,yrep.1.10.1,yrep.1.11.1,yrep.1.12.1,yrep.1.13.1,yrep.1.14.1,yrep.1.15.1,yrep.1.1.2,yrep.1.2.2,yrep.1.3.2,yrep.1.4.2,yrep.1.5.2,yrep.1.6.2,yrep.1.7.2,yrep.1.8.2,yrep.1.9.2,yrep.1.10.2,yrep.1.11.2,yrep.1.12.2,yrep.1.13.2,yrep.1.14.2,yrep.1.15.2,cor_R.1.1,cor_R.2.1,cor_R.1.2,cor_R.2.2,cor_group.1.1,cor_group.2.1,cor_group.1.2,cor_group.2.2
 # Adaptation terminated
 # Step size = 0.216513
@@ -101,7 +101,7 @@ lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_di
 -57.761,0.842042,0.216513,4,15,0,85.5168,-1.54976,-1.34884,-0.591557,0.341782,1,0.290867,0,0.956763,1.43085,0.292135,0.130666,-0.370568,-2.02673,-1.00938,-1.5204,-0.557185,-2.16173,0.411383,2.60484,-0.284258,0.682832,-1.19401,0.736934,2.15578,0.979481,-0.367837,0.753815,0.873484,-0.913948,0.341957,-1.89773,-1.07308,0.650692,1.17905,0.699815,0.0303702,1.66573,-1.07083,0.418628,-0.467472,-1.06903,0.0842594,-0.696008,0.607648,0.173709,1,0.275217,0,0.961382,-0.140073,-1.43595,-1.43595,-1.09124,-1.09124,-2.02673,-1.4224,-1.4456,-1.80872,-0.585075,-0.672963,-0.672963,-0.653147,-0.653147,-1.00938,-0.684225,-0.665946,-0.671151,-1.54976,0.341782,-0.591557,-1.34884,2.04733,0.121583,0.121583,0.085343,0.621071,0.103375,0.103375,0.0578297,0.319437,1.18843,-0.12969,0.331151,-0.579055,-99,-99,-99,-99,-0.017707,0.161968,0.0690844,-0.061441,-0.01418,-99,-99,-99,-99,2.04733,2.04733,2.04733,2.04733,2.04733,-99,-99,-99,-99,0.085343,0.085343,0.085343,0.085343,0.085343,-99,-99,-99,-99,0.71645,0.0184544,-0.650689,-0.284058,0.0512,0.173238,0.279631,0.0187171,-0.200877,-0.112206,-1.23818,-0.342366,-1.23818,-0.814222,-0.585161,-0.814222,-0.103467,-2.31979,-0.103467,-0.301579,-0.301579,-1.34573,-0.180719,-0.180719,-0.180719,-1.85005,-1.37254,-1.85005,-1.22843,-1.83942,-0.90122,-0.930246,-1.5509,-1.78185,-1.30033,-1.75582,-1.0036,-0.968111,-1.64474,-1.40102,1,0,1,1,1,0,0,0,0,0,0,1,0,0,0,4,1,4,4,3,3,3,3,3,2,2,4,2,1,3,1,0.290867,0.290867,1,1,0.275217,0.275217,1
 -58.7711,0.920769,0.216513,4,15,0,74.1477,-0.548933,-1.27092,1.80214,-0.704224,1,0.078779,0,0.996892,0.439774,0.266116,-2.10903,0.0436969,0.708565,1.45906,0.673968,0.585587,1.91678,-1.03596,-1.88728,0.553714,-0.885411,0.1983,-1.00826,-2.18732,-1.44475,0.516935,-0.761345,-1.14812,1.35877,-0.0479722,-1.24999,-0.510863,0.887046,-1.32618,-0.619927,0.0114022,-0.917758,0.939932,-0.871331,0.171238,1.14196,-0.3782,0.543695,0.17595,1.0838,1,0.142136,0,0.989847,-0.274038,-0.00847326,-0.00847326,-0.108512,-0.108512,0.708565,0.140383,0.146908,0.224795,0.346622,0.13786,0.13786,0.173069,0.173069,1.45906,0.221293,0.2023,0.165116,-0.548933,-0.704224,1.80214,-1.27092,0.193401,0.00921957,0.00921957,0.0708176,0.134805,-0.0125972,-0.0125972,0.034841,-0.349634,-0.282691,0.0829396,-0.142426,0.0318984,-99,-99,-99,-99,0.102039,-0.0766297,-0.0951848,0.118745,-0.00316126,-99,-99,-99,-99,0.193401,0.193401,0.193401,0.193401,0.193401,-99,-99,-99,-99,0.0708176,0.0708176,0.0708176,0.0708176,0.0708176,-99,-99,-99,-99,-0.233342,0.00200622,0.165381,0.0301293,-0.0665442,-0.869347,-0.982808,-0.789964,1.25146,0.525011,-0.35377,-1.21078,-0.35377,-0.848141,-0.558984,-0.848141,-0.820244,-0.580397,-0.820244,-0.588825,-0.588825,-0.809634,-0.624128,-0.624128,-0.624128,-1.75055,-1.54709,-1.75055,-1.96038,-0.870774,-1.35504,-1.28039,-0.975758,-1.70416,-2.85268,-0.417924,-1.47862,-1.14748,-0.793818,-2.07856,0,0,0,0,1,1,0,1,1,1,0,1,0,1,0,4,1,1,2,1,3,1,2,4,4,3,4,1,4,1,1,0.078779,0.078779,1,1,0.142136,0.142136,1
 # 
-#  Elapsed Time: 0.231 seconds (Warm-up)
-#                0.184 seconds (Sampling)
-#                0.415 seconds (Total)
+#  Elapsed Time: 0.155 seconds (Warm-up)
+#                0.153 seconds (Sampling)
+#                0.308 seconds (Total)
 # 

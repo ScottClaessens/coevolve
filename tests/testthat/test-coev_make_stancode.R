@@ -524,6 +524,52 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      dist_cov = FALSE
+    ),
+    "Argument 'dist_cov' is not a character string.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_cov = c("fail","fail")
+    ),
+    "Argument 'dist_cov' is not of length 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_cov = "fail"
+    ),
+    paste0(
+      "Argument 'dist_cov' currently only supports 'exp_quad' ",
+      "(exponentiated-quadratic kernel) and 'exponential' (exponential ",
+      "kernel)."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       prior = "testing" # not a list
     ),
     "Argument 'prior' is not a list.",
@@ -985,6 +1031,60 @@ test_that("coev_make_stancode() works when constraining Q offdiag to zero", {
   expect_true(
     cmdstanr::cmdstan_model(
       stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+})
+
+test_that("GP covariance kernels produce syntactically correct Stan code", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = rbinom(n, size = 1, prob = 0.5)
+    )
+    dist_mat <- as.matrix(dist(rnorm(n)))
+    rownames(dist_mat) <- colnames(dist_mat) <- tree$tip.label
+  })
+  # get stan code
+  sc1 <- coev_make_stancode(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree,
+    dist_mat = dist_mat,
+    dist_cov = "exp_quad"
+  )
+  sc2 <- coev_make_stancode(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      y = "bernoulli_logit"
+    ),
+    id = "id",
+    tree = tree,
+    dist_mat = dist_mat,
+    dist_cov = "exponential"
+  )
+  # runs without error
+  expect_no_error(sc1)
+  expect_no_error(sc2)
+  # syntactically correct
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc1),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc2),
       compile = FALSE
     )$check_syntax(quiet = TRUE)
   )
