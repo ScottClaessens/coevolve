@@ -8,7 +8,7 @@ coev_plot_predictive_check(
   object,
   variables = NULL,
   ndraws = NULL,
-  tree_id = 1L
+  tree_id = NULL
 )
 }
 \arguments{
@@ -22,7 +22,7 @@ declaring the variables to be included in the list of plots.}
 default and maximum number of draws is the size of the posterior sample.}
 
 \item{tree_id}{An integer indicating the tree ID to use when making
-posterior predictions. Set to 1 by default.}
+posterior predictions. Set to \code{NULL} by default, which will use draws from every tree, integrating phylogenetic uncertainty.}
 }
 \value{
 A list of \code{ggplot} objects

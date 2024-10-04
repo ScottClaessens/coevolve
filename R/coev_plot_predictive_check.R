@@ -10,7 +10,7 @@
 #' @param ndraws An integer indicating the number of draws to return. The
 #'   default and maximum number of draws is the size of the posterior sample.
 #' @param tree_id An integer indicating the tree ID to use when making
-#'   posterior predictions. Set to 1 by default.
+#'   posterior predictions. Set to `NULL` by default, which will use draws from every tree, integrating phylogenetic uncertainty.
 #'
 #' @return A list of \code{ggplot} objects
 #'
@@ -40,7 +40,7 @@
 #'
 #' @export
 coev_plot_predictive_check <- function(object, variables = NULL,
-                                       ndraws = NULL, tree_id = 1L) {
+                                       ndraws = NULL, tree_id = NULL) {
   # stop if object is not of class coevfit
   if (!methods::is(object, "coevfit")) {
     stop2(
@@ -80,11 +80,10 @@ coev_plot_predictive_check <- function(object, variables = NULL,
     }
   }
   # stop if tree_id is not a single positive integer less than total num trees
-  if (!is.integer(tree_id) | length(tree_id) != 1 |
-      tree_id > object$stan_data$N_tree) {
+  if (!is.null(tree_id) | !is.null(tree_id)  && !is.integer(tree_id) | !is.null(tree_id) && length(tree_id) != 1 | !is.null(tree_id) && tree_id > object$stan_data$N_tree) {
     stop2(
       paste0(
-        "Argument 'tree_id' must be a single positive integer and less than ",
+        "Argument 'tree_id' must be either `NULL`, or a single positive integer and less than ",
         "the total number of trees."
         )
       )
@@ -97,6 +96,13 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   } else {
     draws_ids <- sample(1:nrow(object$fit$draws()), size = ndraws)
   }
+  # get tree ids
+  if (is.null(tree_id)) {
+    tree_ids <- 1:object$stan_data$N_tree
+  } else{
+    tree_ids <- tree_id
+  }
+
   # function for choosing plot type
   choose_plot_type <- function(variable) {
     # response distribution
@@ -122,7 +128,11 @@ coev_plot_predictive_check <- function(object, variables = NULL,
     y <- object$stan_data$y[,variable]
     miss <- object$stan_data$miss[,variable]
     y[miss == 1] <- NA
-    yrep <- posterior::as_draws_matrix(post$yrep[tree_id,,var_id])[draws_ids,]
+    # combine draws from multiple trees, if applicable
+    yrep <- posterior::as_draws_matrix(post$yrep[tree_ids[1],,var_id])[draws_ids,]
+if (length(tree_ids > 1)) {
+  for (i in 2:length(tree_ids)) yrep <- rbind(yrep, posterior::as_draws_matrix(post$yrep[tree_ids[i],,var_id])[draws_ids,])
+}
     # remove data if missing for all coevolving variables
     all_missing <- apply(
       object$data[,names(object$variables)], 1, function(x) all(is.na(x))
