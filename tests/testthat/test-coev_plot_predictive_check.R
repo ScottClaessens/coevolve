@@ -51,6 +51,13 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
       ),
     "Argument 'ndraws' must be between 1 and the total number of draws."
   )
+  expect_error(
+    coev_plot_predictive_check(object = m1, tree_id = "fail"),
+    paste0(
+      "Argument 'tree_id' must be either NULL or a single positive ",
+      "integer less than the total number of trees."
+    )
+  )
   # suppress warnings
   SW <- suppressWarnings
   # should run without error and produce list of ggplot objects
