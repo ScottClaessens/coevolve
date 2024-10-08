@@ -85,7 +85,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
     fixed = TRUE
   )
   # should run without error
-  theta1 <- coev_calculate_theta(m1, list(u = NA, v = 0, w = 0, x = 0, y = 0))
+  theta1 <- coev_calculate_theta(m1, list(v = NA, w = 0, x = 0, y = 0))
   theta2 <- coev_calculate_theta(m2, list(w = NA, x = 0))
   theta3 <- coev_calculate_theta(m3, list(w = NA, x = 0))
   theta4 <- coev_calculate_theta(m4, list(y = NA, z = 0))
@@ -124,7 +124,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_true(identical(colnames(theta8), names(m8$variables)))
   expect_true(identical(colnames(theta9), names(m9$variables)))
   # variables should be correctly held constant in output
-  expect_true(all(theta1[,c("v","w","x","y")] == 0))
+  expect_true(all(theta1[,c("w","x","y")] == 0))
   expect_true(all(theta2[,"x"] == 0))
   expect_true(all(theta3[,"x"] == 0))
   expect_true(all(theta4[,"z"] == 0))

@@ -25,13 +25,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   }
   # stop if response distributions are not valid
   if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic",
-                                "poisson_softplus", "normal", "student_t",
-                                "lognormal", "negative_binomial_softplus"))) {
+                                "poisson_softplus", "normal",
+                                "negative_binomial_softplus"))) {
     stop2(
       paste0(
         "Response distributions other than 'bernoulli_logit', ",
-        "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
-        "'lognormal', and 'negative_binomial_softplus' are not yet supported."
+        "'ordered_logistic', 'poisson_softplus', ",
+        "'negative_binomial_softplus', and 'normal' are not yet supported."
         )
       )
   }
@@ -119,32 +119,6 @@ run_checks <- function(data, variables, id, tree, effects_mat,
           "numeric in the data."
           )
         )
-    }
-  }
-  # stop if any student t variables are not numeric
-  for (i in 1:length(distributions)) {
-    if (distributions[i] == "student_t" & !is.numeric(data[,variables[i]])) {
-      stop2(
-        paste0(
-          "Variables following the 'student_t' response distribution must be ",
-          "numeric in the data."
-        )
-      )
-    }
-  }
-  # stop if any lognormal variables are not numeric or are
-  # equal to or less than zero
-  for (i in 1:length(distributions)) {
-    if (distributions[i] == "lognormal" &
-        (!is.numeric(data[,variables[i]]) |
-         !all(data[,variables[i]] > 0 | is.na(data[,variables[i]])))
-        ) {
-      stop2(
-        paste0(
-          "Variables following the 'lognormal' response distribution must be ",
-          "numeric in the data and must be greater than zero."
-        )
-      )
     }
   }
   # stop if id is not a character of length one
@@ -310,7 +284,7 @@ run_checks <- function(data, variables, id, tree, effects_mat,
         paste0(
           "Argument 'prior' list contains names that are not allowed. Please ",
           "use only the following names: 'b', 'eta_anc', 'A_offdiag', ",
-          "'A_diag', 'L_R', 'Q_sigma', 'c', 'phi', 'nu', 'sigma_dist', ",
+          "'A_diag', 'L_R', 'Q_sigma', 'c', 'phi', 'sigma_dist', ",
           "'rho_dist', 'sigma_group', and 'L_group'"
           )
         )

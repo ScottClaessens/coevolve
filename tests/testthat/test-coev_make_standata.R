@@ -75,8 +75,8 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
-      "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
-      "'lognormal', and 'negative_binomial_softplus' are not yet supported."
+      "'ordered_logistic', 'poisson_softplus', 'negative_binomial_softplus', ",
+      "and 'normal' are not yet supported."
     ),
     fixed = TRUE
   )
@@ -192,22 +192,6 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Variables following the 'normal' response distribution ",
-      "must be numeric in the data."
-    ),
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_standata(
-      data = d,
-      variables = list(
-        w = "student_t", # not numeric
-        y = "student_t"
-      ),
-      id = "id",
-      tree = tree
-    ),
-    paste0(
-      "Variables following the 'student_t' response distribution ",
       "must be numeric in the data."
     ),
     fixed = TRUE
@@ -602,7 +586,7 @@ test_that("coev_make_standata() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'L_R', 'Q_sigma', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', ",
+      "'L_R', 'Q_sigma', 'c', 'phi', 'sigma_dist', 'rho_dist', ",
       "'sigma_group', and 'L_group'"
     ),
     fixed = TRUE
@@ -686,7 +670,6 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     coev_make_standata(
       data = d,
       variables = list(
-        u = "student_t",
         v = "negative_binomial_softplus",
         w = "normal",
         x = "bernoulli_logit",
@@ -852,24 +835,20 @@ test_that("coev_make_stancode() scales data correctly", {
         data = d,
         variables = list(
           w = "normal",
-          x = "negative_binomial_softplus",
-          y = "student_t",
-          z = "lognormal"
+          x = "negative_binomial_softplus"
         ),
         id = "id",
         tree = tree,
         scale = FALSE
       )},
     paste0(
-      "When scale = FALSE, continuous and positive real variables are left ",
-      "unstandardised in the Stan data list. Users should take care to set ",
-      "sensible priors for model fitting, rather than use default priors."
+      "When scale = FALSE, continuous variables are left unstandardised in ",
+      "the Stan data list. Users should take care to set sensible priors ",
+      "for model fitting, rather than use default priors."
       )
     )
   expect_identical(sd1$y[,"w"], as.numeric(d$w))
   expect_identical(sd1$y[,"x"], as.numeric(d$x))
-  expect_identical(sd1$y[,"y"], as.numeric(d$y))
-  expect_identical(sd1$y[,"z"], as.numeric(d$z))
   # check stan data is correctly standardised when scale = TRUE
   expect_no_warning(
     {sd2 <-
@@ -877,9 +856,7 @@ test_that("coev_make_stancode() scales data correctly", {
         data = d,
         variables = list(
           w = "normal",
-          x = "negative_binomial_softplus",
-          y = "student_t",
-          z = "lognormal"
+          x = "negative_binomial_softplus"
         ),
         id = "id",
         tree = tree,
@@ -888,8 +865,6 @@ test_that("coev_make_stancode() scales data correctly", {
     )
   expect_identical(sd2$y[,"w"], as.numeric(scale(d$w)))
   expect_identical(sd2$y[,"x"], as.numeric(d$x))
-  expect_identical(sd2$y[,"y"], as.numeric(scale(d$y)))
-  expect_identical(sd2$y[,"z"], as.numeric(exp(scale(log(d$z)))))
 })
 
 test_that("coev_make_standata() works with tibbles", {

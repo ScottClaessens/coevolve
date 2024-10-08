@@ -12,8 +12,8 @@
 #'   Must identify at least two variables. Variable names must refer to valid
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal},
-#'   and \code{negative_binomial_softplus}.
+#'   \code{poisson_softplus}, \code{negative_binomial_softplus} and
+#'   \code{normal}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -47,7 +47,6 @@
 #'   intercepts (\code{b}), the ancestral states for the traits
 #'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 #'   overdispersion parameters for negative binomial variables (\code{phi}),
-#'   the degrees of freedom parameters for Student t variables (\code{nu}),
 #'   the sigma parameters for Gaussian Processes over locations
 #'   (\code{sigma_dist}), the rho parameters for Gaussian Processes over
 #'   locations (\code{rho_dist}), the standard deviation parameters for
@@ -57,13 +56,12 @@
 #'   \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
 #'   an error when the function internally checks the syntax of resulting Stan
 #'   code.
-#' @param scale Logical. If \code{TRUE} (default), continuous and positive real
-#'   variables following the \code{normal}, \code{student_t}, and
-#'   \code{lognormal} response distributions are standardised before fitting the
-#'   model. This approach is recommended when using default priors to improve
-#'   efficiency and ensure accurate inferences. If \code{FALSE}, variables are
-#'   left unstandardised for model fitting. In this case, users should take care
-#'   to set sensible priors on variables.
+#' @param scale Logical. If \code{TRUE} (default), continuous variables
+#'   following the \code{normal} response distribution are standardised before
+#'   fitting the model. This approach is recommended when using default priors
+#'   to improve efficiency and ensure accurate inferences. If \code{FALSE},
+#'   variables are left unstandardised for model fitting. In this case, users
+#'   should take care to set sensible priors on variables.
 #' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
 #'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
@@ -132,7 +130,6 @@ coev_make_stancode <- function(data, variables, id, tree,
       L_R         = "lkj_corr_cholesky(4)",
       Q_sigma     = "std_normal()",
       c           = "normal(0, 2)",
-      nu          = "gamma(2, 0.1)",
       sigma_dist  = "exponential(1)",
       rho_dist    = "exponential(5)",
       sigma_group = "exponential(1)",
@@ -326,7 +323,8 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  vector<lower=0>[J] Q_sigma; // std deviation parameters of the Q mat\n",
     "  vector[J] b; // SDE intercepts\n",
     "  array[N_tree] vector[J] eta_anc; // ancestral states\n",
-    "  array[N_tree, N_seg - 1] vector[J] z_drift; // stochastic drift, unscaled and uncorrelated\n"
+    "  array[N_tree, N_seg - 1] vector[J] z_drift; // stochastic drift, unscaled and uncorrelated\n",
+    "  array[N_tree] matrix[N_obs, J] terminal_drift; // drift for the tips\n"
   )
   for (i in 1:length(distributions)) {
     # add cut points for ordinal_logistic distributions
@@ -338,15 +336,6 @@ coev_make_stancode <- function(data, variables, id, tree,
           sc_parameters,
           "  ordered[", num_cuts, "] c", i, "; ",
           "// cut points for variable ", i, "\n"
-          )
-    }
-    # add degrees of freedom for student_t distributions
-    if (distributions[i] == "student_t") {
-      sc_parameters <-
-        paste0(
-          sc_parameters,
-          "  real<lower=1> nu", i, "; ",
-          "// student t degrees of freedom for variable ", i, "\n"
           )
     }
     # add overdispersion parameters for negative_binomial_softplus distributions
@@ -389,8 +378,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       "  matrix[J,J] Q = diag_matrix(Q_sigma^2); // drift matrix\n"
     ),
     "  matrix[J,J] Q_inf; // asymptotic covariance matrix\n",
-    "  array[N_tree, N_seg] vector[J] drift_tips; // terminal drift parameters\n",
-    "  array[N_tree, N_seg] vector[J] sigma_tips; // terminal drift parameters\n"
+    "  array[N_tree, N_seg] matrix[J,J] VCV_tips; // variance-covariance matrix for drift at the tips\n"
   )
   # add distance random effects if distance matrix specified by user
   if (!is.null(dist_mat)) {
@@ -432,8 +420,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  for (t in 1:N_tree) {\n",
     "    // setting ancestral states and placeholders\n",
     "    eta[t, node_seq[t, 1]] = eta_anc[t];\n",
-    "    drift_tips[t, node_seq[t, 1]] = rep_vector(-99, J);\n",
-    "    sigma_tips[t, node_seq[t, 1]] = rep_vector(-99, J);\n",
+    "    VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(-99, J));\n",
     "    for (i in 2:N_seg) {\n",
     "      matrix[J,J] A_delta; // amount of deterministic change (selection)\n",
     "      matrix[J,J] VCV; // variance-covariance matrix of stochastic change (drift)\n",
@@ -446,16 +433,14 @@ coev_make_stancode <- function(data, variables, id, tree,
     "        eta[t, node_seq[t, i]] = to_vector(\n",
     "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1)) * b) + drift_seg\n",
     "        );\n",
-    "        drift_tips[t, node_seq[t, i]] = rep_vector(-99, J);\n",
-    "        sigma_tips[t, node_seq[t, i]] = rep_vector(-99, J);\n",
+    "        VCV_tips[t, node_seq[t, i]] = diag_matrix(rep_vector(-99, J));\n",
     "      }\n",
     "      // if is a tip, omit, we'll deal with it in the model block;\n",
     "      else {\n",
     "        eta[t, node_seq[t, i]] = to_vector(\n",
     "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1)) * b)\n",
     "        );\n",
-    "        drift_tips[t, node_seq[t, i]] = drift_seg;\n",
-    "        sigma_tips[t, node_seq[t, i]] = diagonal(Q);\n",
+    "        VCV_tips[t, node_seq[t, i]] = VCV;\n",
     "      }\n",
     "    }\n",
     "  }\n"
@@ -518,12 +503,6 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_model <- paste0(sc_model, "  c", j, " ~ ", priors$c, ";\n")
     }
   }
-  # add priors for any degrees of freedom
-  for (j in 1:length(distributions)) {
-    if (distributions[j] == "student_t") {
-      sc_model <- paste0(sc_model, "  nu", j, " ~ ", priors$nu, ";\n")
-    }
-  }
   # add priors for any overdispersion parameters
   for (j in 1:length(distributions)) {
     if (distributions[j] == "negative_binomial_softplus") {
@@ -566,8 +545,9 @@ coev_make_stancode <- function(data, variables, id, tree,
     sc_model,
     "  if (!prior_only) {\n",
     "    for (i in 1:N_obs) {\n",
-    "      array[N_tree,J] real lp = rep_array(log(1.0 / N_tree), N_tree, J);\n",
-    "      for (t in 1:N_tree) {\n"
+    "      vector[N_tree] lp;\n",
+    "      for (t in 1:N_tree) {\n",
+    "        vector[J] residuals;\n"
     )
   # function to get linear model
   lmod <- function(j) {
@@ -585,63 +565,68 @@ coev_make_stancode <- function(data, variables, id, tree,
       )
     )
   }
+  # set residuals for all variables in the model
+  for (j in 1:length(distributions)) {
+    if (distributions[j] == "normal") {
+      sc_model <- paste0(
+        sc_model,
+        "        if (miss[i,", j, "] == 0) {\n",
+        "          residuals[", j, "] = y[i,", j, "] - ", lmod(j), ";\n",
+        "          terminal_drift[t][i,", j, "] ~ std_normal();\n",
+        "        } else {\n",
+        "          residuals[", j, "] = terminal_drift[t][i,", j, "];\n",
+        "        }\n"
+      )
+    } else {
+      sc_model <- paste0(
+        sc_model,
+        "        residuals[", j, "] = terminal_drift[t][i,", j, "];\n"
+      )
+    }
+  }
+  # add multi-normal prior for residuals
+  sc_model <- paste0(
+    sc_model,
+    "        lp[t] = multi_normal_cholesky_lpdf(residuals | rep_vector(0.0, ",
+    "J), cholesky_decompose(VCV_tips[t, tip_id[i]]));\n"
+  )
+  # linear models for non-continuous variables
   for (j in 1:length(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "        if (miss[i,", j, "] == 0) lp[t] += ",
         "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "]);\n"
+        " + residuals[", j, "]);\n"
         )
     } else if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "        if (miss[i,", j, "] == 0) lp[t] += ",
         "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "], c", j, ");\n"
+        " + residuals[", j, "], c", j, ");\n"
         )
     } else if (distributions[j] == "poisson_softplus") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "        if (miss[i,", j, "] == 0) lp[t] += ",
         "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j, ") * log1p_exp(",
-        lmod(j), " + drift_tips[t,tip_id[i]][", j, "]));\n"
-        )
-    } else if (distributions[j] == "normal") {
-      sc_model <- paste0(
-        sc_model,
-        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
-        "normal_lpdf(y[i,", j, "] | ", lmod(j),
-        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
-        )
-    } else if (distributions[j] == "student_t") {
-      sc_model <- paste0(
-        sc_model,
-        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
-        "student_t_lpdf(y[i,", j, "] | nu", j, ", ", lmod(j),
-        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
-      )
-    } else if (distributions[j] == "lognormal") {
-      sc_model <- paste0(
-        sc_model,
-        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
-        "lognormal_lpdf(y[i,", j, "] | ", lmod(j),
-        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
+        lmod(j), " + residuals[", j, "]));\n"
         )
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_model <- paste0(
         sc_model,
-        "        if (miss[i,", j, "] == 0) lp[t,", j, "] += ",
+        "        if (miss[i,", j, "] == 0) lp[t] += ",
         "neg_binomial_2_lpmf(to_int(y[i,", j,
         "]) | mean(obs", j, ") * log1p_exp(", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "]), phi", j, ");\n"
+        " + residuals[", j, "]), phi", j, ");\n"
         )
     }
   }
   sc_model <- paste0(
     sc_model,
     "      }\n",
-    "      for (j in 1:J) target += log_sum_exp(lp[,j]);\n",
+    "      target += log_sum_exp(lp);\n",
     "    }\n",
     "  }\n",
     "}"
@@ -673,83 +658,85 @@ coev_make_stancode <- function(data, variables, id, tree,
     paste0(
       sc_generated_quantities,
       "  {\n",
-      "    matrix[N_obs,J] log_lik_temp = rep_matrix(0, N_obs, J);\n",
+      "    matrix[N_obs,J] log_lik_temp = rep_matrix(0.0, N_obs, J);\n",
       "    for (i in 1:N_obs) {\n",
-      "      array[N_tree,N_obs,J] real lp = rep_array(log(1.0 / N_tree), N_tree, N_obs, J);\n",
-      "      for (t in 1:N_tree) {\n"
+      "      array[N_tree,N_obs,J] real lp = rep_array(0.0, N_tree, N_obs, J);\n",
+      "      for (t in 1:N_tree) {\n",
+      "        vector[J] mu_cond;\n",
+      "        vector[J] sigma_cond;\n",
+      "        vector[J] residuals;\n",
+      "        matrix[J,J] cov_inv = inverse_spd(VCV_tips[t, tip_id[i]]);\n"
       )
+  # get residuals
+  for (j in 1:length(distributions)) {
+    if (distributions[j] == "normal") {
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "        residuals[", j, "] = y[i][", j, "] - ", lmod(j), ";\n"
+      )
+    } else {
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "        residuals[", j, "] = terminal_drift[t, tip_id[i]][", j, "];\n"
+      )
+    }
+  }
+  sc_generated_quantities <- paste0(
+    sc_generated_quantities,
+    "        mu_cond = residuals - (cov_inv * residuals) ./ diagonal(cov_inv);\n",
+    "        sigma_cond = sqrt(1 / diagonal(cov_inv));\n"
+  )
   for (j in 1:length(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
         "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "]);\n",
+        " + residuals[", j, "]);\n",
         "        yrep[t,i,", j, "] = ",
         "bernoulli_logit_rng(", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "]);\n"
+        " + residuals[", j, "]);\n"
       )
     } else if (distributions[j] == "ordered_logistic") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
         "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "], c", j, ");\n",
+        " + residuals[", j, "], c", j, ");\n",
         "        yrep[t,i,", j, "] = ",
         "ordered_logistic_rng(", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "], c", j, ");\n"
+        " + residuals[", j, "], c", j, ");\n"
       )
     } else if (distributions[j] == "poisson_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
         "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
         ") * log1p_exp(", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "]));\n",
+        " + residuals[", j, "]));\n",
         "        yrep[t,i,", j, "] = ",
         "poisson_rng(mean(obs", j, ") * log1p_exp(", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "]));\n"
+        " + residuals[", j, "]));\n"
       )
     } else if (distributions[j] == "normal") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
-        "normal_lpdf(y[i,", j, "] | ", lmod(j),
-        ", sigma_tips[t,tip_id[i]][", j, "]);\n",
-        "        yrep[t,i,", j, "] = ",
-        "normal_rng(", lmod(j),
-        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
-      )
-    } else if (distributions[j] == "student_t") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
-        "student_t_lpdf(y[i,", j, "] | nu", j, ", ", lmod(j),
-        ", sigma_tips[t,tip_id[i]][", j, "]);\n",
-        "        yrep[t,i,", j, "] = ",
-        "student_t_rng(nu", j, ", ", lmod(j),
-        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
-      )
-    } else if (distributions[j] == "lognormal") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
-        "lognormal_lpdf(y[i,", j, "] | ", lmod(j),
-        ", sigma_tips[t,tip_id[i]][", j, "]);\n",
-        "        yrep[t,i,", j, "] = ",
-        "lognormal_rng(", lmod(j),
-        ", sigma_tips[t,tip_id[i]][", j, "]);\n"
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
+        "normal_lpdf(residuals[", j, "] | mu_cond[", j,
+        "], sigma_cond[", j, "]);\n",
+        "        yrep[t,i,", j, "] = ", lmod(j),
+        " + normal_rng(mu_cond[", j, "], sigma_cond[", j, "]);\n"
       )
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] += ",
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
         "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
         ") * log1p_exp(", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "]), phi", j, ");\n",
+        " + residuals[", j, "]), phi", j, ");\n",
         "        yrep[t,i,", j, "] = ",
         "neg_binomial_2_rng(mean(obs", j, ") * log1p_exp(", lmod(j),
-        " + drift_tips[t,tip_id[i]][", j, "]), phi", j, ");\n"
+        " + residuals[", j, "]), phi", j, ");\n"
       )
     }
   }
