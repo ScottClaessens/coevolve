@@ -21,13 +21,13 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   # expect the following errors
   expect_error(
     coev_plot_pred_series(object = "fail"),
-     "Argument 'object' must be a fitted coevolutionary model of class coevfit."
+    "Argument 'object' must be a fitted coevolutionary model of class coevfit.",
+    fixed = TRUE
   )
   expect_error(
     coev_plot_pred_series(object = m1, prob = 95),
-    paste0(
-      "Argument 'prob' is not between 0 and 1."
-    )
+    "Argument 'prob' is not between 0 and 1.",
+    fixed = TRUE
   )
   # suppress warnings
   SW <- suppressWarnings
@@ -41,15 +41,15 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   expect_no_error(SW(coev_plot_pred_series(m7)))
   expect_no_error(SW(coev_plot_pred_series(m8)))
   expect_no_error(SW(coev_plot_pred_series(m9)))
-  expect_no_error(SW(coev_plot_pred_series(m1, stochastic = T)))
-  expect_no_error(SW(coev_plot_pred_series(m2, stochastic = T)))
-  expect_no_error(SW(coev_plot_pred_series(m3, stochastic = T)))
-  expect_no_error(SW(coev_plot_pred_series(m4, stochastic = T)))
-  expect_no_error(SW(coev_plot_pred_series(m5, stochastic = T)))
-  expect_no_error(SW(coev_plot_pred_series(m6, stochastic = T)))
-  expect_no_error(SW(coev_plot_pred_series(m7, stochastic = T)))
-  expect_no_error(SW(coev_plot_pred_series(m8, stochastic = T)))
-  expect_no_error(SW(coev_plot_pred_series(m9, stochastic = T)))
+  expect_no_error(SW(coev_plot_pred_series(m1, stochastic = TRUE)))
+  expect_no_error(SW(coev_plot_pred_series(m2, stochastic = TRUE)))
+  expect_no_error(SW(coev_plot_pred_series(m3, stochastic = TRUE)))
+  expect_no_error(SW(coev_plot_pred_series(m4, stochastic = TRUE)))
+  expect_no_error(SW(coev_plot_pred_series(m5, stochastic = TRUE)))
+  expect_no_error(SW(coev_plot_pred_series(m6, stochastic = TRUE)))
+  expect_no_error(SW(coev_plot_pred_series(m7, stochastic = TRUE)))
+  expect_no_error(SW(coev_plot_pred_series(m8, stochastic = TRUE)))
+  expect_no_error(SW(coev_plot_pred_series(m9, stochastic = TRUE)))
   expect_no_error(SW(coev_plot_pred_series(m1, ndraws = 1L)))
   expect_no_error(SW(coev_plot_pred_series(m2, ndraws = 1L)))
   expect_no_error(SW(coev_plot_pred_series(m3, ndraws = 1L)))

@@ -2,7 +2,7 @@
 % Please edit documentation in R/coev_plot_pred_series.R
 \name{coev_plot_pred_series}
 \alias{coev_plot_pred_series}
-\title{Plot a predicted co-evolutionary time series from a fitted \code{coevfit}
+\title{Plot a predicted coevolutionary time series from a fitted \code{coevfit}
 object}
 \usage{
 coev_plot_pred_series(object, prob = 0.95, ...)
@@ -19,8 +19,13 @@ to be covered by the uncertainty intervals. The default is 0.95.}
 A ggplot object.
 }
 \description{
-Plot a predicted co-evolutionary time series from a fitted \code{coevfit}
-object
+This function plots a predicted coevolutionary time series using the
+estimated parameters from a fitted \code{coevfit} model. By default, the
+plot uses the posterior ancestral states estimated by the model as the
+starting values, but users can also set their own starting values for
+traits. Plots can be generated with or without stochastic drift. For more
+details on the underlying predictive function, see
+\code{help(coev_pred_series)}.
 }
 \examples{
 \dontrun{
@@ -42,16 +47,19 @@ fit <- coev_fit(
 # simulated trait co-evolution
 coev_plot_pred_series(
   object = fit,
-  stochastic = T
+  stochastic = TRUE
   )
 
 # expected trait co-evolution, no drift
 coev_plot_pred_series(
   object = fit,
-  stochastic = F
+  stochastic = FALSE
   )
 }
 
+}
+\seealso{
+\code{\link{coev_pred_series}}
 }
 \author{
 Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen

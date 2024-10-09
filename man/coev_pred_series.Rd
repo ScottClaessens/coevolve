@@ -2,8 +2,7 @@
 % Please edit documentation in R/coev_pred_series.R
 \name{coev_pred_series}
 \alias{coev_pred_series}
-\title{Predict a co-evolutionary time series from a fitted \code{coevfit}
-object}
+\title{Predict a co-evolutionary time series from a fitted \code{coevfit} object}
 \usage{
 coev_pred_series(
   object,
@@ -17,23 +16,35 @@ coev_pred_series(
 \arguments{
 \item{object}{An object of class \code{coevfit}}
 
-\item{eta_anc}{If \code{NULL} default, the starting values for the latent states \eqn{\eta} will be set to the estimated ancestral states at the root from the the \code{coevfit}. Otherwise, a numeric vector with length equal to the number of variable specifying the initial \eqn{\eta}  values.}
+\item{eta_anc}{If \code{NULL} (default), the starting values for the latent
+states \eqn{\eta} will be set to the estimated ancestral states at the
+root from the \code{coevfit} model. Otherwise, a named numeric vector with
+length equal to the number of variables specifying the initial \eqn{\eta}
+values. All variable names must be included in this vector.}
 
-\item{tmax}{A positive number indicating the total duration of time for which to predict. Set to 1 by default, corresponding to the entire time depth of the original phylogenetic tree(s).}
+\item{tmax}{A positive number indicating the total duration of time for which
+to predict. Set to 1 by default, corresponding to the entire time depth of
+the original phylogenetic tree(s).}
 
-\item{ntimes}{A positive integer indicating the total number of discrete time steps over which to make predictions. Each step corresponds to a time difference of dt = tmax/ntimes. Set to 30 by default.}
+\item{ntimes}{A positive integer indicating the total number of discrete time
+steps over which to make predictions. Each step corresponds to a time
+difference of dt = tmax/ntimes. Set to 30 by default.}
 
 \item{ndraws}{An integer indicating the number of draws to return. The
 default and maximum number of draws is the size of the posterior sample.}
 
-\item{stochastic}{Logical (defaults to \code{FALSE}); indicator of whether predictions should include only the expected co-evolutionary change (deterministic selection), or also stochastic drift.}
+\item{stochastic}{Logical (defaults to \code{FALSE}); indicator of whether
+predictions should include only the expected co-evolutionary change
+due to deterministic selection (FALSE) or also stochastic drift (TRUE).}
 }
 \value{
-An \link{ndraw, ntimes, nvariables} array of predicted \eqn{\eta}  values.
+An [ndraw, ntimes, nvariables] array of predicted \eqn{\eta}
+values.
 }
 \description{
-Predict a co-evolutionary time series from a fitted \code{coevfit}
-object
+This function produces predicted values of traits over a time series, given
+the estimated parameters for a \code{coevfit} model. This function is used
+under the hood by the plotting function \code{\link{coev_pred_series}}.
 }
 \examples{
 \dontrun{
@@ -55,16 +66,19 @@ fit <- coev_fit(
 # simulate trait co-evolution
 sims <- coev_pred_series(
   object = fit,
-  stochastic = T
+  stochastic = TRUE
   )
 
 # expected trait co-evolution, no drift
 epreds <- coev_pred_series(
   object = fit,
-  stochastic = F
+  stochastic = FALSE
   )
 }
 
+}
+\seealso{
+\code{\link{coev_plot_pred_series}}
 }
 \author{
 Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen

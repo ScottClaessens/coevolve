@@ -29,8 +29,10 @@ Imports:
     bayesplot,
     cmdstanr,
     colorspace,
+    cubelyr,
     dplyr,
     ggplot2,
+    Matrix,
     methods,
     phangorn,
     phaseR,
@@ -41,8 +43,7 @@ Imports:
     rlang,
     stats,
     stringr,
-    tidyr,
-    cubelyr
+    tidyr
 VignetteBuilder: knitr
 Depends: 
     R (>= 3.5.0)

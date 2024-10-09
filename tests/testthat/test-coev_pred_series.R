@@ -21,43 +21,60 @@ test_that("coev_pred_series() produces expected errors and output", {
   # expect the following errors
   expect_error(
     coev_pred_series(object = "fail"),
-     "Argument 'object' must be a fitted coevolutionary model of class coevfit."
+    "Argument 'object' must be a fitted coevolutionary model of class coevfit.",
+    fixed = TRUE
   )
   expect_error(
     coev_pred_series(object = m1, eta_anc = c(1, "LCA")),
     paste0(
-      "Argument 'eta_anc' must be numeric and equal in length to the number of variables."
-    )
+      "Argument 'eta_anc' must be numeric and equal in length to the number ",
+      "of variables."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(object = m2, eta_anc = c(1, 2)),
+    "Argument 'eta_anc' is not a named vector.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(object = m2, eta_anc = c("a" = 1, "b" = 2)),
+    paste0(
+      "Argument 'eta_anc' has names different to the variables included ",
+      "in the model."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_pred_series(object = m1, tmax = -1),
-    paste0(
-      "Argument 'tmax' must be positive."
-    )
+    "Argument 'tmax' must be positive.",
+    fixed = TRUE
   )
   expect_error(
     coev_pred_series(object = m1, ndraws = "fail"),
-    "Argument 'ndraws' must be a single integer."
+    "Argument 'ndraws' must be a single integer.",
+    fixed = TRUE
   )
   expect_error(
     coev_pred_series(object = m1, ndraws = 0L),
-    "Argument 'ndraws' must be between 1 and the total number of draws."
+    "Argument 'ndraws' must be between 1 and the total number of draws.",
+    fixed = TRUE
   )
   expect_error(
     coev_pred_series(
       object = m1, ndraws = as.integer(nrow(m1$fit$draws()) + 1)
       ),
-    "Argument 'ndraws' must be between 1 and the total number of draws."
+    "Argument 'ndraws' must be between 1 and the total number of draws.",
+    fixed = TRUE
   )
   expect_error(
     coev_pred_series(object = m1, stochastic = "only"),
-    paste0(
-      "Argument 'stochastic' must be logical."
-    )
+    "Argument 'stochastic' must be logical.",
+    fixed = TRUE
   )
   # suppress warnings
   SW <- suppressWarnings
-  # should run without error and produce list of ggplot objects
+  # should run without error
   expect_no_error(SW(coev_pred_series(m1)))
   expect_no_error(SW(coev_pred_series(m2)))
   expect_no_error(SW(coev_pred_series(m3)))
@@ -67,15 +84,15 @@ test_that("coev_pred_series() produces expected errors and output", {
   expect_no_error(SW(coev_pred_series(m7)))
   expect_no_error(SW(coev_pred_series(m8)))
   expect_no_error(SW(coev_pred_series(m9)))
-  expect_no_error(SW(coev_pred_series(m1, stochastic = T)))
-  expect_no_error(SW(coev_pred_series(m2, stochastic = T)))
-  expect_no_error(SW(coev_pred_series(m3, stochastic = T)))
-  expect_no_error(SW(coev_pred_series(m4, stochastic = T)))
-  expect_no_error(SW(coev_pred_series(m5, stochastic = T)))
-  expect_no_error(SW(coev_pred_series(m6, stochastic = T)))
-  expect_no_error(SW(coev_pred_series(m7, stochastic = T)))
-  expect_no_error(SW(coev_pred_series(m8, stochastic = T)))
-  expect_no_error(SW(coev_pred_series(m9, stochastic = T)))
+  expect_no_error(SW(coev_pred_series(m1, stochastic = TRUE)))
+  expect_no_error(SW(coev_pred_series(m2, stochastic = TRUE)))
+  expect_no_error(SW(coev_pred_series(m3, stochastic = TRUE)))
+  expect_no_error(SW(coev_pred_series(m4, stochastic = TRUE)))
+  expect_no_error(SW(coev_pred_series(m5, stochastic = TRUE)))
+  expect_no_error(SW(coev_pred_series(m6, stochastic = TRUE)))
+  expect_no_error(SW(coev_pred_series(m7, stochastic = TRUE)))
+  expect_no_error(SW(coev_pred_series(m8, stochastic = TRUE)))
+  expect_no_error(SW(coev_pred_series(m9, stochastic = TRUE)))
   expect_no_error(SW(coev_pred_series(m1, ndraws = 1L)))
   expect_no_error(SW(coev_pred_series(m2, ndraws = 1L)))
   expect_no_error(SW(coev_pred_series(m3, ndraws = 1L)))
