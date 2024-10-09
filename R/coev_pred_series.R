@@ -49,8 +49,7 @@ coev_pred_series <- function(object, eta_anc = NULL, tmax = 1, ntimes = 30, ndra
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
-        "Argument 'object' must be a fitted coevolutionary model ",
-        "of class coevfit."
+        "Argument 'object' must be a fitted coevolutionary model of class coevfit."
         )
       )
   }
@@ -65,16 +64,16 @@ coev_pred_series <- function(object, eta_anc = NULL, tmax = 1, ntimes = 30, ndra
   else if (tmax <= 0) {
     stop2("Argument 'tmax' must be positive.")
   }
- # stop if ndraws is not a single integer between 1 and the total num draws
- if (!is.null(ndraws)) {
-  if (!as.integer(ndraws) == ndraws|ndraws <= 0|length(ndraws) != 1) {
-    stop2("Argument 'ndraws' must be a single integer.")
-  } else if (ndraws < 1 | ndraws > nrow(object$fit$draws())) {
-    stop2(
-      "Argument 'ndraws' must be between 1 and the total number of draws."
-      )
+  # stop if ndraws is not a single integer between 1 and the total num draws
+  if (!is.null(ndraws)) {
+    if (!is.integer(ndraws) | length(ndraws) != 1) {
+      stop2("Argument 'ndraws' must be a single integer.")
+    } else if (ndraws < 1 | ndraws > nrow(object$fit$draws())) {
+      stop2(
+        "Argument 'ndraws' must be between 1 and the total number of draws."
+        )
+    }
   }
-}
 # stop if stochastic not logical
   if (!is.logical(stochastic)) {
     stop2("Argument 'stochastic' must be logical.")
@@ -101,7 +100,8 @@ coev_pred_series <- function(object, eta_anc = NULL, tmax = 1, ntimes = 30, ndra
 
     if (ntrees > 1) {
     # make into 2d matrix by stacking trees
-    dim(eta_anc_long) <- c(dim(eta_anc_long)[1], prod(dim(eta_anc_long)[2:3]) )
+    eta_anc_long2 <- eta_anc_long[,1,]
+    for (t in 2:ntrees) eta_anc_long2 <- rbind(eta_anc_long2, eta_anc_long[,t,]) -> eta_anc_long
     }
     for (i in 1:nsamps) preds[i,1,] = eta_anc_long[i,]
     }
