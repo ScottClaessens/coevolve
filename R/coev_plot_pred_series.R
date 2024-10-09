@@ -73,19 +73,19 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...){
       epreds_summary <- epreds_long |> 
       dplyr::group_by(response, time) |> 
       dplyr::summarise(mean = mean(est),
-      lower_CI = quantile(est, probs[1]),
-      upper_CI = quantile(est, probs[2]),
+      lower_CI = stats::quantile(est, probs[1]),
+      upper_CI = stats::quantile(est, probs[2]),
       )
     
-      p <- ggplot2::ggplot(epreds_summary, aes(x = time, y = mean, fill = response, color = response, linetype = response)) +
-      geom_line(lwd = 1) + 
-        geom_ribbon(aes(ymin = lower_CI, ymax = upper_CI), alpha = 0.25, lwd = 0.25) +
-      theme_classic(base_size = 14) + 
-      scale_x_continuous(breaks = c(0, max(epreds_summary$time)), labels = c("LCA", "present")) +
-      ylab("trait value (latent scale)") + 
-      xlab("time") +
-      theme(legend.title = element_blank(),  strip.background = element_blank(),strip.text = element_blank()) + 
-      ggtitle("Expected trait coevolution")
+      p <- ggplot2::ggplot(epreds_summary, ggplot2::aes(x = time, y = mean, fill = response, color = response, linetype = response)) +
+      ggplot2::geom_line(lwd = 1) + 
+        ggplot2::geom_ribbon(ggplot2::aes(ymin = lower_CI, ymax = upper_CI), alpha = 0.25, lwd = 0.25) +
+      ggplot2::theme_classic(base_size = 14) + 
+      ggplot2::scale_x_continuous(breaks = c(0, max(epreds_summary$time)), labels = c("LCA", "present")) +
+      ggplot2::ylab("trait value (latent scale)") + 
+      ggplot2::xlab("time") +
+      ggplot2::theme(legend.title = ggplot2::element_blank(),  strip.background = ggplot2::element_blank(),strip.text = ggplot2::element_blank()) + 
+      ggplot2::ggtitle("Expected trait coevolution")
   }
   else if (combined_args$stochastic == T) {
     sims_long <- preds |>
@@ -93,15 +93,15 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...){
       as.data.frame() |> 
       dplyr::mutate(sim = factor(paste("sim", samps), levels = paste("sim", sort(unique(samps)))))
 
-    p <- ggplot2::ggplot(sims_long |> dplyr::filter(samps <= 15), aes(x = time, y = est, color = response)) +
-    facet_wrap(~sim, ncol = 5) +
-    geom_line(lwd = 1) + 
-    theme_minimal(base_size = 14) + 
-    scale_x_continuous(breaks = c(0, max(sims_long$time)), labels = c("LCA", "present")) +
-    ylab("trait value (latent scale)") + 
-    xlab("time") +
-    theme(legend.title = element_blank(),  strip.background = element_blank(), panel.spacing.x = unit(1, "lines"), axis.text.x = element_blank(),  axis.ticks.x = element_blank()) + 
-    ggtitle("Predicted trait coevolution")
+    p <- ggplot2::ggplot(sims_long |> dplyr::filter(samps <= 15), ggplot2::aes(x = time, y = est, color = response)) +
+    ggplot2::facet_wrap(~sim, ncol = 5) +
+    ggplot2::geom_line(lwd = 1) + 
+    ggplot2::theme_minimal(base_size = 14) + 
+    ggplot2::scale_x_continuous(breaks = c(0, max(sims_long$time)), labels = c("LCA", "present")) +
+    ggplot2::ylab("trait value (latent scale)") + 
+    ggplot2::xlab("time") +
+    ggplot2::theme(legend.title = ggplot2::element_blank(),  strip.background = ggplot2::element_blank(), panel.spacing.x = ggplot2::unit(1, "lines"), axis.text.x = ggplot2::element_blank(),  axis.ticks.x = ggplot2::element_blank()) + 
+    ggplot2::ggtitle("Predicted trait coevolution")
   }
   return(p)
 }
