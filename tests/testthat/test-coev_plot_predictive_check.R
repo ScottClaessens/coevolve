@@ -28,35 +28,56 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
     paste0(
       "Argument 'variables' must be a character string or a ",
       "vector of character strings."
-    )
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_plot_predictive_check(object = m1, variables = "fail"),
     paste0(
       "Argument 'variables' contains variable names that are not ",
       "included in the fitted model."
-    )
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_plot_predictive_check(object = m1, ndraws = "fail"),
-    "Argument 'ndraws' must be a single integer."
+    "Argument 'ndraws' must be numeric.",
+    fixed = TRUE
   )
   expect_error(
-    coev_plot_predictive_check(object = m1, ndraws = 0L),
-    "Argument 'ndraws' must be between 1 and the total number of draws."
+    coev_plot_predictive_check(object = m1, ndraws = c(1, 2)),
+    "Argument 'ndraws' must be a single integer.",
+    fixed = TRUE
   )
   expect_error(
-    coev_plot_predictive_check(
-      object = m1, ndraws = as.integer(nrow(m1$fit$draws()) + 1)
-      ),
-    "Argument 'ndraws' must be between 1 and the total number of draws."
+    coev_plot_predictive_check(object = m1, ndraws = 0),
+    "Argument 'ndraws' must be between 1 and the total number of draws.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_predictive_check(object = m1, ndraws = nrow(m1$fit$draws()) + 1),
+    "Argument 'ndraws' must be between 1 and the total number of draws.",
+    fixed = TRUE
   )
   expect_error(
     coev_plot_predictive_check(object = m1, tree_id = "fail"),
-    paste0(
-      "Argument 'tree_id' must be either NULL or a single positive ",
-      "integer less than the total number of trees."
-    )
+    "Argument 'tree_id' must be numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_predictive_check(object = m1, tree_id = c(1, 2)),
+    "Argument 'tree_id' must be a single integer.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_predictive_check(object = m1, tree_id = 0),
+    "Argument 'tree_id' must be between 1 and the total number of trees.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_predictive_check(object = m1, tree_id = m1$stan_data$N_tree + 1),
+    "Argument 'tree_id' must be between 1 and the total number of trees.",
+    fixed = TRUE
   )
   # suppress warnings
   SW <- suppressWarnings
@@ -79,17 +100,17 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
   expect_no_error(SW(coev_plot_predictive_check(m7, variables = "w")))
   expect_no_error(SW(coev_plot_predictive_check(m8, variables = "x")))
   expect_no_error(SW(coev_plot_predictive_check(m9, variables = "x")))
-  expect_no_error(SW(coev_plot_predictive_check(m1, ndraws = 1L)))
-  expect_no_error(SW(coev_plot_predictive_check(m2, ndraws = 1L)))
-  expect_no_error(SW(coev_plot_predictive_check(m3, ndraws = 1L)))
-  expect_no_error(SW(coev_plot_predictive_check(m4, ndraws = 1L)))
-  expect_no_error(SW(coev_plot_predictive_check(m5, ndraws = 1L)))
-  expect_no_error(SW(coev_plot_predictive_check(m6, ndraws = 1L)))
-  expect_no_error(SW(coev_plot_predictive_check(m7, ndraws = 1L)))
-  expect_no_error(SW(coev_plot_predictive_check(m8, ndraws = 1L)))
-  expect_no_error(SW(coev_plot_predictive_check(m9, ndraws = 1L)))
+  expect_no_error(SW(coev_plot_predictive_check(m1, ndraws = 1)))
+  expect_no_error(SW(coev_plot_predictive_check(m2, ndraws = 1)))
+  expect_no_error(SW(coev_plot_predictive_check(m3, ndraws = 1)))
+  expect_no_error(SW(coev_plot_predictive_check(m4, ndraws = 1)))
+  expect_no_error(SW(coev_plot_predictive_check(m5, ndraws = 1)))
+  expect_no_error(SW(coev_plot_predictive_check(m6, ndraws = 1)))
+  expect_no_error(SW(coev_plot_predictive_check(m7, ndraws = 1)))
+  expect_no_error(SW(coev_plot_predictive_check(m8, ndraws = 1)))
+  expect_no_error(SW(coev_plot_predictive_check(m9, ndraws = 1)))
   # should work with multiPhylo
-  expect_no_error(SW(coev_plot_predictive_check(m8, tree_id = 2L)))
+  expect_no_error(SW(coev_plot_predictive_check(m8, tree_id = 2)))
   # should work as expected with missing data
   # lower limit of plot should not be -9999.45
   expect_false(
