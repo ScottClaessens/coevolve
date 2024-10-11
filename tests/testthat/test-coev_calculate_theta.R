@@ -94,6 +94,8 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   theta7 <- coev_calculate_theta(m7, list(w = NA, x = 0))
   theta8 <- coev_calculate_theta(m8, list(x = NA, y = 0))
   theta9 <- coev_calculate_theta(m9, list(x = NA, y = 0))
+  theta1_null <- coev_calculate_theta(m1, NULL)
+  theta9_null <- coev_calculate_theta(m9, NULL)
   expect_no_error(theta1)
   expect_no_error(theta2)
   expect_no_error(theta3)
@@ -103,6 +105,8 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_no_error(theta7)
   expect_no_error(theta8)
   expect_no_error(theta9)
+  expect_no_error(theta1_null)
+  expect_no_error(theta9_null)
   # output should be matrix of posterior draws
   expect_true(methods::is(theta1, "matrix"))
   expect_true(methods::is(theta2, "matrix"))
@@ -113,6 +117,8 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_true(methods::is(theta7, "matrix"))
   expect_true(methods::is(theta8, "matrix"))
   expect_true(methods::is(theta9, "matrix"))
+  expect_true(methods::is(theta1_null, "matrix"))
+  expect_true(methods::is(theta9_null, "matrix"))
   # output column names should be equal to variable names
   expect_true(identical(colnames(theta1), names(m1$variables)))
   expect_true(identical(colnames(theta2), names(m2$variables)))
@@ -123,6 +129,8 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_true(identical(colnames(theta7), names(m7$variables)))
   expect_true(identical(colnames(theta8), names(m8$variables)))
   expect_true(identical(colnames(theta9), names(m9$variables)))
+  expect_true(identical(colnames(theta9_null), names(m9$variables)))
+  expect_true(identical(colnames(theta1_null), names(m1$variables)))
   # variables should be correctly held constant in output
   expect_true(all(theta1[,c("v","w","x","y")] == 0))
   expect_true(all(theta2[,"x"] == 0))
@@ -133,4 +141,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   expect_true(all(theta7[,"x"] == 0))
   expect_true(all(theta8[,"y"] == 0))
   expect_true(all(theta9[,"y"] == 0))
+  # free variables should not be constant in output
+  expect_false(all(theta1_null[,"y"] == 0))
+  expect_false(all(theta9_null[,"y"] == 0))
 })

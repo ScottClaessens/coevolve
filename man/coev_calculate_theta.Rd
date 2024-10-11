@@ -4,16 +4,15 @@
 \alias{coev_calculate_theta}
 \title{Calculate equilibrium trait values (theta) for a fitted \code{coevfit} object}
 \usage{
-coev_calculate_theta(object, intervention_values)
+coev_calculate_theta(object, intervention_values = NULL)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}}
 
-\item{intervention_values}{A named list of variables and associated
-intervention values for calculating equilibrium trait values. All
-coevolving variables must be declared separately in the named list without
+\item{intervention_values}{Either \code{NULL} (the default) or a named list of variables and associated
+intervention values for calculating equilibrium trait values. If \code{NULL}, calculates the equiilbirium states when all parameters are free to vary. Otherwise, all coevolving variables must be declared separately in the named list without
 repetition. If the intervention value for a particular variable is set to
-NA, this variable is treated as a free variable. Otherwise, if the
+NA, this variable is treated as a free variable. If the
 intervention value for a particular variable is specified, the variable is
 held constant at this trait value in the calculation. At least one variable
 must be declared as a free variable and at least one variable must be held
@@ -28,10 +27,21 @@ a set of intervention values for other traits from a fitted \code{coevfit}
 object.
 }
 \details{
-The equilibrium trait value for a free trait \eqn{\eta_i} is
+The equilibrium trait values for freely evolving traits \eqn{\mathbf{\eta}} are
 calculated using the following formula:
-\deqn{\theta_{\eta_i} = \frac{-(\sum_{j \neq i}\textbf{A}[i,j]\eta_j) +
-  \textbf{b}_i}{\textbf{A}[i,i]}}
+\deqn{\mathbf{\theta} = -\mathbf{A}^{-1}\mathbf{b}}
+
+If we hold some variables constant at some value(s) (denoted \eqn{\eta_{h}}) and let others evolve freely (denoted \eqn{\eta_{f}}), we can partition the parameters as follows:
+
+\deqn{\mathbf{A}_{ff}: \text{selection coefficients to/from the free variables}}
+\deqn{\mathbf{A}_{fh}: \text{selection coefficients to the free variables from the held variables}}
+\deqn{\mathbf{b}_{f}: \text{continuous time intercepts for the free variables}}
+
+We can then calculate the equilibrium values for the free variables:
+\deqn{\boldsymbol{\theta_f} = -\mathbf{A}_{ff}^{-1} \left( \mathbf{A}_{fh} \mathbf{\eta}_h + \mathbf{b}_f \right)}
+
+With the overall equilibrium vector being a mix of the free equilibria and the held values:
+\deqn{\boldsymbol{\theta | \mathbf{\eta}_h} = \begin{bmatrix} \boldsymbol{\theta}_f \\\mathbf{\eta}_h\end{bmatrix}}
 }
 \examples{
 \dontrun{
@@ -49,6 +59,11 @@ fit <- coev_fit(
   parallel_chains = 4,
   seed = 1
   )
+
+# calculate theta with no interventions
+coev_calculate_theta(
+  object = fit
+ )
 
 # calculate theta given intervention values
 coev_calculate_theta(
