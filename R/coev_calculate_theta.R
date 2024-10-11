@@ -5,36 +5,50 @@
 #' object.
 #'
 #' @param object An object of class \code{coevfit}
-#' @param intervention_values Either \code{NULL} (the default) or a named list of variables and associated
-#'   intervention values for calculating equilibrium trait values. If \code{NULL}, calculates the equiilbirium states when all parameters are free to vary. Otherwise, all coevolving variables must be declared separately in the named list without
-#'   repetition. If the intervention value for a particular variable is set to
-#'   NA, this variable is treated as a free variable. If the
-#'   intervention value for a particular variable is specified, the variable is
-#'   held constant at this trait value in the calculation. At least one variable
-#'   must be declared as a free variable and at least one variable must be held
-#'   constant (e.g., \code{list(var1 = NA, var2 = 0)}).
+#' @param intervention_values Either \code{NULL} (the default) or a named list
+#'   of variables and associated intervention values for calculating equilibrium
+#'   trait values. If \code{NULL}, calculates the equilibrium states when all
+#'   parameters are free to vary. Otherwise, all coevolving variables must be
+#'   declared separately in the named list without repetition. If the
+#'   intervention value for a particular variable is set to NA, this variable is
+#'   treated as a free variable. If the intervention value for a particular
+#'   variable is specified, the variable is held constant at this trait value in
+#'   the calculation. At least one variable must be declared as a free variable
+#'   and at least one variable must be held constant (e.g.,
+#'   \code{list(var1 = NA, var2 = 0)}).
 #'
 #' @return Posterior samples in matrix format
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @details The equilibrium trait values for freely evolving traits \eqn{\mathbf{\eta}} are
-#'   calculated using the following formula:
+#' @details The equilibrium trait values for freely evolving traits
+#'   \eqn{\mathbf{\eta}} are calculated using the following formula:
+#'
 #'   \deqn{\mathbf{\theta} = -\mathbf{A}^{-1}\mathbf{b}}
-#'  
-#' If we hold some variables constant at some value(s) (denoted \eqn{\eta_{h}}) and let others evolve freely (denoted \eqn{\eta_{f}}), we can partition the parameters as follows:
-#' 
-#' \deqn{\mathbf{A}_{ff}: \text{selection coefficients to/from the free variables}}
-#' \deqn{\mathbf{A}_{fh}: \text{selection coefficients to the free variables from the held variables}}
-#' \deqn{\mathbf{b}_{f}: \text{continuous time intercepts for the free variables}}
-#' 
-#' We can then calculate the equilibrium values for the free variables:
-#' \deqn{\boldsymbol{\theta_f} = -\mathbf{A}_{ff}^{-1} \left( \mathbf{A}_{fh} \mathbf{\eta}_h + \mathbf{b}_f \right)}
-#' 
-#' With the overall equilibrium vector being a mix of the free equilibria and the held values:
-#' \deqn{\boldsymbol{\theta | \mathbf{\eta}_h} = \begin{bmatrix} \boldsymbol{\theta}_f \\\mathbf{\eta}_h\end{bmatrix}}
-#' 
+#'
+#'   If we hold some variables constant at some value(s) (denoted
+#'   \eqn{\eta_{h}}) and let others evolve freely (denoted \eqn{\eta_{f}}), we
+#'   can partition the parameters as follows:
+#'
+#'   - \eqn{\mathbf{A}_{ff}}: selection coefficients to/from the free
+#'   variables
+#'   - \eqn{\mathbf{A}_{fh}}: selection coefficients to the free variables
+#'   from the held variables
+#'   - \eqn{\mathbf{b}_{f}}: continuous time intercepts for the free
+#'   variables
+#'
+#'   We can then calculate the equilibrium values for the free variables:
+#'
+#'   \deqn{\boldsymbol{\theta_f} = -\mathbf{A}_{ff}^{-1} \left( \mathbf{A}_{fh}
+#'   \mathbf{\eta}_h + \mathbf{b}_f \right)}
+#'
+#'   With the overall equilibrium vector being a mix of the free equilibria and
+#'   the held values:
+#'
+#'   \deqn{\boldsymbol{\theta | \mathbf{\eta}_h} = \begin{bmatrix}
+#'   \boldsymbol{\theta}_f \\\mathbf{\eta}_h\end{bmatrix}}
+#'
 #' @references
 #' Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
 #' reveal that resource-use intensification drives the evolution of "complex"
@@ -64,7 +78,7 @@
 #'   parallel_chains = 4,
 #'   seed = 1
 #'   )
-#' 
+#'
 #' # calculate theta with no interventions
 #' coev_calculate_theta(
 #'   object = fit
@@ -96,15 +110,15 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
   A <- posterior::draws_of(post$A)
   b <- posterior::draws_of(post$b)
   # construct theta matrix
-  theta <- matrix(NA, nrow = posterior::ndraws(post), ncol = length(object$variables))
-
-  # Non-intervention
+  theta <- matrix(NA, nrow = posterior::ndraws(post),
+                  ncol = length(object$variables))
+  # non-intervention
   if (is.null(intervention_values)) {
     for (i in 1:posterior::ndraws(post)) {
       theta[i,] = -solve(A[i,,]) %*% b[i,]
     }
   }
-  # Intervention (at least one value held)
+  # intervention (at least one value held)
   else{
     # stop if intervention_values argument is not a named list
     if (!is.list(intervention_values) | is.null(names(intervention_values))) {
@@ -130,7 +144,9 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
     }
     # stop if repetition in intervention_values
     if (any(duplicated(names(intervention_values)))) {
-      stop2("Argument 'intervention_values' contains duplicated variable names.")
+      stop2(
+        "Argument 'intervention_values' contains duplicated variable names."
+        )
     }
     # stop if any values in intervention_list are not of length one
     if (any(unlist(lapply(intervention_values, length)) != 1)) {
