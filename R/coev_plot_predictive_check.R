@@ -72,7 +72,9 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   }
   # stop if ndraws is not a single integer between 1 and the total num draws
   if (!is.null(ndraws)) {
-    if (!is.integer(ndraws) | length(ndraws) != 1) {
+    if (!is.numeric(ndraws)) {
+      stop2("Argument 'ndraws' must be numeric.")
+    } else if (!all(as.integer(ndraws) == ndraws) | length(ndraws) != 1) {
       stop2("Argument 'ndraws' must be a single integer.")
     } else if (ndraws < 1 | ndraws > nrow(object$fit$draws())) {
       stop2(
@@ -80,17 +82,17 @@ coev_plot_predictive_check <- function(object, variables = NULL,
         )
     }
   }
-  # stop if tree_id is not a single positive integer less than total num trees
-  if (!is.null(tree_id) && !is.integer(tree_id) |
-      !is.null(tree_id) && length(tree_id) != 1 |
-      !is.null(tree_id) && tree_id > object$stan_data$N_tree |
-      !is.null(tree_id) && tree_id <= 0) {
-    stop2(
-      paste0(
-        "Argument 'tree_id' must be either NULL or a single positive ",
-        "integer less than the total number of trees."
-        )
+  # stop if tree_id is not a single integer between 1 and the total num trees
+  if (!is.null(tree_id)) {
+    if (!is.numeric(tree_id)) {
+      stop2("Argument 'tree_id' must be numeric.")
+    } else if (!all(as.integer(tree_id) == tree_id) | length(tree_id) != 1) {
+      stop2("Argument 'tree_id' must be a single integer.")
+    } else if (tree_id < 1 | tree_id > object$stan_data$N_tree) {
+      stop2(
+        "Argument 'tree_id' must be between 1 and the total number of trees."
       )
+    }
   }
   # get posterior predictions
   post <- posterior::as_draws_rvars(object$fit$draws(variables = "yrep"))
