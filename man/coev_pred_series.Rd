@@ -69,10 +69,11 @@ sims <- coev_pred_series(
   stochastic = TRUE
   )
 
-# expected trait co-evolution, no drift
+# expected trait co-evolution, no drift, specify ancestral states (initial values)
 epreds <- coev_pred_series(
   object = fit,
-  stochastic = FALSE
+  stochastic = FALSE,
+  eta_anc = c("political_authority" = -2, "religious_authority" = 1.5)
   )
 }
 
