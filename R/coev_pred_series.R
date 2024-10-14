@@ -169,12 +169,8 @@ coev_pred_series <- function(object, eta_anc = NULL, tmax = 1, ntimes = 30,
     b <- post$b[i,]
     # drift parameters
     Q_inf <- post$Q_inf[i,,]
-    # eigendecomposition for numerical stability
-    eig_Q <- eigen(Q_inf)
-    U <- eig_Q$vectors
-    Lambda <- diag(eig_Q$values)
-    A_U <- A_delta %*% U
-    chol_VCV <- A_U %*% Lambda %*% t(A_U)
+    VCV <- Q_inf - ((A) %*% Q_inf %*% t(A))
+    chol_VCV <- t(chol(Matrix::nearPD(VCV)$mat))
     # calculate predictions over time
     for (t in 1:ntimes) {
       preds[i, t + 1, ] <- (A_delta %*% preds[i, t, ] +
