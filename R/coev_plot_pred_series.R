@@ -47,7 +47,8 @@
 #' # expected trait co-evolution, no drift
 #' coev_plot_pred_series(
 #'   object = fit,
-#'   stochastic = FALSE
+#'   stochastic = FALSE,
+#'   eta_anc = c("political_authority" = -2, "religious_authority" = 1.5)
 #'   )
 #' }
 #'

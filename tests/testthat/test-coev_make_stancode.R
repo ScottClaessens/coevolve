@@ -75,8 +75,8 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
-      "'ordered_logistic', 'poisson_softplus', 'normal', 'student_t', ",
-      "'lognormal', and 'negative_binomial_softplus' are not yet supported."
+      "'ordered_logistic', 'poisson_softplus', ",
+      "'negative_binomial_softplus', and 'normal' are not yet supported."
     ),
     fixed = TRUE
   )
@@ -192,22 +192,6 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     paste0(
       "Variables following the 'normal' response distribution ",
-      "must be numeric in the data."
-    ),
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_stancode(
-      data = d,
-      variables = list(
-        w = "student_t", # not numeric
-        y = "student_t"
-      ),
-      id = "id",
-      tree = tree
-    ),
-    paste0(
-      "Variables following the 'student_t' response distribution ",
       "must be numeric in the data."
     ),
     fixed = TRUE
@@ -602,7 +586,7 @@ test_that("coev_make_stancode() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'L_R', 'Q_sigma', 'c', 'phi', 'nu', 'sigma_dist', 'rho_dist', ",
+      "'L_R', 'Q_sigma', 'c', 'phi', 'sigma_dist', 'rho_dist', ",
       "'sigma_group', and 'L_group'"
     ),
     fixed = TRUE
@@ -701,7 +685,6 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
-      u = rnorm(n),
       v = as.integer(rnbinom(n, mu = 4, size = 1)),
       w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
@@ -714,7 +697,6 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     coev_make_stancode(
       data = d,
       variables = list(
-          u = "student_t",
           v = "negative_binomial_softplus",
           w = "normal",
           x = "bernoulli_logit",
