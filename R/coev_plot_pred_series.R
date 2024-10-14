@@ -143,8 +143,10 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
       dplyr::mutate(
         sim = factor(paste("Sim", match(samps, unique(samps))))
       )
+    sim_num <- as.numeric(gsub("Sim ", "", unique(sims_long$sim)))
+    sims_long$sim <- factor(sims_long$sim , levels = unique(sims_long$sim)[order(sim_num)])
     # Create the stochastic plot
-    p <- ggplot2::ggplot(sims_long, ggplot2::aes(x = time, y = est, color = response)) +
+    p <- ggplot2::ggplot(sims_long, ggplot2::aes(x = time, y = est, color = response, linetype = response)) +
       ggplot2::geom_line(size = 1) +
       ggplot2::facet_wrap(~ sim, ncol = 5) +
       ggplot2::theme_minimal(base_size = 14) +
