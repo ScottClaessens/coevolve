@@ -21,7 +21,10 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   # expect the following errors
   expect_error(
     coev_plot_pred_series(object = "fail"),
-    "Argument 'object' must be a fitted coevolutionary model of class 'coevfit'.",
+    paste0(
+      "Argument 'object' must be a fitted coevolutionary model of class ",
+      "'coevfit'."
+      ),
     fixed = TRUE
   )
   expect_error(

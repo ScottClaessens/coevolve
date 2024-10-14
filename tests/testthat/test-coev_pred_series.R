@@ -25,7 +25,10 @@ test_that("coev_pred_series() produces expected errors and output", {
     fixed = TRUE
   )
   expect_error(
-    coev_pred_series(object = m1, eta_anc = list(x = "LCA", u = 0, y = 0, v = 0, w = 0)),
+    coev_pred_series(
+      object = m1,
+      eta_anc = list(x = "LCA", u = 0, y = 0, v = 0, w = 0)
+      ),
     paste0(
       "Values in 'eta_anc' must each be numeric."
     ),
@@ -37,7 +40,10 @@ test_that("coev_pred_series() produces expected errors and output", {
     fixed = TRUE
   )
   expect_error(
-    coev_pred_series(object = m1, eta_anc = list(var1 = 0, y = 0, v = 0, w = 0)),
+    coev_pred_series(
+      object = m1,
+      eta_anc = list(var1 = 0, y = 0, v = 0, w = 0)
+      ),
     paste0(
       "At least one variable in 'eta_anc' is not included in the fitted model."
     ),

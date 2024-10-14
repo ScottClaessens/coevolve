@@ -16,7 +16,7 @@
 #'
 #' @return A ggplot object.
 #'
-#' @author Scott Claessens \email{scott.claessens@@gmail.com}, 
+#' @author Scott Claessens \email{scott.claessens@@gmail.com},
 #'   Erik Ringen \email{erikjacob.ringen@@uzh.ch}
 #'
 #' @seealso \code{\link{coev_pred_series}}
@@ -54,35 +54,55 @@
 #'
 #' @export
 coev_plot_pred_series <- function(object, prob = 0.95, ...) {
-  # Check if object is of class coevfit
+  # check if object is of class coevfit
   if (!methods::is(object, "coevfit")) {
-    stop2("Argument 'object' must be a fitted coevolutionary model of class 'coevfit'.")
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model of ",
+        "class 'coevfit'."
+        )
+      )
   }
-  # Check if prob is between 0 and 1
+  # check if prob is between 0 and 1
   if (!is.numeric(prob) || length(prob) != 1 || prob <= 0 || prob >= 1) {
     stop2("Argument 'prob' must be a single numeric value between 0 and 1.")
   }
-  # Collect additional arguments
+  # collect additional arguments
   user_args <- list(...)
-  # Define default arguments from coev_pred_series, excluding 'object'
+  # define default arguments from coev_pred_series, excluding 'object'
   default_args <- formals(coev_pred_series)
   default_args <- default_args[names(default_args) != "object"]
-  # Convert default_args to a list with their default values
+  # convert default_args to a list with their default values
   default_args <- as.list(default_args)
-  # Combine user arguments with defaults, giving precedence to user arguments
+  # combine user arguments with defaults, giving precedence to user arguments
   combined_args <- modifyList(default_args, user_args)
-  # Ensure 'object' is set
+  # ensure 'object' is set
   combined_args$object <- object
-  # Call coev_pred_series with combined arguments
+  # call coev_pred_series with combined arguments
   preds <- do.call(coev_pred_series, combined_args)
-  # Find held indices, if any
-  held_indices <- which(!is.na(unlist(combined_args$intervention_values[names(combined_args$intervention_values)])))
-  # Check if 'preds' has the necessary dimension names
-  if (is.null(dimnames(preds)) || 
+  # find held indices, if any
+  held_indices <-
+    which(
+      !is.na(
+        unlist(
+          combined_args$intervention_values[
+            names(combined_args$intervention_values)
+            ]
+          )
+        )
+      )
+  # check if 'preds' has the necessary dimension names
+  if (is.null(dimnames(preds)) ||
       !all(c("samps", "time", "response") %in% names(dimnames(preds)))) {
-    stop2("The 'preds' array must have dimension names: 'samps', 'time', 'response'.")
+    stop2(
+      paste0(
+        "The 'preds' array must have dimension names: 'samps', 'time', ",
+        "'response'."
+        )
+      )
   }
-  # Convert the 3D array 'preds' to a long-format data frame using tidyr::pivot_longer
+  # convert the 3D array 'preds' to a long-format data frame
+  # using tidyr::pivot_longer
   preds_long <- preds |>
     as.data.frame.table(responseName = "est") |>
     tidyr::pivot_longer(
@@ -94,12 +114,13 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
       samps = as.numeric(as.character(samps)),
       time = as.numeric(as.character(time))
     )
-  # For deterministic predictions
+  # for deterministic predictions
   if (combined_args$stochastic == FALSE) {
-    # Calculate confidence interval bounds
+    # calculate confidence interval bounds
     probs <- c((1 - prob) / 2, 1 - (1 - prob) / 2)
-    # Summarize mean and confidence intervals for each response and time
-    epreds_summary <- preds_long |>
+    # summarize mean and confidence intervals for each response and time
+    epreds_summary <-
+      preds_long |>
       dplyr::group_by(response, time) |>
       dplyr::summarise(
         mean = mean(est, na.rm = TRUE),
@@ -110,13 +131,35 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
     title <- "Expected trait coevolution"
     # label which traits are held
     if (length(held_indices) > 0) {
-      epreds_summary$response <- ifelse(epreds_summary$response %in% names(held_indices), paste(epreds_summary$response, "(held)"), paste(epreds_summary$response, "(free)"))
+      epreds_summary$response <-
+        ifelse(
+          epreds_summary$response %in% names(held_indices),
+          paste(epreds_summary$response, "(held)"),
+          paste(epreds_summary$response, "(free)")
+          )
       title <- paste(title, "| intervention")
     }
-    # Create the deterministic plot
-    p <- ggplot2::ggplot(epreds_summary, ggplot2::aes(x = time, y = mean, color = response, fill = response, linetype = response)) +
+    # create the deterministic plot
+    p <-
+      ggplot2::ggplot(
+        epreds_summary,
+        ggplot2::aes(
+          x = time,
+          y = mean,
+          color = response,
+          fill = response,
+          linetype = response
+          )
+        ) +
       ggplot2::geom_line(size = 1) +
-      ggplot2::geom_ribbon(ggplot2::aes(ymin = lower_CI, ymax = upper_CI), alpha = 0.25, color = NA) +
+      ggplot2::geom_ribbon(
+        ggplot2::aes(
+          ymin = lower_CI,
+          ymax = upper_CI
+          ),
+        alpha = 0.25,
+        color = NA
+        ) +
       ggplot2::theme_classic(base_size = 14) +
       ggplot2::scale_x_continuous(
         breaks = c(1, max(epreds_summary$time)),
@@ -131,22 +174,34 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
         plot.title = ggplot2::element_text(size = 14)
       ) +
       ggplot2::ggtitle(title)
-  } 
-  # For stochastic predictions
+  }
+  # for stochastic predictions
   else if (combined_args$stochastic == TRUE) {
-    # Limit to first 15 simulations for clarity
+    # limit to first 15 simulations for clarity
     max_sims <- min(15, max(preds_long$samps))
-    sampled_sim <- sample(1:max(preds_long$samps), size = max_sims, replace = F)
-
-    sims_long <- preds_long |>
-      dplyr::filter(samps %in% sampled_sim) |>
-      dplyr::mutate(
-        sim = factor(paste("Sim", match(samps, unique(samps))))
+    sampled_sim <- sample(
+      1:max(preds_long$samps),
+      size = max_sims,
+      replace = FALSE
       )
+    sims_long <-
+      preds_long |>
+      dplyr::filter(samps %in% sampled_sim) |>
+      dplyr::mutate(sim = factor(paste("Sim", match(samps, unique(samps)))))
     sim_num <- as.numeric(gsub("Sim ", "", unique(sims_long$sim)))
-    sims_long$sim <- factor(sims_long$sim , levels = unique(sims_long$sim)[order(sim_num)])
-    # Create the stochastic plot
-    p <- ggplot2::ggplot(sims_long, ggplot2::aes(x = time, y = est, color = response, linetype = response)) +
+    sims_long$sim <-
+      factor(sims_long$sim, levels = unique(sims_long$sim)[order(sim_num)])
+    # create the stochastic plot
+    p <-
+      ggplot2::ggplot(
+        sims_long,
+        ggplot2::aes(
+          x = time,
+          y = est,
+          color = response,
+          linetype = response
+          )
+        ) +
       ggplot2::geom_line(size = 1) +
       ggplot2::facet_wrap(~ sim, ncol = 5) +
       ggplot2::theme_minimal(base_size = 14) +

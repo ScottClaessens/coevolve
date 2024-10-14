@@ -89,11 +89,12 @@ epreds <- coev_pred_series(
   eta_anc = list(political_authority = -2, religious_authority = 1.5)
   )
 
-#' # expected trait co-evolution under intervention, no drift
+# expected trait co-evolution under intervention, no drift
 epreds_intervention <- coev_pred_series(
   object = fit,
   stochastic = FALSE,
-  intervention_values = list(political_authority = NA, religious_authority = 1.5)
+  intervention_values = list(political_authority = NA,
+                             religious_authority = 1.5)
   )
 }
 
