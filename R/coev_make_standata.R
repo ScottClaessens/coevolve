@@ -13,8 +13,8 @@
 #'   Must identify at least two variables. Variable names must refer to valid
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{negative_binomial_softplus} and
-#'   \code{normal}.
+#'   \code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal},
+#'   and \code{negative_binomial_softplus}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -48,21 +48,21 @@
 #'   intercepts (\code{b}), the ancestral states for the traits
 #'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 #'   overdispersion parameters for negative binomial variables (\code{phi}),
+#'   the degrees of freedom parameters for Student t variables (\code{nu}),
 #'   the sigma parameters for Gaussian Processes over locations
 #'   (\code{sigma_dist}), the rho parameters for Gaussian Processes over
 #'   locations (\code{rho_dist}), the standard deviation parameters for
 #'   non-phylogenetic group-level varying effects (\code{sigma_group}), and the
 #'   Cholesky factor for the non-phylogenetic group-level correlation matrix
 #'   (\code{L_group}). These must be entered with valid prior strings, e.g.
-#'   \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
-#'   an error when the function internally checks the syntax of resulting Stan
-#'   code.
-#' @param scale Logical. If \code{TRUE} (default), continuous variables
-#'   following the \code{normal} response distribution are standardised before
-#'   fitting the model. This approach is recommended when using default priors
-#'   to improve efficiency and ensure accurate inferences. If \code{FALSE},
-#'   variables are left unstandardised for model fitting. In this case, users
-#'   should take care to set sensible priors on variables.
+#'   \code{list(A_offdiag = "normal(0, 2)")}.
+#' @param scale Logical. If \code{TRUE} (default), continuous and positive real
+#'   variables following the \code{normal}, \code{student_t}, and
+#'   \code{lognormal} response distributions are standardised before fitting the
+#'   model. This approach is recommended when using default priors to improve
+#'   efficiency and ensure accurate inferences. If \code{FALSE}, variables are
+#'   left unstandardised for model fitting. In this case, users should take care
+#'   to set sensible priors on variables.
 #' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
 #'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
@@ -119,9 +119,9 @@ coev_make_standata <- function(data, variables, id, tree,
   if (!scale) {
     warning2(
       paste0(
-        "When scale = FALSE, continuous variables are left unstandardised in ",
-        "the Stan data list. Users should take care to set sensible priors ",
-        "for model fitting, rather than use default priors."
+        "When scale = FALSE, continuous and positive real variables are left ",
+        "unstandardised in the Stan data list. Users should take care to set ",
+        "sensible priors for model fitting, rather than use default priors."
       )
     )
   }
@@ -208,9 +208,13 @@ coev_make_standata <- function(data, variables, id, tree,
   # get data matrix
   y <- list()
   for (j in 1:length(variables)) {
-    if (scale & variables[[j]] == "normal") {
+    if (scale & variables[[j]] %in% c("normal", "student_t")) {
       # standardised continuous variables
       y[[names(variables)[j]]] <- as.numeric(scale(data[,names(variables)[j]]))
+    } else if (scale & variables[[j]] == "lognormal") {
+      # standardised positive reals
+      y[[names(variables)[j]]] <-
+        as.numeric(exp(scale(log(data[,names(variables)[j]]))))
     } else {
       # unstandardised and binary/ordered/count variables
       y[[names(variables)[j]]] <- as.numeric(data[,names(variables)[j]])

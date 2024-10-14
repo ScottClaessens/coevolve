@@ -7,6 +7,7 @@
 coev_pred_series(
   object,
   eta_anc = NULL,
+  intervention_values = NULL,
   tmax = 1,
   ntimes = 30,
   ndraws = NULL,
@@ -18,9 +19,20 @@ coev_pred_series(
 
 \item{eta_anc}{If \code{NULL} (default), the starting values for the latent
 states \eqn{\eta} will be set to the estimated ancestral states at the
-root from the \code{coevfit} model. Otherwise, a named numeric vector with
+root from the \code{coevfit} model. Otherwise, a named list with
 length equal to the number of variables specifying the initial \eqn{\eta}
-values. All variable names must be included in this vector.}
+values. All variable names must be included in this list.}
+
+\item{intervention_values}{Either \code{NULL} (the default) or a named list
+of variables and associated intervention values. If \code{NULL}, all trats
+are free to vary. Otherwise, all coevolving variables must be
+declared separately in the named list without repetition. If the
+intervention value for a particular variable is set to NA, this variable is
+treated as a free variable. If the intervention value for a particular
+variable is specified, the variable is held constant at this trait value in
+the calculation. At least one variable must be declared as a free variable
+and at least one variable must be held constant (e.g.,
+\code{list(var1 = NA, var2 = 0)}).}
 
 \item{tmax}{A positive number indicating the total duration of time for which
 to predict. Set to 1 by default, corresponding to the entire time depth of
@@ -35,7 +47,8 @@ default and maximum number of draws is the size of the posterior sample.}
 
 \item{stochastic}{Logical (defaults to \code{FALSE}); indicator of whether
 predictions should include only the expected co-evolutionary change
-due to deterministic selection (FALSE) or also stochastic drift (TRUE).}
+due to deterministic selection (FALSE) or also stochastic drift (TRUE).
+Incompatible with the 'intervention_values' argument.}
 }
 \value{
 An [ndraw, ntimes, nvariables] array of predicted \eqn{\eta}
@@ -69,11 +82,19 @@ sims <- coev_pred_series(
   stochastic = TRUE
   )
 
-# expected trait co-evolution, no drift, specify ancestral states (initial values)
+# expected trait co-evolution, no drift
 epreds <- coev_pred_series(
   object = fit,
   stochastic = FALSE,
-  eta_anc = c("political_authority" = -2, "religious_authority" = 1.5)
+  eta_anc = list(political_authority = -2, religious_authority = 1.5)
+  )
+
+# expected trait co-evolution under intervention, no drift
+epreds_intervention <- coev_pred_series(
+  object = fit,
+  stochastic = FALSE,
+  intervention_values = list(political_authority = NA,
+                             religious_authority = 1.5)
   )
 }
 

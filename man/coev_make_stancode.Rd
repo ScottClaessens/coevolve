@@ -28,8 +28,8 @@ the model and their associated response distributions as character strings
 Must identify at least two variables. Variable names must refer to valid
 column names in data. Currently, the only supported response distributions
 are \code{bernoulli_logit}, \code{ordered_logistic},
-\code{poisson_softplus}, \code{negative_binomial_softplus} and
-\code{normal}.}
+\code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal},
+and \code{negative_binomial_softplus}.}
 
 \item{id}{A character of length one identifying the variable in the data that
 links rows to tips on the phylogeny. Must refer to a valid column name in
@@ -69,6 +69,7 @@ the drift std. dev. parameters (\code{Q_sigma}), the continuous time
 intercepts (\code{b}), the ancestral states for the traits
 (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 overdispersion parameters for negative binomial variables (\code{phi}),
+the degrees of freedom parameters for Student t variables (\code{nu}),
 the sigma parameters for Gaussian Processes over locations
 (\code{sigma_dist}), the rho parameters for Gaussian Processes over
 locations (\code{rho_dist}), the standard deviation parameters for
@@ -79,12 +80,13 @@ Cholesky factor for the non-phylogenetic group-level correlation matrix
 an error when the function internally checks the syntax of resulting Stan
 code.}
 
-\item{scale}{Logical. If \code{TRUE} (default), continuous variables
-following the \code{normal} response distribution are standardised before
-fitting the model. This approach is recommended when using default priors
-to improve efficiency and ensure accurate inferences. If \code{FALSE},
-variables are left unstandardised for model fitting. In this case, users
-should take care to set sensible priors on variables.}
+\item{scale}{Logical. If \code{TRUE} (default), continuous and positive real
+variables following the \code{normal}, \code{student_t}, and
+\code{lognormal} response distributions are standardised before fitting the
+model. This approach is recommended when using default priors to improve
+efficiency and ensure accurate inferences. If \code{FALSE}, variables are
+left unstandardised for model fitting. In this case, users should take care
+to set sensible priors on variables.}
 
 \item{estimate_Q_offdiag}{Logical. If \code{TRUE} (default), the model
 estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated

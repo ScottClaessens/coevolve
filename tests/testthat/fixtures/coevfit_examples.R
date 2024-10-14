@@ -24,6 +24,7 @@ coevfit_example1 <-
   coev_fit(
     data = d,
     variables = list(
+      u = "student_t",
       v = "normal",
       w = "bernoulli_logit",
       x = "ordered_logistic",
@@ -34,8 +35,7 @@ coevfit_example1 <-
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
-    adapt_delta = 0.99,
-    seed = 12345
+    seed = 1
     )
 
 # fit model with distance matrix
@@ -54,8 +54,7 @@ coevfit_example2 <-
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
-    adapt_delta = 0.99,
-    seed = 12345
+    seed = 1
     )
 
 # fit prior only model
@@ -71,8 +70,7 @@ coevfit_example3 <-
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
-    adapt_delta = 0.99,
-    seed = 12345,
+    seed = 1,
     prior_only = TRUE
     )
 
@@ -89,8 +87,7 @@ coevfit_example4 <-
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
-    adapt_delta = 0.99,
-    seed = 12345
+    seed = 1
     )
 
 # fit model with effects matrix
@@ -115,8 +112,7 @@ coevfit_example5 <-
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
-    adapt_delta = 0.99,
-    seed = 12345
+    seed = 1
     )
 
 # fit model with missing data
@@ -134,8 +130,7 @@ coevfit_example6 <-
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
-    adapt_delta = 0.99,
-    seed = 12345
+    seed = 1
     )
 
 # fit model with repeated observations
@@ -156,8 +151,7 @@ coevfit_example7 <-
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
-    adapt_delta = 0.99,
-    seed = 12345
+    seed = 1
   )
 
 # fit model with multiPhylo object
@@ -179,8 +173,7 @@ coevfit_example8 <-
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
-    adapt_delta = 0.99,
-    seed = 12345
+    seed = 1
   )
 
 # set Q off diagonals to zero
@@ -203,8 +196,7 @@ coevfit_example9 <-
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
-    adapt_delta = 0.99,
-    seed = 12345
+    seed = 1,
   )
 
 # update cmdstanr file locations

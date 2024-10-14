@@ -20,8 +20,8 @@
 #'   Must identify at least two variables. Variable names must refer to valid
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{negative_binomial_softplus} and
-#'   \code{normal}.
+#'   \code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal},
+#'   and \code{negative_binomial_softplus}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -55,6 +55,7 @@
 #'   intercepts (\code{b}), the ancestral states for the traits
 #'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 #'   overdispersion parameters for negative binomial variables (\code{phi}),
+#'   the degrees of freedom parameters for Student t variables (\code{nu}),
 #'   the sigma parameters for Gaussian Processes over locations
 #'   (\code{sigma_dist}), the rho parameters for Gaussian Processes over
 #'   locations (\code{rho_dist}), the standard deviation parameters for
@@ -64,12 +65,13 @@
 #'   \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
 #'   an error when the function internally checks the syntax of resulting Stan
 #'   code.
-#' @param scale Logical. If \code{TRUE} (default), continuous variables
-#'   following the \code{normal} response distribution are standardised before
-#'   fitting the model. This approach is recommended when using default priors
-#'   to improve efficiency and ensure accurate inferences. If \code{FALSE},
-#'   variables are left unstandardised for model fitting. In this case, users
-#'   should take care to set sensible priors on variables.
+#' @param scale Logical. If \code{TRUE} (default), continuous and positive real
+#'   variables following the \code{normal}, \code{student_t}, and
+#'   \code{lognormal} response distributions are standardised before fitting the
+#'   model. This approach is recommended when using default priors to improve
+#'   efficiency and ensure accurate inferences. If \code{FALSE}, variables are
+#'   left unstandardised for model fitting. In this case, users should take care
+#'   to set sensible priors on variables.
 #' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
 #'   estimates the off-diagonals for the \eqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \eqn{Q} drift matrix
@@ -94,8 +96,8 @@
 #'   distributions. For example: \code{list(x = "bernoulli_logit", y =
 #'   "ordered_logistic")}. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{negative_binomial_softplus}, and
-#'   \code{normal}.
+#'   \code{poisson_softplus}, \code{normal}, \code{student_t}, \code{lognormal},
+#'   and \code{negative_binomial_softplus}.
 #'
 #'   \bold{Default prior distributions}
 #'
@@ -112,6 +114,7 @@
 #'   - \code{b} (continuous time intercepts) = \code{std_normal()}
 #'   - \code{eta_anc} (trait ancestral states) = \code{std_normal()}
 #'   - \code{c} (ordinal cutpoints) = \code{normal(0, 2)}
+#'   - \code{nu} (Student t degrees of freedom) = \code{gamma(2, 0.1)}
 #'   - \code{sigma_dist} (sigma for Gaussian process over locations) =
 #'   \code{exponential(1)}
 #'   - \code{rho_dist} (rho for Gaussian process over locations) =

@@ -25,23 +25,27 @@ test_that("coev_pred_series() produces expected errors and output", {
     fixed = TRUE
   )
   expect_error(
-    coev_pred_series(object = m1, eta_anc = c(1, "LCA")),
+    coev_pred_series(
+      object = m1,
+      eta_anc = list(x = "LCA", u = 0, y = 0, v = 0, w = 0)
+      ),
     paste0(
-      "Argument 'eta_anc' must be numeric and equal in length to the number ",
-      "of variables."
+      "Values in 'eta_anc' must each be numeric."
     ),
     fixed = TRUE
   )
   expect_error(
     coev_pred_series(object = m2, eta_anc = c(1, 2)),
-    "Argument 'eta_anc' is not a named vector.",
+    "Argument 'eta_anc' is not a named list",
     fixed = TRUE
   )
   expect_error(
-    coev_pred_series(object = m2, eta_anc = c("a" = 1, "b" = 2)),
+    coev_pred_series(
+      object = m1,
+      eta_anc = list(var1 = 0, y = 0, v = 0, w = 0)
+      ),
     paste0(
-      "Argument 'eta_anc' has names different to the variables included ",
-      "in the model."
+      "At least one variable in 'eta_anc' is not included in the fitted model."
     ),
     fixed = TRUE
   )
@@ -52,7 +56,7 @@ test_that("coev_pred_series() produces expected errors and output", {
   )
   expect_error(
     coev_pred_series(object = m1, ndraws = "fail"),
-    "Argument 'ndraws' must be a single integer.",
+    "Argument 'ndraws' must be numeric.",
     fixed = TRUE
   )
   expect_error(
@@ -102,4 +106,22 @@ test_that("coev_pred_series() produces expected errors and output", {
   expect_no_error(SW(coev_pred_series(m7, ndraws = 1L)))
   expect_no_error(SW(coev_pred_series(m8, ndraws = 1L)))
   expect_no_error(SW(coev_pred_series(m9, ndraws = 1L)))
+  expect_no_error(SW(coev_pred_series(m1, intervention_values = list(u = NA, v = 0, w = 0, x = 0, y = 0))))
+  expect_no_error(SW(coev_pred_series(m2, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_pred_series(m3, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_pred_series(m4, intervention_values = list(y = NA, z = 0))))
+  expect_no_error(SW(coev_pred_series(m5, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_pred_series(m6, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_pred_series(m7, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_pred_series(m8, intervention_values = list(x = NA, y = 0))))
+  expect_no_error(SW(coev_pred_series(m9, intervention_values = list(x = NA, y = 0))))
+  expect_no_error(SW(coev_pred_series(m1, eta_anc = list(u = 0, v = 0, w = 0, x = 0, y = 0))))
+  expect_no_error(SW(coev_pred_series(m2, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_pred_series(m3, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_pred_series(m4, eta_anc = list(y = 0, z = 0))))
+  expect_no_error(SW(coev_pred_series(m5, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_pred_series(m6, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_pred_series(m7, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_pred_series(m8, eta_anc = list(x = 0, y = 0))))
+  expect_no_error(SW(coev_pred_series(m9, eta_anc = list(x = 0, y = 0))))
 })

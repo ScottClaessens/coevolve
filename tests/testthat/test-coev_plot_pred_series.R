@@ -21,12 +21,15 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   # expect the following errors
   expect_error(
     coev_plot_pred_series(object = "fail"),
-    "Argument 'object' must be a fitted coevolutionary model of class coevfit.",
+    paste0(
+      "Argument 'object' must be a fitted coevolutionary model of class ",
+      "'coevfit'."
+      ),
     fixed = TRUE
   )
   expect_error(
     coev_plot_pred_series(object = m1, prob = 95),
-    "Argument 'prob' is not between 0 and 1.",
+    "Argument 'prob' must be a single numeric value between 0 and 1.",
     fixed = TRUE
   )
   # suppress warnings
@@ -59,6 +62,25 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   expect_no_error(SW(coev_plot_pred_series(m7, ndraws = 1L)))
   expect_no_error(SW(coev_plot_pred_series(m8, ndraws = 1L)))
   expect_no_error(SW(coev_plot_pred_series(m9, ndraws = 1L)))
+  expect_no_error(SW(coev_plot_pred_series(m1, intervention_values = list(u = NA, v = 0, w = 0, x = 0, y = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m2, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m3, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m4, intervention_values = list(y = NA, z = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m5, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m6, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m7, intervention_values = list(w = NA, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m8, intervention_values = list(x = NA, y = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m9, intervention_values = list(x = NA, y = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m1, eta_anc = list(u = 0, v = 0, w = 0, x = 0, y = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m2, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m3, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m4, eta_anc = list(y = 0, z = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m5, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m6, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m7, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m8, eta_anc = list(x = 0, y = 0))))
+  expect_no_error(SW(coev_plot_pred_series(m9, eta_anc = list(x = 0, y = 0))))
+  expect_true(methods::is(SW(coev_plot_pred_series(m1)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_pred_series(m1)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_pred_series(m2)), "ggplot"))
   expect_true(methods::is(SW(coev_plot_pred_series(m3)), "ggplot"))
