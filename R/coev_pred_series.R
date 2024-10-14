@@ -169,7 +169,7 @@ coev_pred_series <- function(object, eta_anc = NULL, tmax = 1, ntimes = 30,
     b <- post$b[i,]
     # drift parameters
     Q_inf <- post$Q_inf[i,,]
-    VCV <- Q_inf - ((A) %*% Q_inf %*% t(A))
+    VCV <- Q_inf - ((A_delta) %*% Q_inf %*% t(A_delta))
     chol_VCV <- t(chol(Matrix::nearPD(VCV)$mat))
     # calculate predictions over time
     for (t in 1:ntimes) {
