@@ -367,7 +367,7 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
       # add drift if stochastic
       if (stochastic == TRUE) {
         preds_free <-
-          preds_free + (chol_VCV %*% rnorm(length(free_indices), 0, 1))
+          preds_free + (chol_VCV %*% stats::rnorm(length(free_indices), 0, 1))
       }
       # update preds for the next time point
       preds[i, t + 1, free_indices] <- preds_free

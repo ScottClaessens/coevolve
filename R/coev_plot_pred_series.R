@@ -75,7 +75,7 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
   # convert default_args to a list with their default values
   default_args <- as.list(default_args)
   # combine user arguments with defaults, giving precedence to user arguments
-  combined_args <- modifyList(default_args, user_args)
+  combined_args <- utils::modifyList(default_args, user_args)
   # ensure 'object' is set
   combined_args$object <- object
   # call coev_pred_series with combined arguments
@@ -106,13 +106,13 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
   preds_long <- preds |>
     as.data.frame.table(responseName = "est") |>
     tidyr::pivot_longer(
-      cols = -c(samps, time, response),
+      cols = -c(.data$samps, .data$time, .data$response),
       names_to = NULL,
       values_to = "est"
     ) |>
     dplyr::mutate(
-      samps = as.numeric(as.character(samps)),
-      time = as.numeric(as.character(time))
+      samps = as.numeric(as.character(.data$samps)),
+      time = as.numeric(as.character(.data$time))
     )
   # for deterministic predictions
   if (combined_args$stochastic == FALSE) {
@@ -121,11 +121,11 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
     # summarize mean and confidence intervals for each response and time
     epreds_summary <-
       preds_long |>
-      dplyr::group_by(response, time) |>
+      dplyr::group_by(.data$response, .data$time) |>
       dplyr::summarise(
-        mean = mean(est, na.rm = TRUE),
-        lower_CI = stats::quantile(est, probs[1], na.rm = TRUE),
-        upper_CI = stats::quantile(est, probs[2], na.rm = TRUE),
+        mean = mean(.data$est, na.rm = TRUE),
+        lower_CI = stats::quantile(.data$est, probs[1], na.rm = TRUE),
+        upper_CI = stats::quantile(.data$est, probs[2], na.rm = TRUE),
         .groups = "drop"
       )
     title <- "Expected trait coevolution"
@@ -144,18 +144,18 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
       ggplot2::ggplot(
         epreds_summary,
         ggplot2::aes(
-          x = time,
-          y = mean,
-          color = response,
-          fill = response,
-          linetype = response
+          x = .data$time,
+          y = .data$mean,
+          color = .data$response,
+          fill = .data$response,
+          linetype = .data$response
           )
         ) +
       ggplot2::geom_line(size = 1) +
       ggplot2::geom_ribbon(
         ggplot2::aes(
-          ymin = lower_CI,
-          ymax = upper_CI
+          ymin = .data$lower_CI,
+          ymax = .data$upper_CI
           ),
         alpha = 0.25,
         color = NA
@@ -186,8 +186,10 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
       )
     sims_long <-
       preds_long |>
-      dplyr::filter(samps %in% sampled_sim) |>
-      dplyr::mutate(sim = factor(paste("Sim", match(samps, unique(samps)))))
+      dplyr::filter(.data$samps %in% sampled_sim) |>
+      dplyr::mutate(
+        sim = factor(paste("Sim", match(.data$samps, unique(.data$samps))))
+        )
     sim_num <- as.numeric(gsub("Sim ", "", unique(sims_long$sim)))
     sims_long$sim <-
       factor(sims_long$sim, levels = unique(sims_long$sim)[order(sim_num)])
@@ -196,10 +198,10 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
       ggplot2::ggplot(
         sims_long,
         ggplot2::aes(
-          x = time,
-          y = est,
-          color = response,
-          linetype = response
+          x = .data$time,
+          y = .data$est,
+          color = .data$response,
+          linetype = .data$response
           )
         ) +
       ggplot2::geom_line(size = 1) +

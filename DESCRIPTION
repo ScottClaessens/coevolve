@@ -29,7 +29,6 @@ Imports:
     bayesplot,
     cmdstanr,
     colorspace,
-    cubelyr,
     dplyr,
     ggplot2,
     Matrix,

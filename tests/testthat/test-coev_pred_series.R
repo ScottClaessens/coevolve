@@ -27,7 +27,7 @@ test_that("coev_pred_series() produces expected errors and output", {
   expect_error(
     coev_pred_series(
       object = m1,
-      eta_anc = list(x = "LCA", u = 0, y = 0, v = 0, w = 0)
+      eta_anc = list(x = "LCA", y = 0, v = 0, w = 0)
       ),
     paste0(
       "Values in 'eta_anc' must each be numeric."
@@ -106,7 +106,7 @@ test_that("coev_pred_series() produces expected errors and output", {
   expect_no_error(SW(coev_pred_series(m7, ndraws = 1L)))
   expect_no_error(SW(coev_pred_series(m8, ndraws = 1L)))
   expect_no_error(SW(coev_pred_series(m9, ndraws = 1L)))
-  expect_no_error(SW(coev_pred_series(m1, intervention_values = list(u = NA, v = 0, w = 0, x = 0, y = 0))))
+  expect_no_error(SW(coev_pred_series(m1, intervention_values = list(v = NA, w = 0, x = 0, y = 0))))
   expect_no_error(SW(coev_pred_series(m2, intervention_values = list(w = NA, x = 0))))
   expect_no_error(SW(coev_pred_series(m3, intervention_values = list(w = NA, x = 0))))
   expect_no_error(SW(coev_pred_series(m4, intervention_values = list(y = NA, z = 0))))
@@ -115,7 +115,7 @@ test_that("coev_pred_series() produces expected errors and output", {
   expect_no_error(SW(coev_pred_series(m7, intervention_values = list(w = NA, x = 0))))
   expect_no_error(SW(coev_pred_series(m8, intervention_values = list(x = NA, y = 0))))
   expect_no_error(SW(coev_pred_series(m9, intervention_values = list(x = NA, y = 0))))
-  expect_no_error(SW(coev_pred_series(m1, eta_anc = list(u = 0, v = 0, w = 0, x = 0, y = 0))))
+  expect_no_error(SW(coev_pred_series(m1, eta_anc = list(v = 0, w = 0, x = 0, y = 0))))
   expect_no_error(SW(coev_pred_series(m2, eta_anc = list(w = 0, x = 0))))
   expect_no_error(SW(coev_pred_series(m3, eta_anc = list(w = 0, x = 0))))
   expect_no_error(SW(coev_pred_series(m4, eta_anc = list(y = 0, z = 0))))
