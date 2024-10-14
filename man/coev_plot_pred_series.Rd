@@ -53,7 +53,8 @@ coev_plot_pred_series(
 # expected trait co-evolution, no drift
 coev_plot_pred_series(
   object = fit,
-  stochastic = FALSE
+  stochastic = FALSE,
+  eta_anc = list(political_authority = -2, religious_authority = 1.5)
   )
 }
 
@@ -62,6 +63,6 @@ coev_plot_pred_series(
 \code{\link{coev_pred_series}}
 }
 \author{
-Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
-\email{erikjacob.ringen@uzh.ch}
+Scott Claessens \email{scott.claessens@gmail.com},
+Erik Ringen \email{erikjacob.ringen@uzh.ch}
 }

@@ -7,9 +7,19 @@
 #' @param object An object of class \code{coevfit}
 #' @param eta_anc If \code{NULL} (default), the starting values for the latent
 #'   states \eqn{\eta} will be set to the estimated ancestral states at the
-#'   root from the \code{coevfit} model. Otherwise, a named numeric vector with
+#'   root from the \code{coevfit} model. Otherwise, a named list with
 #'   length equal to the number of variables specifying the initial \eqn{\eta}
-#'   values. All variable names must be included in this vector.
+#'   values. All variable names must be included in this list.
+#' @param intervention_values Either \code{NULL} (the default) or a named list
+#'   of variables and associated intervention values. If \code{NULL}, all trats
+#'   are free to vary. Otherwise, all coevolving variables must be
+#'   declared separately in the named list without repetition. If the
+#'   intervention value for a particular variable is set to NA, this variable is
+#'   treated as a free variable. If the intervention value for a particular
+#'   variable is specified, the variable is held constant at this trait value in
+#'   the calculation. At least one variable must be declared as a free variable
+#'   and at least one variable must be held constant (e.g.,
+#'   \code{list(var1 = NA, var2 = 0)}).
 #' @param tmax A positive number indicating the total duration of time for which
 #'   to predict. Set to 1 by default, corresponding to the entire time depth of
 #'   the original phylogenetic tree(s).
@@ -21,6 +31,7 @@
 #' @param stochastic Logical (defaults to \code{FALSE}); indicator of whether
 #'   predictions should include only the expected co-evolutionary change
 #'   due to deterministic selection (FALSE) or also stochastic drift (TRUE).
+#'   Incompatible with the 'intervention_values' argument.
 #'
 #' @return An \[ndraw, ntimes, nvariables\] array of predicted \eqn{\eta}
 #'   values.
@@ -56,131 +67,325 @@
 #' # expected trait co-evolution, no drift
 #' epreds <- coev_pred_series(
 #'   object = fit,
-#'   stochastic = FALSE
+#'   stochastic = FALSE,
+#'   eta_anc = list(political_authority = -2, religious_authority = 1.5)
+#'   )
+#' 
+#' #' # expected trait co-evolution under intervention, no drift
+#' epreds_intervention <- coev_pred_series(
+#'   object = fit,
+#'   stochastic = FALSE,
+#'   intervention_values = list(political_authority = NA, religious_authority = 1.5)
 #'   )
 #' }
 #'
 #' @export
-coev_pred_series <- function(object, eta_anc = NULL, tmax = 1, ntimes = 30,
+coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL, tmax = 1, ntimes = 30,
                              ndraws = NULL, stochastic = FALSE) {
-  # stop if object is not of class coevfit
-  if (!methods::is(object, "coevfit")) {
+ # stop if object is not of class coevfit
+ if (!methods::is(object, "coevfit")) {
+  stop2(
+    paste0(
+      "Argument 'object' must be a fitted coevolutionary model of class ",
+      "coevfit."
+    )
+  )
+}
+if (!is.null(eta_anc)) {
+  # stop if eta_anc argument is not a named list
+  if (!is.list(eta_anc) | is.null(names(eta_anc))) {
+    stop2("Argument 'eta_anc' is not a named list.")
+  }
+  # stop if eta_anc contains variables not included in the model
+  if (!all(names(eta_anc) %in% names(object$variables))) {
     stop2(
       paste0(
-        "Argument 'object' must be a fitted coevolutionary model of class ",
-        "coevfit."
-        )
+        "At least one variable in 'eta_anc' is not included in ",
+        "the fitted model."
       )
+    )
   }
-  if (!is.null(eta_anc)) {
-    # stop if eta_anc is neither NULL nor
-    # a named vector of length equal to the number of variables
-    if (!is.numeric(eta_anc) | length(eta_anc) != length(object$variables)) {
-        stop2(
-          paste0(
-            "Argument 'eta_anc' must be numeric and equal in length to the ",
-            "number of variables."
-          )
-        )
-    }
-    # stop if eta_anc is not a named vector
-    if (is.null(names(eta_anc))) {
-      stop2("Argument 'eta_anc' is not a named vector.")
-    }
-    # stop if eta_anc does not have names equal to variables in the model
-    if (!identical(sort(names(eta_anc)), sort(names(object$variables)))) {
-      stop2(
-        paste0(
-          "Argument 'eta_anc' has names different to the variables included ",
-          "in the model."
-        )
+  # stop if any coevolving variables are not listed in eta_anc
+  if (any(!(names(object$variables) %in% names(eta_anc)))) {
+    stop2(
+      paste0(
+        "All coevolving variables must be included in ",
+        "argument 'eta_anc'."
       )
-    }
+    )
   }
-  # stop if tmax is not numeric or not positive
-  if (!is.numeric(tmax) | length(tmax) != 1) {
-    stop2("Argument 'tmax' must be a single numeric value.")
-  } else if (tmax <= 0) {
-    stop2("Argument 'tmax' must be positive.")
+  # stop if repetition in eta_anc
+  if (any(duplicated(names(eta_anc)))) {
+    stop2(
+      "Argument 'eta_anc' contains duplicated variable names."
+    )
   }
-  # stop if ndraws is not a single integer between 1 and the total num draws
-  if (!is.null(ndraws)) {
-    if (!is.integer(ndraws) | length(ndraws) != 1) {
-      stop2("Argument 'ndraws' must be a single integer.")
-    } else if (ndraws < 1 | ndraws > nrow(object$fit$draws())) {
-      stop2(
-        "Argument 'ndraws' must be between 1 and the total number of draws."
-        )
-    }
+  # stop if any values in eta_anc are not of length one
+  if (any(unlist(lapply(eta_anc, length)) != 1)) {
+    stop2("Values in 'eta_anc' must each be of length one.")
   }
-  # stop if stochastic not logical
-  if (!is.logical(stochastic)) {
-    stop2("Argument 'stochastic' must be logical.")
+  # stop if any values in eta_anc are not numeric
+  if (any(unlist(lapply(eta_anc,
+                        function(x) !is.numeric(x))))) {
+    stop2("Values in 'eta_anc' must each be numeric.")
   }
-  # get posterior samples and number of variables
-  post <- extract_samples(object)
-  J <- length(object$variables)
-  # get eta_anc in the correct order
-  eta_anc <- eta_anc[names(object$variables)]
-  # get number of samples
-  nsamps <- ifelse(is.null(ndraws), length(post$lp__), ndraws)
-  # initialise empty array for predictions
-  preds <-
-    array(
-      NA,
-      dim = c(nsamps, ntimes + 1, J),
-      dimnames = list(
-        samps = 1:nsamps,
-        time = 1:(ntimes + 1),
-        response = names(object$variables)
-        )
+}
+# stop if tmax is not numeric or not positive
+if (!is.numeric(tmax) | length(tmax) != 1) {
+  stop2("Argument 'tmax' must be a single numeric value.")
+} else if (tmax <= 0) {
+  stop2("Argument 'tmax' must be positive.")
+}
+# stop if ndraws is not a single integer between 1 and the total num draws
+if (!is.null(ndraws)) {
+  if (!is.numeric(ndraws)) {
+    stop2("Argument 'ndraws' must be numeric.")
+  } else if (!all(as.integer(ndraws) == ndraws)| length(ndraws) != 1) {
+    stop2("Argument 'ndraws' must be a single integer.")
+  } else if (ndraws < 1 | ndraws > nrow(object$fit$draws())) {
+    stop2(
+      "Argument 'ndraws' must be between 1 and the total number of draws."
+    )
+  }
+}
+# stop if stochastic not logical
+if (!is.logical(stochastic)) {
+  stop2("Argument 'stochastic' must be logical.")
+}
+
+if (!is.null(intervention_values)) {
+  # stop if stochastic and intervention
+  if (stochastic == TRUE) {
+    stop2("Argument 'stochastic' cannot be `TRUE` when intervention_values are set.")
+  }
+  # stop if intervention_values argument is not a named list
+  if (!is.list(intervention_values) | is.null(names(intervention_values))) {
+    stop2("Argument 'intervention_values' is not a named list.")
+  }
+  # stop if intervention_values contains variables not included in the model
+  if (!all(names(intervention_values) %in% names(object$variables))) {
+    stop2(
+      paste0(
+        "At least one variable in 'intervention_values' is not included in ",
+        "the fitted model."
       )
-  # if user defined ancestral states
-  # otherwise, use model inferred ancestral states
-  if (!is.null(eta_anc)) {
-    for (i in 1:nsamps) preds[i, 1, ] = eta_anc
-  } else {
-    # set posterior ancestral states
-    eta_anc_long <- post$eta_anc
-    ntrees <- dim(eta_anc_long)[2]
-    # shuffle dimensions of tree dimension to get random draws
-    eta_anc_long <-
-      eta_anc_long[, sample(1:ntrees, size = ntrees, replace = FALSE), ]
-    if (ntrees > 1) {
-      # make into 2d matrix by stacking trees
-      eta_anc_long2 <- eta_anc_long[, 1, ]
-      for (t in 2:ntrees) {
-        eta_anc_long2 <- rbind(eta_anc_long2, eta_anc_long[,t,])
-        eta_anc_long <- eta_anc_long2
-      }
-    }
-    for (i in 1:nsamps) {
-      preds[i, 1, ] = eta_anc_long[i, ]
-    }
+    )
   }
-  # calculate predictions
+  # stop if any coevolving variables are not listed in intervention_values
+  if (any(!(names(object$variables) %in% names(intervention_values)))) {
+    stop2(
+      paste0(
+        "All coevolving variables must be included in ",
+        "argument 'intervention_values'."
+      )
+    )
+  }
+  # stop if repetition in intervention_values
+  if (any(duplicated(names(intervention_values)))) {
+    stop2(
+      "Argument 'intervention_values' contains duplicated variable names."
+    )
+  }
+  # stop if any values in intervention_values are not of length one
+  if (any(unlist(lapply(intervention_values, length)) != 1)) {
+    stop2("Values in 'intervention_values' must each be of length one.")
+  }
+  # stop if any values in intervention_values are not NA or numeric
+  if (any(unlist(lapply(intervention_values,
+                        function(x) !is.na(x) & !is.numeric(x))))) {
+    stop2("Values in 'intervention_values' must each be NA or numeric.")
+  }
+  # stop if all variables are held constant in intervention_values
+  if (mean(is.na(intervention_values)) == 0) {
+    stop2(
+      paste0(
+        "Argument 'intervention_values' must have at least one NA value ",
+        "declaring a free variable. If all variables are held constant, the ",
+        "system is already at equilibrium and there is nothing to compute."
+      )
+    )
+  }
+  # stop if all variables in intervention_values are free (all NA)
+  if (mean(is.na(intervention_values)) == 1) {
+    stop2(
+      paste0(
+        "Argument 'intervention_values' must have at least one variable ",
+        "held constant (i.e., not all values are NA)."
+      )
+    )
+  }
+}
+# get posterior samples and number of variables
+post <- extract_samples(object)
+J <- length(object$variables)
+# get number of samples
+nsamps <- ifelse(is.null(ndraws), length(post$lp__), ndraws)
+# initialize empty array for predictions
+preds <-
+array(
+  NA,
+  dim = c(nsamps, ntimes + 1, J),
+  dimnames = list(
+    samps = 1:nsamps,
+    time = 1:(ntimes + 1),
+    response = names(object$variables)
+  )
+)
+
+# Handle intervention_values
+if (!is.null(intervention_values)) {
+# Construct intervention values vector x_hat
+x_hat <- unlist(intervention_values[names(object$variables)])
+# Partition indices into held and free variables
+held_indices <- which(!is.na(x_hat))
+free_indices <- which(is.na(x_hat))
+# Check if there is at least one free variable
+if (length(free_indices) == 0) {
+  stop2(
+    paste0(
+      "At least one variable must be declared as a free variable ",
+      "(with NA in 'intervention_values')."
+    )
+  )
+}
+} 
+else {
+# All variables are free
+x_hat <- rep(NA, J)
+held_indices <- integer(0)
+free_indices <- 1:J
+}
+  
+if (is.null(intervention_values)) {
+  initial_values = rep(NA, J)
+} else {
+    initial_values = unlist(intervention_values[names(object$variables)])
+}
+# Handle eta_anc
+if (!is.null(eta_anc)) {
+# User provided initial values
+eta_anc <- unlist(eta_anc[names(object$variables)])
+# Check for conflicts between eta_anc and intervention_values
+conflicting_vars <- intersect(names(eta_anc)[!is.na(eta_anc)], names(x_hat)[!is.na(x_hat)])
+if (length(conflicting_vars) > 0) {
+  message(
+    paste0(
+      "Note: For variable(s) ",
+      paste(conflicting_vars, collapse = ", "),
+      ", both 'eta_anc' and 'intervention_values' specify non-NA values. ",
+      "The 'intervention_values' will take precedence for these variable(s)."
+    )
+  )
+  # Override eta_anc values for conflicting variables with intervention_values
+  eta_anc[conflicting_vars] <- x_hat[conflicting_vars]
+}
+# Set initial values for variables
+initial_values <- eta_anc
+} 
+
+# Get model inferred ancestral states, if necessary
+if (any(is.na(initial_values))) {
+# Use estimated ancestral states from the model
+eta_anc_long <- post$eta_anc
+ntrees <- dim(eta_anc_long)[2]
+# Shuffle dimensions of tree dimension to get random draws
+eta_anc_long <- eta_anc_long[, sample(1:ntrees, size = ntrees, replace = FALSE), ]
+if (ntrees > 1) {
+  # Make into 2D matrix by stacking trees
+  eta_anc_long2 <- eta_anc_long[, 1, ]
+  for (t in 2:ntrees) {
+    eta_anc_long2 <- rbind(eta_anc_long2, eta_anc_long[, t, ])
+  }
+  eta_anc_long <- eta_anc_long2
+}
+}
+
+for (j in 1:J) {
   for (i in 1:nsamps) {
-    # selection parameters
-    A <- post$A[i,,]
-    A_delta <- as.matrix(Matrix::expm(A * tmax / ntimes))
-    inv_A <- solve(A)
-    I <- diag(rep(1, J))
-    b <- post$b[i,]
-    # drift parameters
-    Q_inf <- post$Q_inf[i,,]
-    VCV <- Q_inf - ((A_delta) %*% Q_inf %*% t(A_delta))
-    chol_VCV <- t(chol(VCV))
-    # calculate predictions over time
-    for (t in 1:ntimes) {
-      preds[i, t + 1, ] <- (A_delta %*% preds[i, t, ] +
-                              (inv_A %*% (A_delta - I) %*% b))[,1]
-      # add drift
-      if (stochastic == TRUE) {
-        preds[i, t + 1, ] <-
-          preds[i, t + 1, ] + (chol_VCV %*% stats::rnorm(J, 0, 1))
+      if (is.na(initial_values[j])) { 
+        preds[i, 1, j] = eta_anc_long[i, j]
       }
+        else {
+        preds[i, 1, j] = initial_values[j]
+        }
+      }
+}
+
+# # For held variables, ensure they are set to intervention_values at all time steps
+# if (!is.null(intervention_values)) {
+#   preds[, , held_indices] <- x_hat[held_indices]
+# }
+
+# Iterate over each sample
+for (i in 1:nsamps) {
+  # Selection parameters for this sample
+  A <- post$A[i, , ]
+  b <- post$b[i, ]
+  
+  # Partition A and b into free and held
+  A_free_free <- A[free_indices, free_indices, drop = FALSE]
+  if (length(held_indices) > 0) {
+    A_free_held <- A[free_indices, held_indices, drop = FALSE]
+  } else {
+    A_free_held <- matrix(0, nrow = length(free_indices), ncol = 0)
+  }
+  b_free <- b[free_indices]
+  
+  # Compute c = A_free_held * x_hat_held + b_free
+  if (length(held_indices) > 0) {
+    c <- A_free_held %*% x_hat[held_indices] + b_free
+  } else {
+    c <- b_free
+  }
+  
+  # Compute A_delta_free_free and inv_A_free_free
+  A_delta_free_free <- as.matrix(Matrix::expm(A_free_free * tmax / ntimes))
+  
+  # Ensure A_free_free is square
+  if (nrow(A_free_free) != ncol(A_free_free)) {
+    stop2("Matrix A_free_free must be square.")
+  }
+  
+  # Invert A_free_free
+  inv_A_free_free <- tryCatch(
+    solve(A_free_free),
+    error = function(e) {
+      stop2("Matrix A_free_free is singular and cannot be inverted.")
+    }
+  )
+  
+  # Identity matrix
+  I_free_free <- diag(rep(1, length(free_indices)))
+  
+  # drift parameters, cannot be used in conjunction with intervention values (currently)
+  if (stochastic == TRUE) {
+    Q_inf <- post$Q_inf[i,,]
+    VCV <- Q_inf - ((A_delta_free_free) %*% Q_inf %*% t(A_delta_free_free))
+    chol_VCV <- t(chol(Matrix::nearPD(VCV)$mat))
+  }
+  
+  # Initialize preds_free with current state
+  preds_free <- preds[i, 1, free_indices]
+  
+  # Iterate over each time step
+  for (t in 1:ntimes) {
+    # Compute expected change for free variables
+    preds_free <- (A_delta_free_free %*% preds_free +
+                    (inv_A_free_free %*% (A_delta_free_free - I_free_free) %*% c))[, 1]
+    
+    # Add drift if stochastic
+    if (stochastic == TRUE) {
+      preds_free <- preds_free + (chol_VCV %*% rnorm(length(free_indices), 0, 1))
+    }
+    
+    # Update preds for the next time point
+    preds[i, t + 1, free_indices] <- preds_free
+    
+    # Set held variables to intervention values
+    if (length(held_indices) > 0) {
+      preds[i, t + 1, held_indices] <- x_hat[held_indices]
     }
   }
-  # shuffle draws to de-correlate when doing simulations
-  preds[sample(1:nsamps, size = nsamps, replace = FALSE), , ]
+  }
+  return(preds)
 }
