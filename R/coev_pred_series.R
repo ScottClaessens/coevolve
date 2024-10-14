@@ -231,7 +231,6 @@ array(
     response = names(object$variables)
   )
 )
-
 # Handle intervention_values
 if (!is.null(intervention_values)) {
 # Construct intervention values vector x_hat
@@ -254,8 +253,7 @@ else {
 x_hat <- rep(NA, J)
 held_indices <- integer(0)
 free_indices <- 1:J
-}
-  
+} 
 if (is.null(intervention_values)) {
   initial_values = rep(NA, J)
 } else {
@@ -282,7 +280,6 @@ if (length(conflicting_vars) > 0) {
 # Set initial values for variables
 initial_values <- eta_anc
 } 
-
 # Get model inferred ancestral states, if necessary
 if (any(is.na(initial_values))) {
 # Use estimated ancestral states from the model
@@ -299,7 +296,6 @@ if (ntrees > 1) {
   eta_anc_long <- eta_anc_long2
 }
 }
-
 for (j in 1:J) {
   for (i in 1:nsamps) {
       if (is.na(initial_values[j])) { 
@@ -310,18 +306,11 @@ for (j in 1:J) {
         }
       }
 }
-
-# # For held variables, ensure they are set to intervention_values at all time steps
-# if (!is.null(intervention_values)) {
-#   preds[, , held_indices] <- x_hat[held_indices]
-# }
-
 # Iterate over each sample
 for (i in 1:nsamps) {
   # Selection parameters for this sample
   A <- post$A[i, , ]
   b <- post$b[i, ]
-  
   # Partition A and b into free and held
   A_free_free <- A[free_indices, free_indices, drop = FALSE]
   if (length(held_indices) > 0) {
@@ -330,22 +319,18 @@ for (i in 1:nsamps) {
     A_free_held <- matrix(0, nrow = length(free_indices), ncol = 0)
   }
   b_free <- b[free_indices]
-  
   # Compute c = A_free_held * x_hat_held + b_free
   if (length(held_indices) > 0) {
     c <- A_free_held %*% x_hat[held_indices] + b_free
   } else {
     c <- b_free
   }
-  
   # Compute A_delta_free_free and inv_A_free_free
   A_delta_free_free <- as.matrix(Matrix::expm(A_free_free * tmax / ntimes))
-  
   # Ensure A_free_free is square
   if (nrow(A_free_free) != ncol(A_free_free)) {
     stop2("Matrix A_free_free must be square.")
   }
-  
   # Invert A_free_free
   inv_A_free_free <- tryCatch(
     solve(A_free_free),
@@ -353,34 +338,27 @@ for (i in 1:nsamps) {
       stop2("Matrix A_free_free is singular and cannot be inverted.")
     }
   )
-  
   # Identity matrix
   I_free_free <- diag(rep(1, length(free_indices)))
-  
   # drift parameters, cannot be used in conjunction with intervention values (currently)
   if (stochastic == TRUE) {
     Q_inf <- post$Q_inf[i,,]
     VCV <- Q_inf - ((A_delta_free_free) %*% Q_inf %*% t(A_delta_free_free))
     chol_VCV <- t(chol(Matrix::nearPD(VCV)$mat))
   }
-  
   # Initialize preds_free with current state
   preds_free <- preds[i, 1, free_indices]
-  
   # Iterate over each time step
   for (t in 1:ntimes) {
     # Compute expected change for free variables
     preds_free <- (A_delta_free_free %*% preds_free +
                     (inv_A_free_free %*% (A_delta_free_free - I_free_free) %*% c))[, 1]
-    
     # Add drift if stochastic
     if (stochastic == TRUE) {
       preds_free <- preds_free + (chol_VCV %*% rnorm(length(free_indices), 0, 1))
     }
-    
     # Update preds for the next time point
     preds[i, t + 1, free_indices] <- preds_free
-    
     # Set held variables to intervention values
     if (length(held_indices) > 0) {
       preds[i, t + 1, held_indices] <- x_hat[held_indices]
