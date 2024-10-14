@@ -76,15 +76,15 @@ fit <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 3 finished in 910.2 seconds.
-#> Chain 1 finished in 910.8 seconds.
-#> Chain 4 finished in 917.5 seconds.
-#> Chain 2 finished in 955.5 seconds.
+#> Chain 3 finished in 972.1 seconds.
+#> Chain 1 finished in 976.9 seconds.
+#> Chain 4 finished in 995.5 seconds.
+#> Chain 2 finished in 1003.6 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 923.5 seconds.
-#> Total execution time: 955.7 seconds.
-#> Warning: 30 of 2000 (2.0%) transitions ended with a divergence.
+#> Mean chain execution time: 987.0 seconds.
+#> Total execution time: 1004.0 seconds.
+#> Warning: 35 of 2000 (2.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
 
@@ -101,41 +101,34 @@ summary(fit)
 #> 
 #> Autoregressive selection effects:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority    -0.66      0.51 -1.90 -0.03 1.01      590      996
-#> religious_authority    -0.80      0.59 -2.15 -0.03 1.00     1315     1007
+#> political_authority    -0.67      0.53 -1.97 -0.02 1.00     1015      769
+#> religious_authority    -0.78      0.57 -2.15 -0.04 1.00     1265     1061
 #> 
 #> Cross selection effects:
-#>                                           Estimate Est.Error  2.5% 97.5% Rhat
-#> political_authority ⟶ religious_authority     2.28      1.03  0.28  4.36 1.01
-#> religious_authority ⟶ political_authority     1.76      1.10 -0.37  4.02 1.00
-#>                                           Bulk_ESS Tail_ESS
-#> political_authority ⟶ religious_authority      543      327
-#> religious_authority ⟶ political_authority      500      801
+#>                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> political_authority ⟶ religious_authority     2.28      0.98  0.31  4.20 1.01      874      951
+#> religious_authority ⟶ political_authority     1.71      1.09 -0.36  3.95 1.01      494     1012
 #> 
 #> Drift parameters:
-#>                                              Estimate Est.Error  2.5% 97.5%
-#> sd(political_authority)                          2.03      0.82  0.35  3.59
-#> sd(religious_authority)                          1.26      0.78  0.06  2.85
-#> cor(political_authority,religious_authority)     0.27      0.31 -0.39  0.76
-#>                                              Rhat Bulk_ESS Tail_ESS
-#> sd(political_authority)                      1.00      416      475
-#> sd(religious_authority)                      1.01      313      779
-#> cor(political_authority,religious_authority) 1.00     1235     1378
+#>                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+#> sd(political_authority)                          1.98      0.80  0.30  3.51 1.01      402      344
+#> sd(religious_authority)                          1.28      0.77  0.07  2.93 1.01      447      776
+#> cor(political_authority,religious_authority)     0.27      0.31 -0.42  0.77 1.00     1303     1340
 #> 
 #> Continuous time intercept parameters:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority     0.21      0.95 -1.65  2.08 1.00     2042     1491
-#> religious_authority     0.20      0.94 -1.55  2.06 1.00     2337     1365
+#> political_authority     0.20      0.95 -1.62  2.05 1.00     2342     1495
+#> religious_authority     0.27      0.90 -1.42  2.02 1.01     2094     1229
 #> 
 #> Ordinal cutpoint parameters:
 #>                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority[1]    -1.33      0.89 -3.04  0.53 1.00     1034      241
-#> political_authority[2]    -0.56      0.87 -2.19  1.35 1.00     1023      241
-#> political_authority[3]     1.66      0.89 -0.04  3.44 1.00      979      253
-#> religious_authority[1]    -1.49      0.98 -3.42  0.54 1.00      739      226
-#> religious_authority[2]    -0.80      0.95 -2.64  1.19 1.00      752      206
-#> religious_authority[3]     1.62      0.98 -0.29  3.71 1.00     1049      209
-#> Warning: There were 30 divergent transitions after warmup.
+#> political_authority[1]    -1.34      0.86 -2.97  0.33 1.00     1113     1468
+#> political_authority[2]    -0.58      0.83 -2.22  1.08 1.00     1257     1585
+#> political_authority[3]     1.61      0.86 -0.00  3.31 1.00     1371     1540
+#> religious_authority[1]    -1.50      0.92 -3.29  0.34 1.00     1647     1280
+#> religious_authority[2]    -0.81      0.90 -2.54  0.93 1.00     1693     1464
+#> religious_authority[3]     1.61      0.94 -0.17  3.52 1.00     1751     1648
+#> Warning: There were 35 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
@@ -161,9 +154,8 @@ of one variable which results from a one median absolute deviation
 increase in another variable.
 
 ``` r
-coev_plot_delta_theta(fit, limits = c(-5, 50))
-#> Warning: Removed 119 rows containing non-finite outside the scale range
-#> (`stat_density()`).
+coev_plot_delta_theta(fit)
+#> Warning: Removed 123 rows containing non-finite outside the scale range (`stat_density()`).
 ```
 
 <img src="man/figures/README-authority-delta-theta-1.png" width="60%" style="display: block; margin: auto;" />
