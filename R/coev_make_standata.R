@@ -59,13 +59,13 @@
 #' @param scale Logical. If \code{TRUE} (default), variables following the
 #'   \code{normal} and \code{gamma_log} response distributions are scaled before
 #'   fitting the model. Continuous variables following the \code{normal}
-#'   distribution are standardised (e.g., centered and scaled by their standard
-#'   deviation) and positive real variables following the \code{gamma_log}
-#'   distribution are scaled by the maximum value without centering. This
-#'   approach is recommended when using default priors to improve efficiency and
-#'   ensure accurate inferences. If \code{FALSE}, variables are left unscaled
-#'   for model fitting. In this case, users should take care to set sensible
-#'   priors on variables.
+#'   distribution are standardised (e.g., mean centered and divided by their
+#'   standard deviation) and positive real variables following the
+#'   \code{gamma_log} distribution are divided by the mean value without
+#'   centering. This approach is recommended when using default priors to
+#'   improve efficiency and ensure accurate inferences. If \code{FALSE},
+#'   variables are left unscaled for model fitting. In this case, users should
+#'   take care to set sensible priors on variables.
 #' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
 #'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
@@ -215,9 +215,12 @@ coev_make_standata <- function(data, variables, id, tree,
       # standardised continuous variables
       y[[names(variables)[j]]] <- as.numeric(scale(data[,names(variables)[j]]))
     } else if (scale & variables[[j]] == "gamma_log") {
-      # positive reals scaled by sample maximum
+      # positive reals scaled by sample mean
       y[[names(variables)[j]]] <-
-        as.numeric(data[,names(variables)[j]] / max(data[,names(variables)[j]]))
+        as.numeric(
+          data[,names(variables)[j]] /
+            max(data[,names(variables)[j]], na.rm = TRUE)
+          )
     } else {
       # unscaled binary/ordered/count variables
       y[[names(variables)[j]]] <- as.numeric(data[,names(variables)[j]])
