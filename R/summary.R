@@ -55,7 +55,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       stringr::str_extract(auto$variable, pattern = "A\\[(\\d+)\\,")
       )
     ]
-  auto <- auto[,2:ncol(auto)]
+  auto <- auto[, 2:ncol(auto)]
   # summarise cross selection effects
   cross <- A[!equal,]
   rownames(cross) <-
@@ -72,7 +72,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
           )
         ]
     )
-  cross <- cross[,2:ncol(cross)]
+  cross <- cross[, 2:ncol(cross)]
   # only include cross selection effects that have been estimated in summary
   cross <- cross[!is.na(cross$Rhat),]
   # summarise drift sd parameters
@@ -86,7 +86,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
     ],
     ")"
   )
-  sd_drift <- sd_drift[,2:ncol(sd_drift)]
+  sd_drift <- sd_drift[, 2:ncol(sd_drift)]
   # summarise drift cor parameters
   cor_drift <- NULL
   if (object$estimate_Q_offdiag) {
@@ -120,14 +120,14 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       ],
       ")"
     )
-    cor_drift <- cor_drift[,2:ncol(cor_drift)]
+    cor_drift <- cor_drift[, 2:ncol(cor_drift)]
   }
   # summarise SDE intercepts
   sde_intercepts <- s[stringr::str_starts(s$variable, "b"),]
   rownames(sde_intercepts) <- names(object$variables)[
     readr::parse_number(sde_intercepts$variable)
     ]
-  sde_intercepts <- sde_intercepts[,2:ncol(sde_intercepts)]
+  sde_intercepts <- sde_intercepts[, 2:ncol(sde_intercepts)]
   # summarise ordinal cutpoints
   cutpoints <- NULL
   if ("ordered_logistic" %in% object$variables) {
@@ -138,14 +138,24 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       names(object$variables)[readr::parse_number(cutpoints$variable)],
       stringr::str_extract(cutpoints$variable, pattern = "\\[\\d+\\]")
       )
-    cutpoints <- cutpoints[,2:ncol(cutpoints)]
+    cutpoints <- cutpoints[, 2:ncol(cutpoints)]
   }
   # summarise overdispersion parameters
   phi <- NULL
   if ("negative_binomial_softplus" %in% object$variables) {
     phi <- s[stringr::str_starts(s$variable, "phi"),]
     rownames(phi) <- names(object$variables)[readr::parse_number(phi$variable)]
-    phi <- phi[,2:ncol(phi)]
+    phi <- phi[, 2:ncol(phi)]
+  }
+  # summarise shape parameters
+  shape <- NULL
+  if ("gamma_log" %in% object$variables) {
+    shape <- s[stringr::str_starts(s$variable, "shape"),]
+    rownames(shape) <- paste0(
+      names(object$variables)[readr::parse_number(shape$variable)],
+      stringr::str_extract(shape$variable, pattern = "\\[\\d+\\]")
+    )
+    shape <- shape[, 2:ncol(shape)]
   }
   # summarise gaussian process parameters
   gpterms <- NULL
@@ -157,7 +167,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       ifelse(gpvars == "sigma", "sdgp", gpvars),
       "(", names(object$variables)[readr::parse_number(gpterms$variable)], ")"
     )
-    gpterms <- gpterms[,2:ncol(gpterms)]
+    gpterms <- gpterms[, 2:ncol(gpterms)]
   }
   # summarise group-level hyperparameters
   sd_group <- NULL
@@ -170,7 +180,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       names(object$variables)[readr::parse_number(sd_group$variable)],
       ")"
       )
-    sd_group <- sd_group[,2:ncol(sd_group)]
+    sd_group <- sd_group[, 2:ncol(sd_group)]
     # correlation parameters
     cor_group <- s[stringr::str_starts(s$variable, "cor_group"),]
     for (i in 1:length(object$variables)) {
@@ -202,7 +212,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       ],
       ")"
     )
-    cor_group <- cor_group[,2:ncol(cor_group)]
+    cor_group <- cor_group[, 2:ncol(cor_group)]
   }
   # create summary list
   out <-
@@ -224,6 +234,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       sde_intercepts = sde_intercepts,
       cutpoints      = cutpoints,
       phi            = phi,
+      shape          = shape,
       gpterms        = gpterms,
       sd_group       = sd_group,
       cor_group      = cor_group,
@@ -304,6 +315,12 @@ print.coevsummary <- function(x, digits = 2, ...) {
     cat("\n")
     cat("Overdispersion parameters:\n")
     print_format(x$phi, digits = digits)
+  }
+  # print shape parameters
+  if (!is.null(x$shape)) {
+    cat("\n")
+    cat("Shape parameters:\n")
+    print_format(x$shape, digits = digits)
   }
   # print gaussian process parameters
   if (!is.null(x$gpterms)) {
