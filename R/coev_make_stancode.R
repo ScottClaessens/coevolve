@@ -12,8 +12,8 @@
 #'   Must identify at least two variables. Variable names must refer to valid
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{negative_binomial_softplus} and
-#'   \code{normal}.
+#'   \code{poisson_softplus}, \code{negative_binomial_softplus}, \code{normal},
+#'   and \code{gamma_log}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -47,21 +47,26 @@
 #'   intercepts (\code{b}), the ancestral states for the traits
 #'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 #'   overdispersion parameters for negative binomial variables (\code{phi}),
-#'   the sigma parameters for Gaussian Processes over locations
-#'   (\code{sigma_dist}), the rho parameters for Gaussian Processes over
-#'   locations (\code{rho_dist}), the standard deviation parameters for
-#'   non-phylogenetic group-level varying effects (\code{sigma_group}), and the
-#'   Cholesky factor for the non-phylogenetic group-level correlation matrix
-#'   (\code{L_group}). These must be entered with valid prior strings, e.g.
+#'   the shape parameters for gamma variables (\code{shape}), the sigma
+#'   parameters for Gaussian Processes over locations (\code{sigma_dist}), the
+#'   rho parameters for Gaussian Processes over locations (\code{rho_dist}), the
+#'   standard deviation parameters for non-phylogenetic group-level varying
+#'   effects (\code{sigma_group}), and the Cholesky factor for the
+#'   non-phylogenetic group-level correlation matrix (\code{L_group}). These
+#'   must be entered with valid prior strings, e.g.
 #'   \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
 #'   an error when the function internally checks the syntax of resulting Stan
 #'   code.
-#' @param scale Logical. If \code{TRUE} (default), continuous variables
-#'   following the \code{normal} response distribution are standardised before
-#'   fitting the model. This approach is recommended when using default priors
-#'   to improve efficiency and ensure accurate inferences. If \code{FALSE},
-#'   variables are left unstandardised for model fitting. In this case, users
-#'   should take care to set sensible priors on variables.
+#' @param scale Logical. If \code{TRUE} (default), variables following the
+#'   \code{normal} and \code{gamma_log} response distributions are scaled before
+#'   fitting the model. Continuous variables following the \code{normal}
+#'   distribution are standardised (e.g., centered and scaled by their standard
+#'   deviation) and positive real variables following the \code{gamma_log}
+#'   distribution are scaled by the maximum value without centering. This
+#'   approach is recommended when using default priors to improve efficiency and
+#'   ensure accurate inferences. If \code{FALSE}, variables are left unscaled
+#'   for model fitting. In this case, users should take care to set sensible
+#'   priors on variables.
 #' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
 #'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
@@ -130,6 +135,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       L_R         = "lkj_corr_cholesky(4)",
       Q_sigma     = "std_normal()",
       c           = "normal(0, 2)",
+      shape       = "gamma(0.01, 0.01)",
       sigma_dist  = "exponential(1)",
       rho_dist    = "exponential(5)",
       sigma_group = "exponential(1)",
@@ -353,6 +359,15 @@ coev_make_stancode <- function(data, variables, id, tree,
           "// neg binom inverse overdispersion parameter for variable ", i, "\n"
           )
     }
+    # add shape parameters for gamma_log distributions
+    if (distributions[i] == "gamma_log") {
+      sc_parameters <-
+        paste0(
+          sc_parameters,
+          "  real<lower=0> shape", i, "; ",
+          "// gamma shape parameter for variable ", i, "\n"
+        )
+    }
   }
   # add gaussian process parameters if distance matrix specified by user
   if (!is.null(dist_mat)) {
@@ -530,7 +545,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     ifelse(estimate_Q_offdiag, paste0("  L_R ~ ", priors$L_R, ";\n"), ""),
     "  Q_sigma ~ ", priors$Q_sigma, ";\n"
   )
-  # add priors for any cut points
+  # add priors for any cutpoint parameters
   for (j in 1:length(distributions)) {
     if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(sc_model, "  c", j, " ~ ", priors$c, ";\n")
@@ -552,6 +567,12 @@ coev_make_stancode <- function(data, variables, id, tree,
           ),
           ";\n"
         )
+    }
+  }
+  # add priors for any shape parameters
+  for (j in 1:length(distributions)) {
+    if (distributions[j] == "gamma_log") {
+      sc_model <- paste0(sc_model, "  shape", j, " ~ ", priors$shape, ";\n")
     }
   }
   # add priors for any gaussian process parameters
@@ -663,6 +684,14 @@ coev_make_stancode <- function(data, variables, id, tree,
         ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
         "), phi", j, ");\n"
         )
+    } else if (distributions[j] == "gamma_log") {
+      sc_model <- paste0(
+        sc_model,
+        "        if (miss[i,", j, "] == 0) lp[t] += ",
+        "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(", lmod(j),
+        ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
+        "));\n"
+      )
     }
   }
   sc_model <- paste0(
@@ -793,6 +822,18 @@ coev_make_stancode <- function(data, variables, id, tree,
         "neg_binomial_2_rng(mean(obs", j, ") * log1p_exp(", lmod(j),
         ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
         "), phi", j, ");\n"
+      )
+    } else if (distributions[j] == "gamma_log") {
+      sc_generated_quantities <- paste0(
+        sc_generated_quantities,
+        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
+        "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(", lmod(j),
+        ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
+        "));\n",
+        "        yrep[t,i,", j, "] = ",
+        "gamma_rng(shape", j, ", shape", j, " / exp(", lmod(j),
+        ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
+        "));\n"
       )
     }
   }

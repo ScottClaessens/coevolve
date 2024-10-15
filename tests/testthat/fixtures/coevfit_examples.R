@@ -6,7 +6,7 @@ n <- 5
 tree <- ape::rcoal(n)
 d <- data.frame(
   id = tree$tip.label,
-  u = rnorm(n),
+  u = rgamma(n, shape = 1, rate = 1),
   v = rnorm(n),
   w = rbinom(n, size = 1, prob = 0.5),
   x = ordered(sample(1:4, size = n, replace = TRUE)),
@@ -24,6 +24,7 @@ coevfit_example1 <-
   coev_fit(
     data = d,
     variables = list(
+      u = "gamma_log",
       v = "normal",
       w = "bernoulli_logit",
       x = "ordered_logistic",

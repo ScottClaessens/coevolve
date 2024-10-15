@@ -130,4 +130,6 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
   expect_no_error(SW(coev_plot_delta_theta(m7, prob = 0.5, prob_outer = 0.89)))
   expect_no_error(SW(coev_plot_delta_theta(m8, prob = 0.5, prob_outer = 0.89)))
   expect_no_error(SW(coev_plot_delta_theta(m9, prob = 0.5, prob_outer = 0.89)))
+  # declaring variables works as expected
+  expect_no_error(SW(coev_plot_delta_theta(m1, variables = c("x", "y"))))
 })

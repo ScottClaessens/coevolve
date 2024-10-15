@@ -25,13 +25,14 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   }
   # stop if response distributions are not valid
   if (!all(distributions %in% c("bernoulli_logit", "ordered_logistic",
-                                "poisson_softplus", "normal",
+                                "poisson_softplus", "normal", "gamma_log",
                                 "negative_binomial_softplus"))) {
     stop2(
       paste0(
         "Response distributions other than 'bernoulli_logit', ",
         "'ordered_logistic', 'poisson_softplus', ",
-        "'negative_binomial_softplus', and 'normal' are not yet supported."
+        "'negative_binomial_softplus', 'normal', and 'gamma_log' are ",
+        "not yet supported."
         )
       )
   }
@@ -119,6 +120,19 @@ run_checks <- function(data, variables, id, tree, effects_mat,
           "numeric in the data."
           )
         )
+    }
+  }
+  # stop if any gamma variables are not numeric and positive
+  for (i in 1:length(distributions)) {
+    if (distributions[i] == "gamma_log") {
+      if (!is.numeric(data[,variables[i]]) | !all(data[,variables[i]] > 0)) {
+        stop2(
+          paste0(
+            "Variables following the 'gamma_log' response distribution must ",
+            "be positive reals in the data."
+          )
+        )
+      }
     }
   }
   # stop if id is not a character of length one
@@ -278,13 +292,13 @@ run_checks <- function(data, variables, id, tree, effects_mat,
     }
     # stop if prior names not allowed
     if (!all(names(prior) %in% c("b", "eta_anc", "A_offdiag", "A_diag",
-                                 "Q_diag", "c", "phi", "nu", "sigma_dist",
+                                 "Q_diag", "c", "phi", "shape", "sigma_dist",
                                  "rho_dist", "sigma_group", "L_group"))) {
       stop2(
         paste0(
           "Argument 'prior' list contains names that are not allowed. Please ",
           "use only the following names: 'b', 'eta_anc', 'A_offdiag', ",
-          "'A_diag', 'L_R', 'Q_sigma', 'c', 'phi', 'sigma_dist', ",
+          "'A_diag', 'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', ",
           "'rho_dist', 'sigma_group', and 'L_group'"
           )
         )

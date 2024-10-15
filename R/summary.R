@@ -147,13 +147,6 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
     rownames(phi) <- names(object$variables)[readr::parse_number(phi$variable)]
     phi <- phi[,2:ncol(phi)]
   }
-  # summarise degrees of freedom parameters
-  nu <- NULL
-  if ("student_t" %in% object$variables) {
-    nu <- s[stringr::str_starts(s$variable, "nu"),]
-    rownames(nu) <- names(object$variables)[readr::parse_number(nu$variable)]
-    nu <- nu[,2:ncol(nu)]
-  }
   # summarise gaussian process parameters
   gpterms <- NULL
   if (!is.null(object$dist_mat)) {
@@ -231,7 +224,6 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       sde_intercepts = sde_intercepts,
       cutpoints      = cutpoints,
       phi            = phi,
-      nu             = nu,
       gpterms        = gpterms,
       sd_group       = sd_group,
       cor_group      = cor_group,
@@ -312,12 +304,6 @@ print.coevsummary <- function(x, digits = 2, ...) {
     cat("\n")
     cat("Overdispersion parameters:\n")
     print_format(x$phi, digits = digits)
-  }
-  # print degrees of freedom parameters
-  if (!is.null(x$nu)) {
-    cat("\n")
-    cat("Degrees of freedom parameters:\n")
-    print_format(x$nu, digits = digits)
   }
   # print gaussian process parameters
   if (!is.null(x$gpterms)) {

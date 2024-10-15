@@ -76,7 +76,8 @@ test_that("coev_fit() produces expected errors", {
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
       "'ordered_logistic', 'poisson_softplus', ",
-      "'negative_binomial_softplus', and 'normal' are not yet supported."
+      "'negative_binomial_softplus', 'normal', and 'gamma_log' ",
+      "are not yet supported."
     ),
     fixed = TRUE
   )
@@ -193,6 +194,22 @@ test_that("coev_fit() produces expected errors", {
     paste0(
       "Variables following the 'normal' response distribution ",
       "must be numeric in the data."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        v = "gamma_log",
+        w = "gamma_log" # not positive real
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Variables following the 'gamma_log' response distribution must ",
+      "be positive reals in the data."
     ),
     fixed = TRUE
   )
@@ -586,7 +603,7 @@ test_that("coev_fit() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'L_R', 'Q_sigma', 'c', 'phi', 'sigma_dist', 'rho_dist', ",
+      "'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', 'rho_dist', ",
       "'sigma_group', and 'L_group'"
     ),
     fixed = TRUE
@@ -656,14 +673,10 @@ test_that("coev_fit() fits the model without error", {
   m2 <- readRDS(test_path("fixtures", "coevfit_example2.rds"))
   m3 <- readRDS(test_path("fixtures", "coevfit_example3.rds"))
   m4 <- readRDS(test_path("fixtures", "coevfit_example4.rds"))
-  m5 <- readRDS(test_path("fixtures", "coevfit_example5.rds"))
-  m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
   m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
   m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
   m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
   m4 <- reload_fit(m4, filename = "coevfit_example4-1.csv")
-  m5 <- reload_fit(m5, filename = "coevfit_example5-1.csv")
-  m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # expect no errors for model fitting or summaries

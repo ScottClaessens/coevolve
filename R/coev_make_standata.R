@@ -13,8 +13,8 @@
 #'   Must identify at least two variables. Variable names must refer to valid
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{negative_binomial_softplus} and
-#'   \code{normal}.
+#'   \code{poisson_softplus}, \code{negative_binomial_softplus}, \code{normal},
+#'   and \code{gamma_log}.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny. Must refer to a valid column name in
 #'   the data. The id column must exactly match the tip labels in the phylogeny.
@@ -48,21 +48,24 @@
 #'   intercepts (\code{b}), the ancestral states for the traits
 #'   (\code{eta_anc}), the cutpoints for ordinal variables (\code{c}), the
 #'   overdispersion parameters for negative binomial variables (\code{phi}),
-#'   the sigma parameters for Gaussian Processes over locations
-#'   (\code{sigma_dist}), the rho parameters for Gaussian Processes over
-#'   locations (\code{rho_dist}), the standard deviation parameters for
-#'   non-phylogenetic group-level varying effects (\code{sigma_group}), and the
-#'   Cholesky factor for the non-phylogenetic group-level correlation matrix
-#'   (\code{L_group}). These must be entered with valid prior strings, e.g.
-#'   \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
-#'   an error when the function internally checks the syntax of resulting Stan
-#'   code.
-#' @param scale Logical. If \code{TRUE} (default), continuous variables
-#'   following the \code{normal} response distribution are standardised before
-#'   fitting the model. This approach is recommended when using default priors
-#'   to improve efficiency and ensure accurate inferences. If \code{FALSE},
-#'   variables are left unstandardised for model fitting. In this case, users
-#'   should take care to set sensible priors on variables.
+#'   the shape parameters for gamma variables (\code{shape}), the sigma
+#'   parameters for Gaussian Processes over locations (\code{sigma_dist}), the
+#'   rho parameters for Gaussian Processes over locations (\code{rho_dist}), the
+#'   standard deviation parameters for non-phylogenetic group-level varying
+#'   effects (\code{sigma_group}), and the Cholesky factor for the
+#'   non-phylogenetic group-level correlation matrix (\code{L_group}). These
+#'   must be entered with valid prior strings, e.g.
+#'   \code{list(A_offdiag = "normal(0, 2)")}.
+#' @param scale Logical. If \code{TRUE} (default), variables following the
+#'   \code{normal} and \code{gamma_log} response distributions are scaled before
+#'   fitting the model. Continuous variables following the \code{normal}
+#'   distribution are standardised (e.g., centered and scaled by their standard
+#'   deviation) and positive real variables following the \code{gamma_log}
+#'   distribution are scaled by the maximum value without centering. This
+#'   approach is recommended when using default priors to improve efficiency and
+#'   ensure accurate inferences. If \code{FALSE}, variables are left unscaled
+#'   for model fitting. In this case, users should take care to set sensible
+#'   priors on variables.
 #' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
 #'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
@@ -211,8 +214,12 @@ coev_make_standata <- function(data, variables, id, tree,
     if (scale & variables[[j]] == "normal") {
       # standardised continuous variables
       y[[names(variables)[j]]] <- as.numeric(scale(data[,names(variables)[j]]))
+    } else if (scale & variables[[j]] == "gamma_log") {
+      # positive reals scaled by sample maximum
+      y[[names(variables)[j]]] <-
+        as.numeric(data[,names(variables)[j]] / max(data[,names(variables)[j]]))
     } else {
-      # unstandardised and binary/ordered/count variables
+      # unscaled binary/ordered/count variables
       y[[names(variables)[j]]] <- as.numeric(data[,names(variables)[j]])
     }
   }
