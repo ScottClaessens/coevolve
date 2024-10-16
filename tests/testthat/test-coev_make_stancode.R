@@ -76,7 +76,8 @@ test_that("coev_make_stancode() produces expected errors", {
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
       "'ordered_logistic', 'poisson_softplus', ",
-      "'negative_binomial_softplus', and 'normal' are not yet supported."
+      "'negative_binomial_softplus', 'normal', and 'gamma_log' ",
+      "are not yet supported."
     ),
     fixed = TRUE
   )
@@ -193,6 +194,22 @@ test_that("coev_make_stancode() produces expected errors", {
     paste0(
       "Variables following the 'normal' response distribution ",
       "must be numeric in the data."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        v = "gamma_log",
+        w = "gamma_log" # not positive real
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Variables following the 'gamma_log' response distribution must ",
+      "be positive reals in the data."
     ),
     fixed = TRUE
   )
@@ -586,7 +603,7 @@ test_that("coev_make_stancode() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'L_R', 'Q_sigma', 'c', 'phi', 'sigma_dist', 'rho_dist', ",
+      "'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', 'rho_dist', ",
       "'sigma_group', and 'L_group'"
     ),
     fixed = TRUE
@@ -1086,5 +1103,43 @@ test_that("GP covariance kernels produce syntactically correct Stan code", {
       stan_file = cmdstanr::write_stan_file(sc3),
       compile = FALSE
     )$check_syntax(quiet = TRUE)
+  )
+})
+
+test_that("coev_make_stancode() works with gamma_log distribution", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rgamma(n, shape = 1, rate = 1),
+      y = rgamma(n, shape = 1, rate = 1)
+    )
+  })
+  # default priors should work
+  expect_no_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "gamma_log",
+        y = "gamma_log"
+      ),
+      id = "id",
+      tree = tree
+    )
+  )
+  # setting a prior for shape parameter should also work
+  expect_no_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "gamma_log",
+        y = "gamma_log"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list(shape = "gamma(0.05, 0.05)")
+    )
   )
 })

@@ -76,7 +76,7 @@ test_that("coev_make_standata() produces expected errors", {
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
       "'ordered_logistic', 'poisson_softplus', 'negative_binomial_softplus', ",
-      "and 'normal' are not yet supported."
+      "'normal', and 'gamma_log' are not yet supported."
     ),
     fixed = TRUE
   )
@@ -193,6 +193,22 @@ test_that("coev_make_standata() produces expected errors", {
     paste0(
       "Variables following the 'normal' response distribution ",
       "must be numeric in the data."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        v = "gamma_log",
+        w = "gamma_log" # not positive real
+      ),
+      id = "id",
+      tree = tree
+    ),
+    paste0(
+      "Variables following the 'gamma_log' response distribution must ",
+      "be positive reals in the data."
     ),
     fixed = TRUE
   )
@@ -586,7 +602,7 @@ test_that("coev_make_standata() produces expected errors", {
     paste0(
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
-      "'L_R', 'Q_sigma', 'c', 'phi', 'sigma_dist', 'rho_dist', ",
+      "'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', 'rho_dist', ",
       "'sigma_group', and 'L_group'"
     ),
     fixed = TRUE
@@ -657,7 +673,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
-      u = rnorm(n),
+      u = rgamma(n, shape = 1, rate = 1),
       v = as.integer(rnbinom(n, mu = 4, size = 1)),
       w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
@@ -670,6 +686,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     coev_make_standata(
       data = d,
       variables = list(
+        u = "gamma_log",
         v = "negative_binomial_softplus",
         w = "normal",
         x = "bernoulli_logit",

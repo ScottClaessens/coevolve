@@ -113,8 +113,8 @@ coev_plot_predictive_check <- function(object, variables = NULL,
     # response distribution
     resp_dist <- object$variables[[variable]]
     # choose plot type based on response distribution
-    if (resp_dist %in% c("normal", "student_t", "lognormal",
-                         "poisson_softplus", "negative_binomial_softplus")) {
+    if (resp_dist %in% c("normal", "poisson_softplus",
+                         "negative_binomial_softplus", "gamma_log")) {
       bayesplot::ppc_dens_overlay
     } else if (resp_dist %in% c("bernoulli_logit", "ordered_logistic")) {
       bayesplot::ppc_bars
