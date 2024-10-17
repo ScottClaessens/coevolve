@@ -79,6 +79,9 @@
 #'   estimates the off-diagonals for the \eqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \eqn{Q} drift matrix
 #'   are set to zero.
+#' @param log_lik Logical. Set to \code{FALSE} by default. If \code{TRUE}, the
+#'   model returns the pointwise log likelihood, which can be used to calculate
+#'   WAIC and LOO.
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
@@ -198,18 +201,19 @@ coev_fit <- function(data, variables, id, tree,
                      dist_cov = "exp_quad",
                      prior = NULL, scale = TRUE,
                      estimate_Q_offdiag = TRUE,
+                     log_lik = FALSE,
                      prior_only = FALSE, ...) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, dist_mat,
-             dist_cov, prior, scale, estimate_Q_offdiag, prior_only)
+             dist_cov, prior, scale, estimate_Q_offdiag, log_lik, prior_only)
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
                            dist_mat, dist_cov, prior, scale,
-                           estimate_Q_offdiag, prior_only)
+                           estimate_Q_offdiag, log_lik, prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
                            dist_mat, dist_cov, prior, scale,
-                           estimate_Q_offdiag, prior_only)
+                           estimate_Q_offdiag, log_lik, prior_only)
   # fit model
   model <-
     cmdstanr::cmdstan_model(

@@ -71,6 +71,9 @@
 #'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
 #'   are set to zero.
+#' @param log_lik Logical. Set to \code{FALSE} by default. If \code{TRUE}, the
+#'   model returns the pointwise log likelihood, which can be used to calculate
+#'   WAIC and LOO.
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
@@ -116,10 +119,11 @@ coev_make_stancode <- function(data, variables, id, tree,
                                dist_cov = "exp_quad",
                                prior = NULL, scale = TRUE,
                                estimate_Q_offdiag = TRUE,
+                               log_lik = FALSE,
                                prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, dist_mat,
-             dist_cov, prior, scale, estimate_Q_offdiag, prior_only)
+             dist_cov, prior, scale, estimate_Q_offdiag, log_lik, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # extract distributions and variable names from named list
@@ -706,7 +710,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_generated_quantities <-
     paste0(
       "generated quantities{\n",
-      "  vector[N_obs*J] log_lik; // log-likelihood\n",
+      ifelse(log_lik, "  vector[N_obs*J] log_lik; // log-likelihood\n", ""),
       "  array[N_tree,N_obs,J] real yrep; // predictive checks\n"
       )
   if (estimate_Q_offdiag) {
@@ -729,9 +733,17 @@ coev_make_stancode <- function(data, variables, id, tree,
     paste0(
       sc_generated_quantities,
       "  {\n",
-      "    matrix[N_obs,J] log_lik_temp = rep_matrix(0.0, N_obs, J);\n",
+      ifelse(
+        log_lik,
+        "    matrix[N_obs,J] log_lik_temp = rep_matrix(0.0, N_obs, J);\n",
+        ""
+        ),
       "    for (i in 1:N_obs) {\n",
-      "      array[N_tree,N_obs,J] real lp = rep_array(0.0, N_tree, N_obs, J);\n",
+      ifelse(
+        log_lik,
+        "      array[N_tree,N_obs,J] real lp = rep_array(0.0, N_tree, N_obs, J);\n",
+        ""
+        ),
       "      for (t in 1:N_tree) {\n"
       )
   # only implement the following if there are gaussian distributions
@@ -767,10 +779,16 @@ coev_make_stancode <- function(data, variables, id, tree,
     if (distributions[j] == "bernoulli_logit") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-        "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-        ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
-        ");\n",
+        ifelse(
+          log_lik,
+          paste0(
+            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
+            "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
+            ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
+            ");\n"
+          ),
+          ""
+          ),
         "        yrep[t,i,", j, "] = ",
         "bernoulli_logit_rng(", lmod(j),
         ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
@@ -779,10 +797,16 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "ordered_logistic") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-        "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-        ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
-        ", c", j, ");\n",
+        ifelse(
+          log_lik,
+          paste0(
+            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
+            "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
+            ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
+            ", c", j, ");\n"
+          ),
+          ""
+        ),
         "        yrep[t,i,", j, "] = ",
         "ordered_logistic_rng(", lmod(j),
         ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
@@ -791,11 +815,17 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "poisson_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-        "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
-        ") * log1p_exp(", lmod(j),
-        ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
-        "));\n",
+        ifelse(
+          log_lik,
+          paste0(
+            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
+            "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
+            ") * log1p_exp(", lmod(j),
+            ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
+            "));\n"
+          ),
+          ""
+        ),
         "        yrep[t,i,", j, "] = ",
         "poisson_rng(mean(obs", j, ") * log1p_exp(", lmod(j),
         ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
@@ -804,20 +834,32 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "normal") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-        "normal_lpdf(residuals[", j, "] | mu_cond[", j,
-        "], sigma_cond[", j, "]);\n",
+        ifelse(
+          log_lik,
+          paste0(
+            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
+            "normal_lpdf(residuals[", j, "] | mu_cond[", j,
+            "], sigma_cond[", j, "]);\n"
+          ),
+          ""
+        ),
         "        yrep[t,i,", j, "] = ", lmod(j),
         " + normal_rng(mu_cond[", j, "], sigma_cond[", j, "]);\n"
       )
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-        "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
-        ") * log1p_exp(", lmod(j),
-        ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
-        "), phi", j, ");\n",
+        ifelse(
+          log_lik,
+          paste0(
+            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
+            "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
+            ") * log1p_exp(", lmod(j),
+            ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
+            "), phi", j, ");\n"
+          ),
+          ""
+        ),
         "        yrep[t,i,", j, "] = ",
         "neg_binomial_2_rng(mean(obs", j, ") * log1p_exp(", lmod(j),
         ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
@@ -826,10 +868,16 @@ coev_make_stancode <- function(data, variables, id, tree,
     } else if (distributions[j] == "gamma_log") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
-        "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-        "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(", lmod(j),
-        ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
-        "));\n",
+        ifelse(
+          log_lik,
+          paste0(
+            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
+            "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(", lmod(j),
+            ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
+            "));\n"
+          ),
+          ""
+        ),
         "        yrep[t,i,", j, "] = ",
         "gamma_rng(shape", j, ", shape", j, " / exp(", lmod(j),
         ifelse("normal" %in% distributions, paste0(" + residuals[", j, "]"), ""),
@@ -841,9 +889,17 @@ coev_make_stancode <- function(data, variables, id, tree,
     paste0(
       sc_generated_quantities,
       "      }\n",
-      "    for (j in 1:J) log_lik_temp[i,j] += log_sum_exp(lp[,i,j]);\n",
+      ifelse(
+        log_lik,
+        "    for (j in 1:J) log_lik_temp[i,j] += log_sum_exp(lp[,i,j]);\n",
+        ""
+        ),
       "    }\n",
-      "  log_lik = to_vector(log_lik_temp);\n",
+      ifelse(
+        log_lik,
+        "  log_lik = to_vector(log_lik_temp);\n",
+        ""
+      ),
       "  }\n",
       "}"
     )

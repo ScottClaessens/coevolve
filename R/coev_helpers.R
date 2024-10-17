@@ -1,7 +1,7 @@
 # helper function for checking arguments
 run_checks <- function(data, variables, id, tree, effects_mat,
                        dist_mat, dist_cov, prior, scale,
-                       estimate_Q_offdiag, prior_only) {
+                       estimate_Q_offdiag, log_lik, prior_only) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
@@ -315,6 +315,10 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   # stop if estimate_Q_offdiag is not logical
   if (!is.logical(estimate_Q_offdiag)) {
     stop2("Argument 'estimate_Q_offdiag' is not logical.")
+  }
+  # stop if log_lik is not logical
+  if (!is.logical(log_lik)) {
+    stop2("Argument 'log_lik' is not logical.")
   }
   # stop if prior_only is not logical
   if (!is.logical(prior_only)) {
