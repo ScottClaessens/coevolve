@@ -15,6 +15,7 @@ coev_make_standata(
   prior = NULL,
   scale = TRUE,
   estimate_Q_offdiag = TRUE,
+  log_lik = FALSE,
   prior_only = FALSE
 )
 }
@@ -93,6 +94,10 @@ take care to set sensible priors on variables.}
 estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
 are set to zero.}
+
+\item{log_lik}{Logical. Set to \code{FALSE} by default. If \code{TRUE}, the
+model returns the pointwise log likelihood, which can be used to calculate
+WAIC and LOO.}
 
 \item{prior_only}{Logical. If \code{FALSE} (default), the model is fitted to
 the data and returns a posterior distribution. If \code{TRUE}, the model
