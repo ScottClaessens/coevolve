@@ -33,6 +33,7 @@ Imports:
     ggplot2,
     Matrix,
     methods,
+    patchwork,
     phangorn,
     phaseR,
     phytools,
