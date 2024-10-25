@@ -70,12 +70,12 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
     )
   }
   if (!is.null(variables)) {
-    if (!is.character(variables)) {
+    if (!is.character(variables) | !(length(variables) >= 2)) {
       # stop if variables is not a character string
       stop2(
         paste0(
-          "Argument 'variables' must be a character string or a ",
-          "vector of character strings."
+          "Argument 'variables' must be a character vector ",
+          "of at least length 2."
         )
       )
     } else if (!all(variables %in% names(object$variables))) {
@@ -159,10 +159,11 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
   # get model summary
   s <- summary(object)
   # get draws
-  if (is.null(ndraws)) {
-    draw_ids <- 1:(s$iter * s$chains * s$ntrees)
+  all_draw_ids <- 1:(s$iter * s$chains * ifelse(is.null(tree_id), s$ntrees, 1))
+  if (!is.null(ndraws)) {
+    draw_ids <- sample(all_draw_ids, size = ndraws)
   } else {
-    draw_ids <- sample(1:(s$iter * s$chains * s$ntrees), size = ndraws)
+    draws_ids <- all_draw_ids
   }
   # function for plotting in upper triangle
   plot_upper_tri <- function(i, j) {
@@ -237,7 +238,7 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
         ) |>
       tidyr::unnest(!.data$taxa) |>
       dplyr::mutate(
-        iter = rep(1:(s$iter * s$chains * s$ntrees), times = max(.data$taxa))
+        iter = rep(all_draw_ids, times = max(.data$taxa))
         ) |>
       dplyr::filter(.data$iter %in% draw_ids) |>
       ggplot2::ggplot() +
