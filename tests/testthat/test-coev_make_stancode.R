@@ -810,12 +810,20 @@ test_that("Setting manual priors in coev_make_stancode() works as expected", {
       id = "id",
       tree = tree,
       prior = list(
-        b         = "normal(0, 2)",
-        eta_anc   = "normal(0, 2)",
-        A_offdiag = "normal(0, 2)",
-        A_diag    = "normal(0, 2)",
-        Q_diag    = "normal(0, 2)"
-        )
+        b           = "normal(0, 2)",
+        eta_anc     = "normal(0, 2)",
+        A_offdiag   = "normal(0, 2)",
+        A_diag      = "normal(0, 2)",
+        L_R         = "lkj_corr_cholesky(3)",
+        Q_sigma     = "normal(0, 2)",
+        c           = "normal(0, 3)",
+        phi         = "normal(1, 1)",
+        shape       = "gamma(0.02, 0.02)",
+        sigma_dist  = "exponential(2)",
+        rho_dist    = "exponential(6)",
+        sigma_group = "exponential(2)",
+        L_group     = "lkj_corr_cholesky(3)"
+      )
     )
   )
 })
