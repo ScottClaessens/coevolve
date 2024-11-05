@@ -703,8 +703,8 @@ coev_make_stancode <- function(data, variables, id, tree,
         ),
       "      for (t in 1:N_tree) {\n"
       )
-  # only declare the following if there are gaussian distributions
-  if ("normal" %in% distributions) {
+  # only declare the following if there are gaussian distributions and log_lik = TRUE
+  if ("normal" %in% distributions & log_lik) {
     sc_generated_quantities <- paste0(
       sc_generated_quantities,
       "        vector[J] mu_cond;\n",
@@ -733,8 +733,8 @@ coev_make_stancode <- function(data, variables, id, tree,
       )
     }
   }
-  # only calculate if there are gaussian distributions
-  if ("normal" %in% distributions) {
+  # only calculate if there are gaussian distributions and log_lik = TRUE
+  if ("normal" %in% distributions & log_lik) {
     sc_generated_quantities <- paste0(
       sc_generated_quantities,
       "        matrix[J,J] cov_inv = inverse_spd(VCV_tips[t, tip_id[i]]);\n",
