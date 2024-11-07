@@ -221,6 +221,7 @@ coev_fit <- function(data, variables, id, tree,
       compile = TRUE
     )$sample(
       data = sd,
+      adapt_delta = 0.95,
       show_exceptions = FALSE,
       ...
     )
