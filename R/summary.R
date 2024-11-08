@@ -151,10 +151,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   shape <- NULL
   if ("gamma_log" %in% object$variables) {
     shape <- s[stringr::str_starts(s$variable, "shape"),]
-    rownames(shape) <- paste0(
-      names(object$variables)[readr::parse_number(shape$variable)],
-      stringr::str_extract(shape$variable, pattern = "\\[\\d+\\]")
-    )
+    rownames(shape) <- names(object$variables)[readr::parse_number(shape$variable)]
     shape <- shape[, 2:ncol(shape)]
   }
   # summarise gaussian process parameters

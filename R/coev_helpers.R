@@ -125,7 +125,8 @@ run_checks <- function(data, variables, id, tree, effects_mat,
   # stop if any gamma variables are not numeric and positive
   for (i in 1:length(distributions)) {
     if (distributions[i] == "gamma_log") {
-      if (!is.numeric(data[,variables[i]]) | !all(data[,variables[i]] > 0)) {
+      if (!is.numeric(data[,variables[i]]) |
+          !all(data[,variables[i]] > 0, na.rm = TRUE)) {
         stop2(
           paste0(
             "Variables following the 'gamma_log' response distribution must ",
