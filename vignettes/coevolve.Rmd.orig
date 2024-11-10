@@ -89,7 +89,7 @@ package. Users can run these steps one-by-one using the `coev_make_stancode()`
 and `coev_make_standata()` functions, but for now we just use the `coev_fit()`
 function.
 
-```{r authority-fit, warning=FALSE, message=FALSE, eval=FALSE}
+```{r authority-fit, warning=FALSE, message=FALSE}
 fit1 <-
   coev_fit(
     data = authority$data,
@@ -105,8 +105,8 @@ fit1 <-
     log_lik = TRUE,
     # additional arguments for cmdstanr
     parallel_chains = 4,
-    iter_sampling = 500,
-    adapt_delta = 0.99,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
     refresh = 0,
     seed = 1
   )
@@ -289,7 +289,7 @@ for the group size variable.
 In this case, the model will retain all available data and impute the missing
 group size values.
 
-```{r primates-fit, warning=FALSE, message=FALSE, eval=FALSE}
+```{r primates-fit, warning=FALSE, message=FALSE}
 fit2 <-
   coev_fit(
     data = primates_data,
@@ -301,7 +301,8 @@ fit2 <-
     tree = primates_phylogeny,
     # additional arguments for cmdstanr
     parallel_chains = 4,
-    adapt_delta = 0.99,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
     refresh = 0,
     seed = 1
   )
@@ -317,7 +318,7 @@ imputed.
 
 We can then use plotting functions as usual.
 
-```{r primates-delta-theta, fig.height=5, fig.width=5}
+```{r primates-delta-theta, fig.height=5, fig.width=5, warning=FALSE, message=FALSE}
 coev_plot_delta_theta(fit2)
 ```
 
@@ -340,7 +341,7 @@ head(repeated$data)
 
 We can fit the dynamic coevolutionary model to this dataset.
 
-```{r repeated-fit, warning=FALSE, message=FALSE, eval=FALSE}
+```{r repeated-fit, warning=FALSE, message=FALSE}
 fit3 <-
   coev_fit(
     data = repeated$data,
@@ -354,7 +355,6 @@ fit3 <-
     parallel_chains = 4,
     iter_warmup = 2000,
     iter_sampling = 2000,
-    adapt_delta = 0.99,
     refresh = 0,
     seed = 1
   )
@@ -409,7 +409,7 @@ authority_multiphylo <- c(
 authority_multiphylo
 ```
 
-```{r authority-fit-multiphylo, warning=FALSE, message=FALSE, eval=FALSE}
+```{r authority-fit-multiphylo, warning=FALSE, message=FALSE}
 fit4 <-
   coev_fit(
     data = authority$data,
@@ -424,9 +424,8 @@ fit4 <-
     prior = list(A_offdiag = "normal(0, 2)"),
     # additional arguments for cmdstanr
     parallel_chains = 4,
-    iter_warmup = 2000,
     iter_sampling = 2000,
-    adapt_delta = 0.99,
+    iter_warmup = 2000,
     refresh = 0,
     seed = 1
   )
@@ -485,7 +484,8 @@ fit5 <-
     log_lik = TRUE,
     # additional arguments for cmdstanr
     parallel_chains = 4,
-    adapt_delta = 0.95,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
     refresh = 0,
     seed = 1
   )
