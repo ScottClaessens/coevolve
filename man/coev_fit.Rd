@@ -10,6 +10,7 @@ coev_fit(
   id,
   tree,
   effects_mat = NULL,
+  complete_cases = FALSE,
   dist_mat = NULL,
   dist_cov = "exp_quad",
   prior = NULL,
@@ -50,6 +51,10 @@ TRUE and will ignore cross-lagged effects where cells in the matrix are
 FALSE. In the matrix, columns represent predictor variables and rows
 represent outcome variables. All autoregressive effects (e.g., X -> X) must
 be TRUE in the matrix.}
+
+\item{complete_cases}{(optional) Logical. If \code{FALSE} (default), all
+missing values are imputed by the model. If \code{TRUE}, taxa with missing
+data are excluded.}
 
 \item{dist_mat}{(optional) A distance matrix with row and column names
 exactly matching the tip labels in the phylogeny. If specified, the model
@@ -170,17 +175,15 @@ negative-binomial distribution) is scaled automatically based on the
 variance of the data.
 
 We recommend that users assess the suitability of these default priors by
-fitting the model with \code{prior_only = TRUE} and then plotting a prior
-predictive check for all variables using the
+fitting the model with \code{prior_only = TRUE} and then plotting prior
+predictive checks for all variables using the
 \code{coev_plot_predictive_check()} function.
 
 \bold{Handling missing data}
 
 In order to retain the most information, the \code{coev_fit()} function
-removes cases only when data are missing for all coevolving variables. For
-cases where data are missing for some coevolving variables but not others,
-the model retains these cases and averages over the missingness in the
-model.
+automatically imputes all missing values. To turn off this behaviour and
+exclude taxa with missing data, set \code{complete_cases = FALSE}.
 
 \bold{Dealing with repeated observations}
 

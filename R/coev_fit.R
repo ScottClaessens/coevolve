@@ -37,6 +37,9 @@
 #'   FALSE. In the matrix, columns represent predictor variables and rows
 #'   represent outcome variables. All autoregressive effects (e.g., X -> X) must
 #'   be TRUE in the matrix.
+#' @param complete_cases (optional) Logical. If \code{FALSE} (default), all
+#'   missing values are imputed by the model. If \code{TRUE}, taxa with missing
+#'   data are excluded.
 #' @param dist_mat (optional) A distance matrix with row and column names
 #'   exactly matching the tip labels in the phylogeny. If specified, the model
 #'   will additionally control for spatial location by including a separate
@@ -136,17 +139,15 @@
 #'   variance of the data.
 #'
 #'   We recommend that users assess the suitability of these default priors by
-#'   fitting the model with \code{prior_only = TRUE} and then plotting a prior
-#'   predictive check for all variables using the
+#'   fitting the model with \code{prior_only = TRUE} and then plotting prior
+#'   predictive checks for all variables using the
 #'   \code{coev_plot_predictive_check()} function.
 #'
 #'   \bold{Handling missing data}
 #'
 #'   In order to retain the most information, the \code{coev_fit()} function
-#'   removes cases only when data are missing for all coevolving variables. For
-#'   cases where data are missing for some coevolving variables but not others,
-#'   the model retains these cases and averages over the missingness in the
-#'   model.
+#'   automatically imputes all missing values. To turn off this behaviour and
+#'   exclude taxa with missing data, set \code{complete_cases = FALSE}.
 #'
 #'   \bold{Dealing with repeated observations}
 #'
@@ -197,22 +198,22 @@
 #'
 #' @export
 coev_fit <- function(data, variables, id, tree,
-                     effects_mat = NULL, dist_mat = NULL,
-                     dist_cov = "exp_quad",
+                     effects_mat = NULL, complete_cases = FALSE,
+                     dist_mat = NULL, dist_cov = "exp_quad",
                      prior = NULL, scale = TRUE,
                      estimate_Q_offdiag = TRUE,
                      log_lik = FALSE,
                      prior_only = FALSE, ...) {
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, dist_mat,
+  run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, prior, scale, estimate_Q_offdiag, log_lik, prior_only)
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
-                           dist_mat, dist_cov, prior, scale,
+                           complete_cases, dist_mat, dist_cov, prior, scale,
                            estimate_Q_offdiag, log_lik, prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
-                           dist_mat, dist_cov, prior, scale,
+                           complete_cases, dist_mat, dist_cov, prior, scale,
                            estimate_Q_offdiag, log_lik, prior_only)
   # fit model
   model <-
@@ -238,6 +239,7 @@ coev_fit <- function(data, variables, id, tree,
       stan_code = sc,
       stan_data = sd,
       effects_mat = sd$effects_mat,
+      complete_cases = complete_cases,
       dist_mat = sd$dist_mat,
       dist_cov = dist_cov,
       scale = scale,

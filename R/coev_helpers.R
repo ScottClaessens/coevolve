@@ -1,6 +1,6 @@
 # helper function for checking arguments
 run_checks <- function(data, variables, id, tree, effects_mat,
-                       dist_mat, dist_cov, prior, scale,
+                       complete_cases, dist_mat, dist_cov, prior, scale,
                        estimate_Q_offdiag, log_lik, prior_only) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
@@ -228,6 +228,10 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       }
     }
   }
+  # stop if complete_cases is not logical of length one
+  if (!is.logical(complete_cases) | length(complete_cases) != 1) {
+    stop2("Argument 'complete_cases' must be a logical of length one.")
+  }
   # if user entered a distance matrix
   if (!is.null(dist_mat)) {
     # stop if dist_mat is not a matrix
@@ -309,21 +313,21 @@ run_checks <- function(data, variables, id, tree, effects_mat,
       stop2("Argument 'prior' contains duplicate names.")
     }
   }
-  # stop if scale is not logical
-  if (!is.logical(scale)) {
-    stop2("Argument 'scale' is not logical.")
+  # stop if scale is not logical of length one
+  if (!is.logical(scale) | length(scale) != 1) {
+    stop2("Argument 'scale' must be a logical of length one.")
   }
-  # stop if estimate_Q_offdiag is not logical
-  if (!is.logical(estimate_Q_offdiag)) {
-    stop2("Argument 'estimate_Q_offdiag' is not logical.")
+  # stop if estimate_Q_offdiag is not logical of length one
+  if (!is.logical(estimate_Q_offdiag) | length(estimate_Q_offdiag) != 1) {
+    stop2("Argument 'estimate_Q_offdiag' must be a logical of length one.")
   }
-  # stop if log_lik is not logical
-  if (!is.logical(log_lik)) {
-    stop2("Argument 'log_lik' is not logical.")
+  # stop if log_lik is not logical of length one
+  if (!is.logical(log_lik) | length(log_lik) != 1) {
+    stop2("Argument 'log_lik' must be a logical of length one.")
   }
-  # stop if prior_only is not logical
-  if (!is.logical(prior_only)) {
-    stop2("Argument 'prior_only' is not logical.")
+  # stop if prior_only is not logical of length one
+  if (!is.logical(prior_only) | length(prior_only) != 1) {
+    stop2("Argument 'prior_only' must be a logical of length one.")
   }
 }
 

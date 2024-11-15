@@ -10,6 +10,7 @@ coev_make_stancode(
   id,
   tree,
   effects_mat = NULL,
+  complete_cases = FALSE,
   dist_mat = NULL,
   dist_cov = "exp_quad",
   prior = NULL,
@@ -49,6 +50,10 @@ TRUE and will ignore cross-lagged effects where cells in the matrix are
 FALSE. In the matrix, columns represent predictor variables and rows
 represent outcome variables. All autoregressive effects (e.g., X -> X) must
 be TRUE in the matrix.}
+
+\item{complete_cases}{(optional) Logical. If \code{FALSE} (default), all
+missing values are imputed by the model. If \code{TRUE}, taxa with missing
+data are excluded.}
 
 \item{dist_mat}{(optional) A distance matrix with row and column names
 exactly matching the tip labels in the phylogeny. If specified, the model

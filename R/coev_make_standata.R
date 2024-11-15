@@ -30,6 +30,9 @@
 #'   FALSE. In the matrix, columns represent predictor variables and rows
 #'   represent outcome variables. All autoregressive effects (e.g., X -> X) must
 #'   be TRUE in the matrix.
+#' @param complete_cases (optional) Logical. If \code{FALSE} (default), all
+#'   missing values are imputed by the model. If \code{TRUE}, taxa with missing
+#'   data are excluded.
 #' @param dist_mat (optional) A distance matrix with row and column names
 #'   exactly matching the tip labels in the phylogeny. If specified, the model
 #'   will additionally control for spatial location by including a separate
@@ -111,14 +114,14 @@
 #'
 #' @export
 coev_make_standata <- function(data, variables, id, tree,
-                               effects_mat = NULL, dist_mat = NULL,
-                               dist_cov = "exp_quad",
+                               effects_mat = NULL, complete_cases = FALSE,
+                               dist_mat = NULL, dist_cov = "exp_quad",
                                prior = NULL, scale = TRUE,
                                estimate_Q_offdiag = TRUE,
                                log_lik = FALSE,
                                prior_only = FALSE) {
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, dist_mat,
+  run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, prior, scale, estimate_Q_offdiag, log_lik, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
@@ -132,14 +135,16 @@ coev_make_standata <- function(data, variables, id, tree,
       )
     )
   }
-  # remove data rows where all coevolving variables are NA
-  all_missing <- apply(data[,names(variables)], 1, function(x) all(is.na(x)))
-  data <- data[!all_missing,]
+  # if complete_cases = TRUE, remove data rows with NAs
+  if (complete_cases) {
+    any_missing <- apply(data[,names(variables)], 1, function(x) any(is.na(x)))
+    data <- data[!any_missing,]
+  }
   # coerce tree object to multiPhylo
   tree <- phytools::as.multiPhylo(tree)
   # ensure that all trees have same tip labels
   tree <- ape::.compressTipLabel(tree)
-  # prune tree to updated dataset
+  # prune tree to dataset
   tree <- ape::keep.tip.multiPhylo(tree, data[,id])
   # match data ordering to tree tip label ordering
   matched_data <- data.frame()
@@ -260,5 +265,16 @@ coev_make_standata <- function(data, variables, id, tree,
   if (!is.null(dist_mat)) sd[["dist_mat"]] <- dist_mat
   # add prior_only
   sd[["prior_only"]] <- as.numeric(prior_only)
+  # produce warnings for missing data
+  if (sum(miss) > 0) {
+    message(
+      paste0(
+        "Note: Missing values (NAs) detected. These values have been included ",
+        "in the Stan data list and will be imputed by the model. Set ",
+        "complete_cases = TRUE to exclude taxa with missing values."
+      )
+    )
+  }
+  # return stan data
   return(sd)
 }
