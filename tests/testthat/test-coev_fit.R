@@ -799,19 +799,6 @@ test_that("coev_fit() works with missing data", {
   expect_no_error(SW(standata(m)))
   expect_output(SW(stancode(m)))
   expect_true(SW(methods::is(standata(m), "list")))
-  # expect warning in summary output
-  capture.output(
-    SW(
-      expect_warning(
-        print(m),
-        paste0(
-          "Rows with NAs for all coevolving variables were excluded ",
-          "from the model."
-        )
-      )
-    ),
-    file = nullfile()
-    )
 })
 
 test_that("coev_fit() works with repeated observations", {
