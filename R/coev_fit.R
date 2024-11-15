@@ -88,7 +88,8 @@
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
-#' @param ... Additional arguments for \pkg{cmdstanr::sampling()}.
+#' @param adapt_delta Argument for \pkg{cmdstanr::sample()}. Default is 0.95.
+#' @param ... Additional arguments for \pkg{cmdstanr::sample()}.
 #'
 #' @return Fitted model of class \code{coevfit}.
 #'
@@ -202,8 +203,8 @@ coev_fit <- function(data, variables, id, tree,
                      dist_mat = NULL, dist_cov = "exp_quad",
                      prior = NULL, scale = TRUE,
                      estimate_Q_offdiag = TRUE,
-                     log_lik = FALSE,
-                     prior_only = FALSE, ...) {
+                     log_lik = FALSE, prior_only = FALSE,
+                     adapt_delta = 0.95, ...) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, prior, scale, estimate_Q_offdiag, log_lik, prior_only)
@@ -222,7 +223,7 @@ coev_fit <- function(data, variables, id, tree,
       compile = TRUE
     )$sample(
       data = sd,
-      adapt_delta = 0.95,
+      adapt_delta = adapt_delta,
       show_exceptions = FALSE,
       ...
     )

@@ -18,6 +18,7 @@ coev_fit(
   estimate_Q_offdiag = TRUE,
   log_lik = FALSE,
   prior_only = FALSE,
+  adapt_delta = 0.95,
   ...
 )
 }
@@ -111,7 +112,9 @@ WAIC and LOO.}
 the data and returns a posterior distribution. If \code{TRUE}, the model
 samples from the prior only, ignoring the likelihood.}
 
-\item{...}{Additional arguments for \pkg{cmdstanr::sampling()}.}
+\item{adapt_delta}{Argument for \pkg{cmdstanr::sample()}. Default is 0.95.}
+
+\item{...}{Additional arguments for \pkg{cmdstanr::sample()}.}
 }
 \value{
 Fitted model of class \code{coevfit}.
