@@ -212,8 +212,7 @@ coev_plot_delta_theta(fit1)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="vignettes/authority-delta-theta-1.png" alt="plot of chunk authority-delta-theta" width="60%" />
-<p class="caption">plot of chunk authority-delta-theta</p>
+<img src="authority-delta-theta-1.png" alt="plot of chunk authority-delta-theta" width="60%" />
 </div>
 
 This plot shows the posterior distribution, the posterior median, and the 66%
@@ -238,8 +237,7 @@ coev_plot_trait_values(fit1, xlim = c(-5, 7), ylim = c(-5, 7))
 ```
 
 <div class="figure" style="text-align: center">
-<img src="vignettes/authority-trait-values-1.png" alt="plot of chunk authority-trait-values" width="60%" />
-<p class="caption">plot of chunk authority-trait-values</p>
+<img src="authority-trait-values-1.png" alt="plot of chunk authority-trait-values" width="60%" />
 </div>
 
 Now that we have a good sense of the trait space, we can plot a flow field of
@@ -257,8 +255,7 @@ coev_plot_flowfield(
 ```
 
 <div class="figure" style="text-align: center">
-<img src="vignettes/authority-flowfield-1.png" alt="plot of chunk authority-flowfield" width="60%" />
-<p class="caption">plot of chunk authority-flowfield</p>
+<img src="authority-flowfield-1.png" alt="plot of chunk authority-flowfield" width="60%" />
 </div>
 
 The arrows in this plot tend to point towards the upper right-hand corner,
@@ -282,8 +279,7 @@ coev_plot_selection_gradient(
 ```
 
 <div class="figure" style="text-align: center">
-<img src="vignettes/authority-selection-gradient-1.png" alt="plot of chunk authority-selection-gradient" width="60%" />
-<p class="caption">plot of chunk authority-selection-gradient</p>
+<img src="authority-selection-gradient-1.png" alt="plot of chunk authority-selection-gradient" width="60%" />
 </div>
 
 We can see from this plot that as each variable increases, the selection on the
@@ -301,8 +297,7 @@ coev_plot_pred_series(fit1)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="vignettes/authority-pred-series-1-1.png" alt="plot of chunk authority-pred-series-1" width="60%" />
-<p class="caption">plot of chunk authority-pred-series-1</p>
+<img src="authority-pred-series-1-1.png" alt="plot of chunk authority-pred-series-1" width="60%" />
 </div>
 
 It is also possible to initialise the variables at different starting points, to
@@ -322,8 +317,7 @@ coev_plot_pred_series(
 ```
 
 <div class="figure" style="text-align: center">
-<img src="vignettes/authority-pred-series-2-1.png" alt="plot of chunk authority-pred-series-2" width="60%" />
-<p class="caption">plot of chunk authority-pred-series-2</p>
+<img src="authority-pred-series-2-1.png" alt="plot of chunk authority-pred-series-2" width="60%" />
 </div>
 
 ## Available response distributions
@@ -480,8 +474,7 @@ coev_plot_delta_theta(fit2)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="vignettes/primates-delta-theta-1.png" alt="plot of chunk primates-delta-theta" width="60%" />
-<p class="caption">plot of chunk primates-delta-theta</p>
+<img src="primates-delta-theta-1.png" alt="plot of chunk primates-delta-theta" width="60%" />
 </div>
 
 ## Repeated observations
