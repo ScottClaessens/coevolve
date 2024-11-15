@@ -566,6 +566,88 @@ test_that("coev_make_stancode() produces expected errors", {
       data = d,
       variables = list(
         x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = "fail"
+    ),
+    "Argument 'measurement_error' is not a named list.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(x = "x_se")
+    ),
+    paste0(
+      "Argument 'measurement_error' contains variables that were not ",
+      "declared as normally-distributed variables in the model."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(w = "w_se")
+    ),
+    paste0(
+      "Argument 'measurement_error' refers to measurement error columns ",
+      "that are not valid column names in the data."
+    ),
+    fixed = TRUE
+  )
+  d$w_se <- rep(0, 20)
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(w = "w_se")
+    ),
+    "Standard errors in measurement error columns must be positive reals.",
+    fixed = TRUE
+  )
+  d$w_se <- rexp(20)
+  d$w_se[1] <- NA
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(w = "w_se")
+    ),
+    paste0(
+      "Standard errors in measurement error columns must not be NA ",
+      "in rows where there is observed data for the focal variable."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
         y = "ordered_logistic"
       ),
       id = "id",
