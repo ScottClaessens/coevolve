@@ -435,6 +435,20 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      complete_cases = "testing"
+    ),
+    "Argument 'complete_cases' must be a logical of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       dist_mat = "testing" # not of class matrix
     ),
     "Argument 'dist_mat' must be a matrix.",
@@ -634,7 +648,7 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       scale = "testing"
     ),
-    "Argument 'scale' is not logical.",
+    "Argument 'scale' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -648,7 +662,7 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       estimate_Q_offdiag = "testing"
     ),
-    "Argument 'estimate_Q_offdiag' is not logical.",
+    "Argument 'estimate_Q_offdiag' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -662,7 +676,7 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       prior_only = "testing"
     ),
-    "Argument 'prior_only' is not logical.",
+    "Argument 'prior_only' must be a logical of length one.",
     fixed = TRUE
   )
 })
@@ -785,19 +799,6 @@ test_that("coev_fit() works with missing data", {
   expect_no_error(SW(standata(m)))
   expect_output(SW(stancode(m)))
   expect_true(SW(methods::is(standata(m), "list")))
-  # expect warning in summary output
-  capture.output(
-    SW(
-      expect_warning(
-        print(m),
-        paste0(
-          "Rows with NAs for all coevolving variables were excluded ",
-          "from the model."
-        )
-      )
-    ),
-    file = nullfile()
-    )
 })
 
 test_that("coev_fit() works with repeated observations", {

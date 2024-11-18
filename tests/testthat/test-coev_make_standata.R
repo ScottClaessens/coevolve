@@ -75,8 +75,9 @@ test_that("coev_make_standata() produces expected errors", {
     ),
     paste0(
       "Response distributions other than 'bernoulli_logit', ",
-      "'ordered_logistic', 'poisson_softplus', 'negative_binomial_softplus', ",
-      "'normal', and 'gamma_log' are not yet supported."
+      "'ordered_logistic', 'poisson_softplus', ",
+      "'negative_binomial_softplus', 'normal', and 'gamma_log' ",
+      "are not yet supported."
     ),
     fixed = TRUE
   )
@@ -434,6 +435,20 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      complete_cases = "testing"
+    ),
+    "Argument 'complete_cases' must be a logical of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       dist_mat = "testing" # not of class matrix
     ),
     "Argument 'dist_mat' must be a matrix.",
@@ -633,7 +648,7 @@ test_that("coev_make_standata() produces expected errors", {
       tree = tree,
       scale = "testing"
     ),
-    "Argument 'scale' is not logical.",
+    "Argument 'scale' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -647,7 +662,7 @@ test_that("coev_make_standata() produces expected errors", {
       tree = tree,
       estimate_Q_offdiag = "testing"
     ),
-    "Argument 'estimate_Q_offdiag' is not logical.",
+    "Argument 'estimate_Q_offdiag' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -661,7 +676,7 @@ test_that("coev_make_standata() produces expected errors", {
       tree = tree,
       prior_only = "testing"
     ),
-    "Argument 'prior_only' is not logical.",
+    "Argument 'prior_only' must be a logical of length one.",
     fixed = TRUE
   )
 })
@@ -770,8 +785,28 @@ test_that("coev_make_standata() works with missing data", {
   # row 3 missing y only
   d$x[c(1,2)] <- NA
   d$y[c(1,3)] <- NA
-  # make stan data
-  sd <-
+  # make stan data with missing values to be imputed
+  # should return expected message with missing data
+  expect_message(
+    {sd1 <- coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      complete_cases = FALSE
+    )},
+    paste0(
+      "Note: Missing values (NAs) detected. These values have been ",
+      "included in the Stan data list and will be imputed by the model. Set ",
+      "complete_cases = TRUE to exclude taxa with missing values."
+    ),
+    fixed = TRUE
+  )
+  # make stan data with listwise deletion
+  sd2 <-
     coev_make_standata(
       data = d,
       variables = list(
@@ -779,24 +814,38 @@ test_that("coev_make_standata() works with missing data", {
         y = "ordered_logistic"
       ),
       id = "id",
-      tree = tree
+      tree = tree,
+      complete_cases = TRUE
     )
   # runs without error
-  expect_no_error(sd)
-  # N_tips = 19 because one row removed
-  expect_equal(sd$N_tips, 19)
-  expect_equal(nrow(sd$y), 19)
-  expect_equal(nrow(sd$miss), 19)
+  expect_no_error(sd1)
+  expect_no_error(sd2)
+  # N_tips correct
+  expect_equal(sd1$N_tips, 20)
+  expect_equal(sd2$N_tips, 17)
+  expect_equal(nrow(sd1$y), 20)
+  expect_equal(nrow(sd2$y), 17)
+  expect_equal(nrow(sd1$miss), 20)
+  expect_equal(nrow(sd2$miss), 17)
   # missing matrix correct
-  d <- d[-1,c("x","y")]
-  miss <- as.matrix(ifelse(is.na(d), 1, 0))
-  rownames(miss) <- NULL
-  expect_identical(sd$miss, miss)
+  miss1 <- as.matrix(ifelse(is.na(d[,c("x","y")]), 1, 0))
+  miss2 <-
+    matrix(0, nrow = sum(apply(d, 1, function(x) all(!is.na(x)))), ncol = 2)
+  rownames(miss1) <- NULL
+  colnames(miss2) <- c("x","y")
+  expect_identical(sd1$miss, miss1)
+  expect_identical(sd2$miss, miss2)
   # dataset correct
-  d$x <- ifelse(is.na(d$x), -9999, d$x)
-  d$y <- ifelse(is.na(d$y), -9999, d$y)
-  d <- as.matrix(d, rownames.force = FALSE)
-  expect_identical(sd$y, d)
+  d1 <- d[, c("x", "y")]
+  d2 <- d[, c("x", "y")]
+  d1$x <- ifelse(is.na(d1$x), -9999, d1$x)
+  d1$y <- ifelse(is.na(d1$y), -9999, d1$y)
+  d2 <- d2[apply(d2, 1, function(x) all(!is.na(x))), ]
+  d2$y <- as.numeric(d2$y)
+  d1 <- as.matrix(d1, rownames.force = FALSE)
+  d2 <- as.matrix(d2, rownames.force = FALSE)
+  expect_identical(sd1$y, d1)
+  expect_identical(sd2$y, d2)
 })
 
 test_that("coev_make_standata() works with repeated observations", {

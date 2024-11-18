@@ -223,6 +223,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       nobs           = object$stan_data$N_obs,
       ntrees         = object$stan_data$N_tree,
       tree_name      = object$tree_name,
+      complete_cases = object$complete_cases,
       chains         = object$fit$num_chains(),
       iter           = object$fit$metadata()$iter_sampling,
       warmup         = object$fit$metadata()$iter_warmup,
@@ -355,14 +356,9 @@ print.coevsummary <- function(x, digits = 2, ...) {
     )
     cat("\n")
   }
-  # warnings if data excluded
-  if (nrow(x$data) != x$nobs) {
-    warning2(
-      paste0(
-        "Rows with NAs for all coevolving variables were ",
-        "excluded from the model."
-      )
-    )
+  # warning if complete_cases = TRUE and rows removed
+  if (x$complete_cases & nrow(x$data) != x$nobs) {
+    warning2("Rows with NAs were excluded from the model.")
     cat("\n")
   }
   # return

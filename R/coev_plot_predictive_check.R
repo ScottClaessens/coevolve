@@ -148,11 +148,6 @@ coev_plot_predictive_check <- function(object, variables = NULL,
             )
         }
     }
-    # remove data if missing for all coevolving variables
-    all_missing <- apply(
-      object$data[,names(object$variables)], 1, function(x) all(is.na(x))
-      )
-    y <- y[!all_missing]
     # remove missing data for this variable only
     if (any(is.na(y))) {
       yrep <- yrep[,!is.na(y)]
