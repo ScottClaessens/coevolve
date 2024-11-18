@@ -274,7 +274,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  matrix[N_obs,J] miss; // are data points missing?\n",
     ifelse(
       !is.null(measurement_error),
-      "  matrix[N_obs,J] se; // standard errors\n", ""
+      "  matrix[N_obs,J] se; // squared standard errors\n", ""
       ),
     "  array[N_obs] int<lower=1> tip_id; // index between 1 and N_tips that gives the group id\n"
     )
@@ -626,7 +626,14 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc_model <- paste0(
     sc_model,
     "        lp[t] = multi_normal_cholesky_lpdf(residuals | rep_vector(0.0, ",
-    "J), cholesky_decompose(VCV_tips[t, tip_id[i]]));\n"
+    "J), cholesky_decompose(",
+    ifelse(
+      !is.null(measurement_error),
+      # add squared standard errors to diagonal of VCV_tips
+      "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
+      "VCV_tips[t, tip_id[i]]"
+    ),
+    "));\n"
   )
   # linear models for non-continuous variables
   for (j in 1:length(distributions)) {
@@ -730,7 +737,14 @@ coev_make_stancode <- function(data, variables, id, tree,
     "        vector[J] residuals;\n",
     "        vector[J] terminal_drift_rep;\n",
     "        for (j in 1:J) terminal_drift_rep[j] = normal_rng(0, 1);\n",
-    "        terminal_drift_rep = cholesky_decompose(VCV_tips[t, tip_id[i]]) * terminal_drift_rep;\n"
+    "        terminal_drift_rep = cholesky_decompose(",
+    ifelse(
+      !is.null(measurement_error),
+      # add squared standard errors to diagonal of VCV_tips
+      "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
+      "VCV_tips[t, tip_id[i]]"
+    ),
+    ") * terminal_drift_rep;\n"
   )
   # get residuals
   for (j in 1:length(distributions)) {
@@ -750,7 +764,14 @@ coev_make_stancode <- function(data, variables, id, tree,
   if ("normal" %in% distributions & log_lik) {
     sc_generated_quantities <- paste0(
       sc_generated_quantities,
-      "        matrix[J,J] cov_inv = inverse_spd(VCV_tips[t, tip_id[i]]);\n",
+      "        matrix[J,J] cov_inv = inverse_spd(",
+      ifelse(
+        !is.null(measurement_error),
+        # add squared standard errors to diagonal of VCV_tips
+        "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
+        "VCV_tips[t, tip_id[i]]"
+      ),
+      ");\n",
       "        mu_cond = residuals - (cov_inv * residuals) ./ diagonal(cov_inv);\n",
       "        sigma_cond = sqrt(1 / diagonal(cov_inv));\n"
     )

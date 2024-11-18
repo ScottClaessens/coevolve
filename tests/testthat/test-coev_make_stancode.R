@@ -609,7 +609,7 @@ test_that("coev_make_stancode() produces expected errors", {
     ),
     fixed = TRUE
   )
-  d$w_se <- rep(0, 20)
+  d$w_se <- rep(-1, 20)
   expect_error(
     coev_make_stancode(
       data = d,
@@ -621,7 +621,10 @@ test_that("coev_make_stancode() produces expected errors", {
       tree = tree,
       measurement_error = list(w = "w_se")
     ),
-    "Standard errors in measurement error columns must be positive reals.",
+    paste0(
+      "Standard errors in measurement error columns must be zero or ",
+      "positive reals."
+    ),
     fixed = TRUE
   )
   d$w_se <- rexp(20)

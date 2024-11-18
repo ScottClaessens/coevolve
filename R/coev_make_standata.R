@@ -38,6 +38,13 @@
 #'   Processes over locations. Currently supported are \code{"exp_quad"}
 #'   (exponentiated-quadratic kernel; default), \code{"exponential"}
 #'   (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).
+#' @param measurement_error (optional) A named list of coevolving variables and
+#'   their associated columns in the dataset containing standard errors. Only
+#'   valid for normally-distributed variables. For example, if we declare
+#'   \code{variables = list(x = "normal", y = "normal")}, then we could set
+#'   \code{measurement_error = list(x = "x_std_err")} to tell the function to
+#'   include measurement error on \code{x} using standard errors from the
+#'   \code{x_std_err} column of the dataset.
 #' @param prior (optional) A named list of priors for the model. If not
 #'   specified, the model uses default priors (see \code{help(coev_fit)}).
 #'   Alternatively, the user can specify a named list of priors. The list must
@@ -113,13 +120,15 @@
 coev_make_standata <- function(data, variables, id, tree,
                                effects_mat = NULL, dist_mat = NULL,
                                dist_cov = "exp_quad",
+                               measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_Q_offdiag = TRUE,
                                log_lik = FALSE,
                                prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, dist_mat,
-             dist_cov, prior, scale, estimate_Q_offdiag, log_lik, prior_only)
+             dist_cov, measurement_error, prior, scale, estimate_Q_offdiag,
+             log_lik, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # warning if scale = FALSE
@@ -132,9 +141,6 @@ coev_make_standata <- function(data, variables, id, tree,
       )
     )
   }
-  # remove data rows where all coevolving variables are NA
-  all_missing <- apply(data[,names(variables)], 1, function(x) all(is.na(x)))
-  data <- data[!all_missing,]
   # coerce tree object to multiPhylo
   tree <- phytools::as.multiPhylo(tree)
   # ensure that all trees have same tip labels
@@ -175,7 +181,7 @@ coev_make_standata <- function(data, variables, id, tree,
   }
   # get number of trees
   N_tree <- length(tree)
-  # get number of segements in trees
+  # get number of segments in trees
   N_seg <- length(ape::node.depth(tree[[1]]))
   # initialise tree variables for stan
   stan_node_seq <- matrix(NA, N_tree, N_seg)
@@ -235,6 +241,29 @@ coev_make_standata <- function(data, variables, id, tree,
   miss <- ifelse(is.na(y), 1, 0)
   # replace y with -9999 if missing
   y[miss == 1] <- -9999
+  # get matrix with squared standard errors
+  if (!is.null(measurement_error)) {
+    se <- list()
+    for (j in 1:length(variables)) {
+      if (names(variables)[j] %in% names(measurement_error)) {
+        # if standard errors declared for this variable
+        # get standard error column
+        se_column <- measurement_error[[names(variables)[j]]]
+        # get vector of standard error values
+        se_values <- data[[se_column]]
+        if (scale) {
+          # if scale = TRUE, need to also scale the standard errors correctly
+          se_values <- se_values / sd(data[[names(variables)[j]]], na.rm = TRUE)
+        }
+        # add squared standard errors to matrix, set any NAs to zero
+        se[[names(variables)[j]]] <- ifelse(is.na(se_values), 0, se_values^2)
+      } else {
+        # if no standard errors declared, zero for entire column in matrix
+        se[[names(variables)[j]]] <- rep(0, times = nrow(data))
+      }
+    }
+    se <- as.matrix(as.data.frame(se))
+  }
   # normalise distance matrix so that maximum distance = 1
   if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
   # match tip ids
@@ -258,6 +287,8 @@ coev_make_standata <- function(data, variables, id, tree,
   )
   # add distance matrix if specified
   if (!is.null(dist_mat)) sd[["dist_mat"]] <- dist_mat
+  # add squared standard errors if measurement_error specified
+  if (!is.null(measurement_error)) sd[["se"]] <- se
   # add prior_only
   sd[["prior_only"]] <- as.numeric(prior_only)
   return(sd)
