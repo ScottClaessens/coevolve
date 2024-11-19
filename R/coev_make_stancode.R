@@ -29,6 +29,9 @@
 #'   FALSE. In the matrix, columns represent predictor variables and rows
 #'   represent outcome variables. All autoregressive effects (e.g., X -> X) must
 #'   be TRUE in the matrix.
+#' @param complete_cases (optional) Logical. If \code{FALSE} (default), all
+#'   missing values are imputed by the model. If \code{TRUE}, taxa with missing
+#'   data are excluded.
 #' @param dist_mat (optional) A distance matrix with row and column names
 #'   exactly matching the tip labels in the phylogeny. If specified, the model
 #'   will additionally control for spatial location by including a separate
@@ -122,15 +125,15 @@
 #'
 #' @export
 coev_make_stancode <- function(data, variables, id, tree,
-                               effects_mat = NULL, dist_mat = NULL,
-                               dist_cov = "exp_quad",
+                               effects_mat = NULL, complete_cases = FALSE,
+                               dist_mat = NULL, dist_cov = "exp_quad",
                                measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_Q_offdiag = TRUE,
                                log_lik = FALSE,
                                prior_only = FALSE) {
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, dist_mat,
+  run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, measurement_error, prior, scale, estimate_Q_offdiag,
              log_lik, prior_only)
   # coerce data argument to data frame
