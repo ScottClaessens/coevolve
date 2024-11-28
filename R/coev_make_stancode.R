@@ -727,26 +727,34 @@ coev_make_stancode <- function(data, variables, id, tree,
       "        vector[J] sigma_cond;\n"
     )
   }
+  # only declare the following if log_lik = TRUE
+  if (log_lik) {
+    sc_generated_quantities <- paste0(
+      sc_generated_quantities,
+      "        vector[J] residuals;\n"
+    )
+  }
   # calculate terminal drift for yrep
   sc_generated_quantities <- paste0(
     sc_generated_quantities,
-    "        vector[J] residuals;\n",
     "        vector[J] terminal_drift_rep;\n",
     "        for (j in 1:J) terminal_drift_rep[j] = normal_rng(0, 1);\n",
     "        terminal_drift_rep = cholesky_decompose(VCV_tips[t, tip_id[i]]) * terminal_drift_rep;\n"
   )
-  # get residuals
-  for (j in 1:length(distributions)) {
-    if (distributions[j] == "normal") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        "        residuals[", j, "] = y[i][", j, "] - ", lmod(j), ";\n"
-      )
-    } else {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        "        residuals[", j, "] = terminal_drift[t, tip_id[i]][", j, "];\n"
-      )
+  # get residuals if log_lik = TRUE
+  if (log_lik) {
+    for (j in 1:length(distributions)) {
+      if (distributions[j] == "normal") {
+        sc_generated_quantities <- paste0(
+          sc_generated_quantities,
+          "        residuals[", j, "] = y[i][", j, "] - ", lmod(j), ";\n"
+        )
+      } else {
+        sc_generated_quantities <- paste0(
+          sc_generated_quantities,
+          "        residuals[", j, "] = terminal_drift[t, tip_id[i]][", j, "];\n"
+        )
+      }
     }
   }
   # only calculate if there are gaussian distributions and log_lik = TRUE
