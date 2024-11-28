@@ -526,6 +526,11 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  for (t in 1:N_tree) {\n",
     "    eta_anc[t] ~ ", priors$eta_anc, ";\n",
     "    for (i in 1:(N_seg - 1)) z_drift[t, i] ~ std_normal();\n",
+    ifelse(
+      !("normal" %in% distributions),
+      "    for (i in 1:N_obs) to_vector(terminal_drift[t][i,]) ~ std_normal();\n",
+      ""
+    ),
     "  }\n",
     "  A_offdiag ~ ", priors$A_offdiag, ";\n",
     "  A_diag ~ ", priors$A_diag, ";\n",
@@ -607,37 +612,52 @@ coev_make_stancode <- function(data, variables, id, tree,
     "        vector[J] residuals;\n"
     )
   # set residuals for all variables in the model
-  for (j in 1:length(distributions)) {
-    if (distributions[j] == "normal") {
-      sc_model <- paste0(
-        sc_model,
-        "        if (miss[i,", j, "] == 0) {\n",
-        "          residuals[", j, "] = y[i,", j, "] - ", lmod(j), ";\n",
-        "          terminal_drift[t][i,", j, "] ~ std_normal();\n",
-        "        } else {\n",
-        "          residuals[", j, "] = terminal_drift[t][i,", j, "];\n",
-        "        }\n"
-      )
-    } else {
-      sc_model <- paste0(
-        sc_model,
-        "        residuals[", j, "] = terminal_drift[t][i,", j, "];\n"
-      )
+  if ("normal" %in% distributions) {
+    for (j in 1:length(distributions)) {
+      if (distributions[j] == "normal") {
+        sc_model <- paste0(
+          sc_model,
+          "        if (miss[i,", j, "] == 0) {\n",
+          "          residuals[", j, "] = y[i,", j, "] - ", lmod(j), ";\n",
+          "          terminal_drift[t][i,", j, "] ~ std_normal();\n",
+          "        } else {\n",
+          "          residuals[", j, "] = terminal_drift[t][i,", j, "];\n",
+          "        }\n"
+        )
+      } else {
+        sc_model <- paste0(
+          sc_model,
+          "        residuals[", j, "] = terminal_drift[t][i,", j, "];\n"
+        )
+      }
     }
+    # add multi-normal prior for residuals
+    sc_model <- paste0(
+      sc_model,
+      "        lp[t] = multi_normal_cholesky_lpdf(residuals | rep_vector(0.0, ",
+      "J), cholesky_decompose(",
+      ifelse(
+        !is.null(measurement_error),
+        # add squared standard errors to diagonal of VCV_tips
+        "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
+        "VCV_tips[t, tip_id[i]]"
+      ),
+      "));\n"
+    )
+  } else {
+    # if no gaussian traits, use non-centered parameterisation instead
+    sc_model <- paste0(
+      sc_model,
+      "        residuals = cholesky_decompose(",
+      ifelse(
+        !is.null(measurement_error),
+        # add squared standard errors to diagonal of VCV_tips
+        "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
+        "VCV_tips[t, tip_id[i]]"
+      ),
+      ") * to_vector(terminal_drift[t][i,]);\n"
+    )
   }
-  # add multi-normal prior for residuals
-  sc_model <- paste0(
-    sc_model,
-    "        lp[t] = multi_normal_cholesky_lpdf(residuals | rep_vector(0.0, ",
-    "J), cholesky_decompose(",
-    ifelse(
-      !is.null(measurement_error),
-      # add squared standard errors to diagonal of VCV_tips
-      "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
-      "VCV_tips[t, tip_id[i]]"
-    ),
-    "));\n"
-  )
   # linear models for non-continuous variables
   for (j in 1:length(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
@@ -734,10 +754,16 @@ coev_make_stancode <- function(data, variables, id, tree,
       "        vector[J] sigma_cond;\n"
     )
   }
+  # only declare the following if log_lik = TRUE
+  if (log_lik) {
+    sc_generated_quantities <- paste0(
+      sc_generated_quantities,
+      "        vector[J] residuals;\n"
+    )
+  }
   # calculate terminal drift for yrep
   sc_generated_quantities <- paste0(
     sc_generated_quantities,
-    "        vector[J] residuals;\n",
     "        vector[J] terminal_drift_rep;\n",
     "        for (j in 1:J) terminal_drift_rep[j] = normal_rng(0, 1);\n",
     "        terminal_drift_rep = cholesky_decompose(",
@@ -749,18 +775,20 @@ coev_make_stancode <- function(data, variables, id, tree,
     ),
     ") * terminal_drift_rep;\n"
   )
-  # get residuals
-  for (j in 1:length(distributions)) {
-    if (distributions[j] == "normal") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        "        residuals[", j, "] = y[i][", j, "] - ", lmod(j), ";\n"
-      )
-    } else {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        "        residuals[", j, "] = terminal_drift[t, tip_id[i]][", j, "];\n"
-      )
+  # get residuals if log_lik = TRUE
+  if (log_lik) {
+    for (j in 1:length(distributions)) {
+      if (distributions[j] == "normal") {
+        sc_generated_quantities <- paste0(
+          sc_generated_quantities,
+          "        residuals[", j, "] = y[i][", j, "] - ", lmod(j), ";\n"
+        )
+      } else {
+        sc_generated_quantities <- paste0(
+          sc_generated_quantities,
+          "        residuals[", j, "] = terminal_drift[t, tip_id[i]][", j, "];\n"
+        )
+      }
     }
   }
   # only calculate if there are gaussian distributions and log_lik = TRUE
