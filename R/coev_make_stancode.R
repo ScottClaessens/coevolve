@@ -513,6 +513,11 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  for (t in 1:N_tree) {\n",
     "    eta_anc[t] ~ ", priors$eta_anc, ";\n",
     "    for (i in 1:(N_seg - 1)) z_drift[t, i] ~ std_normal();\n",
+    ifelse(
+      !("normal" %in% distributions),
+      "    for (i in 1:N_obs) to_vector(terminal_drift[t][i,]) ~ std_normal();\n",
+      ""
+    ),
     "  }\n",
     "  A_offdiag ~ ", priors$A_offdiag, ";\n",
     "  A_diag ~ ", priors$A_diag, ";\n",
@@ -594,30 +599,38 @@ coev_make_stancode <- function(data, variables, id, tree,
     "        vector[J] residuals;\n"
     )
   # set residuals for all variables in the model
-  for (j in 1:length(distributions)) {
-    if (distributions[j] == "normal") {
-      sc_model <- paste0(
-        sc_model,
-        "        if (miss[i,", j, "] == 0) {\n",
-        "          residuals[", j, "] = y[i,", j, "] - ", lmod(j), ";\n",
-        "          terminal_drift[t][i,", j, "] ~ std_normal();\n",
-        "        } else {\n",
-        "          residuals[", j, "] = terminal_drift[t][i,", j, "];\n",
-        "        }\n"
-      )
-    } else {
-      sc_model <- paste0(
-        sc_model,
-        "        residuals[", j, "] = terminal_drift[t][i,", j, "];\n"
-      )
+  if ("normal" %in% distributions) {
+    for (j in 1:length(distributions)) {
+      if (distributions[j] == "normal") {
+        sc_model <- paste0(
+          sc_model,
+          "        if (miss[i,", j, "] == 0) {\n",
+          "          residuals[", j, "] = y[i,", j, "] - ", lmod(j), ";\n",
+          "          terminal_drift[t][i,", j, "] ~ std_normal();\n",
+          "        } else {\n",
+          "          residuals[", j, "] = terminal_drift[t][i,", j, "];\n",
+          "        }\n"
+        )
+      } else {
+        sc_model <- paste0(
+          sc_model,
+          "        residuals[", j, "] = terminal_drift[t][i,", j, "];\n"
+        )
+      }
     }
+    # add multi-normal prior for residuals
+    sc_model <- paste0(
+      sc_model,
+      "        lp[t] = multi_normal_cholesky_lpdf(residuals | rep_vector(0.0, ",
+      "J), cholesky_decompose(VCV_tips[t, tip_id[i]]));\n"
+    )
+  } else {
+    # if no gaussian traits, use non-centered parameterisation instead
+    sc_model <- paste0(
+      sc_model,
+      "        residuals = cholesky_decompose(VCV_tips[t, tip_id[i]]) * to_vector(terminal_drift[t][i,]);\n"
+    )
   }
-  # add multi-normal prior for residuals
-  sc_model <- paste0(
-    sc_model,
-    "        lp[t] = multi_normal_cholesky_lpdf(residuals | rep_vector(0.0, ",
-    "J), cholesky_decompose(VCV_tips[t, tip_id[i]]));\n"
-  )
   # linear models for non-continuous variables
   for (j in 1:length(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
