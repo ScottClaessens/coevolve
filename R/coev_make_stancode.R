@@ -484,8 +484,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   if (dist_cov == "exp_quad") {
     # exponentiated quadratic kernel
     dist_cov_code <- paste0(
-      "sigma_dist[j] * exp(-(square(dist_mat[i,m]) / ",
-      "(2.0 * square(rho_dist[j]))))"
+      "sigma_dist[j] * exp(-(square(dist_mat[i,m]) / rho_dist[j]))"
       )
   } else if (dist_cov == "exponential") {
     # exponential kernel
