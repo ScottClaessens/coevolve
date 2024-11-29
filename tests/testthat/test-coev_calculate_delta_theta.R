@@ -1,17 +1,17 @@
 test_that("coev_calculate_delta_theta() produces expected errors and output", {
   # load model
-  m1 <- readRDS(test_path("fixtures", "coevfit_example1.rds"))
-  m2 <- readRDS(test_path("fixtures", "coevfit_example2.rds"))
-  m3 <- readRDS(test_path("fixtures", "coevfit_example3.rds"))
-  m4 <- readRDS(test_path("fixtures", "coevfit_example4.rds"))
-  m5 <- readRDS(test_path("fixtures", "coevfit_example5.rds"))
-  m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
-  m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
-  m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
-  m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
-  m4 <- reload_fit(m4, filename = "coevfit_example4-1.csv")
-  m5 <- reload_fit(m5, filename = "coevfit_example5-1.csv")
-  m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
+  m1 <- readRDS(test_path("fixtures", "coevfit_example_01.rds"))
+  m2 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
+  m3 <- readRDS(test_path("fixtures", "coevfit_example_03.rds"))
+  m4 <- readRDS(test_path("fixtures", "coevfit_example_04.rds"))
+  m5 <- readRDS(test_path("fixtures", "coevfit_example_05.rds"))
+  m6 <- readRDS(test_path("fixtures", "coevfit_example_06.rds"))
+  m1 <- reload_fit(m1, filename = "coevfit_example_01-1.csv")
+  m2 <- reload_fit(m2, filename = "coevfit_example_02-1.csv")
+  m3 <- reload_fit(m3, filename = "coevfit_example_03-1.csv")
+  m4 <- reload_fit(m4, filename = "coevfit_example_04-1.csv")
+  m5 <- reload_fit(m5, filename = "coevfit_example_05-1.csv")
+  m6 <- reload_fit(m6, filename = "coevfit_example_06-1.csv")
   # expect the following errors
   expect_error(
     coev_calculate_delta_theta(object = "fail"),
@@ -59,8 +59,8 @@ test_that("coev_calculate_delta_theta() produces expected errors and output", {
 
 test_that("coev_calculate_delta_theta() works with repeated observations", {
   # load model
-  m <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
-  m <- reload_fit(m, filename = "coevfit_example7-1.csv")
+  m <- readRDS(test_path("fixtures", "coevfit_example_07.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_07-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # should run without error and produce draws_array object
@@ -77,8 +77,8 @@ test_that("coev_calculate_delta_theta() works with repeated observations", {
 
 test_that("coev_calculate_delta_theta() works with multiPhylo object", {
   # load model
-  m <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
-  m <- reload_fit(m, filename = "coevfit_example8-1.csv")
+  m <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_08-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # should run without error and produce draws_array object
@@ -95,8 +95,26 @@ test_that("coev_calculate_delta_theta() works with multiPhylo object", {
 
 test_that("coev_calculate_delta_theta() works when Q offdiag == 0", {
   # load model
-  m <- readRDS(test_path("fixtures", "coevfit_example9.rds"))
-  m <- reload_fit(m, filename = "coevfit_example9-1.csv")
+  m <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_09-1.csv")
+  # suppress warnings
+  SW <- suppressWarnings
+  # should run without error and produce draws_array object
+  expect_no_error(
+    SW(coev_calculate_delta_theta(m, response = "x", predictor = "y"))
+  )
+  expect_true(
+    methods::is(
+      SW(coev_calculate_delta_theta(m, response = "x", predictor = "y")),
+      "draws_array"
+    )
+  )
+})
+
+test_that("coev_calculate_delta_theta() works with measurement error", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_10-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # should run without error and produce draws_array object

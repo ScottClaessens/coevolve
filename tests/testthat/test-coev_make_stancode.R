@@ -1250,3 +1250,41 @@ test_that("coev_make_stancode() works with gamma_log distribution", {
     )
   )
 })
+
+test_that("coev_make_stancode() works with measurement error", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n),
+      x_se = 0,
+      y_se = rexp(20, 5)
+    )
+  })
+  # make stan code with measurement error
+  sc <-
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(
+        x = "x_se",
+        y = "y_se"
+      )
+    )
+  # check stan code is syntactically correct
+  expect_no_error(sc)
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+})

@@ -683,14 +683,14 @@ test_that("coev_fit() produces expected errors", {
 
 test_that("coev_fit() fits the model without error", {
   # load models
-  m1 <- readRDS(test_path("fixtures", "coevfit_example1.rds"))
-  m2 <- readRDS(test_path("fixtures", "coevfit_example2.rds"))
-  m3 <- readRDS(test_path("fixtures", "coevfit_example3.rds"))
-  m4 <- readRDS(test_path("fixtures", "coevfit_example4.rds"))
-  m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
-  m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
-  m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
-  m4 <- reload_fit(m4, filename = "coevfit_example4-1.csv")
+  m1 <- readRDS(test_path("fixtures", "coevfit_example_01.rds"))
+  m2 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
+  m3 <- readRDS(test_path("fixtures", "coevfit_example_03.rds"))
+  m4 <- readRDS(test_path("fixtures", "coevfit_example_04.rds"))
+  m1 <- reload_fit(m1, filename = "coevfit_example_01-1.csv")
+  m2 <- reload_fit(m2, filename = "coevfit_example_02-1.csv")
+  m3 <- reload_fit(m3, filename = "coevfit_example_03-1.csv")
+  m4 <- reload_fit(m4, filename = "coevfit_example_04-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # expect no errors for model fitting or summaries
@@ -743,8 +743,8 @@ test_that("coev_fit() fits the model without error", {
 
 test_that("effects_mat argument to coev_fit() works as expected", {
   # load model
-  m <- readRDS(test_path("fixtures", "coevfit_example5.rds"))
-  m <- reload_fit(m, filename = "coevfit_example5-1.csv")
+  m <- readRDS(test_path("fixtures", "coevfit_example_05.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_05-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # expect no errors for model fitting or summaries
@@ -782,8 +782,8 @@ test_that("effects_mat argument to coev_fit() works as expected", {
 
 test_that("coev_fit() works with missing data", {
   # load model
-  m <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
-  m <- reload_fit(m, filename = "coevfit_example6-1.csv")
+  m <- readRDS(test_path("fixtures", "coevfit_example_06.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_06-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # fitted without error
@@ -803,8 +803,8 @@ test_that("coev_fit() works with missing data", {
 
 test_that("coev_fit() works with repeated observations", {
   # load model
-  m <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
-  m <- reload_fit(m, filename = "coevfit_example7-1.csv")
+  m <- readRDS(test_path("fixtures", "coevfit_example_07.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_07-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # fitted without error
@@ -821,8 +821,8 @@ test_that("coev_fit() works with repeated observations", {
 
 test_that("coev_fit() works with multiPhylo object", {
   # load model
-  m <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
-  m <- reload_fit(m, filename = "coevfit_example8-1.csv")
+  m <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_08-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # fitted without error
@@ -839,8 +839,26 @@ test_that("coev_fit() works with multiPhylo object", {
 
 test_that("coev_fit() works when Q off diagonals == 0", {
   # load model
-  m <- readRDS(test_path("fixtures", "coevfit_example9.rds"))
-  m <- reload_fit(m, filename = "coevfit_example9-1.csv")
+  m <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_09-1.csv")
+  # suppress warnings
+  SW <- suppressWarnings
+  # fitted without error
+  expect_no_error(SW(m))
+  expect_no_error(SW(summary(m)))
+  expect_output(SW(print(m)))
+  expect_output(SW(print(summary(m))))
+  # expect no errors for stancode or standata methods
+  expect_no_error(SW(stancode(m)))
+  expect_no_error(SW(standata(m)))
+  expect_output(SW(stancode(m)))
+  expect_true(SW(methods::is(standata(m), "list")))
+})
+
+test_that("coev_fit() works with measurement error", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_10-1.csv")
   # suppress warnings
   SW <- suppressWarnings
   # fitted without error

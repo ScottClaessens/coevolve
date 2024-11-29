@@ -1,57 +1,59 @@
 test_that("coev_plot_selection_gradient() produces expected errors and output", {
   # load models
-  m1 <- readRDS(test_path("fixtures", "coevfit_example1.rds"))
-  m2 <- readRDS(test_path("fixtures", "coevfit_example2.rds"))
-  m3 <- readRDS(test_path("fixtures", "coevfit_example3.rds"))
-  m4 <- readRDS(test_path("fixtures", "coevfit_example4.rds"))
-  m5 <- readRDS(test_path("fixtures", "coevfit_example5.rds"))
-  m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
-  m7 <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
-  m8 <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
-  m9 <- readRDS(test_path("fixtures", "coevfit_example9.rds"))
-  m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
-  m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
-  m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
-  m4 <- reload_fit(m4, filename = "coevfit_example4-1.csv")
-  m5 <- reload_fit(m5, filename = "coevfit_example5-1.csv")
-  m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
-  m7 <- reload_fit(m7, filename = "coevfit_example7-1.csv")
-  m8 <- reload_fit(m8, filename = "coevfit_example8-1.csv")
-  m9 <- reload_fit(m9, filename = "coevfit_example9-1.csv")
+  m01 <- readRDS(test_path("fixtures", "coevfit_example_01.rds"))
+  m02 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
+  m03 <- readRDS(test_path("fixtures", "coevfit_example_03.rds"))
+  m04 <- readRDS(test_path("fixtures", "coevfit_example_04.rds"))
+  m05 <- readRDS(test_path("fixtures", "coevfit_example_05.rds"))
+  m06 <- readRDS(test_path("fixtures", "coevfit_example_06.rds"))
+  m07 <- readRDS(test_path("fixtures", "coevfit_example_07.rds"))
+  m08 <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
+  m09 <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
+  m10 <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
+  m01 <- reload_fit(m01, filename = "coevfit_example_01-1.csv")
+  m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
+  m03 <- reload_fit(m03, filename = "coevfit_example_03-1.csv")
+  m04 <- reload_fit(m04, filename = "coevfit_example_04-1.csv")
+  m05 <- reload_fit(m05, filename = "coevfit_example_05-1.csv")
+  m06 <- reload_fit(m06, filename = "coevfit_example_06-1.csv")
+  m07 <- reload_fit(m07, filename = "coevfit_example_07-1.csv")
+  m08 <- reload_fit(m08, filename = "coevfit_example_08-1.csv")
+  m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
+  m10 <- reload_fit(m10, filename = "coevfit_example_10-1.csv")
   # expect the following errors
   expect_error(
     coev_plot_selection_gradient(object = "fail", var1 = "x", var2 = "y"),
     "Argument 'object' must be a fitted coevolutionary model of class coevfit."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m1, var1 = 0:1, var2 = "y"),
+    coev_plot_selection_gradient(object = m01, var1 = 0:1, var2 = "y"),
     "Argument 'var1' must be a character string of length one."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m1, var1 = "z", var2 = "y"),
+    coev_plot_selection_gradient(object = m01, var1 = "z", var2 = "y"),
     "Argument 'var1' must be a variable included in the fitted model."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m1, var1 = "x", var2 = 0:1),
+    coev_plot_selection_gradient(object = m01, var1 = "x", var2 = 0:1),
     "Argument 'var2' must be a character string of length one."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m1, var1 = "x", var2 = "z"),
+    coev_plot_selection_gradient(object = m01, var1 = "x", var2 = "z"),
     "Argument 'var2' must be a variable included in the fitted model."
   )
   expect_error(
-    coev_plot_selection_gradient(object = m1, var1 = "x", var2 = "x"),
+    coev_plot_selection_gradient(object = m01, var1 = "x", var2 = "x"),
     "Argument 'var1' and 'var2' must refer to different variables."
   )
   expect_error(
     coev_plot_selection_gradient(
-      object = m1, var1 = "x", var2 = "y", contour = "hello"
+      object = m01, var1 = "x", var2 = "y", contour = "hello"
       ),
     "Argument 'contour' must be logical."
   )
   expect_error(
     coev_plot_selection_gradient(
-      object = m1, var1 = "x", var2 = "y", limits = "hello"
+      object = m01, var1 = "x", var2 = "y", limits = "hello"
     ),
     "Argument 'limits' must be a numeric vector of length 2."
   )
@@ -61,41 +63,45 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
       coev_plot_selection_gradient(model, var1, var2, contour, limits)
       )
   }
-  expect_no_error(fun(m1, "x", "y"))
-  expect_no_error(fun(m2, "w", "x"))
-  expect_no_error(fun(m3, "w", "x"))
-  expect_no_error(fun(m4, "y", "z"))
-  expect_no_error(fun(m5, "w", "x"))
-  expect_no_error(fun(m6, "w", "x"))
-  expect_no_error(fun(m7, "w", "x"))
-  expect_no_error(fun(m8, "x", "y"))
-  expect_no_error(fun(m9, "x", "y"))
-  expect_no_error(fun(m1, "x", "y", contour = TRUE))
-  expect_no_error(fun(m2, "w", "x", contour = TRUE))
-  expect_no_error(fun(m3, "w", "x", contour = TRUE))
-  expect_no_error(fun(m4, "y", "z", contour = TRUE))
-  expect_no_error(fun(m5, "w", "x", contour = TRUE))
-  expect_no_error(fun(m6, "w", "x", contour = TRUE))
-  expect_no_error(fun(m7, "w", "x", contour = TRUE))
-  expect_no_error(fun(m8, "x", "y", contour = TRUE))
-  expect_no_error(fun(m9, "x", "y", contour = TRUE))
-  expect_no_error(fun(m1, "x", "y", limits = c(-3, 3)))
-  expect_no_error(fun(m2, "w", "x", limits = c(-3, 3)))
-  expect_no_error(fun(m3, "w", "x", limits = c(-3, 3)))
-  expect_no_error(fun(m4, "y", "z", limits = c(-3, 3)))
-  expect_no_error(fun(m5, "w", "x", limits = c(-3, 3)))
-  expect_no_error(fun(m6, "w", "x", limits = c(-3, 3)))
-  expect_no_error(fun(m7, "w", "x", limits = c(-3, 3)))
-  expect_no_error(fun(m8, "y", "x", limits = c(-3, 3)))
-  expect_no_error(fun(m9, "y", "x", limits = c(-3, 3)))
-  expect_true(methods::is(fun(m1, "x", "y"), "ggplot"))
-  expect_true(methods::is(fun(m2, "w", "x"), "ggplot"))
-  expect_true(methods::is(fun(m3, "w", "x"), "ggplot"))
-  expect_true(methods::is(fun(m4, "y", "z"), "ggplot"))
-  expect_true(methods::is(fun(m5, "w", "x"), "ggplot"))
-  expect_true(methods::is(fun(m6, "w", "x"), "ggplot"))
-  expect_true(methods::is(fun(m7, "w", "x"), "ggplot"))
-  expect_true(methods::is(fun(m7, "w", "x"), "ggplot"))
-  expect_true(methods::is(fun(m8, "x", "y"), "ggplot"))
-  expect_true(methods::is(fun(m9, "x", "y"), "ggplot"))
+  expect_no_error(fun(m01, "x", "y"))
+  expect_no_error(fun(m02, "w", "x"))
+  expect_no_error(fun(m03, "w", "x"))
+  expect_no_error(fun(m04, "y", "z"))
+  expect_no_error(fun(m05, "w", "x"))
+  expect_no_error(fun(m06, "w", "x"))
+  expect_no_error(fun(m07, "w", "x"))
+  expect_no_error(fun(m08, "x", "y"))
+  expect_no_error(fun(m09, "x", "y"))
+  expect_no_error(fun(m10, "x", "y"))
+  expect_no_error(fun(m01, "x", "y", contour = TRUE))
+  expect_no_error(fun(m02, "w", "x", contour = TRUE))
+  expect_no_error(fun(m03, "w", "x", contour = TRUE))
+  expect_no_error(fun(m04, "y", "z", contour = TRUE))
+  expect_no_error(fun(m05, "w", "x", contour = TRUE))
+  expect_no_error(fun(m06, "w", "x", contour = TRUE))
+  expect_no_error(fun(m07, "w", "x", contour = TRUE))
+  expect_no_error(fun(m08, "x", "y", contour = TRUE))
+  expect_no_error(fun(m09, "x", "y", contour = TRUE))
+  expect_no_error(fun(m10, "x", "y", contour = TRUE))
+  expect_no_error(fun(m01, "x", "y", limits = c(-3, 3)))
+  expect_no_error(fun(m02, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m03, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m04, "y", "z", limits = c(-3, 3)))
+  expect_no_error(fun(m05, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m06, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m07, "w", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m08, "y", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m09, "y", "x", limits = c(-3, 3)))
+  expect_no_error(fun(m10, "y", "x", limits = c(-3, 3)))
+  expect_true(methods::is(fun(m01, "x", "y"), "ggplot"))
+  expect_true(methods::is(fun(m02, "w", "x"), "ggplot"))
+  expect_true(methods::is(fun(m03, "w", "x"), "ggplot"))
+  expect_true(methods::is(fun(m04, "y", "z"), "ggplot"))
+  expect_true(methods::is(fun(m05, "w", "x"), "ggplot"))
+  expect_true(methods::is(fun(m06, "w", "x"), "ggplot"))
+  expect_true(methods::is(fun(m07, "w", "x"), "ggplot"))
+  expect_true(methods::is(fun(m07, "w", "x"), "ggplot"))
+  expect_true(methods::is(fun(m08, "x", "y"), "ggplot"))
+  expect_true(methods::is(fun(m09, "x", "y"), "ggplot"))
+  expect_true(methods::is(fun(m10, "x", "y"), "ggplot"))
 })

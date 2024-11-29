@@ -997,3 +997,62 @@ test_that("coev_make_standata() works with multiPhylo object", {
   expect_true(nrow(sd$ts) == 2)
   expect_true(nrow(sd$tip) == 2)
 })
+
+test_that("coev_make_standata() works with measurement error", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n),
+      z = rbinom(n, 1, 0.5),
+      x_se = 0, # no measurement error
+      y_se = rexp(20, 5)
+    )
+  })
+  # make stan data with measurement error when scale = TRUE
+  sd1 <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal",
+        z = "bernoulli_logit"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(
+        x = "x_se",
+        y = "y_se"
+      )
+    )
+  # make stan data with measurement error when scale = FALSE
+  sd2 <-
+    suppressWarnings(
+      coev_make_standata(
+        data = d,
+        variables = list(
+          x = "normal",
+          y = "normal",
+          z = "bernoulli_logit"
+        ),
+        id = "id",
+        tree = tree,
+        measurement_error = list(
+          x = "x_se",
+          y = "y_se"
+        ),
+        scale = FALSE
+      )
+    )
+  # check squared standard errors are scaled correctly in stan data
+  expect_identical(sd1$se[, 1], (d$x_se / sd(d$x))^2)
+  expect_identical(sd1$se[, 2], (d$y_se / sd(d$y))^2)
+  expect_identical(sd2$se[, 1], d$x_se^2)
+  expect_identical(sd2$se[, 2], d$y_se^2)
+  # se set to zero for non-normal variables
+  expect_true(all(sd1$se[, 3] == 0))
+  expect_true(all(sd2$se[, 3] == 0))
+})

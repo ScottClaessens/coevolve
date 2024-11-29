@@ -1,8 +1,8 @@
 # stan_version_major = 2
 # stan_version_minor = 35
 # stan_version_patch = 0
-# model = model_f6045411f4949b6a3caebcc79d0982a8_model
-# start_datetime = 2024-11-28 14:39:45 UTC
+# model = model_f722746ac6c1de06f25869a88dd8fca0_model
+# start_datetime = 2024-11-28 16:40:46 UTC
 # method = sample (Default)
 #   sample
 #     num_samples = 50
@@ -31,20 +31,20 @@
 #     num_chains = 1 (Default)
 # id = 1 (Default)
 # data
-#   file = C:/Users/sc2223/AppData/Local/Temp/RtmpQhvtKc/standata-1d982ac31f4d.json
+#   file = C:/Users/sc2223/AppData/Local/Temp/RtmpA9woa3/standata-63e863203f66.json
 # init = 2 (Default)
 # random
 #   seed = 12345
 # output
-#   file = C:/Users/sc2223/AppData/Local/Temp/RtmpQhvtKc/model_f6045411f4949b6a3caebcc79d0982a8-202411281439-1-22103e.csv
+#   file = C:/Users/sc2223/AppData/Local/Temp/RtmpA9woa3/model_f722746ac6c1de06f25869a88dd8fca0-202411281640-1-22568e.csv
 #   diagnostic_file =  (Default)
 #   refresh = 100 (Default)
 #   sig_figs = -1 (Default)
-#   profile_file = C:/Users/sc2223/AppData/Local/Temp/RtmpQhvtKc/model_f6045411f4949b6a3caebcc79d0982a8-profile-202411281439-1-334499.csv
+#   profile_file = C:/Users/sc2223/AppData/Local/Temp/RtmpA9woa3/model_f722746ac6c1de06f25869a88dd8fca0-profile-202411281640-1-338ae9.csv
 #   save_cmdstan_config = false (Default)
 # num_threads = 1 (Default)
 # stanc_version = stanc3 v2.35.0
-# stancflags = --name=model_f6045411f4949b6a3caebcc79d0982a8_model
+# stancflags = --name=model_f722746ac6c1de06f25869a88dd8fca0_model
 lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_diag.1,A_diag.2,A_offdiag.1,A_offdiag.2,L_R.1.1,L_R.2.1,L_R.1.2,L_R.2.2,Q_sigma.1,Q_sigma.2,b.1,b.2,eta_anc.1.1,eta_anc.1.2,z_drift.1.1.1,z_drift.1.2.1,z_drift.1.3.1,z_drift.1.4.1,z_drift.1.5.1,z_drift.1.6.1,z_drift.1.7.1,z_drift.1.8.1,z_drift.1.1.2,z_drift.1.2.2,z_drift.1.3.2,z_drift.1.4.2,z_drift.1.5.2,z_drift.1.6.2,z_drift.1.7.2,z_drift.1.8.2,terminal_drift.1.1.1,terminal_drift.1.2.1,terminal_drift.1.3.1,terminal_drift.1.4.1,terminal_drift.1.5.1,terminal_drift.1.6.1,terminal_drift.1.7.1,terminal_drift.1.8.1,terminal_drift.1.9.1,terminal_drift.1.10.1,terminal_drift.1.11.1,terminal_drift.1.12.1,terminal_drift.1.13.1,terminal_drift.1.14.1,terminal_drift.1.15.1,terminal_drift.1.1.2,terminal_drift.1.2.2,terminal_drift.1.3.2,terminal_drift.1.4.2,terminal_drift.1.5.2,terminal_drift.1.6.2,terminal_drift.1.7.2,terminal_drift.1.8.2,terminal_drift.1.9.2,terminal_drift.1.10.2,terminal_drift.1.11.2,terminal_drift.1.12.2,terminal_drift.1.13.2,terminal_drift.1.14.2,terminal_drift.1.15.2,c2.1,c2.2,c2.3,group_z.1.1,group_z.2.1,group_z.1.2,group_z.2.2,group_z.1.3,group_z.2.3,group_z.1.4,group_z.2.4,group_z.1.5,group_z.2.5,sigma_group.1,sigma_group.2,L_group.1.1,L_group.2.1,L_group.1.2,L_group.2.2,eta.1.1.1,eta.1.2.1,eta.1.3.1,eta.1.4.1,eta.1.5.1,eta.1.6.1,eta.1.7.1,eta.1.8.1,eta.1.9.1,eta.1.1.2,eta.1.2.2,eta.1.3.2,eta.1.4.2,eta.1.5.2,eta.1.6.2,eta.1.7.2,eta.1.8.2,eta.1.9.2,A.1.1,A.2.1,A.1.2,A.2.2,Q.1.1,Q.2.1,Q.1.2,Q.2.2,Q_inf.1.1,Q_inf.2.1,Q_inf.1.2,Q_inf.2.2,VCV_tips.1.1.1.1,VCV_tips.1.2.1.1,VCV_tips.1.3.1.1,VCV_tips.1.4.1.1,VCV_tips.1.5.1.1,VCV_tips.1.6.1.1,VCV_tips.1.7.1.1,VCV_tips.1.8.1.1,VCV_tips.1.9.1.1,VCV_tips.1.1.2.1,VCV_tips.1.2.2.1,VCV_tips.1.3.2.1,VCV_tips.1.4.2.1,VCV_tips.1.5.2.1,VCV_tips.1.6.2.1,VCV_tips.1.7.2.1,VCV_tips.1.8.2.1,VCV_tips.1.9.2.1,VCV_tips.1.1.1.2,VCV_tips.1.2.1.2,VCV_tips.1.3.1.2,VCV_tips.1.4.1.2,VCV_tips.1.5.1.2,VCV_tips.1.6.1.2,VCV_tips.1.7.1.2,VCV_tips.1.8.1.2,VCV_tips.1.9.1.2,VCV_tips.1.1.2.2,VCV_tips.1.2.2.2,VCV_tips.1.3.2.2,VCV_tips.1.4.2.2,VCV_tips.1.5.2.2,VCV_tips.1.6.2.2,VCV_tips.1.7.2.2,VCV_tips.1.8.2.2,VCV_tips.1.9.2.2,group_v.1.1,group_v.2.1,group_v.3.1,group_v.4.1,group_v.5.1,group_v.1.2,group_v.2.2,group_v.3.2,group_v.4.2,group_v.5.2,yrep.1.1.1,yrep.1.2.1,yrep.1.3.1,yrep.1.4.1,yrep.1.5.1,yrep.1.6.1,yrep.1.7.1,yrep.1.8.1,yrep.1.9.1,yrep.1.10.1,yrep.1.11.1,yrep.1.12.1,yrep.1.13.1,yrep.1.14.1,yrep.1.15.1,yrep.1.1.2,yrep.1.2.2,yrep.1.3.2,yrep.1.4.2,yrep.1.5.2,yrep.1.6.2,yrep.1.7.2,yrep.1.8.2,yrep.1.9.2,yrep.1.10.2,yrep.1.11.2,yrep.1.12.2,yrep.1.13.2,yrep.1.14.2,yrep.1.15.2,cor_R.1.1,cor_R.2.1,cor_R.1.2,cor_R.2.2,cor_group.1.1,cor_group.2.1,cor_group.1.2,cor_group.2.2
 # Adaptation terminated
 # Step size = 0.0592359
@@ -101,7 +101,7 @@ lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_di
 -80.078,0.997472,0.0592359,6,63,0,118.302,-0.0712201,-0.207256,1.12167,-0.918997,1,-0.124554,0,0.992213,0.318207,0.178959,1.39031,-0.865826,-1.37943,-0.25547,0.755646,1.20977,-1.37253,-0.279973,0.0388122,-1.38258,0.756652,-0.209738,-0.6681,-0.472302,1.16571,-1.98628,-0.132325,-0.978359,-0.730428,-0.0602827,0.83285,-0.914191,-1.19453,-0.836885,-0.984481,-0.251477,-0.0838746,-1.38092,2.46312,-1.93539,0.487038,-1.27728,1.45089,0.978857,-0.135926,0.596198,0.00368026,0.962651,-0.885921,0.832531,1.64375,-0.405581,0.64687,-0.582128,0.896146,-1.64783,-1.52423,-2.4894,-1.84969,-2.15898,-1.56946,0.379332,1.72324,-0.11625,0.0277425,-0.575963,0.311515,2.09217,0.256636,0.695277,0.686461,0.153878,-1.17884,0.658717,0.348275,1,0.429836,0,0.902907,-0.185476,-0.0784803,-0.0784803,-0.00884495,-0.00884495,-1.37943,-0.139496,-0.125909,-0.184481,-0.373263,-0.519164,-0.519164,-0.565168,-0.565168,-0.25547,-0.460885,-0.465218,-0.439708,-0.0712201,-0.918997,1.12167,-0.207256,0.101256,-0.00709283,-0.00709283,0.0320263,0.252803,-0.0290846,-0.0290846,0.206228,0.0735152,0.0121758,0.0121758,0.014119,0.014119,-99,-99,-99,-99,-0.0218244,-0.00127251,-0.00127251,-0.00155459,-0.00155459,0,0,0,0,-0.0218244,-0.00127251,-0.00127251,-0.00155459,-0.00155459,0,0,0,0,0.0420283,0.00396314,0.00396314,0.00462645,0.00462645,-99,-99,-99,-99,-0.0765759,-0.379396,1.37815,0.457991,0.101362,-0.00867887,0.0117367,0.393902,0.319949,-0.347664,0,1,0,1,0,0,1,1,1,0,0,1,0,0,1,3,2,1,2,1,2,3,3,2,2,2,4,2,3,1,1,-0.124554,-0.124554,1,1,0.429836,0.429836,1
 -75.1269,0.975825,0.0592359,6,63,0,113.243,-2.46946,-0.325143,-0.281471,0.59198,1,-0.404103,0,0.914714,0.297033,1.22175,-1.5513,-0.263414,0.892392,-0.00395723,-0.164914,-1.30125,0.962233,0.921563,0.217905,0.256102,-1.36591,-0.399082,1.21281,0.305851,0.00229185,2.44317,-0.000108322,0.929335,0.470461,-0.0834644,-0.63857,0.931847,0.471516,1.2616,0.339778,-0.0484832,0.427065,1.75499,-2.2004,0.767267,0.327591,1.17971,-0.778086,-0.52247,0.0657304,-1.06716,0.164242,-0.0887496,0.677554,-0.568453,-2.05863,-0.480537,-1.26898,0.0361702,-0.922867,2.16827,1.07357,2.47932,2.31894,1.54174,-3.0751,-0.0362475,1.12096,-0.659163,0.788246,0.310749,-0.496043,-1.62064,-1.08676,-1.37375,-1.32934,0.671699,0.28059,0.250829,0.404742,1,-0.365396,0,0.930852,-0.48411,-0.503596,-0.503596,-0.545697,-0.545697,0.892392,-0.461611,-0.474961,-0.433761,-0.275457,0.591544,0.591544,0.686314,0.686314,-0.00395723,0.770568,0.802042,0.683617,-2.46946,0.59198,-0.281471,-0.325143,0.0882286,-0.146649,-0.146649,1.49268,0.044283,-0.231785,-0.231785,1.87342,0.0290259,0.00863418,0.00863418,0.00971761,0.00971761,-99,-99,-99,-99,-0.119209,-0.0176964,-0.0176964,-0.0205417,-0.0205417,0,0,0,0,-0.119209,-0.0176964,-0.0176964,-0.0205417,-0.0205417,0,0,0,0,1.0356,0.174998,0.174998,0.202211,0.202211,-99,-99,-99,-99,-0.165337,0.0779448,-0.406504,-0.344575,0.168481,0.39446,-0.232844,-0.169762,-0.297669,0.00637543,0,1,1,1,1,0,1,1,0,1,0,1,0,1,0,3,2,3,4,4,3,2,3,4,2,3,4,3,4,2,1,-0.404103,-0.404103,1,1,-0.365396,-0.365396,1
 # 
-#  Elapsed Time: 0.666 seconds (Warm-up)
-#                0.518 seconds (Sampling)
-#                1.184 seconds (Total)
+#  Elapsed Time: 0.743 seconds (Warm-up)
+#                0.494 seconds (Sampling)
+#                1.237 seconds (Total)
 # 
