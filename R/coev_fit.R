@@ -48,6 +48,13 @@
 #'   Processes over locations. Currently supported are \code{"exp_quad"}
 #'   (exponentiated-quadratic kernel; default), \code{"exponential"}
 #'   (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).
+#' @param measurement_error (optional) A named list of coevolving variables and
+#'   their associated columns in the dataset containing standard errors. Only
+#'   valid for normally-distributed variables. For example, if we declare
+#'   \code{variables = list(x = "normal", y = "normal")}, then we could set
+#'   \code{measurement_error = list(x = "x_std_err")} to tell the function to
+#'   include measurement error on \code{x} using standard errors from the
+#'   \code{x_std_err} column of the dataset.
 #' @param prior (optional) A named list of priors for the model. If not
 #'   specified, the model uses default priors (see \code{help(coev_fit)}).
 #'   Alternatively, the user can specify a named list of priors. The list must
@@ -158,6 +165,12 @@
 #'   clustering. These parameters represent the between-taxa variation and
 #'   correlation that remains after accounting for the coevolutionary process.
 #'
+#'   \bold{Incorporating measurement error}
+#'
+#'   If any normally-distributed coevolving variables are measured with error,
+#'   the user can pass standard errors for one or more of these variables into
+#'   the model with the \code{measurement_error} argument.
+#'
 #'   \bold{Controlling for spatial location}
 #'
 #'   If users declare a distance matrix with the \code{dist_mat} argument,
@@ -201,20 +214,24 @@
 coev_fit <- function(data, variables, id, tree,
                      effects_mat = NULL, complete_cases = FALSE,
                      dist_mat = NULL, dist_cov = "exp_quad",
+                     measurement_error = NULL,
                      prior = NULL, scale = TRUE,
                      estimate_Q_offdiag = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
                      adapt_delta = 0.95, ...) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, prior, scale, estimate_Q_offdiag, log_lik, prior_only)
+             dist_cov, measurement_error, prior, scale, estimate_Q_offdiag,
+             log_lik, prior_only)
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
-                           complete_cases, dist_mat, dist_cov, prior, scale,
+                           complete_cases, dist_mat, dist_cov,
+                           measurement_error, prior, scale,
                            estimate_Q_offdiag, log_lik, prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
-                           complete_cases, dist_mat, dist_cov, prior, scale,
+                           complete_cases, dist_mat, dist_cov,
+                           measurement_error, prior, scale,
                            estimate_Q_offdiag, log_lik, prior_only)
   # fit model
   model <-
@@ -243,6 +260,7 @@ coev_fit <- function(data, variables, id, tree,
       complete_cases = complete_cases,
       dist_mat = sd$dist_mat,
       dist_cov = dist_cov,
+      measurement_error = measurement_error,
       scale = scale,
       estimate_Q_offdiag = estimate_Q_offdiag,
       prior_only = prior_only

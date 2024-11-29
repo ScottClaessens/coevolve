@@ -1,8 +1,8 @@
 # stan_version_major = 2
 # stan_version_minor = 35
 # stan_version_patch = 0
-# model = model_83ac96ddff59b62a0047e2995b5de39e_model
-# start_datetime = 2024-11-28 14:30:26 UTC
+# model = model_148e1bb211436cec7254202eef90b8ba_model
+# start_datetime = 2024-11-28 16:33:57 UTC
 # method = sample (Default)
 #   sample
 #     num_samples = 50
@@ -31,20 +31,20 @@
 #     num_chains = 1 (Default)
 # id = 1 (Default)
 # data
-#   file = C:/Users/sc2223/AppData/Local/Temp/RtmpQhvtKc/standata-1d987d9aacc.json
+#   file = C:/Users/sc2223/AppData/Local/Temp/RtmpA9woa3/standata-63e873b75b7c.json
 # init = 2 (Default)
 # random
 #   seed = 12345
 # output
-#   file = C:/Users/sc2223/AppData/Local/Temp/RtmpQhvtKc/model_83ac96ddff59b62a0047e2995b5de39e-202411281430-1-73d155.csv
+#   file = C:/Users/sc2223/AppData/Local/Temp/RtmpA9woa3/model_148e1bb211436cec7254202eef90b8ba-202411281633-1-7417a5.csv
 #   diagnostic_file =  (Default)
 #   refresh = 100 (Default)
 #   sig_figs = -1 (Default)
-#   profile_file = C:/Users/sc2223/AppData/Local/Temp/RtmpQhvtKc/model_83ac96ddff59b62a0047e2995b5de39e-profile-202411281430-1-0e4206.csv
+#   profile_file = C:/Users/sc2223/AppData/Local/Temp/RtmpA9woa3/model_148e1bb211436cec7254202eef90b8ba-profile-202411281633-1-0e8856.csv
 #   save_cmdstan_config = false (Default)
 # num_threads = 1 (Default)
 # stanc_version = stanc3 v2.35.0
-# stancflags = --name=model_83ac96ddff59b62a0047e2995b5de39e_model
+# stancflags = --name=model_148e1bb211436cec7254202eef90b8ba_model
 lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_diag.1,A_diag.2,A_offdiag.1,A_offdiag.2,L_R.1.1,L_R.2.1,L_R.1.2,L_R.2.2,Q_sigma.1,Q_sigma.2,b.1,b.2,eta_anc.1.1,eta_anc.1.2,z_drift.1.1.1,z_drift.1.2.1,z_drift.1.3.1,z_drift.1.4.1,z_drift.1.5.1,z_drift.1.6.1,z_drift.1.7.1,z_drift.1.8.1,z_drift.1.1.2,z_drift.1.2.2,z_drift.1.3.2,z_drift.1.4.2,z_drift.1.5.2,z_drift.1.6.2,z_drift.1.7.2,z_drift.1.8.2,terminal_drift.1.1.1,terminal_drift.1.2.1,terminal_drift.1.3.1,terminal_drift.1.4.1,terminal_drift.1.5.1,terminal_drift.1.1.2,terminal_drift.1.2.2,terminal_drift.1.3.2,terminal_drift.1.4.2,terminal_drift.1.5.2,c2.1,c2.2,dist_z.1.1,dist_z.2.1,dist_z.3.1,dist_z.4.1,dist_z.5.1,dist_z.1.2,dist_z.2.2,dist_z.3.2,dist_z.4.2,dist_z.5.2,rho_dist.1,rho_dist.2,sigma_dist.1,sigma_dist.2,eta.1.1.1,eta.1.2.1,eta.1.3.1,eta.1.4.1,eta.1.5.1,eta.1.6.1,eta.1.7.1,eta.1.8.1,eta.1.9.1,eta.1.1.2,eta.1.2.2,eta.1.3.2,eta.1.4.2,eta.1.5.2,eta.1.6.2,eta.1.7.2,eta.1.8.2,eta.1.9.2,A.1.1,A.2.1,A.1.2,A.2.2,Q.1.1,Q.2.1,Q.1.2,Q.2.2,Q_inf.1.1,Q_inf.2.1,Q_inf.1.2,Q_inf.2.2,VCV_tips.1.1.1.1,VCV_tips.1.2.1.1,VCV_tips.1.3.1.1,VCV_tips.1.4.1.1,VCV_tips.1.5.1.1,VCV_tips.1.6.1.1,VCV_tips.1.7.1.1,VCV_tips.1.8.1.1,VCV_tips.1.9.1.1,VCV_tips.1.1.2.1,VCV_tips.1.2.2.1,VCV_tips.1.3.2.1,VCV_tips.1.4.2.1,VCV_tips.1.5.2.1,VCV_tips.1.6.2.1,VCV_tips.1.7.2.1,VCV_tips.1.8.2.1,VCV_tips.1.9.2.1,VCV_tips.1.1.1.2,VCV_tips.1.2.1.2,VCV_tips.1.3.1.2,VCV_tips.1.4.1.2,VCV_tips.1.5.1.2,VCV_tips.1.6.1.2,VCV_tips.1.7.1.2,VCV_tips.1.8.1.2,VCV_tips.1.9.1.2,VCV_tips.1.1.2.2,VCV_tips.1.2.2.2,VCV_tips.1.3.2.2,VCV_tips.1.4.2.2,VCV_tips.1.5.2.2,VCV_tips.1.6.2.2,VCV_tips.1.7.2.2,VCV_tips.1.8.2.2,VCV_tips.1.9.2.2,dist_v.1.1,dist_v.2.1,dist_v.3.1,dist_v.4.1,dist_v.5.1,dist_v.1.2,dist_v.2.2,dist_v.3.2,dist_v.4.2,dist_v.5.2,yrep.1.1.1,yrep.1.2.1,yrep.1.3.1,yrep.1.4.1,yrep.1.5.1,yrep.1.1.2,yrep.1.2.2,yrep.1.3.2,yrep.1.4.2,yrep.1.5.2,cor_R.1.1,cor_R.2.1,cor_R.1.2,cor_R.2.2
 # Adaptation terminated
 # Step size = 0.0799286
@@ -101,7 +101,7 @@ lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_di
 -48.1084,0.958855,0.0799286,6,63,0,84.3985,-0.225049,-0.850867,-0.381376,0.0256213,1,-0.0729757,0,0.997334,1.72452,0.0804559,-0.656327,0.787513,-0.617638,1.94251,0.966878,2.24903,-0.755916,-0.0959842,-0.484258,-1.75174,-1.4499,0.492967,-0.858371,1.91708,0.206076,0.471923,-0.606376,-0.845019,-0.255392,-1.67702,-1.04364,0.461224,1.35697,0.686185,-0.325956,0.202827,-0.712951,0.552255,-0.851281,-1.68299,0.193608,2.95455,0.347494,-0.973935,1.72471,3.69053,-0.437541,-0.484942,0.1991,-0.325795,0.716649,-1.18482,0.0193498,0.318993,1.93613,0.541801,-1.62361,-0.446669,-0.446669,-0.13902,-0.13902,-0.617638,-0.0999837,0.0260701,-0.314102,1.33864,1.31148,1.31148,1.31387,1.31387,1.94251,1.36015,1.36437,1.35528,-0.225049,0.0256213,-0.381376,-0.850867,2.97396,-0.0101252,-0.0101252,0.00647314,6.37102,0.139469,0.139469,0.00800353,2.39127,0.355505,0.355505,0.412091,0.412091,-99,-99,-99,-99,0.016713,-0.000641391,-0.000641391,-0.000639208,-0.000639208,0,0,0,0,0.016713,-0.000641391,-0.000641391,-0.000639208,-0.000639208,0,0,0,0,0.0032957,0.000715226,0.000715226,0.000818925,0.000818925,-99,-99,-99,-99,0.484767,-0.690847,2.40603,5.14842,-0.610349,-0.360231,-0.324063,-0.326381,0.394605,-0.675007,1,0,1,1,1,2,1,2,2,1,1,-0.0729757,-0.0729757,1
 -47.6436,0.998656,0.0799286,6,63,0,67.973,-2.08481,-0.899706,0.418196,0.0112746,1,-0.258956,0,0.965889,0.312049,1.31657,0.234122,-0.87637,0.236158,-1.9276,-0.977364,-2.34682,0.790734,0.151973,0.462076,1.86818,1.34082,-0.485286,0.685282,-1.80272,-0.311188,-0.32822,0.640405,0.787435,0.165454,1.88141,0.652629,-0.727068,-1.20792,-0.527443,-0.0144906,0.233298,0.584681,-0.393718,0.782592,1.33683,-1.5984,1.74599,-1.20443,0.507061,-1.16505,-3.24265,-0.0103035,-0.688093,-0.557328,1.80252,-1.16454,0.74665,0.071894,0.215596,0.10326,1.92943,-0.138413,-0.221971,-0.221971,-0.265274,-0.265274,0.236158,-0.292751,-0.316348,-0.249804,-1.36225,-1.17998,-1.17998,-1.13927,-1.13927,-1.9276,-1.11253,-1.16147,-1.20371,-2.08481,0.0112746,0.418196,-0.899706,0.0973748,-0.106388,-0.106388,1.73335,0.0433464,0.0996698,0.0996698,0.964536,0.0306008,0.00900088,0.00900088,0.0100554,0.0100554,-99,-99,-99,-99,0.055383,-0.00642615,-0.00642615,-0.00645258,-0.00645258,0,0,0,0,0.055383,-0.00642615,-0.00642615,-0.00645258,-0.00645258,0,0,0,0,0.80426,0.191053,0.191053,0.218612,0.218612,-99,-99,-99,-99,-0.405341,-0.279694,-0.392086,-1.09129,-0.198702,-0.958263,-1.05044,2.50973,-1.81565,-0.168816,0,1,0,0,1,2,1,3,2,2,1,-0.258956,-0.258956,1
 # 
-#  Elapsed Time: 0.594 seconds (Warm-up)
-#                0.412 seconds (Sampling)
-#                1.006 seconds (Total)
+#  Elapsed Time: 0.586 seconds (Warm-up)
+#                0.424 seconds (Sampling)
+#                1.01 seconds (Total)
 # 

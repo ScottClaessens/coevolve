@@ -13,6 +13,7 @@ coev_make_standata(
   complete_cases = FALSE,
   dist_mat = NULL,
   dist_cov = "exp_quad",
+  measurement_error = NULL,
   prior = NULL,
   scale = TRUE,
   estimate_Q_offdiag = TRUE,
@@ -64,6 +65,14 @@ Gaussian Process over locations for every coevolving variable in the model.}
 Processes over locations. Currently supported are \code{"exp_quad"}
 (exponentiated-quadratic kernel; default), \code{"exponential"}
 (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).}
+
+\item{measurement_error}{(optional) A named list of coevolving variables and
+their associated columns in the dataset containing standard errors. Only
+valid for normally-distributed variables. For example, if we declare
+\code{variables = list(x = "normal", y = "normal")}, then we could set
+\code{measurement_error = list(x = "x_std_err")} to tell the function to
+include measurement error on \code{x} using standard errors from the
+\code{x_std_err} column of the dataset.}
 
 \item{prior}{(optional) A named list of priors for the model. If not
 specified, the model uses default priors (see \code{help(coev_fit)}).

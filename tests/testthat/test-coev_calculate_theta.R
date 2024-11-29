@@ -1,41 +1,43 @@
 test_that("coev_calculate_theta() produces expected errors and output", {
   # load model
-  m1 <- readRDS(test_path("fixtures", "coevfit_example1.rds"))
-  m2 <- readRDS(test_path("fixtures", "coevfit_example2.rds"))
-  m3 <- readRDS(test_path("fixtures", "coevfit_example3.rds"))
-  m4 <- readRDS(test_path("fixtures", "coevfit_example4.rds"))
-  m5 <- readRDS(test_path("fixtures", "coevfit_example5.rds"))
-  m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
-  m7 <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
-  m8 <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
-  m9 <- readRDS(test_path("fixtures", "coevfit_example9.rds"))
-  m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
-  m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
-  m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
-  m4 <- reload_fit(m4, filename = "coevfit_example4-1.csv")
-  m5 <- reload_fit(m5, filename = "coevfit_example5-1.csv")
-  m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
-  m7 <- reload_fit(m7, filename = "coevfit_example7-1.csv")
-  m8 <- reload_fit(m8, filename = "coevfit_example8-1.csv")
-  m9 <- reload_fit(m9, filename = "coevfit_example9-1.csv")
+  m01 <- readRDS(test_path("fixtures", "coevfit_example_01.rds"))
+  m02 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
+  m03 <- readRDS(test_path("fixtures", "coevfit_example_03.rds"))
+  m04 <- readRDS(test_path("fixtures", "coevfit_example_04.rds"))
+  m05 <- readRDS(test_path("fixtures", "coevfit_example_05.rds"))
+  m06 <- readRDS(test_path("fixtures", "coevfit_example_06.rds"))
+  m07 <- readRDS(test_path("fixtures", "coevfit_example_07.rds"))
+  m08 <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
+  m09 <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
+  m10 <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
+  m01 <- reload_fit(m01, filename = "coevfit_example_01-1.csv")
+  m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
+  m03 <- reload_fit(m03, filename = "coevfit_example_03-1.csv")
+  m04 <- reload_fit(m04, filename = "coevfit_example_04-1.csv")
+  m05 <- reload_fit(m05, filename = "coevfit_example_05-1.csv")
+  m06 <- reload_fit(m06, filename = "coevfit_example_06-1.csv")
+  m07 <- reload_fit(m07, filename = "coevfit_example_07-1.csv")
+  m08 <- reload_fit(m08, filename = "coevfit_example_08-1.csv")
+  m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
+  m10 <- reload_fit(m10, filename = "coevfit_example_10-1.csv")
   # expect the following errors
   expect_error(
     coev_calculate_theta(object = "fail"),
     "Argument 'object' must be a fitted coevolutionary model of class coevfit."
   )
   expect_error(
-    coev_calculate_theta(object = m4, intervention_values = list("fail")),
+    coev_calculate_theta(object = m04, intervention_values = list("fail")),
     "Argument 'intervention_values' is not a named list."
   )
   expect_error(
-    coev_calculate_theta(object = m4, intervention_values = list(fail = NA)),
+    coev_calculate_theta(object = m04, intervention_values = list(fail = NA)),
     paste0(
       "At least one variable in 'intervention_values' is not included in ",
       "the fitted model."
     )
   )
   expect_error(
-    coev_calculate_theta(object = m4, intervention_values = list(y = NA)),
+    coev_calculate_theta(object = m04, intervention_values = list(y = NA)),
     paste0(
       "All coevolving variables must be included in ",
       "argument 'intervention_values'."
@@ -43,28 +45,28 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   )
   expect_error(
     coev_calculate_theta(
-      object = m4,
+      object = m04,
       intervention_values = list(y = NA, y = NA, z = NA)
     ),
     "Argument 'intervention_values' contains duplicated variable names."
   )
   expect_error(
     coev_calculate_theta(
-      object = m4,
+      object = m04,
       intervention_values = list(y = c(NA, NA), z = 0)
     ),
     "Values in 'intervention_values' must each be of length one."
   )
   expect_error(
     coev_calculate_theta(
-      object = m4,
+      object = m04,
       intervention_values = list(y = "fail", z = 0)
     ),
     "Values in 'intervention_values' must each be NA or numeric."
   )
   expect_error(
     coev_calculate_theta(
-      object = m4,
+      object = m04,
       intervention_values = list(y = 0, z = 0)
     ),
     paste0(
@@ -75,7 +77,7 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   )
   expect_error(
     coev_calculate_theta(
-      object = m4,
+      object = m04,
       intervention_values = list(y = NA, z = NA)
     ),
     paste0(
@@ -85,91 +87,100 @@ test_that("coev_calculate_theta() produces expected errors and output", {
     fixed = TRUE
   )
   # should run without error
-  theta1 <- coev_calculate_theta(m1, list(u = NA, v = 0, w = 0, x = 0, y = 0))
-  theta2 <- coev_calculate_theta(m2, list(w = NA, x = 0))
-  theta3 <- coev_calculate_theta(m3, list(w = NA, x = 0))
-  theta4 <- coev_calculate_theta(m4, list(y = NA, z = 0))
-  theta5 <- coev_calculate_theta(m5, list(w = NA, x = 0))
-  theta6 <- coev_calculate_theta(m6, list(w = NA, x = 0))
-  theta7 <- coev_calculate_theta(m7, list(w = NA, x = 0))
-  theta8 <- coev_calculate_theta(m8, list(x = NA, y = 0))
-  theta9 <- coev_calculate_theta(m9, list(x = NA, y = 0))
-  theta1_null <- coev_calculate_theta(m1, intervention_values = NULL)
-  theta2_null <- coev_calculate_theta(m2, intervention_values = NULL)
-  theta3_null <- coev_calculate_theta(m3, intervention_values = NULL)
-  theta4_null <- coev_calculate_theta(m4, intervention_values = NULL)
-  theta5_null <- coev_calculate_theta(m5, intervention_values = NULL)
-  theta6_null <- coev_calculate_theta(m6, intervention_values = NULL)
-  theta7_null <- coev_calculate_theta(m7, intervention_values = NULL)
-  theta8_null <- coev_calculate_theta(m8, intervention_values = NULL)
-  theta9_null <- coev_calculate_theta(m9, intervention_values = NULL)
-  expect_no_error(theta1)
-  expect_no_error(theta2)
-  expect_no_error(theta3)
-  expect_no_error(theta4)
-  expect_no_error(theta5)
-  expect_no_error(theta6)
-  expect_no_error(theta7)
-  expect_no_error(theta8)
-  expect_no_error(theta9)
-  expect_no_error(theta1_null)
-  expect_no_error(theta2_null)
-  expect_no_error(theta3_null)
-  expect_no_error(theta4_null)
-  expect_no_error(theta5_null)
-  expect_no_error(theta6_null)
-  expect_no_error(theta7_null)
-  expect_no_error(theta8_null)
-  expect_no_error(theta9_null)
+  theta01 <- coev_calculate_theta(m01, list(u = NA, v = 0, w = 0, x = 0, y = 0))
+  theta02 <- coev_calculate_theta(m02, list(w = NA, x = 0))
+  theta03 <- coev_calculate_theta(m03, list(w = NA, x = 0))
+  theta04 <- coev_calculate_theta(m04, list(y = NA, z = 0))
+  theta05 <- coev_calculate_theta(m05, list(w = NA, x = 0))
+  theta06 <- coev_calculate_theta(m06, list(w = NA, x = 0))
+  theta07 <- coev_calculate_theta(m07, list(w = NA, x = 0))
+  theta08 <- coev_calculate_theta(m08, list(x = NA, y = 0))
+  theta09 <- coev_calculate_theta(m09, list(x = NA, y = 0))
+  theta10 <- coev_calculate_theta(m10, list(x = NA, y = 0))
+  theta01_null <- coev_calculate_theta(m01, intervention_values = NULL)
+  theta02_null <- coev_calculate_theta(m02, intervention_values = NULL)
+  theta03_null <- coev_calculate_theta(m03, intervention_values = NULL)
+  theta04_null <- coev_calculate_theta(m04, intervention_values = NULL)
+  theta05_null <- coev_calculate_theta(m05, intervention_values = NULL)
+  theta06_null <- coev_calculate_theta(m06, intervention_values = NULL)
+  theta07_null <- coev_calculate_theta(m07, intervention_values = NULL)
+  theta08_null <- coev_calculate_theta(m08, intervention_values = NULL)
+  theta09_null <- coev_calculate_theta(m09, intervention_values = NULL)
+  theta10_null <- coev_calculate_theta(m10, intervention_values = NULL)
+  expect_no_error(theta01)
+  expect_no_error(theta02)
+  expect_no_error(theta03)
+  expect_no_error(theta04)
+  expect_no_error(theta05)
+  expect_no_error(theta06)
+  expect_no_error(theta07)
+  expect_no_error(theta08)
+  expect_no_error(theta09)
+  expect_no_error(theta10)
+  expect_no_error(theta01_null)
+  expect_no_error(theta02_null)
+  expect_no_error(theta03_null)
+  expect_no_error(theta04_null)
+  expect_no_error(theta05_null)
+  expect_no_error(theta06_null)
+  expect_no_error(theta07_null)
+  expect_no_error(theta08_null)
+  expect_no_error(theta09_null)
+  expect_no_error(theta10_null)
   # output should be matrix of posterior draws
-  expect_true(methods::is(theta1, "matrix"))
-  expect_true(methods::is(theta2, "matrix"))
-  expect_true(methods::is(theta3, "matrix"))
-  expect_true(methods::is(theta4, "matrix"))
-  expect_true(methods::is(theta5, "matrix"))
-  expect_true(methods::is(theta6, "matrix"))
-  expect_true(methods::is(theta7, "matrix"))
-  expect_true(methods::is(theta8, "matrix"))
-  expect_true(methods::is(theta9, "matrix"))
-  expect_true(methods::is(theta1_null, "matrix"))
-  expect_true(methods::is(theta2_null, "matrix"))
-  expect_true(methods::is(theta3_null, "matrix"))
-  expect_true(methods::is(theta4_null, "matrix"))
-  expect_true(methods::is(theta5_null, "matrix"))
-  expect_true(methods::is(theta6_null, "matrix"))
-  expect_true(methods::is(theta7_null, "matrix"))
-  expect_true(methods::is(theta8_null, "matrix"))
-  expect_true(methods::is(theta9_null, "matrix"))
+  expect_true(methods::is(theta01, "matrix"))
+  expect_true(methods::is(theta02, "matrix"))
+  expect_true(methods::is(theta03, "matrix"))
+  expect_true(methods::is(theta04, "matrix"))
+  expect_true(methods::is(theta05, "matrix"))
+  expect_true(methods::is(theta06, "matrix"))
+  expect_true(methods::is(theta07, "matrix"))
+  expect_true(methods::is(theta08, "matrix"))
+  expect_true(methods::is(theta09, "matrix"))
+  expect_true(methods::is(theta10, "matrix"))
+  expect_true(methods::is(theta01_null, "matrix"))
+  expect_true(methods::is(theta02_null, "matrix"))
+  expect_true(methods::is(theta03_null, "matrix"))
+  expect_true(methods::is(theta04_null, "matrix"))
+  expect_true(methods::is(theta05_null, "matrix"))
+  expect_true(methods::is(theta06_null, "matrix"))
+  expect_true(methods::is(theta07_null, "matrix"))
+  expect_true(methods::is(theta08_null, "matrix"))
+  expect_true(methods::is(theta09_null, "matrix"))
+  expect_true(methods::is(theta10_null, "matrix"))
   # output column names should be equal to variable names
-  expect_true(identical(colnames(theta1), names(m1$variables)))
-  expect_true(identical(colnames(theta2), names(m2$variables)))
-  expect_true(identical(colnames(theta3), names(m3$variables)))
-  expect_true(identical(colnames(theta4), names(m4$variables)))
-  expect_true(identical(colnames(theta5), names(m5$variables)))
-  expect_true(identical(colnames(theta6), names(m6$variables)))
-  expect_true(identical(colnames(theta7), names(m7$variables)))
-  expect_true(identical(colnames(theta8), names(m8$variables)))
-  expect_true(identical(colnames(theta9), names(m9$variables)))
-  expect_true(identical(colnames(theta1_null), names(m1$variables)))
-  expect_true(identical(colnames(theta2_null), names(m2$variables)))
-  expect_true(identical(colnames(theta3_null), names(m3$variables)))
-  expect_true(identical(colnames(theta4_null), names(m4$variables)))
-  expect_true(identical(colnames(theta5_null), names(m5$variables)))
-  expect_true(identical(colnames(theta6_null), names(m6$variables)))
-  expect_true(identical(colnames(theta7_null), names(m7$variables)))
-  expect_true(identical(colnames(theta8_null), names(m8$variables)))
-  expect_true(identical(colnames(theta9_null), names(m9$variables)))
+  expect_true(identical(colnames(theta01), names(m01$variables)))
+  expect_true(identical(colnames(theta02), names(m02$variables)))
+  expect_true(identical(colnames(theta03), names(m03$variables)))
+  expect_true(identical(colnames(theta04), names(m04$variables)))
+  expect_true(identical(colnames(theta05), names(m05$variables)))
+  expect_true(identical(colnames(theta06), names(m06$variables)))
+  expect_true(identical(colnames(theta07), names(m07$variables)))
+  expect_true(identical(colnames(theta08), names(m08$variables)))
+  expect_true(identical(colnames(theta09), names(m09$variables)))
+  expect_true(identical(colnames(theta10), names(m10$variables)))
+  expect_true(identical(colnames(theta01_null), names(m01$variables)))
+  expect_true(identical(colnames(theta02_null), names(m02$variables)))
+  expect_true(identical(colnames(theta03_null), names(m03$variables)))
+  expect_true(identical(colnames(theta04_null), names(m04$variables)))
+  expect_true(identical(colnames(theta05_null), names(m05$variables)))
+  expect_true(identical(colnames(theta06_null), names(m06$variables)))
+  expect_true(identical(colnames(theta07_null), names(m07$variables)))
+  expect_true(identical(colnames(theta08_null), names(m08$variables)))
+  expect_true(identical(colnames(theta09_null), names(m09$variables)))
+  expect_true(identical(colnames(theta10_null), names(m10$variables)))
   # variables should be correctly held constant in output
-  expect_true(all(theta1[,c("v","w","x","y")] == 0))
-  expect_true(all(theta2[,"x"] == 0))
-  expect_true(all(theta3[,"x"] == 0))
-  expect_true(all(theta4[,"z"] == 0))
-  expect_true(all(theta5[,"x"] == 0))
-  expect_true(all(theta6[,"x"] == 0))
-  expect_true(all(theta7[,"x"] == 0))
-  expect_true(all(theta8[,"y"] == 0))
-  expect_true(all(theta9[,"y"] == 0))
+  expect_true(all(theta01[,c("v","w","x","y")] == 0))
+  expect_true(all(theta02[,"x"] == 0))
+  expect_true(all(theta03[,"x"] == 0))
+  expect_true(all(theta04[,"z"] == 0))
+  expect_true(all(theta05[,"x"] == 0))
+  expect_true(all(theta06[,"x"] == 0))
+  expect_true(all(theta07[,"x"] == 0))
+  expect_true(all(theta08[,"y"] == 0))
+  expect_true(all(theta09[,"y"] == 0))
+  expect_true(all(theta10[,"y"] == 0))
   # free variables should not be constant in output
-  expect_false(all(theta1_null[,"y"] == 0))
-  expect_false(all(theta9_null[,"y"] == 0))
+  expect_false(all(theta01_null[,"y"] == 0))
+  expect_false(all(theta09_null[,"y"] == 0))
 })

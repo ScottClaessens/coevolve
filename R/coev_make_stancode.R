@@ -40,6 +40,13 @@
 #'   Processes over locations. Currently supported are \code{"exp_quad"}
 #'   (exponentiated-quadratic kernel; default), \code{"exponential"}
 #'   (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).
+#' @param measurement_error (optional) A named list of coevolving variables and
+#'   their associated columns in the dataset containing standard errors. Only
+#'   valid for normally-distributed variables. For example, if we declare
+#'   \code{variables = list(x = "normal", y = "normal")}, then we could set
+#'   \code{measurement_error = list(x = "x_std_err")} to tell the function to
+#'   include measurement error on \code{x} using standard errors from the
+#'   \code{x_std_err} column of the dataset.
 #' @param prior (optional) A named list of priors for the model. If not
 #'   specified, the model uses default priors (see \code{help(coev_fit)}).
 #'   Alternatively, the user can specify a named list of priors. The list must
@@ -120,13 +127,15 @@
 coev_make_stancode <- function(data, variables, id, tree,
                                effects_mat = NULL, complete_cases = FALSE,
                                dist_mat = NULL, dist_cov = "exp_quad",
+                               measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_Q_offdiag = TRUE,
                                log_lik = FALSE,
                                prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, prior, scale, estimate_Q_offdiag, log_lik, prior_only)
+             dist_cov, measurement_error, prior, scale, estimate_Q_offdiag,
+             log_lik, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # extract distributions and variable names from named list
@@ -266,6 +275,10 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  int<lower=2> num_effects; // number of effects being estimated\n",
     "  matrix[N_obs,J] y; // observed data\n",
     "  matrix[N_obs,J] miss; // are data points missing?\n",
+    ifelse(
+      !is.null(measurement_error),
+      "  matrix[N_obs,J] se; // squared standard errors\n", ""
+      ),
     "  array[N_obs] int<lower=1> tip_id; // index between 1 and N_tips that gives the group id\n"
     )
   # add distance matrix if user has defined one
@@ -622,13 +635,27 @@ coev_make_stancode <- function(data, variables, id, tree,
     sc_model <- paste0(
       sc_model,
       "        lp[t] = multi_normal_cholesky_lpdf(residuals | rep_vector(0.0, ",
-      "J), cholesky_decompose(VCV_tips[t, tip_id[i]]));\n"
+      "J), cholesky_decompose(",
+      ifelse(
+        !is.null(measurement_error),
+        # add squared standard errors to diagonal of VCV_tips
+        "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
+        "VCV_tips[t, tip_id[i]]"
+      ),
+      "));\n"
     )
   } else {
     # if no gaussian traits, use non-centered parameterisation instead
     sc_model <- paste0(
       sc_model,
-      "        residuals = cholesky_decompose(VCV_tips[t, tip_id[i]]) * to_vector(terminal_drift[t][i,]);\n"
+      "        residuals = cholesky_decompose(",
+      ifelse(
+        !is.null(measurement_error),
+        # add squared standard errors to diagonal of VCV_tips
+        "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
+        "VCV_tips[t, tip_id[i]]"
+      ),
+      ") * to_vector(terminal_drift[t][i,]);\n"
     )
   }
   # linear models for non-continuous variables
@@ -739,7 +766,14 @@ coev_make_stancode <- function(data, variables, id, tree,
     sc_generated_quantities,
     "        vector[J] terminal_drift_rep;\n",
     "        for (j in 1:J) terminal_drift_rep[j] = normal_rng(0, 1);\n",
-    "        terminal_drift_rep = cholesky_decompose(VCV_tips[t, tip_id[i]]) * terminal_drift_rep;\n"
+    "        terminal_drift_rep = cholesky_decompose(",
+    ifelse(
+      !is.null(measurement_error),
+      # add squared standard errors to diagonal of VCV_tips
+      "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
+      "VCV_tips[t, tip_id[i]]"
+    ),
+    ") * terminal_drift_rep;\n"
   )
   # get residuals if log_lik = TRUE
   if (log_lik) {
@@ -761,7 +795,14 @@ coev_make_stancode <- function(data, variables, id, tree,
   if ("normal" %in% distributions & log_lik) {
     sc_generated_quantities <- paste0(
       sc_generated_quantities,
-      "        matrix[J,J] cov_inv = inverse_spd(VCV_tips[t, tip_id[i]]);\n",
+      "        matrix[J,J] cov_inv = inverse_spd(",
+      ifelse(
+        !is.null(measurement_error),
+        # add squared standard errors to diagonal of VCV_tips
+        "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
+        "VCV_tips[t, tip_id[i]]"
+      ),
+      ");\n",
       "        mu_cond = residuals - (cov_inv * residuals) ./ diagonal(cov_inv);\n",
       "        sigma_cond = sqrt(1 / diagonal(cov_inv));\n"
     )
