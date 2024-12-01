@@ -1,12 +1,12 @@
 #' Save a fitted \code{coevfit} object to a file
 #'
-#' A wrapper around \code{\link{base::saveRDS()}} that saves a fitted
+#' A wrapper around \code{\link[base]{saveRDS}} that saves a fitted
 #' \code{coevfit} model object while ensuring that all posterior draws and
 #' diagnostics are correctly saved by \pkg{cmdstanr}.
 #'
 #' @param object An object of class \code{coevfit}
 #' @param file A string declaring the path where the file should be saved
-#' @param ... Other arguments to pass to \code{\link{base::saveRDS()}} besides
+#' @param ... Other arguments to pass to \code{\link[base]{saveRDS}} besides
 #'   \code{object} and \code{file}
 #'
 #' @export
