@@ -68,10 +68,10 @@
 #'   the shape parameters for gamma variables (\code{shape}), the sigma
 #'   parameters for Gaussian Processes over locations (\code{sigma_dist}), the
 #'   rho parameters for Gaussian Processes over locations (\code{rho_dist}), the
-#'   standard deviation parameters for non-phylogenetic group-level varying
-#'   effects (\code{sigma_group}), and the Cholesky factor for the
-#'   non-phylogenetic group-level correlation matrix (\code{L_group}). These
-#'   must be entered with valid prior strings, e.g.
+#'   residual standard deviations when there are repeated observations
+#'   (\code{sigma_residual}), and the Cholesky factor for the residual
+#'   correlations when there are repeated observations (\code{L_residual}).
+#'   These must be entered with valid prior strings, e.g.
 #'   \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
 #'   an error when the function internally checks the syntax of resulting Stan
 #'   code.
@@ -144,9 +144,9 @@
 #'   \code{exponential(1)}
 #'   - \code{rho_dist} (rho for Gaussian process over locations) =
 #'   \code{exponential(5)}
-#'   - \code{sigma_group} (standard deviation for group-level varying effects) =
+#'   - \code{sigma_residual} (residual standard deviations) =
 #'   \code{exponential(1)}
-#'   - \code{L_group} (Cholesky factor for group-level varying effects) =
+#'   - \code{L_residual} (Cholesky factor for residual correlations) =
 #'   \code{lkj_corr_cholesky(2)}
 #'
 #'   The default prior for \code{phi} (the overdispersion parameter for the

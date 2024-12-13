@@ -352,14 +352,14 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
     # stop if prior names not allowed
     if (!all(names(prior) %in% c("b", "eta_anc", "A_offdiag", "A_diag",
                                  "L_R", "Q_sigma", "c", "phi", "shape",
-                                 "sigma_dist", "rho_dist", "sigma_group",
-                                 "L_group"))) {
+                                 "sigma_dist", "rho_dist", "sigma_residual",
+                                 "L_residual"))) {
       stop2(
         paste0(
           "Argument 'prior' list contains names that are not allowed. Please ",
           "use only the following names: 'b', 'eta_anc', 'A_offdiag', ",
           "'A_diag', 'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', ",
-          "'rho_dist', 'sigma_group', and 'L_group'"
+          "'rho_dist', 'sigma_residual', and 'L_residual'"
           )
         )
     }

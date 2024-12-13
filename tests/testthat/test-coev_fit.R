@@ -618,7 +618,7 @@ test_that("coev_fit() produces expected errors", {
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
       "'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', 'rho_dist', ",
-      "'sigma_group', and 'L_group'"
+      "'sigma_residual', and 'L_residual'"
     ),
     fixed = TRUE
   )

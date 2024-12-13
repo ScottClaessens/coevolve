@@ -88,10 +88,10 @@ overdispersion parameters for negative binomial variables (\code{phi}),
 the shape parameters for gamma variables (\code{shape}), the sigma
 parameters for Gaussian Processes over locations (\code{sigma_dist}), the
 rho parameters for Gaussian Processes over locations (\code{rho_dist}), the
-standard deviation parameters for non-phylogenetic group-level varying
-effects (\code{sigma_group}), and the Cholesky factor for the
-non-phylogenetic group-level correlation matrix (\code{L_group}). These
-must be entered with valid prior strings, e.g.
+residual standard deviations when there are repeated observations
+(\code{sigma_residual}), and the Cholesky factor for the residual
+correlations when there are repeated observations (\code{L_residual}).
+These must be entered with valid prior strings, e.g.
 \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
 an error when the function internally checks the syntax of resulting Stan
 code.}

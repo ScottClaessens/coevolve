@@ -60,10 +60,10 @@
 #'   the shape parameters for gamma variables (\code{shape}), the sigma
 #'   parameters for Gaussian Processes over locations (\code{sigma_dist}), the
 #'   rho parameters for Gaussian Processes over locations (\code{rho_dist}), the
-#'   standard deviation parameters for non-phylogenetic group-level varying
-#'   effects (\code{sigma_group}), and the Cholesky factor for the
-#'   non-phylogenetic group-level correlation matrix (\code{L_group}). These
-#'   must be entered with valid prior strings, e.g.
+#'   residual standard deviations when there are repeated observations
+#'   (\code{sigma_residual}), and the Cholesky factor for the residual
+#'   correlations when there are repeated observations (\code{L_residual}).
+#'   These must be entered with valid prior strings, e.g.
 #'   \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
 #'   an error when the function internally checks the syntax of resulting Stan
 #'   code.
@@ -152,18 +152,18 @@ coev_make_stancode <- function(data, variables, id, tree,
   # get default priors
   priors <-
     list(
-      b           = "std_normal()",
-      eta_anc     = "std_normal()",
-      A_offdiag   = "std_normal()",
-      A_diag      = "std_normal()",
-      L_R         = "lkj_corr_cholesky(4)",
-      Q_sigma     = "std_normal()",
-      c           = "normal(0, 2)",
-      shape       = "gamma(0.01, 0.01)",
-      sigma_dist  = "exponential(1)",
-      rho_dist    = "exponential(5)",
-      sigma_group = "exponential(1)",
-      L_group     = "lkj_corr_cholesky(2)"
+      b              = "std_normal()",
+      eta_anc        = "std_normal()",
+      A_offdiag      = "std_normal()",
+      A_diag         = "std_normal()",
+      L_R            = "lkj_corr_cholesky(4)",
+      Q_sigma        = "std_normal()",
+      c              = "normal(0, 2)",
+      shape          = "gamma(0.01, 0.01)",
+      sigma_dist     = "exponential(1)",
+      rho_dist       = "exponential(5)",
+      sigma_residual = "exponential(1)",
+      L_residual     = "lkj_corr_cholesky(2)"
     )
   # note: default prior for phi (overdispersion) set within the model code
   # replace priors if user has explicitly set them
@@ -404,9 +404,9 @@ coev_make_stancode <- function(data, variables, id, tree,
   if (any(duplicated(data[,id]))) {
     sc_parameters <- paste0(
       sc_parameters,
-      "  matrix[J,N_tips] group_z;\n",
-      "  vector<lower=0>[J] sigma_group;\n",
-      "  cholesky_factor_corr[J] L_group;\n"
+      "  matrix[J,N_tips] residual_z;\n",
+      "  vector<lower=0>[J] sigma_residual;\n",
+      "  cholesky_factor_corr[J] L_residual;\n"
     )
   }
   sc_parameters <- paste0(sc_parameters, "}")
@@ -430,13 +430,13 @@ coev_make_stancode <- function(data, variables, id, tree,
       "  matrix[N_tips,J] dist_v; // distance covariance random effects\n"
     )
   }
-  # add group random effects if there are repeated measures
+  # add residual sds and cors if there are repeated measures
   if (any(duplicated(data[,id]))) {
     sc_transformed_parameters <- paste0(
       sc_transformed_parameters,
-      "  matrix[N_tips,J] group_v; // group random effects\n",
-      "  // scale and correlate group random effects\n",
-      "  group_v = (diag_pre_multiply(sigma_group, L_group) * group_z)';\n"
+      "  matrix[N_tips,J] residual_v; // group pars\n",
+      "  // scale and correlate group pars\n",
+      "  residual_v = (diag_pre_multiply(sigma_residual, L_residual) * residual_z)';\n"
     )
   }
   sc_transformed_parameters <- paste0(
@@ -583,14 +583,14 @@ coev_make_stancode <- function(data, variables, id, tree,
       "  rho_dist ~ ", priors$rho_dist, ";\n"
     )
   }
-  # add priors for any group-level random effect parameters
+  # add priors for any residual sds and cors
   if (any(duplicated(data[,id]))) {
     sc_model <- paste0(
       sc_model,
-      "  // priors for group-level random effects (non-phylogenetic)\n",
-      "  to_vector(group_z) ~ std_normal();\n",
-      "  sigma_group ~ ", priors$sigma_group, ";\n",
-      "  L_group ~ ", priors$L_group, ";\n"
+      "  // priors for residual sds and cors\n",
+      "  to_vector(residual_z) ~ std_normal();\n",
+      "  sigma_residual ~ ", priors$sigma_residual, ";\n",
+      "  L_residual ~ ", priors$L_residual, ";\n"
     )
   }
   # function to get linear model
@@ -604,7 +604,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       ),
       ifelse(
         any(duplicated(data[,id])),
-        paste0(" + group_v[tip_id[i],", j, "]"),
+        paste0(" + residual_v[tip_id[i],", j, "]"),
         ""
       )
     )
@@ -732,8 +732,8 @@ coev_make_stancode <- function(data, variables, id, tree,
     sc_generated_quantities <-
       paste0(
         sc_generated_quantities,
-        "  matrix[J,J] cor_group; // group-level correlations\n",
-        "  cor_group = multiply_lower_tri_self_transpose(L_group);\n"
+        "  matrix[J,J] cor_residual; // residual correlations\n",
+        "  cor_residual = multiply_lower_tri_self_transpose(L_residual);\n"
       )
   }
   sc_generated_quantities <-
@@ -960,8 +960,8 @@ coev_make_stancode <- function(data, variables, id, tree,
   if (any(duplicated(data[,id]))) {
     message(
       paste0(
-        "Note: Repeated observations detected. Group-level varying effects ",
-        "have been included for each variable in the model."
+        "Note: Repeated observations detected. Residual standard deviations ",
+        "and correlations have been included in the model."
       )
     )
   }
