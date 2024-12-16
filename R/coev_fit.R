@@ -235,12 +235,14 @@ coev_fit <- function(data, variables, id, tree,
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
                            complete_cases, dist_mat, dist_cov,
                            measurement_error, prior, scale,
-                           estimate_Q_offdiag, log_lik, prior_only)
+                           estimate_Q_offdiag, estimate_residual, log_lik,
+                           prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
                            complete_cases, dist_mat, dist_cov,
                            measurement_error, prior, scale,
-                           estimate_Q_offdiag, log_lik, prior_only)
+                           estimate_Q_offdiag, estimate_residual, log_lik,
+                           prior_only)
   # fit model
   model <-
     cmdstanr::cmdstan_model(
