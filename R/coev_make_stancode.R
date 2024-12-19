@@ -1180,6 +1180,17 @@ coev_make_stancode <- function(data, variables, id, tree,
       )
     )
   }
+  # produce warning that repeated models with mix of gaussian and non-gaussian
+  # is experimental at this stage
+  if ("normal" %in% distributions & !all(distributions == "normal")) {
+    message(
+      paste0(
+        "Note: Repeated observations models with a mixture of ",
+        "normally-distributed and non-normally-distributed variables are ",
+        "currently experimental. Be sure to check models for convergence."
+      )
+    )
+  }
   # return stan code
   return(sc)
 }
