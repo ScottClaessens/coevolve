@@ -273,6 +273,7 @@ coev_fit <- function(data, variables, id, tree,
       measurement_error = measurement_error,
       scale = scale,
       estimate_Q_offdiag = estimate_Q_offdiag,
+      estimate_residual = estimate_residual,
       prior_only = prior_only
     )
   class(out) <- "coevfit"
