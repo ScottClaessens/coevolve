@@ -188,7 +188,7 @@ parameters are as follows:
 \item \code{sigma_residual} (residual standard deviations) =
 \code{exponential(1)}
 \item \code{L_residual} (Cholesky factor for residual correlations) =
-\code{lkj_corr_cholesky(2)}
+\code{lkj_corr_cholesky(4)}
 }
 
 The default prior for \code{phi} (the overdispersion parameter for the

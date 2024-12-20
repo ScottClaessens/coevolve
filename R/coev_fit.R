@@ -147,7 +147,7 @@
 #'   - \code{sigma_residual} (residual standard deviations) =
 #'   \code{exponential(1)}
 #'   - \code{L_residual} (Cholesky factor for residual correlations) =
-#'   \code{lkj_corr_cholesky(2)}
+#'   \code{lkj_corr_cholesky(4)}
 #'
 #'   The default prior for \code{phi} (the overdispersion parameter for the
 #'   negative-binomial distribution) is scaled automatically based on the
