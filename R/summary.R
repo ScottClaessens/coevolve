@@ -237,8 +237,8 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       phi            = phi,
       shape          = shape,
       gpterms        = gpterms,
-      sd_residual       = sd_residual,
-      cor_residual      = cor_residual,
+      sd_residual    = sd_residual,
+      cor_residual   = cor_residual,
       num_divergent  = sum(
         object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent
         ),
@@ -332,7 +332,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
   # print residual sds and correlations
   if (!is.null(x$sd_residual) & !is.null(x$cor_residual)) {
     cat("\n")
-    cat("Residual standard deviations and correlations:\n")
+    cat("Residual parameters:\n")
     print_format(rbind(x$sd_residual, x$cor_residual), digits = digits)
   }
   # warnings for high rhats or divergences
