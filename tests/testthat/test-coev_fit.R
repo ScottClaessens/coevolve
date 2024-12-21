@@ -674,6 +674,20 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      estimate_residual = "testing"
+    ),
+    "Argument 'estimate_residual' must be a logical of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       prior_only = "testing"
     ),
     "Argument 'prior_only' must be a logical of length one.",
