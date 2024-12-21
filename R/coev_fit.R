@@ -90,12 +90,12 @@
 #'   drift). If \code{FALSE}, the off-diagonals for the \eqn{Q} drift matrix
 #'   are set to zero.
 #' @param estimate_residual Logical. If \code{TRUE} (default), the model
-#'   estimates residual variances and residual correlations when there are
-#'   repeated observations for taxa. If \code{FALSE}, residual variances and
-#'   residual correlations are not estimated. The latter may be preferable
-#'   in cases where repeated observations are sparse (i.e., only some taxa have
-#'   only few repeated observations). This argument only applies when repeated
-#'   observations are present in the data.
+#'   estimates residual standard deviations and residual correlations when there
+#'   are repeated observations for taxa. If \code{FALSE}, residual standard
+#'   deviations and residual correlations are not estimated. The latter may be
+#'   preferable in cases where repeated observations are sparse (e.g., only some
+#'   taxa have only few repeated observations). This argument only applies when
+#'   repeated observations are present in the data.
 #' @param log_lik Logical. Set to \code{FALSE} by default. If \code{TRUE}, the
 #'   model returns the pointwise log likelihood, which can be used to calculate
 #'   WAIC and LOO.
@@ -167,10 +167,10 @@
 #'   \bold{Dealing with repeated observations}
 #'
 #'   If taxa appear in the dataset multiple times (i.e., there are repeated
-#'   observations), the model will automatically estimate residual variances
-#'   and residual correlations that capture the within-taxa variation that is
-#'   not due to the coevolutionary process. To turn off this behaviour, set
-#'   \code{estimate_residual = FALSE}.
+#'   observations), the model will automatically estimate residual standard
+#'   deviations and residual correlations that capture the within-taxa variation
+#'   that is not due to the coevolutionary process. To turn off this behaviour,
+#'   set \code{estimate_residual = FALSE}.
 #'
 #'   \bold{Incorporating measurement error}
 #'
