@@ -184,7 +184,6 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
     A_free_free  <- A[,free_indices, free_indices, drop = FALSE]
     A_free_held  <- A[,free_indices, held_indices, drop = FALSE]
     b_free       <- b[,free_indices, drop = FALSE]
-
     for (i in 1:posterior::ndraws(post)) {
       # compute the equilibrium for the free variables
       if (length(held_indices) == 1) {
@@ -209,4 +208,4 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
   # add column names to theta matrix
   colnames(theta) <- names(object$variables)
   return(theta)
-  }
+}

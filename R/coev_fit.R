@@ -68,10 +68,10 @@
 #'   the shape parameters for gamma variables (\code{shape}), the sigma
 #'   parameters for Gaussian Processes over locations (\code{sigma_dist}), the
 #'   rho parameters for Gaussian Processes over locations (\code{rho_dist}), the
-#'   standard deviation parameters for non-phylogenetic group-level varying
-#'   effects (\code{sigma_group}), and the Cholesky factor for the
-#'   non-phylogenetic group-level correlation matrix (\code{L_group}). These
-#'   must be entered with valid prior strings, e.g.
+#'   residual standard deviations when there are repeated observations
+#'   (\code{sigma_residual}), and the Cholesky factor for the residual
+#'   correlations when there are repeated observations (\code{L_residual}).
+#'   These must be entered with valid prior strings, e.g.
 #'   \code{list(A_offdiag = "normal(0, 2)")}. Invalid prior strings will throw
 #'   an error when the function internally checks the syntax of resulting Stan
 #'   code.
@@ -89,6 +89,13 @@
 #'   estimates the off-diagonals for the \eqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \eqn{Q} drift matrix
 #'   are set to zero.
+#' @param estimate_residual Logical. If \code{TRUE} (default), the model
+#'   estimates residual standard deviations and residual correlations when there
+#'   are repeated observations for taxa. If \code{FALSE}, residual standard
+#'   deviations and residual correlations are not estimated. The latter may be
+#'   preferable in cases where repeated observations are sparse (e.g., only some
+#'   taxa have only few repeated observations). This argument only applies when
+#'   repeated observations are present in the data.
 #' @param log_lik Logical. Set to \code{FALSE} by default. If \code{TRUE}, the
 #'   model returns the pointwise log likelihood, which can be used to calculate
 #'   WAIC and LOO.
@@ -137,10 +144,10 @@
 #'   \code{exponential(1)}
 #'   - \code{rho_dist} (rho for Gaussian process over locations) =
 #'   \code{exponential(5)}
-#'   - \code{sigma_group} (standard deviation for group-level varying effects) =
+#'   - \code{sigma_residual} (residual standard deviations) =
 #'   \code{exponential(1)}
-#'   - \code{L_group} (Cholesky factor for group-level varying effects) =
-#'   \code{lkj_corr_cholesky(2)}
+#'   - \code{L_residual} (Cholesky factor for residual correlations) =
+#'   \code{lkj_corr_cholesky(4)}
 #'
 #'   The default prior for \code{phi} (the overdispersion parameter for the
 #'   negative-binomial distribution) is scaled automatically based on the
@@ -160,10 +167,10 @@
 #'   \bold{Dealing with repeated observations}
 #'
 #'   If taxa appear in the dataset multiple times (i.e., there are repeated
-#'   observations), the model will automatically include non-phylogenetic
-#'   group-level varying effects and correlations to account for this
-#'   clustering. These parameters represent the between-taxa variation and
-#'   correlation that remains after accounting for the coevolutionary process.
+#'   observations), the model will automatically estimate residual standard
+#'   deviations and residual correlations that capture the within-taxa variation
+#'   that is not due to the coevolutionary process. To turn off this behaviour,
+#'   set \code{estimate_residual = FALSE}.
 #'
 #'   \bold{Incorporating measurement error}
 #'
@@ -217,22 +224,25 @@ coev_fit <- function(data, variables, id, tree,
                      measurement_error = NULL,
                      prior = NULL, scale = TRUE,
                      estimate_Q_offdiag = TRUE,
+                     estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
                      adapt_delta = 0.95, ...) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, measurement_error, prior, scale, estimate_Q_offdiag,
-             log_lik, prior_only)
+             estimate_residual, log_lik, prior_only)
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
                            complete_cases, dist_mat, dist_cov,
                            measurement_error, prior, scale,
-                           estimate_Q_offdiag, log_lik, prior_only)
+                           estimate_Q_offdiag, estimate_residual, log_lik,
+                           prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
                            complete_cases, dist_mat, dist_cov,
                            measurement_error, prior, scale,
-                           estimate_Q_offdiag, log_lik, prior_only)
+                           estimate_Q_offdiag, estimate_residual, log_lik,
+                           prior_only)
   # fit model
   model <-
     cmdstanr::cmdstan_model(
@@ -263,6 +273,7 @@ coev_fit <- function(data, variables, id, tree,
       measurement_error = measurement_error,
       scale = scale,
       estimate_Q_offdiag = estimate_Q_offdiag,
+      estimate_residual = estimate_residual,
       prior_only = prior_only
     )
   class(out) <- "coevfit"

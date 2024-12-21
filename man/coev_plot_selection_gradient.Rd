@@ -41,9 +41,13 @@ the change in a trait due to stochastic drift \eqn{\sigma}. Values
 between -1 and 1 indicate parameter space where the change due to
 drift is greater than change due to selection on the trait. Conversely,
 values greater than 1 (or less than -1) indicate parameter space where
-positive (or negative) selection is stronger than drift. If three or more
-traits were included in the model, other traits are held at their median
-values during these computations.
+positive (or negative) selection is stronger than drift.
+
+If three or more traits were included in the model, other traits are held
+at their median values during the computations. Note that selection
+gradient plots can potentially produce misleading pictures of
+coevolutionary dynamics when other traits are held constant in models with
+three or more traits.
 
 If the plot does not look right, the user might try zooming out from the
 default parameter space by setting wider limits. For some variables (e.g.,

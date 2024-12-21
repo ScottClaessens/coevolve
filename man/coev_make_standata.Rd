@@ -17,6 +17,7 @@ coev_make_standata(
   prior = NULL,
   scale = TRUE,
   estimate_Q_offdiag = TRUE,
+  estimate_residual = TRUE,
   log_lik = FALSE,
   prior_only = FALSE
 )
@@ -87,10 +88,10 @@ overdispersion parameters for negative binomial variables (\code{phi}),
 the shape parameters for gamma variables (\code{shape}), the sigma
 parameters for Gaussian Processes over locations (\code{sigma_dist}), the
 rho parameters for Gaussian Processes over locations (\code{rho_dist}), the
-standard deviation parameters for non-phylogenetic group-level varying
-effects (\code{sigma_group}), and the Cholesky factor for the
-non-phylogenetic group-level correlation matrix (\code{L_group}). These
-must be entered with valid prior strings, e.g.
+residual standard deviations when there are repeated observations
+(\code{sigma_residual}), and the Cholesky factor for the residual
+correlations when there are repeated observations (\code{L_residual}).
+These must be entered with valid prior strings, e.g.
 \code{list(A_offdiag = "normal(0, 2)")}.}
 
 \item{scale}{Logical. If \code{TRUE} (default), variables following the
@@ -108,6 +109,14 @@ take care to set sensible priors on variables.}
 estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
 are set to zero.}
+
+\item{estimate_residual}{Logical. If \code{TRUE} (default), the model
+estimates residual standard deviations and residual correlations when there
+are repeated observations for taxa. If \code{FALSE}, residual standard
+deviations and residual correlations are not estimated. The latter may be
+preferable in cases where repeated observations are sparse (e.g., only some
+taxa have only few repeated observations). This argument only applies when
+repeated observations are present in the data.}
 
 \item{log_lik}{Logical. Set to \code{FALSE} by default. If \code{TRUE}, the
 model returns the pointwise log likelihood, which can be used to calculate

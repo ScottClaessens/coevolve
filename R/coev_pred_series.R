@@ -11,7 +11,7 @@
 #'   length equal to the number of variables specifying the initial \eqn{\eta}
 #'   values. All variable names must be included in this list.
 #' @param intervention_values Either \code{NULL} (the default) or a named list
-#'   of variables and associated intervention values. If \code{NULL}, all trats
+#'   of variables and associated intervention values. If \code{NULL}, all traits
 #'   are free to vary. Otherwise, all coevolving variables must be
 #'   declared separately in the named list without repetition. If the
 #'   intervention value for a particular variable is set to NA, this variable is

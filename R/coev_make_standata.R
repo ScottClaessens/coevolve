@@ -61,10 +61,10 @@
 #'   the shape parameters for gamma variables (\code{shape}), the sigma
 #'   parameters for Gaussian Processes over locations (\code{sigma_dist}), the
 #'   rho parameters for Gaussian Processes over locations (\code{rho_dist}), the
-#'   standard deviation parameters for non-phylogenetic group-level varying
-#'   effects (\code{sigma_group}), and the Cholesky factor for the
-#'   non-phylogenetic group-level correlation matrix (\code{L_group}). These
-#'   must be entered with valid prior strings, e.g.
+#'   residual standard deviations when there are repeated observations
+#'   (\code{sigma_residual}), and the Cholesky factor for the residual
+#'   correlations when there are repeated observations (\code{L_residual}).
+#'   These must be entered with valid prior strings, e.g.
 #'   \code{list(A_offdiag = "normal(0, 2)")}.
 #' @param scale Logical. If \code{TRUE} (default), variables following the
 #'   \code{normal} and \code{gamma_log} response distributions are scaled before
@@ -80,6 +80,13 @@
 #'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
 #'   are set to zero.
+#' @param estimate_residual Logical. If \code{TRUE} (default), the model
+#'   estimates residual standard deviations and residual correlations when there
+#'   are repeated observations for taxa. If \code{FALSE}, residual standard
+#'   deviations and residual correlations are not estimated. The latter may be
+#'   preferable in cases where repeated observations are sparse (e.g., only some
+#'   taxa have only few repeated observations). This argument only applies when
+#'   repeated observations are present in the data.
 #' @param log_lik Logical. Set to \code{FALSE} by default. If \code{TRUE}, the
 #'   model returns the pointwise log likelihood, which can be used to calculate
 #'   WAIC and LOO.
@@ -126,12 +133,13 @@ coev_make_standata <- function(data, variables, id, tree,
                                measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_Q_offdiag = TRUE,
+                               estimate_residual = TRUE,
                                log_lik = FALSE,
                                prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, measurement_error, prior, scale, estimate_Q_offdiag,
-             log_lik, prior_only)
+             estimate_residual, log_lik, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # warning if scale = FALSE

@@ -1,7 +1,8 @@
 # helper function for checking arguments
 run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
                        dist_mat, dist_cov, measurement_error, prior, scale,
-                       estimate_Q_offdiag, log_lik, prior_only) {
+                       estimate_Q_offdiag, estimate_residual, log_lik,
+                       prior_only) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
@@ -351,14 +352,14 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
     # stop if prior names not allowed
     if (!all(names(prior) %in% c("b", "eta_anc", "A_offdiag", "A_diag",
                                  "L_R", "Q_sigma", "c", "phi", "shape",
-                                 "sigma_dist", "rho_dist", "sigma_group",
-                                 "L_group"))) {
+                                 "sigma_dist", "rho_dist", "sigma_residual",
+                                 "L_residual"))) {
       stop2(
         paste0(
           "Argument 'prior' list contains names that are not allowed. Please ",
           "use only the following names: 'b', 'eta_anc', 'A_offdiag', ",
           "'A_diag', 'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', ",
-          "'rho_dist', 'sigma_group', and 'L_group'"
+          "'rho_dist', 'sigma_residual', and 'L_residual'"
           )
         )
     }
@@ -374,6 +375,10 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   # stop if estimate_Q_offdiag is not logical of length one
   if (!is.logical(estimate_Q_offdiag) | length(estimate_Q_offdiag) != 1) {
     stop2("Argument 'estimate_Q_offdiag' must be a logical of length one.")
+  }
+  # stop if estimate_residual is not logical of length one
+  if (!is.logical(estimate_residual) | length(estimate_residual) != 1) {
+    stop2("Argument 'estimate_residual' must be a logical of length one.")
   }
   # stop if log_lik is not logical of length one
   if (!is.logical(log_lik) | length(log_lik) != 1) {
