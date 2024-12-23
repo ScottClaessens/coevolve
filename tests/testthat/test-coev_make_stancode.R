@@ -435,6 +435,20 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      complete_cases = "testing"
+    ),
+    "Argument 'complete_cases' must be a logical of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       dist_mat = "testing" # not of class matrix
     ),
     "Argument 'dist_mat' must be a matrix.",
@@ -566,6 +580,91 @@ test_that("coev_make_stancode() produces expected errors", {
       data = d,
       variables = list(
         x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = "fail"
+    ),
+    "Argument 'measurement_error' is not a named list.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(x = "x_se")
+    ),
+    paste0(
+      "Argument 'measurement_error' contains variables that were not ",
+      "declared as normally-distributed variables in the model."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(w = "w_se")
+    ),
+    paste0(
+      "Argument 'measurement_error' refers to measurement error columns ",
+      "that are not valid column names in the data."
+    ),
+    fixed = TRUE
+  )
+  d$w_se <- rep(-1, 20)
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(w = "w_se")
+    ),
+    paste0(
+      "Standard errors in measurement error columns must be zero or ",
+      "positive reals."
+    ),
+    fixed = TRUE
+  )
+  d$w_se <- rexp(20)
+  d$w_se[1] <- NA
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        w = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(w = "w_se")
+    ),
+    paste0(
+      "Standard errors in measurement error columns must not be NA ",
+      "in rows where there is observed data for the focal variable."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
         y = "ordered_logistic"
       ),
       id = "id",
@@ -604,7 +703,7 @@ test_that("coev_make_stancode() produces expected errors", {
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
       "'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', 'rho_dist', ",
-      "'sigma_group', and 'L_group'"
+      "'sigma_residual', and 'L_residual'"
     ),
     fixed = TRUE
   )
@@ -634,7 +733,7 @@ test_that("coev_make_stancode() produces expected errors", {
       tree = tree,
       scale = "testing"
     ),
-    "Argument 'scale' is not logical.",
+    "Argument 'scale' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -648,7 +747,21 @@ test_that("coev_make_stancode() produces expected errors", {
       tree = tree,
       estimate_Q_offdiag = "testing"
     ),
-    "Argument 'estimate_Q_offdiag' is not logical.",
+    "Argument 'estimate_Q_offdiag' must be a logical of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      estimate_residual = "testing"
+    ),
+    "Argument 'estimate_residual' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -662,7 +775,7 @@ test_that("coev_make_stancode() produces expected errors", {
       tree = tree,
       prior_only = "testing"
     ),
-    "Argument 'prior_only' is not logical.",
+    "Argument 'prior_only' must be a logical of length one.",
     fixed = TRUE
   )
 })
@@ -810,19 +923,19 @@ test_that("Setting manual priors in coev_make_stancode() works as expected", {
       id = "id",
       tree = tree,
       prior = list(
-        b           = "normal(0, 2)",
-        eta_anc     = "normal(0, 2)",
-        A_offdiag   = "normal(0, 2)",
-        A_diag      = "normal(0, 2)",
-        L_R         = "lkj_corr_cholesky(3)",
-        Q_sigma     = "normal(0, 2)",
-        c           = "normal(0, 3)",
-        phi         = "normal(1, 1)",
-        shape       = "gamma(0.02, 0.02)",
-        sigma_dist  = "exponential(2)",
-        rho_dist    = "exponential(6)",
-        sigma_group = "exponential(2)",
-        L_group     = "lkj_corr_cholesky(3)"
+        b              = "normal(0, 2)",
+        eta_anc        = "normal(0, 2)",
+        A_offdiag      = "normal(0, 2)",
+        A_diag         = "normal(0, 2)",
+        L_R            = "lkj_corr_cholesky(3)",
+        Q_sigma        = "normal(0, 2)",
+        c              = "normal(0, 3)",
+        phi            = "normal(1, 1)",
+        shape          = "gamma(0.02, 0.02)",
+        sigma_dist     = "exponential(2)",
+        rho_dist       = "exponential(6)",
+        sigma_residual = "exponential(2)",
+        L_residual     = "lkj_corr_cholesky(3)"
       )
     )
   )
@@ -943,8 +1056,8 @@ test_that("coev_make_stancode() works with repeated observations", {
       tree = tree
     ),
     paste0(
-      "Note: Repeated observations detected. Group-level varying effects ",
-      "have been included for each variable in the model."
+      "Note: Repeated observations detected. Residual standard deviations ",
+      "and correlations have been included in the model."
     )
   )
 })
@@ -1149,5 +1262,43 @@ test_that("coev_make_stancode() works with gamma_log distribution", {
       tree = tree,
       prior = list(shape = "gamma(0.05, 0.05)")
     )
+  )
+})
+
+test_that("coev_make_stancode() works with measurement error", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n),
+      x_se = 0,
+      y_se = rexp(20, 5)
+    )
+  })
+  # make stan code with measurement error
+  sc <-
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(
+        x = "x_se",
+        y = "y_se"
+      )
+    )
+  # check stan code is syntactically correct
+  expect_no_error(sc)
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
   )
 })

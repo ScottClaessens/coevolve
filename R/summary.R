@@ -132,7 +132,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   cutpoints <- NULL
   if ("ordered_logistic" %in% object$variables) {
     cutpoints <- s[stringr::str_starts(s$variable, "c") &
-                     !stringr::str_starts(s$variable, "cor_group") &
+                     !stringr::str_starts(s$variable, "cor_residual") &
                      !stringr::str_starts(s$variable, "cor_R"),]
     rownames(cutpoints) <- paste0(
       names(object$variables)[readr::parse_number(cutpoints$variable)],
@@ -166,35 +166,35 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
     )
     gpterms <- gpterms[, 2:ncol(gpterms)]
   }
-  # summarise group-level hyperparameters
-  sd_group <- NULL
-  cor_group <- NULL
+  # summarise residual sds and correlations
+  sd_residual <- NULL
+  cor_residual <- NULL
   if (any(duplicated(object$data[,object$id]))) {
     # sd parameters
-    sd_group <- s[stringr::str_starts(s$variable, "sigma_group"),]
-    rownames(sd_group) <- paste0(
+    sd_residual <- s[stringr::str_starts(s$variable, "sigma_residual"),]
+    rownames(sd_residual) <- paste0(
       "sd(",
-      names(object$variables)[readr::parse_number(sd_group$variable)],
+      names(object$variables)[readr::parse_number(sd_residual$variable)],
       ")"
       )
-    sd_group <- sd_group[, 2:ncol(sd_group)]
+    sd_residual <- sd_residual[, 2:ncol(sd_residual)]
     # correlation parameters
-    cor_group <- s[stringr::str_starts(s$variable, "cor_group"),]
+    cor_residual <- s[stringr::str_starts(s$variable, "cor_residual"),]
     for (i in 1:length(object$variables)) {
       for (j in 1:length(object$variables)) {
         if (i >= j) {
-          var <- paste0("cor_group[", i, ",", j, "]")
-          cor_group <- cor_group[cor_group$variable != var,]
+          var <- paste0("cor_residual[", i, ",", j, "]")
+          cor_residual <- cor_residual[cor_residual$variable != var,]
         }
       }
     }
-    rownames(cor_group) <- paste0(
+    rownames(cor_residual) <- paste0(
       "cor(",
       names(object$variables)[
         readr::parse_number(
           stringr::str_extract(
-            cor_group$variable,
-            pattern = "cor\\_group\\[(\\d+)\\,"
+            cor_residual$variable,
+            pattern = "cor\\_residual\\[(\\d+)\\,"
           )
         )
       ],
@@ -202,14 +202,14 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       names(object$variables)[
         readr::parse_number(
           stringr::str_extract(
-            cor_group$variable,
+            cor_residual$variable,
             pattern = "\\,(\\d+)\\]"
           )
         )
       ],
       ")"
     )
-    cor_group <- cor_group[, 2:ncol(cor_group)]
+    cor_residual <- cor_residual[, 2:ncol(cor_residual)]
   }
   # create summary list
   out <-
@@ -220,6 +220,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       nobs           = object$stan_data$N_obs,
       ntrees         = object$stan_data$N_tree,
       tree_name      = object$tree_name,
+      complete_cases = object$complete_cases,
       chains         = object$fit$num_chains(),
       iter           = object$fit$metadata()$iter_sampling,
       warmup         = object$fit$metadata()$iter_warmup,
@@ -233,8 +234,8 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       phi            = phi,
       shape          = shape,
       gpterms        = gpterms,
-      sd_group       = sd_group,
-      cor_group      = cor_group,
+      sd_residual    = sd_residual,
+      cor_residual   = cor_residual,
       num_divergent  = sum(
         object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent
         ),
@@ -325,11 +326,11 @@ print.coevsummary <- function(x, digits = 2, ...) {
     cat("Gaussian Process parameters for distances:\n")
     print_format(x$gpterms, digits = digits)
   }
-  # print group-level hyperparameters
-  if (!is.null(x$sd_group) & !is.null(x$cor_group)) {
+  # print residual sds and correlations
+  if (!is.null(x$sd_residual) & !is.null(x$cor_residual)) {
     cat("\n")
-    cat("Group-level hyperparameters:\n")
-    print_format(rbind(x$sd_group, x$cor_group), digits = digits)
+    cat("Residual parameters:\n")
+    print_format(rbind(x$sd_residual, x$cor_residual), digits = digits)
   }
   # warnings for high rhats or divergences
   if (max(x$rhats, na.rm = TRUE) > 1.05) {
@@ -352,14 +353,9 @@ print.coevsummary <- function(x, digits = 2, ...) {
     )
     cat("\n")
   }
-  # warnings if data excluded
-  if (nrow(x$data) != x$nobs) {
-    warning2(
-      paste0(
-        "Rows with NAs for all coevolving variables were ",
-        "excluded from the model."
-      )
-    )
+  # warning if complete_cases = TRUE and rows removed
+  if (x$complete_cases & nrow(x$data) != x$nobs) {
+    warning2("Rows with NAs were excluded from the model.")
     cat("\n")
   }
   # return

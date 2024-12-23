@@ -10,11 +10,14 @@ coev_make_standata(
   id,
   tree,
   effects_mat = NULL,
+  complete_cases = FALSE,
   dist_mat = NULL,
   dist_cov = "exp_quad",
+  measurement_error = NULL,
   prior = NULL,
   scale = TRUE,
   estimate_Q_offdiag = TRUE,
+  estimate_residual = TRUE,
   log_lik = FALSE,
   prior_only = FALSE
 )
@@ -50,6 +53,10 @@ FALSE. In the matrix, columns represent predictor variables and rows
 represent outcome variables. All autoregressive effects (e.g., X -> X) must
 be TRUE in the matrix.}
 
+\item{complete_cases}{(optional) Logical. If \code{FALSE} (default), all
+missing values are imputed by the model. If \code{TRUE}, taxa with missing
+data are excluded.}
+
 \item{dist_mat}{(optional) A distance matrix with row and column names
 exactly matching the tip labels in the phylogeny. If specified, the model
 will additionally control for spatial location by including a separate
@@ -59,6 +66,14 @@ Gaussian Process over locations for every coevolving variable in the model.}
 Processes over locations. Currently supported are \code{"exp_quad"}
 (exponentiated-quadratic kernel; default), \code{"exponential"}
 (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).}
+
+\item{measurement_error}{(optional) A named list of coevolving variables and
+their associated columns in the dataset containing standard errors. Only
+valid for normally-distributed variables. For example, if we declare
+\code{variables = list(x = "normal", y = "normal")}, then we could set
+\code{measurement_error = list(x = "x_std_err")} to tell the function to
+include measurement error on \code{x} using standard errors from the
+\code{x_std_err} column of the dataset.}
 
 \item{prior}{(optional) A named list of priors for the model. If not
 specified, the model uses default priors (see \code{help(coev_fit)}).
@@ -73,10 +88,10 @@ overdispersion parameters for negative binomial variables (\code{phi}),
 the shape parameters for gamma variables (\code{shape}), the sigma
 parameters for Gaussian Processes over locations (\code{sigma_dist}), the
 rho parameters for Gaussian Processes over locations (\code{rho_dist}), the
-standard deviation parameters for non-phylogenetic group-level varying
-effects (\code{sigma_group}), and the Cholesky factor for the
-non-phylogenetic group-level correlation matrix (\code{L_group}). These
-must be entered with valid prior strings, e.g.
+residual standard deviations when there are repeated observations
+(\code{sigma_residual}), and the Cholesky factor for the residual
+correlations when there are repeated observations (\code{L_residual}).
+These must be entered with valid prior strings, e.g.
 \code{list(A_offdiag = "normal(0, 2)")}.}
 
 \item{scale}{Logical. If \code{TRUE} (default), variables following the
@@ -94,6 +109,14 @@ take care to set sensible priors on variables.}
 estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
 are set to zero.}
+
+\item{estimate_residual}{Logical. If \code{TRUE} (default), the model
+estimates residual standard deviations and residual correlations when there
+are repeated observations for taxa. If \code{FALSE}, residual standard
+deviations and residual correlations are not estimated. The latter may be
+preferable in cases where repeated observations are sparse (e.g., only some
+taxa have only few repeated observations). This argument only applies when
+repeated observations are present in the data.}
 
 \item{log_lik}{Logical. Set to \code{FALSE} by default. If \code{TRUE}, the
 model returns the pointwise log likelihood, which can be used to calculate

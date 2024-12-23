@@ -1,23 +1,25 @@
 test_that("coev_plot_delta_theta() produces expected errors and output", {
   # load models
-  m1 <- readRDS(test_path("fixtures", "coevfit_example1.rds"))
-  m2 <- readRDS(test_path("fixtures", "coevfit_example2.rds"))
-  m3 <- readRDS(test_path("fixtures", "coevfit_example3.rds"))
-  m4 <- readRDS(test_path("fixtures", "coevfit_example4.rds"))
-  m5 <- readRDS(test_path("fixtures", "coevfit_example5.rds"))
-  m6 <- readRDS(test_path("fixtures", "coevfit_example6.rds"))
-  m7 <- readRDS(test_path("fixtures", "coevfit_example7.rds"))
-  m8 <- readRDS(test_path("fixtures", "coevfit_example8.rds"))
-  m9 <- readRDS(test_path("fixtures", "coevfit_example9.rds"))
-  m1 <- reload_fit(m1, filename = "coevfit_example1-1.csv")
-  m2 <- reload_fit(m2, filename = "coevfit_example2-1.csv")
-  m3 <- reload_fit(m3, filename = "coevfit_example3-1.csv")
-  m4 <- reload_fit(m4, filename = "coevfit_example4-1.csv")
-  m5 <- reload_fit(m5, filename = "coevfit_example5-1.csv")
-  m6 <- reload_fit(m6, filename = "coevfit_example6-1.csv")
-  m7 <- reload_fit(m7, filename = "coevfit_example7-1.csv")
-  m8 <- reload_fit(m8, filename = "coevfit_example8-1.csv")
-  m9 <- reload_fit(m9, filename = "coevfit_example9-1.csv")
+  m01 <- readRDS(test_path("fixtures", "coevfit_example_01.rds"))
+  m02 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
+  m03 <- readRDS(test_path("fixtures", "coevfit_example_03.rds"))
+  m04 <- readRDS(test_path("fixtures", "coevfit_example_04.rds"))
+  m05 <- readRDS(test_path("fixtures", "coevfit_example_05.rds"))
+  m06 <- readRDS(test_path("fixtures", "coevfit_example_06.rds"))
+  m07 <- readRDS(test_path("fixtures", "coevfit_example_07.rds"))
+  m08 <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
+  m09 <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
+  m10 <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
+  m01 <- reload_fit(m01, filename = "coevfit_example_01-1.csv")
+  m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
+  m03 <- reload_fit(m03, filename = "coevfit_example_03-1.csv")
+  m04 <- reload_fit(m04, filename = "coevfit_example_04-1.csv")
+  m05 <- reload_fit(m05, filename = "coevfit_example_05-1.csv")
+  m06 <- reload_fit(m06, filename = "coevfit_example_06-1.csv")
+  m07 <- reload_fit(m07, filename = "coevfit_example_07-1.csv")
+  m08 <- reload_fit(m08, filename = "coevfit_example_08-1.csv")
+  m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
+  m10 <- reload_fit(m10, filename = "coevfit_example_10-1.csv")
   # expect the following errors
   expect_error(
     coev_plot_delta_theta(object = "fail"),
@@ -25,111 +27,115 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, variables = NA),
+    coev_plot_delta_theta(object = m01, variables = NA),
     "Argument 'variables' must be a character vector.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, variables = "fail"),
+    coev_plot_delta_theta(object = m01, variables = "fail"),
     "Argument 'variables' must be of length > 1.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, variables = c("x", "y", "fail")),
+    coev_plot_delta_theta(object = m01, variables = c("x", "y", "fail")),
     "Some variables in 'variables' are not included in the fitted model.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, variables = c("x", "y", "y")),
+    coev_plot_delta_theta(object = m01, variables = c("x", "y", "y")),
     "Argument 'variables' contains duplicates.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, prob = "fail"),
+    coev_plot_delta_theta(object = m01, prob = "fail"),
     "Argument 'prob' must be numeric.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, prob = c(0.5, 0.5)),
+    coev_plot_delta_theta(object = m01, prob = c(0.5, 0.5)),
     "Argument 'prob' must be of length 1.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, prob = -0.5),
+    coev_plot_delta_theta(object = m01, prob = -0.5),
     "Argument 'prob' must be between 0 and 1.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, prob = 1.5),
+    coev_plot_delta_theta(object = m01, prob = 1.5),
     "Argument 'prob' must be between 0 and 1.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, prob_outer = "fail"),
+    coev_plot_delta_theta(object = m01, prob_outer = "fail"),
     "Argument 'prob_outer' must be numeric.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, prob_outer = c(0.5, 0.5)),
+    coev_plot_delta_theta(object = m01, prob_outer = c(0.5, 0.5)),
     "Argument 'prob_outer' must be of length 1.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, prob_outer = -0.5),
+    coev_plot_delta_theta(object = m01, prob_outer = -0.5),
     "Argument 'prob_outer' must be between 0 and 1.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, prob_outer = 1.5),
+    coev_plot_delta_theta(object = m01, prob_outer = 1.5),
     "Argument 'prob_outer' must be between 0 and 1.",
     fixed = TRUE
   )
   expect_error(
-    coev_plot_delta_theta(object = m1, prob = 0.5, prob_outer = 0.4),
+    coev_plot_delta_theta(object = m01, prob = 0.5, prob_outer = 0.4),
     "Argument 'prob_outer' must be greater than argument 'prob'.",
     fixed = TRUE
   )
   # suppress warnings
   SW <- suppressWarnings
   # should run without error and produce ggplot object
-  expect_no_error(SW(coev_plot_delta_theta(m1)))
-  expect_no_error(SW(coev_plot_delta_theta(m2)))
-  expect_no_error(SW(coev_plot_delta_theta(m3)))
-  expect_no_error(SW(coev_plot_delta_theta(m4)))
-  expect_no_error(SW(coev_plot_delta_theta(m5)))
-  expect_no_error(SW(coev_plot_delta_theta(m6)))
-  expect_no_error(SW(coev_plot_delta_theta(m7)))
-  expect_no_error(SW(coev_plot_delta_theta(m8)))
-  expect_no_error(SW(coev_plot_delta_theta(m9)))
-  expect_true(methods::is(SW(coev_plot_delta_theta(m1)), "ggplot"))
-  expect_true(methods::is(SW(coev_plot_delta_theta(m2)), "ggplot"))
-  expect_true(methods::is(SW(coev_plot_delta_theta(m3)), "ggplot"))
-  expect_true(methods::is(SW(coev_plot_delta_theta(m4)), "ggplot"))
-  expect_true(methods::is(SW(coev_plot_delta_theta(m5)), "ggplot"))
-  expect_true(methods::is(SW(coev_plot_delta_theta(m6)), "ggplot"))
-  expect_true(methods::is(SW(coev_plot_delta_theta(m7)), "ggplot"))
-  expect_true(methods::is(SW(coev_plot_delta_theta(m8)), "ggplot"))
-  expect_true(methods::is(SW(coev_plot_delta_theta(m9)), "ggplot"))
+  expect_no_error(SW(coev_plot_delta_theta(m01)))
+  expect_no_error(SW(coev_plot_delta_theta(m02)))
+  expect_no_error(SW(coev_plot_delta_theta(m03)))
+  expect_no_error(SW(coev_plot_delta_theta(m04)))
+  expect_no_error(SW(coev_plot_delta_theta(m05)))
+  expect_no_error(SW(coev_plot_delta_theta(m06)))
+  expect_no_error(SW(coev_plot_delta_theta(m07)))
+  expect_no_error(SW(coev_plot_delta_theta(m08)))
+  expect_no_error(SW(coev_plot_delta_theta(m09)))
+  expect_no_error(SW(coev_plot_delta_theta(m10)))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m01)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m02)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m03)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m04)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m05)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m06)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m07)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m08)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m09)), "ggplot"))
+  expect_true(methods::is(SW(coev_plot_delta_theta(m10)), "ggplot"))
   # limits work as expected
-  expect_no_error(SW(coev_plot_delta_theta(m1, limits = c(-5, 5))))
-  expect_no_error(SW(coev_plot_delta_theta(m2, limits = c(-5, 5))))
-  expect_no_error(SW(coev_plot_delta_theta(m3, limits = c(-5, 5))))
-  expect_no_error(SW(coev_plot_delta_theta(m4, limits = c(-5, 5))))
-  expect_no_error(SW(coev_plot_delta_theta(m5, limits = c(-5, 5))))
-  expect_no_error(SW(coev_plot_delta_theta(m6, limits = c(-5, 5))))
-  expect_no_error(SW(coev_plot_delta_theta(m7, limits = c(-5, 5))))
-  expect_no_error(SW(coev_plot_delta_theta(m8, limits = c(-5, 5))))
-  expect_no_error(SW(coev_plot_delta_theta(m9, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m01, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m02, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m03, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m04, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m05, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m06, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m07, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m08, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m09, limits = c(-5, 5))))
+  expect_no_error(SW(coev_plot_delta_theta(m10, limits = c(-5, 5))))
   # prob and prob_outer work as expected
-  expect_no_error(SW(coev_plot_delta_theta(m1, prob = 0.5, prob_outer = 0.89)))
-  expect_no_error(SW(coev_plot_delta_theta(m2, prob = 0.5, prob_outer = 0.89)))
-  expect_no_error(SW(coev_plot_delta_theta(m3, prob = 0.5, prob_outer = 0.89)))
-  expect_no_error(SW(coev_plot_delta_theta(m4, prob = 0.5, prob_outer = 0.89)))
-  expect_no_error(SW(coev_plot_delta_theta(m5, prob = 0.5, prob_outer = 0.89)))
-  expect_no_error(SW(coev_plot_delta_theta(m6, prob = 0.5, prob_outer = 0.89)))
-  expect_no_error(SW(coev_plot_delta_theta(m7, prob = 0.5, prob_outer = 0.89)))
-  expect_no_error(SW(coev_plot_delta_theta(m8, prob = 0.5, prob_outer = 0.89)))
-  expect_no_error(SW(coev_plot_delta_theta(m9, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m01, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m02, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m03, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m04, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m05, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m06, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m07, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m08, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m09, prob = 0.5, prob_outer = 0.89)))
+  expect_no_error(SW(coev_plot_delta_theta(m10, prob = 0.5, prob_outer = 0.89)))
   # declaring variables works as expected
-  expect_no_error(SW(coev_plot_delta_theta(m1, variables = c("x", "y"))))
+  expect_no_error(SW(coev_plot_delta_theta(m01, variables = c("x", "y"))))
 })
