@@ -238,7 +238,7 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
         ) |>
       tidyr::unnest(!.data$taxa) |>
       dplyr::mutate(
-        iter = rep(all_draw_ids, times = max(.data$taxa))
+        iter = rep(all_draw_ids, times = max(as.numeric(.data$taxa)))
         ) |>
       dplyr::filter(.data$iter %in% draw_ids) |>
       ggplot2::ggplot() +

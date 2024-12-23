@@ -703,7 +703,7 @@ test_that("coev_make_stancode() produces expected errors", {
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
       "'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', 'rho_dist', ",
-      "'sigma_group', and 'L_group'"
+      "'sigma_residual', and 'L_residual'"
     ),
     fixed = TRUE
   )
@@ -748,6 +748,20 @@ test_that("coev_make_stancode() produces expected errors", {
       estimate_Q_offdiag = "testing"
     ),
     "Argument 'estimate_Q_offdiag' must be a logical of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      estimate_residual = "testing"
+    ),
+    "Argument 'estimate_residual' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -909,19 +923,19 @@ test_that("Setting manual priors in coev_make_stancode() works as expected", {
       id = "id",
       tree = tree,
       prior = list(
-        b           = "normal(0, 2)",
-        eta_anc     = "normal(0, 2)",
-        A_offdiag   = "normal(0, 2)",
-        A_diag      = "normal(0, 2)",
-        L_R         = "lkj_corr_cholesky(3)",
-        Q_sigma     = "normal(0, 2)",
-        c           = "normal(0, 3)",
-        phi         = "normal(1, 1)",
-        shape       = "gamma(0.02, 0.02)",
-        sigma_dist  = "exponential(2)",
-        rho_dist    = "exponential(6)",
-        sigma_group = "exponential(2)",
-        L_group     = "lkj_corr_cholesky(3)"
+        b              = "normal(0, 2)",
+        eta_anc        = "normal(0, 2)",
+        A_offdiag      = "normal(0, 2)",
+        A_diag         = "normal(0, 2)",
+        L_R            = "lkj_corr_cholesky(3)",
+        Q_sigma        = "normal(0, 2)",
+        c              = "normal(0, 3)",
+        phi            = "normal(1, 1)",
+        shape          = "gamma(0.02, 0.02)",
+        sigma_dist     = "exponential(2)",
+        rho_dist       = "exponential(6)",
+        sigma_residual = "exponential(2)",
+        L_residual     = "lkj_corr_cholesky(3)"
       )
     )
   )
@@ -1042,8 +1056,8 @@ test_that("coev_make_stancode() works with repeated observations", {
       tree = tree
     ),
     paste0(
-      "Note: Repeated observations detected. Group-level varying effects ",
-      "have been included for each variable in the model."
+      "Note: Repeated observations detected. Residual standard deviations ",
+      "and correlations have been included in the model."
     )
   )
 })
