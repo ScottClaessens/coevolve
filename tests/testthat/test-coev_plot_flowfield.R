@@ -57,6 +57,15 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
     ),
     "Argument 'limits' must be a numeric vector of length 2."
   )
+  # should produce warning when at least three traits in the model
+  expect_warning(
+    coev_plot_flowfield(object = m01, var1 = "x", var2 = "y"),
+    paste0(
+      "Other traits were held constant at their median values to produce ",
+      "this flowfield plot, which can potentially produce misleading ",
+      "pictures of coevolutionary dynamics."
+    )
+  )
   # should run without error
   fun <- function(model, var1, var2,
                   nullclines = FALSE,

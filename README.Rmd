@@ -29,7 +29,7 @@ knitr::opts_chunk$set(
 
 ## Overview
 
-The **coevolve** package allows the user to fit Bayesian dynamic coevolutionary
+The **coevolve** package allows the user to fit Bayesian generalized dynamic
 phylogenetic models in Stan. These models can be used to estimate how variables 
 have coevolved over evolutionary time and to assess causal directionality
 (X → Y vs. Y → X) and contingencies (X, then Y) in evolution.
@@ -82,7 +82,6 @@ fit <-
     prior = list(A_offdiag = "normal(0, 2)"),
     # arguments for cmdstanr
     parallel_chains = 4,
-    iter_sampling = 500,
     refresh = 0,
     seed = 1
   )
@@ -99,7 +98,7 @@ posterior draws for the model parameters. In particular, the output shows the
 autoregressive selection effects (i.e., the effect of a variable on itself in 
 the future), the cross selection effects (i.e., the effect of a variable on 
 another variable in the future), the amount of drift, continuous time intercept 
-parameters for the schocastic differential equation, and cutpoints for the 
+parameters for the stochastic differential equation, and cutpoints for the 
 ordinal variables.
 
 While this summary output is useful as a first glance, it is difficult to

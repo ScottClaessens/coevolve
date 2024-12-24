@@ -41,9 +41,12 @@ The flowfield visualises the change in two coevolving traits
 depending on their current states, with the direction and strength of
 change depicting with the direction and size of arrows. If nullclines are
 included, they represent the parameter combinations where each trait is
-at equilibrium, depending on the state of the other trait. If three or
-more traits were included in the model, other traits are held at their
-median values during these computations.
+at equilibrium, depending on the state of the other trait.
+
+If three or more traits were included in the model, other traits are held
+at their median values during the computations. Note that flowfield plots
+can potentially produce misleading pictures of coevolutionary dynamics when
+other traits are held constant in models with three or more traits.
 
 If the plot does not look right, the user might try zooming out from the
 default parameter space by setting wider limits. For some variables (e.g.,

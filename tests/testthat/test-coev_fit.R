@@ -618,7 +618,7 @@ test_that("coev_fit() produces expected errors", {
       "Argument 'prior' list contains names that are not allowed. Please ",
       "use only the following names: 'b', 'eta_anc', 'A_offdiag', 'A_diag', ",
       "'L_R', 'Q_sigma', 'c', 'phi', 'shape', 'sigma_dist', 'rho_dist', ",
-      "'sigma_group', and 'L_group'"
+      "'sigma_residual', and 'L_residual'"
     ),
     fixed = TRUE
   )
@@ -663,6 +663,20 @@ test_that("coev_fit() produces expected errors", {
       estimate_Q_offdiag = "testing"
     ),
     "Argument 'estimate_Q_offdiag' must be a logical of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      estimate_residual = "testing"
+    ),
+    "Argument 'estimate_residual' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(

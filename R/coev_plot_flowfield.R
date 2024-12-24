@@ -24,9 +24,12 @@
 #'   depending on their current states, with the direction and strength of
 #'   change depicting with the direction and size of arrows. If nullclines are
 #'   included, they represent the parameter combinations where each trait is
-#'   at equilibrium, depending on the state of the other trait. If three or
-#'   more traits were included in the model, other traits are held at their
-#'   median values during these computations.
+#'   at equilibrium, depending on the state of the other trait.
+#'
+#'   If three or more traits were included in the model, other traits are held
+#'   at their median values during the computations. Note that flowfield plots
+#'   can potentially produce misleading pictures of coevolutionary dynamics when
+#'   other traits are held constant in models with three or more traits.
 #'
 #'   If the plot does not look right, the user might try zooming out from the
 #'   default parameter space by setting wider limits. For some variables (e.g.,
@@ -106,6 +109,16 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
   # stop if limits is not a numeric vector of length 2
   if (!(is.numeric(limits) & is.vector(limits) & length(limits) == 2)) {
     stop2("Argument 'limits' must be a numeric vector of length 2.")
+  }
+  # produce warning if there are three or more traits
+  if (length(object$variables) >= 3) {
+    warning2(
+      paste0(
+        "Other traits were held constant at their median values to produce ",
+        "this flowfield plot, which can potentially produce misleading ",
+        "pictures of coevolutionary dynamics."
+        )
+    )
   }
   # get IDs for variables
   id_var1 <- which(names(object$variables) == var1)

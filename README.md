@@ -12,8 +12,8 @@
 
 ## Overview
 
-The **coevolve** package allows the user to fit Bayesian dynamic
-coevolutionary phylogenetic models in Stan. These models can be used to
+The **coevolve** package allows the user to fit Bayesian generalized
+dynamic phylogenetic models in Stan. These models can be used to
 estimate how variables have coevolved over evolutionary time and to
 assess causal directionality (X → Y vs. Y → X) and contingencies (X,
 then Y) in evolution.
@@ -70,21 +70,23 @@ fit <-
     prior = list(A_offdiag = "normal(0, 2)"),
     # arguments for cmdstanr
     parallel_chains = 4,
-    iter_sampling = 500,
     refresh = 0,
     seed = 1
   )
+```
+
+```r
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 3 finished in 972.1 seconds.
-#> Chain 1 finished in 976.9 seconds.
-#> Chain 4 finished in 995.5 seconds.
-#> Chain 2 finished in 1003.6 seconds.
+#> Chain 1 finished in 442.7 seconds.
+#> Chain 2 finished in 574.2 seconds.
+#> Chain 3 finished in 606.5 seconds.
+#> Chain 4 finished in 612.8 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 987.0 seconds.
-#> Total execution time: 1004.0 seconds.
-#> Warning: 35 of 2000 (2.0%) transitions ended with a divergence.
+#> Mean chain execution time: 559.0 seconds.
+#> Total execution time: 613.0 seconds.
+#> Warning: 22 of 4000 (1.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
 
@@ -96,39 +98,39 @@ summary(fit)
 #>            religious_authority = ordered_logistic 
 #>      Data: authority$data (Number of observations: 97)
 #> Phylogeny: authority$phylogeny (Number of trees: 1)
-#>     Draws: 4 chains, each with iter = 500; warmup = 1000; thin = 1
-#>            total post-warmup draws = 2000
+#>     Draws: 4 chains, each with iter = 1000; warmup = 1000; thin = 1
+#>            total post-warmup draws = 4000
 #> 
 #> Autoregressive selection effects:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority    -0.67      0.53 -1.97 -0.02 1.00     1015      769
-#> religious_authority    -0.78      0.57 -2.15 -0.04 1.00     1265     1061
+#> political_authority    -0.67      0.53 -1.99 -0.03 1.00     2120     1768
+#> religious_authority    -0.78      0.59 -2.20 -0.03 1.00     2260     1766
 #> 
 #> Cross selection effects:
 #>                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority ⟶ religious_authority     2.28      0.98  0.31  4.20 1.01      874      951
-#> religious_authority ⟶ political_authority     1.71      1.09 -0.36  3.95 1.01      494     1012
+#> political_authority ⟶ religious_authority     2.32      1.03  0.38  4.45 1.00     1567     1971
+#> religious_authority ⟶ political_authority     1.82      1.11 -0.28  4.07 1.00     1288     2124
 #> 
 #> Drift parameters:
 #>                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> sd(political_authority)                          1.98      0.80  0.30  3.51 1.01      402      344
-#> sd(religious_authority)                          1.28      0.77  0.07  2.93 1.01      447      776
-#> cor(political_authority,religious_authority)     0.27      0.31 -0.42  0.77 1.00     1303     1340
+#> sd(political_authority)                          1.95      0.83  0.27  3.50 1.01      801     1193
+#> sd(religious_authority)                          1.29      0.80  0.06  2.94 1.00      761     1327
+#> cor(political_authority,religious_authority)     0.26      0.32 -0.44  0.78 1.00     2732     2641
 #> 
 #> Continuous time intercept parameters:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority     0.20      0.95 -1.62  2.05 1.00     2342     1495
-#> religious_authority     0.27      0.90 -1.42  2.02 1.01     2094     1229
+#> political_authority     0.21      0.95 -1.56  2.09 1.00     4088     1162
+#> religious_authority     0.21      0.94 -1.65  2.06 1.00     5112     2655
 #> 
 #> Ordinal cutpoint parameters:
 #>                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority[1]    -1.34      0.86 -2.97  0.33 1.00     1113     1468
-#> political_authority[2]    -0.58      0.83 -2.22  1.08 1.00     1257     1585
-#> political_authority[3]     1.61      0.86 -0.00  3.31 1.00     1371     1540
-#> religious_authority[1]    -1.50      0.92 -3.29  0.34 1.00     1647     1280
-#> religious_authority[2]    -0.81      0.90 -2.54  0.93 1.00     1693     1464
-#> religious_authority[3]     1.61      0.94 -0.17  3.52 1.00     1751     1648
-#> Warning: There were 35 divergent transitions after warmup.
+#> political_authority[1]    -1.31      0.91 -3.12  0.51 1.00     2736     2683
+#> political_authority[2]    -0.56      0.89 -2.32  1.24 1.00     3129     2891
+#> political_authority[3]     1.64      0.92 -0.10  3.55 1.00     3268     2956
+#> religious_authority[1]    -1.53      0.92 -3.31  0.24 1.00     3019     3066
+#> religious_authority[2]    -0.84      0.90 -2.59  0.94 1.00     3329     3051
+#> religious_authority[3]     1.60      0.95 -0.17  3.51 1.00     3205     3102
+#> Warning: There were 22 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
@@ -137,7 +139,7 @@ the posterior draws for the model parameters. In particular, the output
 shows the autoregressive selection effects (i.e., the effect of a
 variable on itself in the future), the cross selection effects (i.e.,
 the effect of a variable on another variable in the future), the amount
-of drift, continuous time intercept parameters for the schocastic
+of drift, continuous time intercept parameters for the stochastic
 differential equation, and cutpoints for the ordinal variables.
 
 While this summary output is useful as a first glance, it is difficult
@@ -155,7 +157,7 @@ increase in another variable.
 
 ``` r
 coev_plot_delta_theta(fit)
-#> Warning: Removed 123 rows containing non-finite outside the scale range (`stat_density()`).
+#> Warning: Removed 235 rows containing non-finite outside the scale range (`stat_density()`).
 ```
 
 <img src="man/figures/README-authority-delta-theta-1.png" width="60%" style="display: block; margin: auto;" />

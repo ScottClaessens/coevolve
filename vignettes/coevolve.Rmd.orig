@@ -12,11 +12,10 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+options(width = 120)
 knitr::opts_chunk$set(
   comment = NA,
   fig.path = "vignettes/",
-  message = FALSE,
-  warning = FALSE,
   dev = "png",
   dpi = 150,
   fig.asp = 0.8,
@@ -29,20 +28,21 @@ library(pander)
 ## Introduction
 
 This vignette provides an introduction to the **coevolve** package. It briefly
-describes the class of dynamic coevolutionary model that the package is designed
-to fit. It then runs through several working examples to showcase features of
-the package, including models with different response distributions, missing
-data, repeated observations, and controls for spatial location.
+describes the class of generalized dynamic phylogenetic models (GDPMs) that the
+package is designed to fit. It then runs through several working examples to
+showcase features of the package, including models with different response
+distributions, missing data, repeated observations, multiPhylo tree objects, and
+controls for spatial location.
 
-## The dynamic coevolutionary model
+## The generalized dynamic phylogenetic model
 
 In the **coevolve** package, the main function is `coev_fit()`, which fits a
-dynamic coevolutionary model to taxa variables given the phylogenetic
+generalized dynamic phylogenetic model to taxa variables given the phylogenetic
 relationships among taxa. The model allows the user to determine whether
 evolutionary change in one variable precedes evolutionary change in another
 variable.
 
-A full description of the dynamic coevolutionary model can be found in
+A full description of the model can be found in
 [this pre-print](https://ecoevorxiv.org/repository/view/4119/). Briefly, the
 model represents observed variables as latent variables that are allowed to
 coevolve along an evolutionary time series. Coevolution unfolds according to a
@@ -53,8 +53,8 @@ upon all other latent variables in the model and themselves, allowing users to
 assess the directional influence of one variable on future change in another
 variable.
 
-Similar coevolutionary models are offered in programs like BayesTraits (see
-[here](http://www.evolution.reading.ac.uk/BayesTraitsV4.1.1/BayesTraitsV4.1.1.html)).
+Similar dynamic coevolutionary models are offered in programs like BayesTraits
+(see [here](http://www.evolution.reading.ac.uk/BayesTraitsV4.1.1/BayesTraitsV4.1.1.html)).
 However, these models are limited to a small number of discrete traits. The
 **coevolve** package goes beyond these models by allowing the user to estimate
 coevolutionary effects between any number of variables and a much wider range of
@@ -71,7 +71,7 @@ larger than the household but smaller than the local community), local
 (incorporating the local community) and supralocal (incorporating more than one
 local community). These data were compiled by Sheehan et al. (2023).
 
-```{r authority-data}
+```{r authority-data, warning=FALSE, message=FALSE}
 library(coevolve)
 head(authority$data)
 ```
@@ -82,14 +82,14 @@ language. These languages can be represented on a linguistic phylogeny (see
 how political and religious authority have coevolved over the course of
 Austronesian cultural evolution.
 
-To fit the dynamic coevolutionary model, we use the `coev_fit()` function.
-Internally, this function builds the Stan code, builds a data list, and then
-compiles and fits the model using the [cmdstanr](https://mc-stan.org/cmdstanr/)
-package. Users can run these steps one-by-one using the `coev_make_stancode()`
-and `coev_make_standata()` functions, but for now we just use the `coev_fit()`
-function.
+To fit the generalized dynamic phylogenetic model, we use the `coev_fit()`
+function. Internally, this function builds the Stan code, builds a data list,
+and then compiles and fits the model using the
+[cmdstanr](https://mc-stan.org/cmdstanr/) package. Users can run these steps
+one-by-one using the `coev_make_stancode()` and `coev_make_standata()`
+functions, but for brevity we just use the `coev_fit()` function.
 
-```{r authority-fit}
+```{r authority-fit, warning=FALSE, message=FALSE}
 fit1 <-
   coev_fit(
     data = authority$data,
@@ -101,9 +101,12 @@ fit1 <-
     tree = authority$phylogeny,
     # set manual prior
     prior = list(A_offdiag = "normal(0, 2)"),
+    # return log likelihood
+    log_lik = TRUE,
     # additional arguments for cmdstanr
     parallel_chains = 4,
-    iter_sampling = 500,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
     refresh = 0,
     seed = 1
   )
@@ -126,45 +129,59 @@ summary(fit1)
 We can see a printed summary of the model parameters, including the
 autoregressive effects (i.e., the effects of variables on themselves in the
 future), the cross effects (i.e., the effects of variables on the other
-variables in the future), the amount of drift, the continuous time intercepts
-for the stochastic differential equation, and the ordinal cutpoints for both
-variables.
+variables in the future), the amount of drift, correlated drift, the continuous
+time intercepts for the stochastic differential equation, and the ordinal
+cutpoints for both variables.
 
 While the summary output is useful, it is difficult to interpret the
 parameters directly to make inferences about coevolutionary patterns. An
 alternative approach is to directly "intervene" in the system. By doing this,
 we can better understand how increases or decreases in a variable change the
-optimal trait values of other variables in the system. For example, we can hold
-one variable at its average value and then increase it by a standardised amount
-to see how the optimal value for the other trait changes.
+equilibrium trait values of other variables in the system. For example, we can
+hold one variable at its average value and then increase it by a standardised
+amount to see how the equilibrium value for the other trait changes.
 
 The function `coev_calculate_delta_theta()` allows the user to calculate
-$\Delta\theta_{z}$, which is defined as the change in the optimal trait value
-for one variable which results from a median absolute deviation increase in
-another variable. This function returns a posterior distribution. We can easily
-visualise the posterior distributions for all cross effects at once using the
-function `coev_plot_delta_theta()`.
+$\Delta\theta_{z}$, which is defined as the change in the equilibrium trait
+value for one variable which results from a median absolute deviation increase
+in another variable. This function returns a posterior distribution. We can
+easily visualise the posterior distributions for all cross effects at once using
+the function `coev_plot_delta_theta()`.
 
-```{r authority-delta-theta, fig.height=5, fig.width=5}
+```{r authority-delta-theta, fig.height=5, fig.width=5, warning=FALSE, message=FALSE}
 coev_plot_delta_theta(fit1)
 ```
 
-This plot shows the posterior distribution, the posterior median, and the 50%
-and 89% credible intervals for $\Delta\theta_{z}$. We can conclude that
+This plot shows the posterior distribution, the posterior median, and the 66%
+and 95% credible intervals for $\Delta\theta_{z}$. We can conclude that
 political and religious authority both influence each other in their evolution.
 A one median absolute deviation increase in political authority results in an
-increase in the optimal trait value for religious authority, and vice versa. In
-other words, these two variables coevolve reciprocally over time.
+increase in the equilibrium trait value for religious authority, and vice versa.
+In other words, these two variables coevolve reciprocally over time.
 
-One way of visualising this runaway coevolutionary process is by plotting a flow
-field of evolutionary change. This plot visualises the strength and direction
-of evolutionary change at different locations in trait space.
+There are several ways to visualise this runaway coevolutionary process: (1) a
+flow field of evolutionary change, (2) a selection gradient plot, and (3) a time
+series simulation of evolutionary dynamics. In order to make these various plots
+more understandable, it is useful to first plot where the different taxa are
+situated in latent trait space. We can do this using the
+`coev_plot_trait_values()` function, which produces a pairs plot of estimated
+trait values for all the variables in the model (along with associated posterior
+uncertainty on the diagonal).
 
-```{r authority-flowfield}
+```{r authority-trait-values, warning=FALSE, message=FALSE}
+coev_plot_trait_values(fit1, xlim = c(-5, 7), ylim = c(-5, 7))
+```
+
+Now that we have a good sense of the trait space, we can plot a flow field of
+evolutionary change. The `coev_plot_flowfield()` function plots the strength and
+direction of evolutionary change at different locations in trait space.
+
+```{r authority-flowfield, warning=FALSE, message=FALSE}
 coev_plot_flowfield(
   object = fit1,
   var1 = "political_authority",
-  var2 = "religious_authority"
+  var2 = "religious_authority",
+  limits = c(-5, 5)
   )
 ```
 
@@ -172,21 +189,48 @@ The arrows in this plot tend to point towards the upper right-hand corner,
 suggesting that political and religious authority evolve towards higher levels
 in a runaway coevolutionary process.
 
-Another way of visualising coevolutionary dynamics is with a selection gradient
-plot. This heatmap shows how selection acts on both variables at different
-locations in trait space, with green indicating positive selection and red
-indicating negative selection.
+We can also visualise the coevolutionary dynamics with a selection gradient
+plot. The function `coev_plot_selection_gradient()` produces a heatmap which
+shows how selection acts on both variables at different locations in trait
+space, with green indicating positive selection and red indicating negative
+selection.
 
-```{r authority-selection-gradient}
+```{r authority-selection-gradient, warning=FALSE, message=FALSE}
 coev_plot_selection_gradient(
   object = fit1,
   var1 = "political_authority",
-  var2 = "religious_authority"
+  var2 = "religious_authority",
+  limits = c(-5, 5)
 )
 ```
 
 We can see from this plot that as each variable increases, the selection on the
 other variable increases.
+
+Finally, we can "replay the past" by simulating these coevolutionary dynamics
+over a time series. By default, the `coev_plot_pred_series()` function uses the
+model-implied ancestral states at the root of the phylogeny as starting points,
+and allows the variables to coevolve over time. Shaded areas represent 95%
+credible intervals for the predictions.
+
+```{r authority-pred-series-1, warning=FALSE, message=FALSE}
+coev_plot_pred_series(fit1)
+```
+
+It is also possible to initialise the variables at different starting points, to
+see the implied coevolutionary dynamics. For example, we can imagine a case
+where the ancestral society had high levels of political authority but low
+levels of religious authority.
+
+```{r authority-pred-series-2, warning=FALSE, message=FALSE}
+coev_plot_pred_series(
+  object = fit1,
+  eta_anc = list(
+    political_authority = 5,
+    religious_authority = -5
+  )
+)
+```
 
 ## Available response distributions
 
@@ -203,8 +247,7 @@ tabl <- "
 | poisson_softplus           | Count           | Softplus       |
 | negative_binomial_softplus | Count           | Softplus       |
 | normal                     | Continuous real | -              |
-| student_t                  | Continuous real | -              |
-| lognormal                  | Positive real   | -              |
+| gamma_log                  | Positive real   | Log            |
 "
 cat(tabl)
 ```
@@ -217,9 +260,8 @@ different types.
 
 Often in comparative datasets, data will be missing for some taxa. Rather
 than remove cases if they have any missing data, the `coev_fit()` function will
-only remove cases if they have missing data for *all* coevolving variables. If
-data are missing for some variables and not others, the function will impute the
-missing values in the coevolutionary process.
+automatically impute any missing values in the model, using all available
+information.
 
 We show this by modelling the coevolutionary relationships between brain weight
 and group size across 21 primate species from the Lemuriformes clade. Data on
@@ -227,7 +269,7 @@ primate species were compiled by DeCasien et al. (2017). There are data for 143
 primate species in total, but we focus on one clade to keep the example small
 and simple.
 
-```{r primates-data}
+```{r primates-data, warning=FALSE, message=FALSE}
 # filter dataset to Lemuriformes only
 primates_data <- primates$data[primates$data$clade == "Lemuriformes",]
 
@@ -239,29 +281,30 @@ primates_phylogeny <- keep.tip(primates$phylogeny, primates_data$species)
 head(primates_data[, c("species", "brain_weight", "group_size")])
 ```
 
-Both variables are positive reals and are lognormally distributed. While there
-are no missing data for the brain weight variable, some data are missing for the
-group size variable.
+Both variables are positive reals, so we use the "gamma_log" distribution. While
+there are no missing data for the brain weight variable, some data are missing
+for the group size variable.
 
-In this case, the model will retain all available data and impute the missing
-group size values.
-
-```{r primates-fit}
+```{r primates-fit, warning=FALSE, message=FALSE}
 fit2 <-
   coev_fit(
     data = primates_data,
     variables = list(
-      brain_weight = "lognormal",
-      group_size = "lognormal"
+      brain_weight = "gamma_log",
+      group_size = "gamma_log"
     ),
     id = "species",
     tree = primates_phylogeny,
     # additional arguments for cmdstanr
     parallel_chains = 4,
-    iter_sampling = 500,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
     refresh = 0,
     seed = 1
   )
+```
+
+```{r primates-summary}
 summary(fit2)
 ```
 
@@ -269,11 +312,8 @@ Notice that the number of observations is still 21 in the summary output,
 informing us that all observations were retained and any missing data were
 imputed.
 
-We can then use plotting functions as usual.
-
-```{r primates-delta-theta, fig.height=5, fig.width=5}
-coev_plot_delta_theta(fit2)
-```
+If we wanted instead to remove any taxa with missing data, we could set
+`complete_cases = TRUE` when fitting the model.
 
 ## Repeated observations
 
@@ -281,7 +321,7 @@ Another common feature of comparative datasets is repeated observations. In the
 previous examples, we had only one observation per taxon. But often there will
 be more than one observation for each taxon, such as when we have observed
 multiple individuals of the same species. In these cases, it can be useful to
-include all of these observations in the model and estimate the between-taxa
+include all of these observations in the model and estimate the residual
 variation that is not due to the coevolutionary process.
 
 We show this using an example dataset from de Villemereuil & Nakagawa (2014).
@@ -294,7 +334,7 @@ head(repeated$data)
 
 We can fit the dynamic coevolutionary model to this dataset.
 
-```{r repeated-fit}
+```{r repeated-fit, warning=FALSE, message=FALSE}
 fit3 <-
   coev_fit(
     data = repeated$data,
@@ -311,27 +351,71 @@ fit3 <-
     refresh = 0,
     seed = 1
   )
+```
+
+```{r repeated-summary}
 summary(fit3)
 ```
 
 In the model output, we can see that `coev_fit()` has detected the presence of
-repeated observations and has consequently modelled additional standard
-deviation and correlation parameters for $x$ and $y$. These parameters represent
-the between-taxa variation and correlation that remains after accounting for
-the coevolutionary process.
+repeated observations and has consequently modelled residual standard deviation
+and residual correlation parameters for $x$ and $y$.
 
-In this case, it appears that there is a high correlation between $x$ and $y$,
-but this is due to species-specific effects rather than the coevolutionary
-process.
+## Using multiPhylo tree objects
 
-```{r repeated-delta-theta}
-# 89% credible interval for delta theta x -> y
-dt_xy <- coev_calculate_delta_theta(fit3, predictor = "x", response = "y")
-quantile(dt_xy, c(0.055, 0.945))
-# 89% credible interval for delta theta y -> x
-dt_yx <- coev_calculate_delta_theta(fit3, predictor = "y", response = "x")
-quantile(dt_yx, c(0.055, 0.945))
+Often, we would like to average our analysis over a posterior set of
+phylogenetic trees, rather than use a single tree. This can be a useful way to
+account for phylogenetic uncertainty in our inferences.
+
+To deal with phylogenetic uncertainty, the `coev_fit()` function allows the user
+to declare multiPhylo objects in the `tree` argument. So long as all trees in
+the multiPhylo object have the same number of taxa with the same tip labels,
+the Stan code will average over all the trees within the same model.
+
+To keep the computation time short, we imagine a simple case where we have a
+multiPhylo object with two identical Austronesian language phylogenies. While
+the results should be the same in this case as there is no phylogenetic
+uncertainty, users should expect differing results when using sets of different
+trees.
+
+```{r authority-multiphylo}
+authority_multiphylo <- c(
+  authority$phylogeny,
+  authority$phylogeny
+)
+
+authority_multiphylo
 ```
+
+```{r authority-fit-multiphylo, warning=FALSE, message=FALSE}
+fit4 <-
+  coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    # use multiPhylo tree object
+    tree = authority_multiphylo,
+    # set manual prior
+    prior = list(A_offdiag = "normal(0, 2)"),
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
+    refresh = 0,
+    seed = 1
+  )
+```
+
+```{r authority-summary-multiphylo}
+summary(fit4)
+```
+
+The summary output correctly shows that we averaged over two trees. Note that
+with more trees, users should expect the computation time for these models to
+increase.
 
 ## Controlling for spatial location
 
@@ -356,11 +440,11 @@ Austronesian societies:
 authority$distance_matrix[1:5, 1:5]
 ```
 
-We can include this distance matrix in the model. The matrix is standardised to
-vary between 0 and 1 under the hood to improve model sampling.
+We can include this distance matrix in the model. The matrix is scaled to vary
+between 0 and 1 under the hood to improve model sampling.
 
-```{r authority-fit-with-distance}
-fit4 <-
+```{r authority-fit-with-distance, warning=FALSE, message=FALSE}
+fit5 <-
   coev_fit(
     data = authority$data,
     variables = list(
@@ -369,43 +453,45 @@ fit4 <-
     ),
     id = "language",
     tree = authority$phylogeny,
+    # declare distance matrix and covariance kernel
     dist_mat = authority$distance_matrix,
+    dist_cov = "exp_quad",
     # set manual prior
     prior = list(A_offdiag = "normal(0, 2)"),
+    # return log likelihood
+    log_lik = TRUE,
     # additional arguments for cmdstanr
     parallel_chains = 4,
-    iter_sampling = 500,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
     refresh = 0,
     seed = 1
   )
-summary(fit4)
+```
+
+```{r authority-summary-with-distance}
+summary(fit5)
 ```
 
 The summary output shows that the model has estimated the parameters for two
 Gaussian Process functions over geographic locations, one for each variable.
 
-Plotting $\Delta\theta_{z}$ shows that our inferences are robust to controlling
-for geographic location.
-
-```{r authority-delta-theta-with-distance, fig.height=5, fig.width=5}
-coev_plot_delta_theta(fit4)
-```
-
 ## Model comparison
 
-Since the underlying Stan code for these models returns a log likelihood vector
-for all observations, it is possible to compare different models using methods
-like approximate leave-one-out cross-validation. For example, we can use the
-`loo_compare()` function from the [loo](https://mc-stan.org/loo/index.html)
-package to see whether adding the distance matrix in the previous example
-improved our out-of-sample predictive accuracy.
+When we set `log_lik = TRUE`, the underlying Stan code for these models returns
+a log likelihood vector for all observations. With this, it is possible to
+compare different models using methods like approximate leave-one-out
+cross-validation. For example, we can use the `loo_compare()` function from the
+[loo](https://mc-stan.org/loo/index.html) package to see whether adding the
+distance matrix in the authority example improved our out-of-sample predictive
+accuracy.
 
-```{r model-comparison}
+```{r model-comparison, warning=FALSE, message=FALSE}
 library(loo)
 loo_compare(
   list(
     fit1 = fit1$fit$loo(), # authority model without distance matrix
-    fit4 = fit4$fit$loo()  # authority model with distance matrix
+    fit5 = fit5$fit$loo()  # authority model with distance matrix
   )
 )
 ```
