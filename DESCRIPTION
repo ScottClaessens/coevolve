@@ -12,7 +12,7 @@ Description: Fit Bayesian dynamic coevolutionary models using 'Stan'. The
     evolutionary process, allowing users to assess directionality between 
     coevolving variables.
 License: file LICENSE
-URL: https://github.com/ScottClaessens/coevolve
+URL: https://github.com/ScottClaessens/coevolve, https://scottclaessens.github.io/coevolve/
 BugReports: https://github.com/ScottClaessens/coevolve/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
