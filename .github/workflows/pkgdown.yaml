@@ -33,13 +33,14 @@ jobs:
 
       # As cmdstanr is not yet on CRAN, configure the action to only install the
       # 'Depends' packages by default and then manually specify the 'Suggests'
-      # packages that are needed for R CMD CHECK
+      # packages that are needed
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: NA
           extra-packages: |
             ape
             stan-dev/cmdstanr
+            coevolve
             colorspace
             dplyr
             ggdist
@@ -75,5 +76,5 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4.5.0
         with:
           clean: false
-          branch: gh-pages
+          branch: main
           folder: docs
