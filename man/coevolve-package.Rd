@@ -4,16 +4,17 @@
 \name{coevolve-package}
 \alias{coevolve}
 \alias{coevolve-package}
-\title{coevolve: Fit Bayesian Dynamic Coevolutionary Models using 'Stan'}
+\title{coevolve: Fit Bayesian Generalized Dynamic Phylogenetic Models using 'Stan'}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Fit Bayesian dynamic coevolutionary models using 'Stan'. The package allows an abritrary number of variables with different response distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck evolutionary process, allowing users to assess directionality between coevolving variables.
+Fit Bayesian generalized dynamic phylogenetic models using 'Stan'. The package allows an abritrary number of variables with different response distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck evolutionary process, allowing users to assess directionality between coevolving variables.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/ScottClaessens/coevolve}
+  \item \url{https://scottclaessens.github.io/coevolve/}
   \item Report bugs at \url{https://github.com/ScottClaessens/coevolve/issues}
 }
 
