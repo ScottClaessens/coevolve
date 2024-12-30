@@ -73,19 +73,16 @@ fit <-
     refresh = 0,
     seed = 1
   )
-```
-
-```r
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 1 finished in 442.7 seconds.
-#> Chain 2 finished in 574.2 seconds.
-#> Chain 3 finished in 606.5 seconds.
-#> Chain 4 finished in 612.8 seconds.
+#> Chain 1 finished in 441.6 seconds.
+#> Chain 2 finished in 582.9 seconds.
+#> Chain 3 finished in 621.8 seconds.
+#> Chain 4 finished in 626.9 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 559.0 seconds.
-#> Total execution time: 613.0 seconds.
+#> Mean chain execution time: 568.3 seconds.
+#> Total execution time: 627.2 seconds.
 #> Warning: 22 of 4000 (1.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
@@ -160,7 +157,7 @@ coev_plot_delta_theta(fit)
 #> Warning: Removed 235 rows containing non-finite outside the scale range (`stat_density()`).
 ```
 
-<img src="man/figures/README-authority-delta-theta-1.png" width="60%" style="display: block; margin: auto;" />
+<img src="man/figures/README-authority-delta-theta-1.png" alt="Plot showing the posterior distributions of delta theta for both directions of coevolution between political and religious authority. The bulk of the posterior densities are greater than zero." width="60%" style="display: block; margin: auto;" />
 
 This plot suggests that both variables influence one another in their
 coevolution. A standardised increase in political authority results in

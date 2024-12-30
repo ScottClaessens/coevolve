@@ -113,6 +113,10 @@ in the optimal trait value of one variable which results from a one median
 absolute deviation increase in another variable.
 
 ```{r authority-delta-theta, fig.height=5, fig.width=5}
+#| fig.alt: >
+#|   Plot showing the posterior distributions of delta theta for both
+#|   directions of coevolution between political and religious authority. The
+#|   bulk of the posterior densities are greater than zero.
 coev_plot_delta_theta(fit)
 ```
 
