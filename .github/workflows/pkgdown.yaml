@@ -37,7 +37,6 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           dependencies: NA
-          needs: website
           extra-packages: |
             ape
             stan-dev/cmdstanr
