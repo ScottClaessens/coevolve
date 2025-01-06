@@ -3,6 +3,8 @@ title: "Introduction to the coevolve package"
 output:
   rmarkdown::html_vignette:
     toc: true
+pkgdown:
+  as_is: true
 date: "`r Sys.Date()`"
 author: "Scott Claessens"
 vignette: >

@@ -1,4 +1,3 @@
 url: https://scottclaessens.github.io/coevolve/
 template:
-  bootstrap: 5
-
+  math-rendering: mathjax
