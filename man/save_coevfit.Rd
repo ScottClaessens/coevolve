@@ -22,3 +22,25 @@ A wrapper around \code{\link[base]{saveRDS}} that saves a fitted
 \code{coevfit} model object while ensuring that all posterior draws and
 diagnostics are correctly saved by \pkg{cmdstanr}.
 }
+\examples{
+\dontrun{
+# fit dynamic coevolutionary model
+fit <- coev_fit(
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  # additional arguments for cmdstanr::sample()
+  chains = 4,
+  parallel_chains = 4,
+  seed = 1
+  )
+
+# save model to .rds file
+save_coevfit(fit, file = "model.rds")
+}
+
+}

@@ -4,6 +4,27 @@
 #'
 #' @returns Printed Stan code
 #'
+#' @examples
+#' \dontrun{
+#' # fit dynamic coevolutionary model
+#' fit <- coev_fit(
+#'   data = authority$data,
+#'   variables = list(
+#'     political_authority = "ordered_logistic",
+#'     religious_authority = "ordered_logistic"
+#'   ),
+#'   id = "language",
+#'   tree = authority$phylogeny,
+#'   # additional arguments for cmdstanr::sample()
+#'   chains = 4,
+#'   parallel_chains = 4,
+#'   seed = 1
+#'   )
+#'
+#' # expose stan code
+#' stancode(fit)
+#' }
+#'
 #' @export
 stancode <- function(object){
   UseMethod("stancode")

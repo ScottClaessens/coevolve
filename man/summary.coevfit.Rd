@@ -29,6 +29,28 @@ Create a summary of a fitted model represented by a \code{coevfit} object
 The convergence diagnostics \code{rhat}, \code{ess_bulk}, and
 \code{ess_tail} are described in detail in Vehtari et al. (2020).
 }
+\examples{
+\dontrun{
+# fit dynamic coevolutionary model
+fit <- coev_fit(
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  # additional arguments for cmdstanr::sample()
+  chains = 4,
+  parallel_chains = 4,
+  seed = 1
+  )
+
+# print summary of model
+summary(fit)
+}
+
+}
 \references{
 Aki Vehtari, Andrew Gelman, Daniel Simpson, Bob Carpenter, and
 Paul-Christian Bürkner (2020). Rank-normalization, folding, and
