@@ -7,6 +7,7 @@
 
 <!-- badges: start -->
 
+[![status](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![R-CMD-check](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
