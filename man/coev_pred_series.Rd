@@ -52,7 +52,7 @@ Incompatible with the 'intervention_values' argument.}
 }
 \value{
 An [ndraw, ntimes, nvariables] array of predicted \eqn{\eta}
-values.
+values
 }
 \description{
 This function produces predicted values of traits over a time series, given

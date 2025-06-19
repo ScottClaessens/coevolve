@@ -4,6 +4,7 @@
 #' @param object An object of class \code{coevfit}.
 #'
 #' @return Named list of data for Stan
+#'
 #' @export
 standata <- function(object){
   UseMethod("standata")

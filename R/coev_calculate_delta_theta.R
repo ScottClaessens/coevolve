@@ -12,7 +12,7 @@
 #' @param predictor A character string equal to one of the coevolving variables
 #'   in the model
 #'
-#' @return Posterior samples in the draws_array format
+#' @returns Posterior samples in the draws_array format
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}

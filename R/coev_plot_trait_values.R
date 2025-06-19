@@ -21,7 +21,7 @@
 #' @param ylim Limits for the y-axis. If \code{NULL} (default), limits are set
 #'   to the minimum and maximum estimated trait values.
 #'
-#' @return A patchwork of \code{ggplot} objects
+#' @returns A patchwork of \code{ggplot} objects
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}

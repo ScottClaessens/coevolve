@@ -13,7 +13,7 @@
 #'   posterior predictions. Set to \code{NULL} by default, which will use draws
 #'   from every tree, integrating phylogenetic uncertainty.
 #'
-#' @return A list of \code{ggplot} objects
+#' @returns A list of \code{ggplot} objects
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}

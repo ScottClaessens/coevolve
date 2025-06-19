@@ -9,6 +9,8 @@
 #'   are applied instead.
 #' @param ... Other potential arguments
 #'
+#' @returns List of class coevsummary
+#'
 #' @details The convergence diagnostics \code{rhat}, \code{ess_bulk}, and
 #'   \code{ess_tail} are described in detail in Vehtari et al. (2020).
 #'
@@ -254,6 +256,8 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
 #'   defaults to 2
 #' @param ... Additional arguments that would be passed
 #'  to method \code{summary} of \code{coevfit}.
+#'
+#' @returns A printed summary of a \code{coevfit} model object
 #'
 #' @seealso \code{\link{summary.coevfit}}
 #'

@@ -48,7 +48,7 @@ variables. Names must include all specified variables.}
 }
 \value{
 List with dataset at final timestep (data), full simulation log
-(simulation), and pruned phylogenetic tree (tree).
+(simulation), and pruned phylogenetic tree (tree)
 }
 \description{
 This function simulates the coevolution of multiple continuous variables in

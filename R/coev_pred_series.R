@@ -33,8 +33,8 @@
 #'   due to deterministic selection (FALSE) or also stochastic drift (TRUE).
 #'   Incompatible with the 'intervention_values' argument.
 #'
-#' @return An \[ndraw, ntimes, nvariables\] array of predicted \eqn{\eta}
-#'   values.
+#' @returns An \[ndraw, ntimes, nvariables\] array of predicted \eqn{\eta}
+#'   values
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}

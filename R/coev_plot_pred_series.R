@@ -14,7 +14,7 @@
 #'   to be covered by the uncertainty intervals. The default is 0.95.
 #' @param ... Additional arguments passed to \code{\link{coev_pred_series}}
 #'
-#' @return A ggplot object.
+#' @returns A ggplot object
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com},
 #'   Erik Ringen \email{erikjacob.ringen@@uzh.ch}

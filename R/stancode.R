@@ -2,7 +2,8 @@
 #'
 #' @param object An object of class \code{coevfit}.
 #'
-#' @return Printed Stan code
+#' @returns Printed Stan code
+#'
 #' @export
 stancode <- function(object){
   UseMethod("stancode")

@@ -14,6 +14,9 @@ save_coevfit(object, file, ...)
 \item{...}{Other arguments to pass to \code{\link[base]{saveRDS}} besides
 \code{object} and \code{file}}
 }
+\value{
+An .RDS file containing the fitted \code{coevfit} model object
+}
 \description{
 A wrapper around \code{\link[base]{saveRDS}} that saves a fitted
 \code{coevfit} model object while ensuring that all posterior draws and

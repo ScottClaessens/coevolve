@@ -130,7 +130,7 @@ samples from the prior only, ignoring the likelihood.}
 }
 \value{
 A character string containing the \pkg{Stan} code to fit the dynamic
-coevolutionary model.
+coevolutionary model
 }
 \description{
 Make the \pkg{Stan} code for the Bayesian dynamic coevolutionary model.

@@ -105,7 +105,7 @@
 #' @param adapt_delta Argument for \pkg{cmdstanr::sample()}. Default is 0.95.
 #' @param ... Additional arguments for \pkg{cmdstanr::sample()}.
 #'
-#' @return Fitted model of class \code{coevfit}.
+#' @returns Fitted model of class \code{coevfit}
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}

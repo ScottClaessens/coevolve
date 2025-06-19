@@ -9,6 +9,8 @@
 #' @param ... Other arguments to pass to \code{\link[base]{saveRDS}} besides
 #'   \code{object} and \code{file}
 #'
+#' @returns An .RDS file containing the fitted \code{coevfit} model object
+#'
 #' @export
 save_coevfit <- function(object, file, ...) {
   # stop if object is not of class coevfit

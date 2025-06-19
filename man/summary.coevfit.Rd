@@ -19,6 +19,9 @@ are applied instead.}
 
 \item{...}{Other potential arguments}
 }
+\value{
+List of class coevsummary
+}
 \description{
 Create a summary of a fitted model represented by a \code{coevfit} object
 }

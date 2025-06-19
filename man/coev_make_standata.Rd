@@ -128,7 +128,7 @@ samples from the prior only, ignoring the likelihood.}
 }
 \value{
 A list containing the data for fitting the dynamic coevolutionary
-model in \pkg{Stan}.
+model in \pkg{Stan}
 }
 \description{
 Make the data list for the \pkg{Stan} model. The function takes a dataset,

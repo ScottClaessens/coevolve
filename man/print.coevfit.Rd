@@ -16,6 +16,9 @@ defaults to 2}
 \item{...}{Additional arguments that would be passed
 to method \code{summary} of \code{coevfit}.}
 }
+\value{
+A printed summary of a \code{coevfit} model object
+}
 \description{
 Print a summary of a fitted model represented by a \code{coevfit} object
 }

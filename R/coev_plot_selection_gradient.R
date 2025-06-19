@@ -13,7 +13,7 @@
 #' @param limits A numeric vector of length 2 (defaults to \code{c(-2.5, 2.5)});
 #'   specifying the lower limit and the upper limit of the x and y axes.
 #'
-#' @return A \code{ggplot} object
+#' @returns A \code{ggplot} object
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}

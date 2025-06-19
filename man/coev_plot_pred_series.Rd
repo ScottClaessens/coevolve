@@ -16,7 +16,7 @@ to be covered by the uncertainty intervals. The default is 0.95.}
 \item{...}{Additional arguments passed to \code{\link{coev_pred_series}}}
 }
 \value{
-A ggplot object.
+A ggplot object
 }
 \description{
 This function plots a predicted coevolutionary time series using the

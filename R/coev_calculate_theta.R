@@ -17,7 +17,7 @@
 #'   and at least one variable must be held constant (e.g.,
 #'   \code{list(var1 = NA, var2 = 0)}).
 #'
-#' @return Posterior samples in matrix format
+#' @returns Posterior samples in matrix format
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}

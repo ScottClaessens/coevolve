@@ -32,8 +32,8 @@
 #'   a named numeric vector specifying the ancestral states for different
 #'   variables. Names must include all specified variables.
 #'
-#' @return List with dataset at final timestep (data), full simulation log
-#'   (simulation), and pruned phylogenetic tree (tree).
+#' @returns List with dataset at final timestep (data), full simulation log
+#'   (simulation), and pruned phylogenetic tree (tree)
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}

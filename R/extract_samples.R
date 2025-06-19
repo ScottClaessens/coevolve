@@ -2,7 +2,8 @@
 #'
 #' @param object An object of class \code{coevfit}
 #'
-#' @return Samples in 'rethinking' style list format
+#' @returns Samples in 'rethinking' style list format
+#'
 #' @export
 extract_samples <- function(object) {
   UseMethod("extract_samples")

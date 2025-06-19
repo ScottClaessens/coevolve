@@ -94,8 +94,8 @@
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
 #'
-#' @return A list containing the data for fitting the dynamic coevolutionary
-#'   model in \pkg{Stan}.
+#' @returns A list containing the data for fitting the dynamic coevolutionary
+#'   model in \pkg{Stan}
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}

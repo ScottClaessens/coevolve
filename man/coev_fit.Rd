@@ -135,7 +135,7 @@ samples from the prior only, ignoring the likelihood.}
 \item{...}{Additional arguments for \pkg{cmdstanr::sample()}.}
 }
 \value{
-Fitted model of class \code{coevfit}.
+Fitted model of class \code{coevfit}
 }
 \description{
 Fit Bayesian dynamic coevolutionary models in \pkg{Stan} for full Bayesian

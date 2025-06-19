@@ -16,7 +16,7 @@
 #'   all posterior samples. Otherwise, a numeric vector of length 2 specifying
 #'   the lower and upper limits for the x-axis.
 #'
-#' @return A \code{ggplot} object
+#' @returns A \code{ggplot} object
 #'
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
