@@ -168,7 +168,7 @@ test_that("coev_make_standata() produces expected errors", {
       data = d,
       variables = list(
         v = "negative_binomial_softplus",
-        z = "negative_binomial_softplus" # sd^2 <= mean
+        z = "negative_binomial_softplus" # sd squared <= mean
       ),
       id = "id",
       tree = tree
@@ -336,8 +336,10 @@ test_that("coev_make_standata() produces expected errors", {
   )
   expect_error(
     {
-      d2 <- d; d2$id[1] <- NA
-      tree2 <- tree; tree2$tip.label[1] <- NA
+      d2 <- d
+      d2$id[1] <- NA
+      tree2 <- tree
+      tree2$tip.label[1] <- NA
       coev_make_standata(
         data = d2,
         variables = list(
@@ -402,7 +404,7 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      effects_mat = matrix(TRUE, dimnames = list("fail","fail")) # invalid names
+      effects_mat = matrix(TRUE, dimnames = list("fail", "fail")) # invalid name
     ),
     paste0(
       "Row and column names for argument 'effects_mat' do not match ",
@@ -420,8 +422,9 @@ test_that("coev_make_standata() produces expected errors", {
       id = "id",
       tree = tree,
       # autoregressive effect = FALSE
-      effects_mat = matrix(c(T,T,T,F), ncol = 2, nrow = 2, byrow = TRUE,
-                           dimnames = list(c("x","y"),c("x","y")))
+      effects_mat = matrix(c(TRUE, TRUE, TRUE, FALSE),
+                           ncol = 2, nrow = 2, byrow = TRUE,
+                           dimnames = list(c("x", "y"), c("x", "y")))
     ),
     "Argument 'effects_mat' must specify TRUE for all autoregressive effects.",
     fixed = TRUE
@@ -553,7 +556,7 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_cov = c("fail","fail")
+      dist_cov = c("fail", "fail")
     ),
     "Argument 'dist_cov' is not of length 1.",
     fixed = TRUE
@@ -660,9 +663,9 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      estimate_Q_offdiag = "testing"
+      estimate_correlated_drift = "testing"
     ),
-    "Argument 'estimate_Q_offdiag' must be a logical of length one.",
+    "Argument 'estimate_correlated_drift' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -732,7 +735,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     names(sd1),
     c("N_tips", "N_tree", "N_obs", "J", "N_seg", "node_seq", "parent", "ts",
       "tip", "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
-    )
+  )
   expect_equal(sd1$prior_only, 0)
   # include distance matrix
   withr::with_seed(1, {
@@ -797,8 +800,8 @@ test_that("coev_make_standata() works with missing data", {
   # row 1 missing both x and y
   # row 2 missing x only
   # row 3 missing y only
-  d$x[c(1,2)] <- NA
-  d$y[c(1,3)] <- NA
+  d$x[c(1, 2)] <- NA
+  d$y[c(1, 3)] <- NA
   # make stan data with missing values to be imputed
   # should return expected message with missing data
   expect_message(
@@ -842,11 +845,11 @@ test_that("coev_make_standata() works with missing data", {
   expect_equal(nrow(sd1$miss), 20)
   expect_equal(nrow(sd2$miss), 17)
   # missing matrix correct
-  miss1 <- as.matrix(ifelse(is.na(d[,c("x","y")]), 1, 0))
+  miss1 <- as.matrix(ifelse(is.na(d[, c("x", "y")]), 1, 0))
   miss2 <-
     matrix(0, nrow = sum(apply(d, 1, function(x) all(!is.na(x)))), ncol = 2)
   rownames(miss1) <- NULL
-  colnames(miss2) <- c("x","y")
+  colnames(miss2) <- c("x", "y")
   expect_identical(sd1$miss, miss1)
   expect_identical(sd2$miss, miss2)
   # dataset correct
@@ -869,8 +872,8 @@ test_that("coev_make_standata() works with repeated observations", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = rep(tree$tip.label, each = 10),
-      x = rnorm(n*10),
-      y = rnorm(n*10)
+      x = rnorm(n * 10),
+      y = rnorm(n * 10)
     )
   })
   # make stan data
@@ -925,26 +928,28 @@ test_that("coev_make_stancode() scales data correctly", {
       "When scale = FALSE, continuous variables are left unstandardised in ",
       "the Stan data list. Users should take care to set sensible priors ",
       "for model fitting, rather than use default priors."
-      )
     )
-  expect_identical(sd1$y[,"w"], as.numeric(d$w))
-  expect_identical(sd1$y[,"x"], as.numeric(d$x))
+  )
+  expect_identical(sd1$y[, "w"], as.numeric(d$w))
+  expect_identical(sd1$y[, "x"], as.numeric(d$x))
   # check stan data is correctly standardised when scale = TRUE
   expect_no_warning(
-    {sd2 <-
-      coev_make_standata(
-        data = d,
-        variables = list(
-          w = "normal",
-          x = "negative_binomial_softplus"
-        ),
-        id = "id",
-        tree = tree,
-        scale = TRUE
-      )}
-    )
-  expect_identical(sd2$y[,"w"], as.numeric(scale(d$w)))
-  expect_identical(sd2$y[,"x"], as.numeric(d$x))
+    {
+      sd2 <-
+        coev_make_standata(
+          data = d,
+          variables = list(
+            w = "normal",
+            x = "negative_binomial_softplus"
+          ),
+          id = "id",
+          tree = tree,
+          scale = TRUE
+        )
+    }
+  )
+  expect_identical(sd2$y[, "w"], as.numeric(scale(d$w)))
+  expect_identical(sd2$y[, "x"], as.numeric(d$x))
 })
 
 test_that("coev_make_standata() works with tibbles", {

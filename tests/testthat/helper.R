@@ -4,5 +4,5 @@ reload_fit <- function(coevfit, filename) {
     cmdstanr::as_cmdstan_fit(
       test_path("fixtures", filename)
     )
-  return(coevfit)
+  coevfit
 }

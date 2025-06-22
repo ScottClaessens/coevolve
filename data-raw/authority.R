@@ -9,7 +9,7 @@ political_authority <-
     file = paste0(
       "https://raw.githubusercontent.com/ScottClaessens/phyloAuthority/main/",
       "data/political_authority_20_09_21.txt"
-      ),
+    ),
     col_types = "cd"
   )
 
@@ -83,7 +83,7 @@ authority <- list(
   data = data,
   phylogeny = phylogeny,
   distance_matrix = dist_mat
-  )
+)
 
 # save
 usethis::use_data(authority, overwrite = TRUE)

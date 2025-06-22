@@ -77,7 +77,7 @@
 #'   improve efficiency and ensure accurate inferences. If \code{FALSE},
 #'   variables are left unscaled for model fitting. In this case, users should
 #'   take care to set sensible priors on variables.
-#' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
+#' @param estimate_correlated_drift Logical. If \code{TRUE} (default), the model
 #'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
 #'   are set to zero.
@@ -136,14 +136,14 @@ coev_make_stancode <- function(data, variables, id, tree,
                                dist_mat = NULL, dist_cov = "exp_quad",
                                measurement_error = NULL,
                                prior = NULL, scale = TRUE,
-                               estimate_Q_offdiag = TRUE,
+                               estimate_correlated_drift = TRUE,
                                estimate_residual = TRUE,
                                log_lik = FALSE,
                                prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, measurement_error, prior, scale, estimate_Q_offdiag,
-             estimate_residual, log_lik, prior_only)
+             dist_cov, measurement_error, prior, scale,
+             estimate_correlated_drift, estimate_residual, log_lik, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # extract distributions and variable names from named list
@@ -175,7 +175,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   # write functions block
   sc_functions <- paste0(
     "functions {\n",
-    "  // Charles Driver's optimized way of solving for the asymptotic Q matrix\n",
+    "  // Charles Driver's solver for the asymptotic Q matrix\n",
     "  matrix ksolve (matrix A, matrix Q) {\n",
     "    int d = rows(A);\n",
     "    int d2 = (d * d - d) %/% 2;\n",
@@ -185,31 +185,33 @@ coev_make_stancode <- function(data, variables, id, tree,
     "    int z = 0;         // z is row of output\n",
     "    for (j in 1:d) {   // for column reference of solution vector\n",
     "      for (i in 1:j) { // and row reference...\n",
-    "        if (j >= i) {  // if i and j denote a covariance parameter (from upper tri)\n",
+    "        if (j >= i) {  // if i and j denote a covariance parameter\n",
     "          int y = 0;   // start new output row\n",
     "          z += 1;      // shift current output row down\n",
     "          for (ci in 1:d) {   // for columns and\n",
     "            for (ri in 1:d) { // rows of solution\n",
     "              if (ci >= ri) { // when in upper tri (inc diag)\n",
     "                y += 1;       // move to next column of output\n",
-    "                if (i == j) { // if output row is for a diagonal element\n",
+    "                if (i == j) { // if output row is a diag element\n",
     "                  if (ri == i) O[z, y] = 2 * A[ri, ci];\n",
     "                  if (ci == i) O[z, y] = 2 * A[ci, ri];\n",
     "                }\n",
-    "                if (i != j) { // if output row is not for a diagonal element\n",
-    "                  //if column of output matches row of output, sum both A diags\n",
+    "                if (i != j) { // if output row is not a diag element\n",
+    "                  //if column matches row, sum both A diags\n",
     "                  if (y == z) O[z, y] = A[ri, ri] + A[ci, ci];\n",
     "                  if (y != z) { // otherwise...\n",
-    "                    // if solution element we refer to is related to output row...\n",
-    "                    if (ci == ri) { // if solution element is a variance\n",
-    "                      // if variance of solution corresponds to row of our output\n",
+    "                    // if solution element is related to output row...\n",
+    "                    if (ci == ri) { // if solution element is variance\n",
+    "                      // if variance of solution corresponds to row\n",
     "                      if (ci == i) O[z, y] = A[j, ci];\n",
-    "                      // if variance of solution corresponds to col of our output\n",
+    "                      // if variance of solution corresponds to col\n",
     "                      if (ci == j) O[z, y] = A[i, ci];\n",
     "                    }\n",
     "                    //if solution element is a related covariance\n",
-    "                    if (ci != ri && (ri == i || ri == j || ci == i || ci == j )) {\n",
-    "                      // for row 1,2 / 2,1 of output, if solution row ri 1 (match)\n",
+    "                    if (ci != ri && (ri == i || ri == j ",
+    "|| ci == i || ci == j )) {\n",
+    "                      // for row 1,2 / 2,1 of output,\n",
+    "                      // if solution row ri 1 (match)\n",
     "                      // and column ci 3, we need A[2,3]\n",
     "                      if (ri == i) O[z, y] = A[j, ci];\n",
     "                      if (ri == j) O[z, y] = A[i, ci];\n",
@@ -276,44 +278,45 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  int<lower=2> J; // number of response traits\n",
     "  int<lower=1> N_seg; // total number of segments in the trees\n",
     "  array[N_tree, N_seg] int<lower=1> node_seq; // index of tree nodes\n",
-    "  array[N_tree, N_seg] int<lower=0> parent; // index of the parent node of each descendent\n",
+    "  array[N_tree, N_seg] int<lower=0> parent; // index of parent nodes\n",
     "  array[N_tree, N_seg] real ts; // time since parent\n",
-    "  array[N_tree, N_seg] int<lower=0,upper=1> tip; // indicator of whether a given segment ends in a tip\n",
-    "  array[J,J] int<lower=0,upper=1> effects_mat; // which effects should be estimated?\n",
+    "  array[N_tree, N_seg] int<lower=0,upper=1> tip; // segment ends in tip\n",
+    "  array[J,J] int<lower=0,upper=1> effects_mat; // effects matrix\n",
     "  int<lower=2> num_effects; // number of effects being estimated\n",
     "  matrix[N_obs,J] y; // observed data\n",
     "  matrix[N_obs,J] miss; // are data points missing?\n",
     ifelse(
       !is.null(measurement_error),
       "  matrix[N_obs,J] se; // squared standard errors\n", ""
-      ),
-    "  array[N_obs] int<lower=1> tip_id; // index between 1 and N_tips that gives the group id\n"
-    )
+    ),
+    "  array[N_obs] int<lower=1> tip_id; // group index between 1 and N_tips\n"
+  )
   # add distance matrix if user has defined one
   if (!is.null(dist_mat)) {
     sc_data <-
       paste0(
         sc_data,
         "  matrix[N_tips,N_tips] dist_mat; // distance matrix\n"
-        )
+      )
   }
   # add prior_only data variable
   sc_data <-
     paste0(
       sc_data,
-      "  int<lower=0,upper=1> prior_only; // should the likelihood be ignored?\n}"
-      )
+      "  int<lower=0,upper=1> prior_only; // should likelihood be ignored?\n}"
+    )
   # write transformed data block
   sc_transformed_data <- "transformed data{\n"
-  for (j in 1:length(distributions)) {
+  for (j in seq_along(distributions)) {
     sc_transformed_data <- paste0(
       sc_transformed_data,
       "  vector[to_int(N_obs - sum(col(miss, ", j,
       ")))] obs", j, "; // observed data for variable ", j, "\n"
     )
   }
-  for (j in 1:length(distributions)) {
-    if (distributions[j] == "negative_binomial_softplus" & is.null(priors$phi)){
+  for (j in seq_along(distributions)) {
+    if (distributions[j] == "negative_binomial_softplus" &&
+          is.null(priors$phi)) {
       sc_transformed_data <-
         paste0(
           sc_transformed_data,
@@ -321,15 +324,15 @@ coev_make_stancode <- function(data, variables, id, tree,
         )
     }
   }
-  for (j in 1:length(distributions)) {
+  for (j in seq_along(distributions)) {
     sc_transformed_data <- paste0(
       sc_transformed_data,
-      "  obs", j, " = col(y, ", j,
-      ")[which_equal(col(miss, ", j, "), 0)];\n"
+      "  obs", j, " = col(y, ", j, ")[which_equal(col(miss, ", j, "), 0)];\n"
     )
   }
-  for (j in 1:length(distributions)) {
-    if (distributions[j] == "negative_binomial_softplus" & is.null(priors$phi)){
+  for (j in seq_along(distributions)) {
+    if (distributions[j] == "negative_binomial_softplus" &&
+          is.null(priors$phi)) {
       sc_transformed_data <-
         paste0(
           sc_transformed_data,
@@ -346,10 +349,10 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  vector[num_effects - J] A_offdiag; // cross-lagged terms of A\n"
   )
   # add cholesky factor for Q matrix if estimating Q off diagonals
-  if (estimate_Q_offdiag) {
+  if (estimate_correlated_drift) {
     sc_parameters <- paste0(
       sc_parameters,
-      "  cholesky_factor_corr[J] L_R; // lower-tri choleksy decomp corr mat, used to construct Q mat\n"
+      "  cholesky_factor_corr[J] L_R; // lower-tri choleksy decomp corr mat\n"
     )
   }
   sc_parameters <- paste0(
@@ -357,20 +360,20 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  vector<lower=0>[J] Q_sigma; // std deviation parameters of the Q mat\n",
     "  vector[J] b; // SDE intercepts\n",
     "  array[N_tree] vector[J] eta_anc; // ancestral states\n",
-    "  array[N_tree, N_seg - 1] vector[J] z_drift; // stochastic drift, unscaled and uncorrelated\n",
+    "  array[N_tree, N_seg - 1] vector[J] z_drift; // stochastic drift\n",
     "  array[N_tree] matrix[N_tips, J] terminal_drift; // drift for the tips\n"
   )
-  for (i in 1:length(distributions)) {
+  for (i in seq_along(distributions)) {
     # add cut points for ordinal_logistic distributions
     if (distributions[i] == "ordered_logistic") {
       # calculate number of cut points (number of levels - 1)
-      num_cuts <- max(as.numeric(data[,variables[i]]), na.rm = TRUE) - 1
+      num_cuts <- max(as.numeric(data[, variables[i]]), na.rm = TRUE) - 1
       sc_parameters <-
         paste0(
           sc_parameters,
           "  ordered[", num_cuts, "] c", i, "; ",
           "// cut points for variable ", i, "\n"
-          )
+        )
     }
     # add overdispersion parameters for negative_binomial_softplus distributions
     if (distributions[i] == "negative_binomial_softplus") {
@@ -379,7 +382,7 @@ coev_make_stancode <- function(data, variables, id, tree,
           sc_parameters,
           "  real<lower=0> phi", i, "; ",
           "// neg binom inverse overdispersion parameter for variable ", i, "\n"
-          )
+        )
     }
     # add shape parameters for gamma_log distributions
     if (distributions[i] == "gamma_log") {
@@ -395,13 +398,13 @@ coev_make_stancode <- function(data, variables, id, tree,
   if (!is.null(dist_mat)) {
     sc_parameters <- paste0(
       sc_parameters,
-      "  matrix[N_tips,J] dist_z; // spatial covariance random effects, unscaled and uncorrelated\n",
-      "  vector<lower=0>[J] rho_dist; // how quickly does covariance decline with distance\n",
-      "  vector<lower=0>[J] sigma_dist; // maximum covariance due to spatial location\n"
+      "  matrix[N_tips,J] dist_z; // spatial covariance random effects\n",
+      "  vector<lower=0>[J] rho_dist; // covariance declining with distance\n",
+      "  vector<lower=0>[J] sigma_dist; // maximum covariance\n"
     )
   }
   # add residual sds and cors if there are repeated measures
-  if (any(duplicated(data[,id])) & estimate_residual) {
+  if (any(duplicated(data[, id])) && estimate_residual) {
     sc_parameters <- paste0(
       sc_parameters,
       "  matrix[J,N_obs] residual_z;\n",
@@ -416,12 +419,15 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  array[N_tree, N_seg] vector[J] eta;\n",
     "  matrix[J,J] A = diag_matrix(A_diag); // selection matrix\n",
     ifelse(
-      estimate_Q_offdiag,
-      "  matrix[J,J] Q = diag_matrix(Q_sigma) * (L_R * L_R') * diag_matrix(Q_sigma); // drift matrix\n",
+      estimate_correlated_drift,
+      paste0(
+        "  matrix[J,J] Q = diag_matrix(Q_sigma) * (L_R * L_R')",
+        " * diag_matrix(Q_sigma); // drift matrix\n"
+      ),
       "  matrix[J,J] Q = diag_matrix(Q_sigma^2); // drift matrix\n"
     ),
     "  matrix[J,J] Q_inf; // asymptotic covariance matrix\n",
-    "  array[N_tree, N_seg] matrix[J,J] VCV_tips; // variance-covariance matrix for drift at the tips\n"
+    "  array[N_tree, N_seg] matrix[J,J] VCV_tips; // vcov matrix for drift\n"
   )
   # add distance random effects if distance matrix specified by user
   if (!is.null(dist_mat)) {
@@ -431,8 +437,8 @@ coev_make_stancode <- function(data, variables, id, tree,
     )
   }
   # add tdrift if repeated observations or no gaussian traits
-  if ((any(duplicated(data[,id])) & estimate_residual) |
-      !("normal" %in% distributions)) {
+  if ((any(duplicated(data[, id])) && estimate_residual) ||
+        !("normal" %in% distributions)) {
     sc_transformed_parameters <- paste0(
       sc_transformed_parameters,
       "  array[N_tree,N_tips] vector[J] tdrift; // terminal drift\n"
@@ -440,13 +446,14 @@ coev_make_stancode <- function(data, variables, id, tree,
   }
   # add residual sds and cors if there are repeated measures and using the
   # non-centered parameterisation (there are no gaussian variables)
-  if (any(duplicated(data[,id])) & estimate_residual &
-      !("normal" %in% distributions)) {
+  if (any(duplicated(data[, id])) && estimate_residual &&
+        !("normal" %in% distributions)) {
     sc_transformed_parameters <- paste0(
       sc_transformed_parameters,
       "  matrix[N_obs,J] residual_v; // residual pars\n",
       "  // scale and correlate residual pars\n",
-      "  residual_v = (diag_pre_multiply(sigma_residual, L_residual) * residual_z)';\n"
+      "  residual_v = (diag_pre_multiply(sigma_residual, L_residual)",
+      " * residual_z)';\n"
     )
   }
   sc_transformed_parameters <- paste0(
@@ -475,8 +482,8 @@ coev_make_stancode <- function(data, variables, id, tree,
     "    eta[t, node_seq[t, 1]] = eta_anc[t];\n",
     "    VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(-99, J));\n",
     "    for (i in 2:N_seg) {\n",
-    "      matrix[J,J] A_delta; // amount of deterministic change (selection)\n",
-    "      matrix[J,J] VCV; // variance-covariance matrix of stochastic change (drift)\n",
+    "      matrix[J,J] A_delta; // amount of deterministic change\n",
+    "      matrix[J,J] VCV; // vcov matrix of stochastic change\n",
     "      vector[J] drift_seg; // accumulated drift over the segment\n",
     "      A_delta = matrix_exp(A * ts[t, i]);\n",
     "      VCV = Q_inf - quad_form_sym(Q_inf, A_delta');\n",
@@ -484,22 +491,24 @@ coev_make_stancode <- function(data, variables, id, tree,
     "      // if not a tip, add the drift parameter\n",
     "      if (tip[t, i] == 0) {\n",
     "        eta[t, node_seq[t, i]] = to_vector(\n",
-    "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1)) * b) + drift_seg\n",
+    "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1))",
+    " * b) + drift_seg\n",
     "        );\n",
     "        VCV_tips[t, node_seq[t, i]] = diag_matrix(rep_vector(-99, J));\n",
     "      }\n",
     "      // if is a tip, omit, we'll deal with it in the model block;\n",
     "      else {\n",
     "        eta[t, node_seq[t, i]] = to_vector(\n",
-    "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1)) * b)\n",
+    "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1))",
+    " * b)\n",
     "        );\n",
     "        VCV_tips[t, node_seq[t, i]] = VCV;\n",
     "      }\n",
     "    }\n"
-    )
+  )
   # if repeated observations or no gaussian traits, calculate tdrift
-  if ((any(duplicated(data[,id])) & estimate_residual) |
-      !("normal" %in% distributions)) {
+  if ((any(duplicated(data[, id])) && estimate_residual) ||
+        !("normal" %in% distributions)) {
     sc_transformed_parameters <- paste0(
       sc_transformed_parameters,
       "    for (i in 1:N_tips) {\n",
@@ -514,7 +523,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     # exponentiated quadratic kernel
     dist_cov_code <- paste0(
       "sigma_dist[j] * exp(-(square(dist_mat[i,m]) / rho_dist[j]))"
-      )
+    )
   } else if (dist_cov == "exponential") {
     # exponential kernel
     dist_cov_code <-
@@ -558,25 +567,29 @@ coev_make_stancode <- function(data, variables, id, tree,
     # 1. there are no repeated measures and no gaussian variables  OR
     # 2. there are repeated measures and estimate_residual = TRUE
     ifelse(
-      (!any(duplicated(data[,id])) & !("normal" %in% distributions)) |
-        (any(duplicated(data[,id])) & estimate_residual),
+      (!any(duplicated(data[, id])) && !("normal" %in% distributions)) ||
+        (any(duplicated(data[, id])) && estimate_residual),
       "    to_vector(terminal_drift[t]) ~ std_normal();\n",
       ""
     ),
     "  }\n",
     "  A_offdiag ~ ", priors$A_offdiag, ";\n",
     "  A_diag ~ ", priors$A_diag, ";\n",
-    ifelse(estimate_Q_offdiag, paste0("  L_R ~ ", priors$L_R, ";\n"), ""),
+    ifelse(
+      estimate_correlated_drift,
+      paste0("  L_R ~ ", priors$L_R, ";\n"),
+      ""
+    ),
     "  Q_sigma ~ ", priors$Q_sigma, ";\n"
   )
   # add priors for any cutpoint parameters
-  for (j in 1:length(distributions)) {
+  for (j in seq_along(distributions)) {
     if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(sc_model, "  c", j, " ~ ", priors$c, ";\n")
     }
   }
   # add priors for any overdispersion parameters
-  for (j in 1:length(distributions)) {
+  for (j in seq_along(distributions)) {
     if (distributions[j] == "negative_binomial_softplus") {
       sc_model <-
         paste0(
@@ -594,7 +607,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     }
   }
   # add priors for any shape parameters
-  for (j in 1:length(distributions)) {
+  for (j in seq_along(distributions)) {
     if (distributions[j] == "gamma_log") {
       sc_model <- paste0(sc_model, "  shape", j, " ~ ", priors$shape, ";\n")
     }
@@ -609,18 +622,19 @@ coev_make_stancode <- function(data, variables, id, tree,
     )
   }
   # add priors for any residual sds and cors
-  if (any(duplicated(data[,id])) & estimate_residual) {
+  if (any(duplicated(data[, id])) && estimate_residual) {
     sc_model <- paste0(sc_model, "  // priors for residual sds and cors\n")
     if ("normal" %in% distributions) {
       sc_model <- paste0(sc_model, "  for (i in 1:N_obs) {\n")
-      for (j in 1:length(distributions)) {
+      for (j in seq_along(distributions)) {
         if (distributions[j] == "normal") {
           sc_model <- paste0(
             sc_model,
             paste0(
-              "    if (miss[i,", j, "] == 0) residual_z[", j, ",i] ~ std_normal();\n"
-              )
+              "    if (miss[i,", j, "] == 0) residual_z[", j,
+              ",i] ~ std_normal();\n"
             )
+          )
         } else {
           sc_model <- paste0(
             sc_model,
@@ -660,23 +674,23 @@ coev_make_stancode <- function(data, variables, id, tree,
     "      for (t in 1:N_tree) {\n",
     # only initialise tdrift vector when no repeated observations and gaussian
     ifelse(
-      !(any(duplicated(data[,id])) & estimate_residual) &
+      !(any(duplicated(data[, id])) && estimate_residual) &&
         "normal" %in% distributions,
       "        vector[J] tdrift;\n",
       ""
     ),
     # only initialise residuals vector when repeated observations and gaussian
     ifelse(
-      any(duplicated(data[,id])) & estimate_residual &
+      any(duplicated(data[, id])) && estimate_residual &&
         ("normal" %in% distributions),
       "        vector[J] residuals;\n",
       ""
-      )
     )
+  )
   # set residuals when there are repeated observations:
-  if (any(duplicated(data[,id])) & estimate_residual) {
+  if (any(duplicated(data[, id])) && estimate_residual) {
     if ("normal" %in% distributions) {
-      for (j in 1:length(distributions)) {
+      for (j in seq_along(distributions)) {
         if (distributions[j] == "normal") {
           sc_model <- paste0(
             sc_model,
@@ -698,15 +712,15 @@ coev_make_stancode <- function(data, variables, id, tree,
       if (!is.null(measurement_error)) {
         sc_model <- paste0(
           sc_model,
-          "        matrix[J,J] residual_cov = diag_matrix(to_vector(se[i,])) + ",
-          "quad_form_diag(L_residual * L_residual', sigma_residual);\n"
+          "        matrix[J,J] residual_cov = diag_matrix(to_vector(se[i,]))",
+          " + quad_form_diag(L_residual * L_residual', sigma_residual);\n"
         )
       }
       # add multi-normal prior for residuals
       sc_model <- paste0(
         sc_model,
-        "        lp[t] = multi_normal_cholesky_lpdf(residuals | rep_vector(0.0, ",
-        "J), ",
+        "        lp[t] = multi_normal_cholesky_lpdf(residuals | ",
+        "rep_vector(0.0, J), ",
         ifelse(
           !is.null(measurement_error),
           "cholesky_decompose(residual_cov)",
@@ -718,7 +732,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   } else {
     # else, set tdrift when there are no repeated observations:
     if ("normal" %in% distributions) {
-      for (j in 1:length(distributions)) {
+      for (j in seq_along(distributions)) {
         if (distributions[j] == "normal") {
           sc_model <- paste0(
             sc_model,
@@ -726,7 +740,8 @@ coev_make_stancode <- function(data, variables, id, tree,
             "          tdrift[", j, "] = y[i,", j, "] - (", lmod(j), ");\n",
             "          terminal_drift[t][tip_id[i],", j, "] ~ std_normal();\n",
             "        } else {\n",
-            "          tdrift[", j, "] = terminal_drift[t][tip_id[i],", j, "];\n",
+            "          tdrift[", j, "] = terminal_drift[t][tip_id[i],", j,
+            "];\n",
             "        }\n"
           )
         } else {
@@ -752,53 +767,53 @@ coev_make_stancode <- function(data, variables, id, tree,
     }
   }
   # linear models for non-continuous variables
-  for (j in 1:length(distributions)) {
+  for (j in seq_along(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
       sc_model <- paste0(
         sc_model,
         "        if (miss[i,", j, "] == 0) lp[t] += ",
         "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
         ifelse(
-          !(any(duplicated(data[,id])) & estimate_residual) &
+          !(any(duplicated(data[, id])) && estimate_residual) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
-          ),
+        ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
         ");\n"
-        )
+      )
     } else if (distributions[j] == "ordered_logistic") {
       sc_model <- paste0(
         sc_model,
         "        if (miss[i,", j, "] == 0) lp[t] += ",
         "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
         ifelse(
-          !(any(duplicated(data[,id])) & estimate_residual) &
+          !(any(duplicated(data[, id])) && estimate_residual) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
         ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
         ", c", j, ");\n"
-        )
+      )
     } else if (distributions[j] == "poisson_softplus") {
       sc_model <- paste0(
         sc_model,
@@ -806,23 +821,23 @@ coev_make_stancode <- function(data, variables, id, tree,
         "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j, ") * log1p_exp(",
         lmod(j),
         ifelse(
-          !(any(duplicated(data[,id])) & estimate_residual) &
+          !(any(duplicated(data[, id])) && estimate_residual) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
         ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
         "));\n"
-        )
+      )
     } else if (distributions[j] == "negative_binomial_softplus") {
       sc_model <- paste0(
         sc_model,
@@ -830,41 +845,41 @@ coev_make_stancode <- function(data, variables, id, tree,
         "neg_binomial_2_lpmf(to_int(y[i,", j,
         "]) | mean(obs", j, ") * log1p_exp(", lmod(j),
         ifelse(
-          !(any(duplicated(data[,id])) & estimate_residual) &
+          !(any(duplicated(data[, id])) && estimate_residual) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
         ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
         "), phi", j, ");\n"
-        )
+      )
     } else if (distributions[j] == "gamma_log") {
       sc_model <- paste0(
         sc_model,
         "        if (miss[i,", j, "] == 0) lp[t] += ",
         "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(", lmod(j),
         ifelse(
-          !(any(duplicated(data[,id])) & estimate_residual) &
+          !(any(duplicated(data[, id])) && estimate_residual) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
         ),
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual &
+          any(duplicated(data[, id])) && estimate_residual &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
@@ -879,15 +894,15 @@ coev_make_stancode <- function(data, variables, id, tree,
     "    }\n",
     "  }\n",
     "}"
-    )
+  )
   # generated quantities block
   sc_generated_quantities <-
     paste0(
       "generated quantities{\n",
       ifelse(log_lik, "  vector[N_obs*J] log_lik; // log-likelihood\n", ""),
       "  array[N_tree,N_obs,J] real yrep; // predictive checks\n"
-      )
-  if (estimate_Q_offdiag) {
+    )
+  if (estimate_correlated_drift) {
     sc_generated_quantities <-
       paste0(
         sc_generated_quantities,
@@ -895,7 +910,7 @@ coev_make_stancode <- function(data, variables, id, tree,
         "  cor_R = multiply_lower_tri_self_transpose(L_R);\n"
       )
   }
-  if (any(duplicated(data[,id])) & estimate_residual) {
+  if (any(duplicated(data[, id])) && estimate_residual) {
     sc_generated_quantities <-
       paste0(
         sc_generated_quantities,
@@ -911,8 +926,8 @@ coev_make_stancode <- function(data, variables, id, tree,
         log_lik,
         "    matrix[N_obs,J] log_lik_temp = rep_matrix(0.0, N_obs, J);\n",
         ""
-        )
       )
+    )
   # calculate terminal drift for yrep
   sc_generated_quantities <- paste0(
     sc_generated_quantities,
@@ -922,8 +937,8 @@ coev_make_stancode <- function(data, variables, id, tree,
     "        for (j in 1:J) terminal_drift_rep[t,i][j] = normal_rng(0, 1);\n",
     "        terminal_drift_rep[t,i] = cholesky_decompose(",
     ifelse(
-      !is.null(measurement_error) & !(any(duplicated(data[,id])) &
-                                        estimate_residual),
+      !is.null(measurement_error) && !(any(duplicated(data[, id])) &&
+                                         estimate_residual),
       # add squared standard errors to diagonal of VCV_tips
       "add_diag(VCV_tips[t, i], se[i,])",
       "VCV_tips[t, i]"
@@ -934,13 +949,16 @@ coev_make_stancode <- function(data, variables, id, tree,
     "    for (i in 1:N_obs) {\n",
     ifelse(
       log_lik,
-      "      array[N_tree,N_obs,J] real lp = rep_array(0.0, N_tree, N_obs, J);\n",
-      ""
+      paste0(
+        "      array[N_tree,N_obs,J] real lp = ",
+        "rep_array(0.0, N_tree, N_obs, J);\n"
       ),
-      "      for (t in 1:N_tree) {\n"
-      )
+      ""
+    ),
+    "      for (t in 1:N_tree) {\n"
+  )
   # only declare the following if there are gaussian distributions and log_lik
-  if ("normal" %in% distributions & log_lik) {
+  if ("normal" %in% distributions && log_lik) {
     sc_generated_quantities <- paste0(
       sc_generated_quantities,
       "        vector[J] mu_cond;\n",
@@ -952,33 +970,34 @@ coev_make_stancode <- function(data, variables, id, tree,
     sc_generated_quantities <- paste0(
       sc_generated_quantities,
       ifelse(
-        any(duplicated(data[,id])) & estimate_residual,
+        any(duplicated(data[, id])) && estimate_residual,
         "        vector[J] residuals;\n",
         "        vector[J] tdrifts;\n"
       )
     )
   }
   # calculate residuals_rep for yrep if repeated observations
-  if (any(duplicated(data[,id])) & estimate_residual) {
+  if (any(duplicated(data[, id])) && estimate_residual) {
     sc_generated_quantities <- paste0(
       sc_generated_quantities,
       "        vector[J] residuals_rep;\n",
       "        for (j in 1:J) residuals_rep[j] = normal_rng(0, 1);\n",
-      "        residuals_rep = diag_pre_multiply(sigma_residual, L_residual) * residuals_rep;\n"
+      "        residuals_rep = diag_pre_multiply(sigma_residual, L_residual)",
+      " * residuals_rep;\n"
     )
   }
   # get tdrifts/residuals if log_lik = TRUE
   if (log_lik) {
-    for (j in 1:length(distributions)) {
+    for (j in seq_along(distributions)) {
       if (distributions[j] == "normal") {
         sc_generated_quantities <- paste0(
           sc_generated_quantities,
           ifelse(
-            any(duplicated(data[,id])) & estimate_residual,
+            any(duplicated(data[, id])) && estimate_residual,
             paste0(
               "        residuals[", j, "] = y[i][", j, "] - (", lmod(j),
               " + tdrift[t,tip_id[i]][", j, "]);\n"
-              ),
+            ),
             paste0(
               "        tdrifts[", j, "] = y[i][", j, "] - (", lmod(j), ");\n"
             )
@@ -988,31 +1007,32 @@ coev_make_stancode <- function(data, variables, id, tree,
         sc_generated_quantities <- paste0(
           sc_generated_quantities,
           ifelse(
-            any(duplicated(data[,id])) & estimate_residual,
+            any(duplicated(data[, id])) && estimate_residual,
             ifelse(
               "normal" %in% distributions,
               paste0("        residuals[", j, "] = residual_z[", j, ",i];\n"),
               paste0("        residuals[", j, "] = residual_v[i,", j, "];\n")
-              ),
+            ),
             paste0(
               "        tdrifts[", j, "] = ",
               ifelse("normal" %in% distributions, "terminal_drift", "tdrift"),
               "[t,tip_id[i]][", j, "];\n"
-              )
             )
           )
+        )
       }
     }
   }
   # only calculate if there are gaussian distributions and log_lik = TRUE
-  if ("normal" %in% distributions & log_lik) {
-    if (any(duplicated(data[,id])) & estimate_residual) {
+  if ("normal" %in% distributions && log_lik) {
+    if (any(duplicated(data[, id])) && estimate_residual) {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         ifelse(
           !is.null(measurement_error),
           paste0(
-            "        matrix[J,J] residual_cov = diag_matrix(to_vector(se[i,])) + ",
+            "        matrix[J,J] residual_cov = ",
+            "diag_matrix(to_vector(se[i,])) + ",
             "quad_form_diag(L_residual * L_residual', sigma_residual);\n"
           ),
           ""
@@ -1020,9 +1040,13 @@ coev_make_stancode <- function(data, variables, id, tree,
         ifelse(
           !is.null(measurement_error),
           "        matrix[J,J] cov_inv = inverse_spd(residual_cov);\n",
-          "        matrix[J,J] cov_inv = chol2inv(diag_pre_multiply(sigma_residual, L_residual));\n"
+          paste0(
+            "        matrix[J,J] cov_inv = ",
+            "chol2inv(diag_pre_multiply(sigma_residual, L_residual));\n"
+          )
         ),
-        "        mu_cond = residuals - (cov_inv * residuals) ./ diagonal(cov_inv);\n",
+        "        mu_cond = residuals - (cov_inv * residuals) ./ ",
+        "diagonal(cov_inv);\n",
         "        sigma_cond = sqrt(1 / diagonal(cov_inv));\n"
       )
     } else {
@@ -1036,12 +1060,13 @@ coev_make_stancode <- function(data, variables, id, tree,
           "VCV_tips[t, tip_id[i]]"
         ),
         ");\n",
-        "        mu_cond = tdrifts - (cov_inv * tdrifts) ./ diagonal(cov_inv);\n",
+        "        mu_cond = tdrifts - (cov_inv * tdrifts) ./ ",
+        "diagonal(cov_inv);\n",
         "        sigma_cond = sqrt(1 / diagonal(cov_inv));\n"
       )
     }
   }
-  for (j in 1:length(distributions)) {
+  for (j in seq_along(distributions)) {
     if (distributions[j] == "bernoulli_logit") {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
@@ -1051,18 +1076,18 @@ coev_make_stancode <- function(data, variables, id, tree,
             "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
             "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
             ifelse(
-              any(duplicated(data[,id])) & estimate_residual,
+              any(duplicated(data[, id])) && estimate_residual,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
             ");\n"
           ),
           ""
-          ),
+        ),
         "        yrep[t,i,", j, "] = bernoulli_logit_rng(", lmod(j),
         " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual,
+          any(duplicated(data[, id])) && estimate_residual,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1077,7 +1102,7 @@ coev_make_stancode <- function(data, variables, id, tree,
             "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
             "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
             ifelse(
-              any(duplicated(data[,id])) & estimate_residual,
+              any(duplicated(data[, id])) && estimate_residual,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
@@ -1088,7 +1113,7 @@ coev_make_stancode <- function(data, variables, id, tree,
         "        yrep[t,i,", j, "] = ", "ordered_logistic_rng(", lmod(j),
         " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual,
+          any(duplicated(data[, id])) && estimate_residual,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1104,7 +1129,7 @@ coev_make_stancode <- function(data, variables, id, tree,
             "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
             ") * log1p_exp(", lmod(j),
             ifelse(
-              any(duplicated(data[,id])) & estimate_residual,
+              any(duplicated(data[, id])) && estimate_residual,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
@@ -1115,7 +1140,7 @@ coev_make_stancode <- function(data, variables, id, tree,
         "        yrep[t,i,", j, "] = poisson_rng(mean(obs", j, ") * log1p_exp(",
         lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual,
+          any(duplicated(data[, id])) && estimate_residual,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1130,7 +1155,7 @@ coev_make_stancode <- function(data, variables, id, tree,
             "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
             "normal_lpdf(",
             ifelse(
-              any(duplicated(data[,id])) & estimate_residual,
+              any(duplicated(data[, id])) && estimate_residual,
               paste0("residuals[", j, "]"),
               paste0("tdrifts[", j, "]")
             ),
@@ -1142,7 +1167,7 @@ coev_make_stancode <- function(data, variables, id, tree,
         "        yrep[t,i,", j, "] = ", lmod(j),
         " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual,
+          any(duplicated(data[, id])) && estimate_residual,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1158,7 +1183,7 @@ coev_make_stancode <- function(data, variables, id, tree,
             "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
             ") * log1p_exp(", lmod(j),
             ifelse(
-              any(duplicated(data[,id])) & estimate_residual,
+              any(duplicated(data[, id])) && estimate_residual,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
@@ -1167,9 +1192,10 @@ coev_make_stancode <- function(data, variables, id, tree,
           ""
         ),
         "        yrep[t,i,", j, "] = neg_binomial_2_rng(mean(obs", j,
-        ") * log1p_exp(", lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j, "]",
+        ") * log1p_exp(", lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j,
+        "]",
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual,
+          any(duplicated(data[, id])) && estimate_residual,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1185,7 +1211,7 @@ coev_make_stancode <- function(data, variables, id, tree,
             "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(",
             lmod(j),
             ifelse(
-              any(duplicated(data[,id])) & estimate_residual,
+              any(duplicated(data[, id])) && estimate_residual,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
@@ -1196,7 +1222,7 @@ coev_make_stancode <- function(data, variables, id, tree,
         "        yrep[t,i,", j, "] = gamma_rng(shape", j, ", shape", j,
         " / exp(", lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[,id])) & estimate_residual,
+          any(duplicated(data[, id])) && estimate_residual,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1212,7 +1238,7 @@ coev_make_stancode <- function(data, variables, id, tree,
         log_lik,
         "    for (j in 1:J) log_lik_temp[i,j] += log_sum_exp(lp[,i,j]);\n",
         ""
-        ),
+      ),
       "    }\n",
       ifelse(
         log_lik,
@@ -1231,7 +1257,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       is.null(sc_transformed_data),
       "",
       paste0(sc_transformed_data, "\n")
-      ),
+    ),
     sc_parameters, "\n",
     sc_transformed_parameters, "\n",
     sc_model, "\n",
@@ -1250,10 +1276,10 @@ coev_make_stancode <- function(data, variables, id, tree,
         "Note: Distance matrix detected. Gaussian processes over spatial ",
         "distances have been included for each variable in the model ",
         "using the '", dist_cov, "' covariance kernel."
-        )
+      )
     )
   }
-  if (any(duplicated(data[,id])) & estimate_residual) {
+  if (any(duplicated(data[, id])) && estimate_residual) {
     message(
       paste0(
         "Note: Repeated observations detected. Residual standard deviations ",
@@ -1264,8 +1290,8 @@ coev_make_stancode <- function(data, variables, id, tree,
   }
   # produce warning that repeated models with mix of gaussian and non-gaussian
   # is experimental at this stage
-  if (any(duplicated(data[,id])) & estimate_residual &
-      "normal" %in% distributions & !all(distributions == "normal")) {
+  if (any(duplicated(data[, id])) && estimate_residual &&
+        "normal" %in% distributions && !all(distributions == "normal")) {
     message(
       paste0(
         "Note: Repeated observations models with a mixture of ",

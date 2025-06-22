@@ -26,11 +26,11 @@
 #' }
 #'
 #' @export
-stancode <- function(object){
+stancode <- function(object) {
   UseMethod("stancode")
 }
 
 #' @export
-stancode.coevfit <- function(object){
+stancode.coevfit <- function(object) {
   cat(object$stan_code)
 }

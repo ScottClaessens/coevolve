@@ -38,12 +38,12 @@ extract_samples.coevfit <- function(object) {
   # reshape to 'rethinking' style list format
   lapply(
     vars,
-    \(var_name){
+    \(var_name) {
       posterior::draws_of(
         draws[[var_name]],
         with_chains = FALSE
-        )
-      }
-    ) |>
-  stats::setNames(vars)
+      )
+    }
+  ) |>
+    stats::setNames(vars)
 }

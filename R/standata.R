@@ -27,11 +27,11 @@
 #' }
 #'
 #' @export
-standata <- function(object){
+standata <- function(object) {
   UseMethod("standata")
 }
 
 #' @export
-standata.coevfit <- function(object){
+standata.coevfit <- function(object) {
   object$stan_data
 }

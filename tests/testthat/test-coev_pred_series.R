@@ -30,7 +30,7 @@ test_that("coev_pred_series() produces expected errors and output", {
     coev_pred_series(
       object = m01,
       eta_anc = list(x = "LCA", y = 0, u = 0, v = 0, w = 0)
-      ),
+    ),
     paste0(
       "Values in 'eta_anc' must each be numeric."
     ),
@@ -45,7 +45,7 @@ test_that("coev_pred_series() produces expected errors and output", {
     coev_pred_series(
       object = m01,
       eta_anc = list(var1 = 0, y = 0, v = 0, w = 0)
-      ),
+    ),
     paste0(
       "At least one variable in 'eta_anc' is not included in the fitted model."
     ),
@@ -69,7 +69,7 @@ test_that("coev_pred_series() produces expected errors and output", {
   expect_error(
     coev_pred_series(
       object = m01, ndraws = as.integer(nrow(m01$fit$draws()) + 1)
-      ),
+    ),
     "Argument 'ndraws' must be between 1 and the total number of draws.",
     fixed = TRUE
   )
@@ -79,56 +79,82 @@ test_that("coev_pred_series() produces expected errors and output", {
     fixed = TRUE
   )
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # should run without error
-  expect_no_error(SW(coev_pred_series(m01)))
-  expect_no_error(SW(coev_pred_series(m02)))
-  expect_no_error(SW(coev_pred_series(m03)))
-  expect_no_error(SW(coev_pred_series(m04)))
-  expect_no_error(SW(coev_pred_series(m05)))
-  expect_no_error(SW(coev_pred_series(m06)))
-  expect_no_error(SW(coev_pred_series(m07)))
-  expect_no_error(SW(coev_pred_series(m08)))
-  expect_no_error(SW(coev_pred_series(m09)))
-  expect_no_error(SW(coev_pred_series(m10)))
-  expect_no_error(SW(coev_pred_series(m01, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m02, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m03, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m04, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m05, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m06, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m07, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m08, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m09, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m10, stochastic = TRUE)))
-  expect_no_error(SW(coev_pred_series(m01, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m02, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m03, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m04, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m05, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m06, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m07, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m08, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m09, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m10, ndraws = 1)))
-  expect_no_error(SW(coev_pred_series(m01, intervention_values = list(u = NA, v = 0, w = 0, x = 0, y = 0))))
-  expect_no_error(SW(coev_pred_series(m02, intervention_values = list(w = NA, x = 0))))
-  expect_no_error(SW(coev_pred_series(m03, intervention_values = list(w = NA, x = 0))))
-  expect_no_error(SW(coev_pred_series(m04, intervention_values = list(y = NA, z = 0))))
-  expect_no_error(SW(coev_pred_series(m05, intervention_values = list(w = NA, x = 0))))
-  expect_no_error(SW(coev_pred_series(m06, intervention_values = list(w = NA, x = 0))))
-  expect_no_error(SW(coev_pred_series(m07, intervention_values = list(w = NA, x = 0))))
-  expect_no_error(SW(coev_pred_series(m08, intervention_values = list(x = NA, y = 0))))
-  expect_no_error(SW(coev_pred_series(m09, intervention_values = list(x = NA, y = 0))))
-  expect_no_error(SW(coev_pred_series(m10, intervention_values = list(x = NA, y = 0))))
-  expect_no_error(SW(coev_pred_series(m01, eta_anc = list(u = 0, v = 0, w = 0, x = 0, y = 0))))
-  expect_no_error(SW(coev_pred_series(m02, eta_anc = list(w = 0, x = 0))))
-  expect_no_error(SW(coev_pred_series(m03, eta_anc = list(w = 0, x = 0))))
-  expect_no_error(SW(coev_pred_series(m04, eta_anc = list(y = 0, z = 0))))
-  expect_no_error(SW(coev_pred_series(m05, eta_anc = list(w = 0, x = 0))))
-  expect_no_error(SW(coev_pred_series(m06, eta_anc = list(w = 0, x = 0))))
-  expect_no_error(SW(coev_pred_series(m07, eta_anc = list(w = 0, x = 0))))
-  expect_no_error(SW(coev_pred_series(m08, eta_anc = list(x = 0, y = 0))))
-  expect_no_error(SW(coev_pred_series(m09, eta_anc = list(x = 0, y = 0))))
-  expect_no_error(SW(coev_pred_series(m10, eta_anc = list(x = 0, y = 0))))
+  expect_no_error(sw(coev_pred_series(m01)))
+  expect_no_error(sw(coev_pred_series(m02)))
+  expect_no_error(sw(coev_pred_series(m03)))
+  expect_no_error(sw(coev_pred_series(m04)))
+  expect_no_error(sw(coev_pred_series(m05)))
+  expect_no_error(sw(coev_pred_series(m06)))
+  expect_no_error(sw(coev_pred_series(m07)))
+  expect_no_error(sw(coev_pred_series(m08)))
+  expect_no_error(sw(coev_pred_series(m09)))
+  expect_no_error(sw(coev_pred_series(m10)))
+  expect_no_error(sw(coev_pred_series(m01, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m02, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m03, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m04, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m05, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m06, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m07, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m08, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m09, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m10, stochastic = TRUE)))
+  expect_no_error(sw(coev_pred_series(m01, ndraws = 1)))
+  expect_no_error(sw(coev_pred_series(m02, ndraws = 1)))
+  expect_no_error(sw(coev_pred_series(m03, ndraws = 1)))
+  expect_no_error(sw(coev_pred_series(m04, ndraws = 1)))
+  expect_no_error(sw(coev_pred_series(m05, ndraws = 1)))
+  expect_no_error(sw(coev_pred_series(m06, ndraws = 1)))
+  expect_no_error(sw(coev_pred_series(m07, ndraws = 1)))
+  expect_no_error(sw(coev_pred_series(m08, ndraws = 1)))
+  expect_no_error(sw(coev_pred_series(m09, ndraws = 1)))
+  expect_no_error(sw(coev_pred_series(m10, ndraws = 1)))
+  expect_no_error(
+    sw(
+      coev_pred_series(
+        m01, intervention_values = list(u = NA, v = 0, w = 0, x = 0, y = 0)
+      )
+    )
+  )
+  expect_no_error(
+    sw(coev_pred_series(m02, intervention_values = list(w = NA, x = 0)))
+  )
+  expect_no_error(
+    sw(coev_pred_series(m03, intervention_values = list(w = NA, x = 0)))
+  )
+  expect_no_error(
+    sw(coev_pred_series(m04, intervention_values = list(y = NA, z = 0)))
+  )
+  expect_no_error(
+    sw(coev_pred_series(m05, intervention_values = list(w = NA, x = 0)))
+  )
+  expect_no_error(
+    sw(coev_pred_series(m06, intervention_values = list(w = NA, x = 0)))
+  )
+  expect_no_error(
+    sw(coev_pred_series(m07, intervention_values = list(w = NA, x = 0)))
+  )
+  expect_no_error(
+    sw(coev_pred_series(m08, intervention_values = list(x = NA, y = 0)))
+  )
+  expect_no_error(
+    sw(coev_pred_series(m09, intervention_values = list(x = NA, y = 0)))
+  )
+  expect_no_error(
+    sw(coev_pred_series(m10, intervention_values = list(x = NA, y = 0)))
+  )
+  expect_no_error(
+    sw(coev_pred_series(m01, eta_anc = list(u = 0, v = 0, w = 0, x = 0, y = 0)))
+  )
+  expect_no_error(sw(coev_pred_series(m02, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(sw(coev_pred_series(m03, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(sw(coev_pred_series(m04, eta_anc = list(y = 0, z = 0))))
+  expect_no_error(sw(coev_pred_series(m05, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(sw(coev_pred_series(m06, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(sw(coev_pred_series(m07, eta_anc = list(w = 0, x = 0))))
+  expect_no_error(sw(coev_pred_series(m08, eta_anc = list(x = 0, y = 0))))
+  expect_no_error(sw(coev_pred_series(m09, eta_anc = list(x = 0, y = 0))))
+  expect_no_error(sw(coev_pred_series(m10, eta_anc = list(x = 0, y = 0))))
 })

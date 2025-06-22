@@ -56,9 +56,9 @@ diet_data <-
         "Frug"     = "Frugivore",
         "Frug/Fol" = "Frugivore/Folivore",
         "Om"       = "Omnivore"
-        )
+      )
       [`Diet Category`]
-      ),
+    ),
     percent_fruit = parse_number(`% Fruit`, na = "n/a")
   )
 

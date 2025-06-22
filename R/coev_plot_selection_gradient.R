@@ -83,17 +83,17 @@ coev_plot_selection_gradient <- function(object, var1, var2,
       paste0(
         "Argument 'object' must be a fitted coevolutionary model of class ",
         "coevfit."
-        )
       )
+    )
   }
-  if (!is.character(var1) | length(var1) != 1) {
+  if (!is.character(var1) || length(var1) != 1) {
     # stop if var1 not character string of length one
     stop2("Argument 'var1' must be a character string of length one.")
   } else if (!(var1 %in% names(object$variables))) {
     # stop if var1 not included in model
     stop2("Argument 'var1' must be a variable included in the fitted model.")
   }
-  if (!is.character(var2) | length(var2) != 1) {
+  if (!is.character(var2) || length(var2) != 1) {
     # stop if var2 not character string of length one
     stop2("Argument 'var2' must be a character string of length one.")
   } else if (!(var2 %in% names(object$variables))) {
@@ -109,7 +109,7 @@ coev_plot_selection_gradient <- function(object, var1, var2,
     stop2("Argument 'contour' must be logical.")
   }
   # stop if limits is not a numeric vector of length 2
-  if (!(is.numeric(limits) & is.vector(limits) & length(limits) == 2)) {
+  if (!(is.numeric(limits) && is.vector(limits) && length(limits) == 2)) {
     stop2("Argument 'limits' must be a numeric vector of length 2.")
   }
   # produce warning if there are three or more traits
@@ -129,40 +129,39 @@ coev_plot_selection_gradient <- function(object, var1, var2,
   draws <- posterior::as_draws_rvars(object$fit)
   # medians and median absolute deviations for all variables
   eta  <- apply(
-    draws$eta[,1:object$stan_data$N_tips,], 3, posterior::rvar_median
-    )
+    draws$eta[, 1:object$stan_data$N_tips, ], 3, posterior::rvar_median
+  )
   meds <- unlist(lapply(eta, stats::median))
   mads <- unlist(lapply(eta, stats::mad))
-  lowers <- meds + limits[1]*mads
-  uppers <- meds + limits[2]*mads
+  lowers <- meds + (limits[1] * mads)
+  uppers <- meds + (limits[2] * mads)
   # get median parameter values for A, b, and Q_sigma
-  A <- stats::median(draws$A)
+  a <- stats::median(draws$A)
   b <- stats::median(draws$b)
-  Q_sigma <- stats::median(draws$Q_sigma)
+  q_sigma <- stats::median(draws$Q_sigma)
   # ornstein uhlenbeck sde function for response and predictor variable
-  OU_sde <- function(resp_value, pred_value, resp_id, pred_id) {
+  ou_sde <- function(resp_value, pred_value, resp_id, pred_id) {
     # sde intercept
     out <- b[resp_id]
     # selection effects
-    for (j in 1:length(names(object$variables))) {
+    for (j in seq_along(names(object$variables))) {
       if (j == resp_id) {
         # autoregressive selection effect (response -> response)
-        out <- out + A[resp_id,j] * resp_value
+        out <- out + (a[resp_id, j] * resp_value)
       } else if (j == pred_id) {
         # cross-lagged selection effect for predictor -> response
-        out <- out + A[resp_id,j] * pred_value
+        out <- out + (a[resp_id, j] * pred_value)
       } else {
         # cross-lagged selection effects for any remaining variables
         # held at their median trait values
-        out <- out + A[resp_id,j] * meds[j]
+        out <- out + (a[resp_id, j] * meds[j])
       }
     }
     # scale by mad for response variable
     out <- out / mads[resp_id]
     # divide by sigma^2 scaled by mad for response variable
-    sigma <- Q_sigma[resp_id]^2 / mads[resp_id]
-    out <- out / sigma
-    return(out)
+    sigma <- q_sigma[resp_id]^2 / mads[resp_id]
+    out / sigma
   }
   # get predictions for different levels of traits
   preds <-
@@ -171,25 +170,25 @@ coev_plot_selection_gradient <- function(object, var1, var2,
         from = lowers[id_var1],
         to = uppers[id_var1],
         length.out = 20
-        ),
+      ),
       var2_value = seq(
         from = lowers[id_var2],
         to = uppers[id_var2],
         length.out = 20
-        ),
+      ),
       var1_delta_sigma = NA,
       var2_delta_sigma = NA
     )
-  for (i in 1:nrow(preds)) {
+  for (i in seq_len(nrow(preds))) {
     preds$var1_delta_sigma[i] <-
-      OU_sde(
+      ou_sde(
         resp_value = preds$var1_value[i],
         pred_value = preds$var2_value[i],
         resp_id = id_var1,
         pred_id = id_var2
       )
     preds$var2_delta_sigma[i] <-
-      OU_sde(
+      ou_sde(
         resp_value = preds$var2_value[i],
         pred_value = preds$var1_value[i],
         resp_id = id_var2,
@@ -201,7 +200,7 @@ coev_plot_selection_gradient <- function(object, var1, var2,
     tidyr::pivot_longer(
       preds,
       -c("var1_value", "var2_value")
-      )
+    )
   out <-
     dplyr::mutate(
       out,
@@ -210,9 +209,9 @@ coev_plot_selection_gradient <- function(object, var1, var2,
         labels = c(
           expression(paste(Delta, !!var1)),
           expression(paste(Delta, !!var2))
-          )
         )
       )
+    )
   # plot as z-score
   out <-
     ggplot2::ggplot(
@@ -225,7 +224,7 @@ coev_plot_selection_gradient <- function(object, var1, var2,
     ggplot2::facet_wrap(
       ~ .data$name,
       labeller = ggplot2::label_parsed
-      ) +
+    ) +
     ggplot2::geom_raster(
       mapping = ggplot2::aes(
         fill = .data$value
@@ -239,37 +238,37 @@ coev_plot_selection_gradient <- function(object, var1, var2,
         mapping = ggplot2::aes(z = .data$value),
         colour = "white",
         breaks = c(-1, 1)
-        )
+      )
   }
   out +
     ggplot2::scale_x_continuous(
       expand = c(0, 0)
-      ) +
+    ) +
     ggplot2::scale_y_continuous(
       expand = c(0, 0)
-      ) +
+    ) +
     colorspace::scale_fill_continuous_divergingx(
       palette = "Geyser",
       trans = "reverse",
       guide = ggplot2::guide_colourbar(reverse = TRUE)
-      ) +
+    ) +
     ggplot2::theme_bw(
       base_size = 14
-      ) +
+    ) +
     ggplot2::theme(
       panel.grid.major = ggplot2::element_blank(),
       panel.grid.minor = ggplot2::element_blank(),
       panel.spacing = ggplot2::unit(1.5, "lines"),
       strip.background = ggplot2::element_blank()
-      ) +
+    ) +
     ggplot2::labs(
       fill = expression(frac(paste(Delta, alpha), sigma))
-      ) +
+    ) +
     ggplot2::xlab(
       paste(var1, "(z-score)")
-      ) +
+    ) +
     ggplot2::ylab(
       paste(var2, "(z-score)")
-      ) +
+    ) +
     ggplot2::coord_fixed()
 }

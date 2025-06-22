@@ -81,17 +81,17 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
       paste0(
         "Argument 'object' must be a fitted coevolutionary model of class ",
         "coevfit."
-        )
       )
+    )
   }
-  if (!is.character(var1) | length(var1) != 1) {
+  if (!is.character(var1) || length(var1) != 1) {
     # stop if var1 not character string of length one
     stop2("Argument 'var1' must be a character string of length one.")
   } else if (!(var1 %in% names(object$variables))) {
     # stop if var1 not included in model
     stop2("Argument 'var1' must be a variable included in the fitted model.")
   }
-  if (!is.character(var2) | length(var2) != 1) {
+  if (!is.character(var2) || length(var2) != 1) {
     # stop if var2 not character string of length one
     stop2("Argument 'var2' must be a character string of length one.")
   } else if (!(var2 %in% names(object$variables))) {
@@ -107,7 +107,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
     stop2("Argument 'nullclines' must be logical.")
   }
   # stop if limits is not a numeric vector of length 2
-  if (!(is.numeric(limits) & is.vector(limits) & length(limits) == 2)) {
+  if (!(is.numeric(limits) && is.vector(limits) && length(limits) == 2)) {
     stop2("Argument 'limits' must be a numeric vector of length 2.")
   }
   # produce warning if there are three or more traits
@@ -117,7 +117,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
         "Other traits were held constant at their median values to produce ",
         "this flowfield plot, which can potentially produce misleading ",
         "pictures of coevolutionary dynamics."
-        )
+      )
     )
   }
   # get IDs for variables
@@ -127,70 +127,69 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
   draws <- posterior::as_draws_rvars(object$fit)
   # medians and median absolute deviations for all variables
   eta  <- apply(
-    draws$eta[,1:object$stan_data$N_tips,], 3, posterior::rvar_median
-    )
+    draws$eta[, 1:object$stan_data$N_tips, ], 3, posterior::rvar_median
+  )
   meds <- unlist(lapply(eta, stats::median))
   mads <- unlist(lapply(eta, stats::mad))
-  lowers <- meds + limits[1]*mads
-  uppers <- meds + limits[2]*mads
+  lowers <- meds + (limits[1] * mads)
+  uppers <- meds + (limits[2] * mads)
   # get median parameter values for A and b
-  A <- stats::median(draws$A)
+  a <- stats::median(draws$A)
   b <- stats::median(draws$b)
   # function for flow field diagram
-  OU <- function(t, y, parameters) {
+  ou <- function(t, y, parameters) {
     dy <- numeric(2)
     # variable 1
     dy[1] <- b[id_var1]
-    for (j in 1:length(names(object$variables))) {
+    for (j in seq_along(names(object$variables))) {
       if (j == id_var1) {
         # autoregressive effect
-        dy[1] <- dy[1] + A[id_var1,j]*y[1]
+        dy[1] <- dy[1] + (a[id_var1, j] * y[1])
       } else if (j == id_var2) {
         # cross-lagged effect of predictor
-        dy[1] <- dy[1] + A[id_var1,j]*y[2]
+        dy[1] <- dy[1] + (a[id_var1, j] * y[2])
       } else {
         # cross-lagged effects of other variables held at their median values
-        dy[1] <- dy[1] + A[id_var1,j]*meds[j]
+        dy[1] <- dy[1] + (a[id_var1, j] * meds[j])
       }
     }
     # variable 2
     dy[2] <- b[id_var2]
-    for (j in 1:length(names(object$variables))) {
+    for (j in seq_along(names(object$variables))) {
       if (j == id_var2) {
         # autoregressive effect
-        dy[2] <- dy[2] + A[id_var2,j]*y[2]
+        dy[2] <- dy[2] + (a[id_var2, j] * y[2])
       } else if (j == id_var1) {
         # cross-lagged effect of predictor
-        dy[2] <- dy[2] + A[id_var2,j]*y[1]
+        dy[2] <- dy[2] + (a[id_var2, j] * y[1])
       } else {
         # cross-lagged effects of other variables held at their median values
-        dy[2] <- dy[2] + A[id_var2,j]*meds[j]
+        dy[2] <- dy[2] + (a[id_var2, j] * meds[j])
       }
     }
-    return(list(dy))
+    list(dy)
   }
   # create flow field diagram
   suppressWarnings({
-    OU.flowField <-
-      phaseR::flowField(
-        OU,
-        xlim = c(lowers[id_var1], uppers[id_var1]),
-        ylim = c(lowers[id_var2], uppers[id_var2]),
-        parameters = NA,
-        add = FALSE,
-        xlab = "",
-        ylab = "",
-        points = 12,
-        col = "grey",
-        xaxt = 'n',
-        yaxt = 'n',
-        arrow.type = "proportional",
-        frac = 1.5,
-        xaxs = "i",
-        yaxs = "i",
-        axes = FALSE,
-        lwd = 2
-      )
+    phaseR::flowField(
+      ou,
+      xlim = c(lowers[id_var1], uppers[id_var1]),
+      ylim = c(lowers[id_var2], uppers[id_var2]),
+      parameters = NA,
+      add = FALSE,
+      xlab = "",
+      ylab = "",
+      points = 12,
+      col = "grey",
+      xaxt = "n",
+      yaxt = "n",
+      arrow.type = "proportional",
+      frac = 1.5,
+      xaxs = "i",
+      yaxs = "i",
+      axes = FALSE,
+      lwd = 2
+    )
   })
   # var 1 label
   graphics::mtext(
@@ -211,18 +210,17 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
   # add nullclines to phase plane
   suppressWarnings({
     if (nullclines) {
-      nc <-
-        phaseR::nullclines(
-          OU,
-          xlim = c(lowers[id_var1], uppers[id_var1]),
-          ylim = c(lowers[id_var2], uppers[id_var2]),
-          parameters = NA,
-          points = 20,
-          axes = FALSE,
-          col = c("#c55852","#5387b6"),
-          add.legend = FALSE,
-          lwd = 2
-        )
+      phaseR::nullclines(
+        ou,
+        xlim = c(lowers[id_var1], uppers[id_var1]),
+        ylim = c(lowers[id_var2], uppers[id_var2]),
+        parameters = NA,
+        points = 20,
+        axes = FALSE,
+        col = c("#c55852", "#5387b6"),
+        add.legend = FALSE,
+        lwd = 2
+      )
     }
   })
   # add axes

@@ -48,8 +48,8 @@ coev_plot_predictive_check <- function(object, variables = NULL,
       paste0(
         "Argument 'object' must be a fitted coevolutionary model ",
         "of class coevfit."
-        )
       )
+    )
   }
   if (!is.null(variables)) {
     if (!is.character(variables)) {
@@ -74,21 +74,21 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   if (!is.null(ndraws)) {
     if (!is.numeric(ndraws)) {
       stop2("Argument 'ndraws' must be numeric.")
-    } else if (!all(as.integer(ndraws) == ndraws) | length(ndraws) != 1) {
+    } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
       stop2("Argument 'ndraws' must be a single integer.")
-    } else if (ndraws < 1 | ndraws > nrow(object$fit$draws())) {
+    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
       stop2(
         "Argument 'ndraws' must be between 1 and the total number of draws."
-        )
+      )
     }
   }
   # stop if tree_id is not a single integer between 1 and the total num trees
   if (!is.null(tree_id)) {
     if (!is.numeric(tree_id)) {
       stop2("Argument 'tree_id' must be numeric.")
-    } else if (!all(as.integer(tree_id) == tree_id) | length(tree_id) != 1) {
+    } else if (!all(as.integer(tree_id) == tree_id) || length(tree_id) != 1) {
       stop2("Argument 'tree_id' must be a single integer.")
-    } else if (tree_id < 1 | tree_id > object$stan_data$N_tree) {
+    } else if (tree_id < 1 || tree_id > object$stan_data$N_tree) {
       stop2(
         "Argument 'tree_id' must be between 1 and the total number of trees."
       )
@@ -98,14 +98,14 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   post <- posterior::as_draws_rvars(object$fit$draws(variables = "yrep"))
   # get draws ids
   if (is.null(ndraws)) {
-    draws_ids <- 1:nrow(object$fit$draws())
+    draws_ids <- seq_len(nrow(object$fit$draws()))
   } else {
-    draws_ids <- sample(1:nrow(object$fit$draws()), size = ndraws)
+    draws_ids <- sample(seq_len(nrow(object$fit$draws())), size = ndraws)
   }
   # get tree ids
   if (is.null(tree_id)) {
     tree_ids <- 1:object$stan_data$N_tree
-  } else{
+  } else {
     tree_ids <- tree_id
   }
   # function for choosing plot type
@@ -130,27 +130,27 @@ coev_plot_predictive_check <- function(object, variables = NULL,
     # variable index
     var_id <- which(names(object$variables) == variable)
     # get y and yrep
-    y <- object$stan_data$y[,variable]
-    miss <- object$stan_data$miss[,variable]
+    y <- object$stan_data$y[, variable]
+    miss <- object$stan_data$miss[, variable]
     y[miss == 1] <- NA
     # combine draws from multiple trees, if applicable
     yrep <- posterior::as_draws_matrix(
-      post$yrep[tree_ids[1],,var_id]
-      )[draws_ids,]
+      post$yrep[tree_ids[1], , var_id]
+    )[draws_ids, ]
     if (length(tree_ids) > 1) {
       for (i in 2:length(tree_ids)) {
         yrep <-
           rbind(
             yrep,
             posterior::as_draws_matrix(
-              post$yrep[tree_ids[i],,var_id]
-              )[draws_ids,]
-            )
-        }
+              post$yrep[tree_ids[i], , var_id]
+            )[draws_ids, ]
+          )
+      }
     }
     # remove missing data for this variable only
     if (any(is.na(y))) {
-      yrep <- yrep[,!is.na(y)]
+      yrep <- yrep[, !is.na(y)]
       y <- y[!is.na(y)]
     }
     # posterior predictive check
@@ -162,10 +162,10 @@ coev_plot_predictive_check <- function(object, variables = NULL,
       ) +
       ggplot2::ggtitle(
         paste0("Variable = '", variable, "'")
-        ) +
+      ) +
       ggplot2::theme(
         panel.grid = ggplot2::element_blank()
-        )
+      )
     # add to plot list
     out[[variable]] <- pp
   }

@@ -62,14 +62,14 @@ test_that("coev_calculate_delta_theta() works with repeated observations", {
   m <- readRDS(test_path("fixtures", "coevfit_example_07.rds"))
   m <- reload_fit(m, filename = "coevfit_example_07-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # should run without error and produce draws_array object
   expect_no_error(
-    SW(coev_calculate_delta_theta(m, response = "w", predictor = "x"))
+    sw(coev_calculate_delta_theta(m, response = "w", predictor = "x"))
   )
   expect_true(
     methods::is(
-      SW(coev_calculate_delta_theta(m, response = "w", predictor = "x")),
+      sw(coev_calculate_delta_theta(m, response = "w", predictor = "x")),
       "draws_array"
     )
   )
@@ -80,14 +80,14 @@ test_that("coev_calculate_delta_theta() works with multiPhylo object", {
   m <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
   m <- reload_fit(m, filename = "coevfit_example_08-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # should run without error and produce draws_array object
   expect_no_error(
-    SW(coev_calculate_delta_theta(m, response = "x", predictor = "y"))
+    sw(coev_calculate_delta_theta(m, response = "x", predictor = "y"))
   )
   expect_true(
     methods::is(
-      SW(coev_calculate_delta_theta(m, response = "x", predictor = "y")),
+      sw(coev_calculate_delta_theta(m, response = "x", predictor = "y")),
       "draws_array"
     )
   )
@@ -98,14 +98,14 @@ test_that("coev_calculate_delta_theta() works when Q offdiag == 0", {
   m <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
   m <- reload_fit(m, filename = "coevfit_example_09-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # should run without error and produce draws_array object
   expect_no_error(
-    SW(coev_calculate_delta_theta(m, response = "x", predictor = "y"))
+    sw(coev_calculate_delta_theta(m, response = "x", predictor = "y"))
   )
   expect_true(
     methods::is(
-      SW(coev_calculate_delta_theta(m, response = "x", predictor = "y")),
+      sw(coev_calculate_delta_theta(m, response = "x", predictor = "y")),
       "draws_array"
     )
   )
@@ -116,14 +116,14 @@ test_that("coev_calculate_delta_theta() works with measurement error", {
   m <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
   m <- reload_fit(m, filename = "coevfit_example_10-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # should run without error and produce draws_array object
   expect_no_error(
-    SW(coev_calculate_delta_theta(m, response = "x", predictor = "y"))
+    sw(coev_calculate_delta_theta(m, response = "x", predictor = "y"))
   )
   expect_true(
     methods::is(
-      SW(coev_calculate_delta_theta(m, response = "x", predictor = "y")),
+      sw(coev_calculate_delta_theta(m, response = "x", predictor = "y")),
       "draws_array"
     )
   )

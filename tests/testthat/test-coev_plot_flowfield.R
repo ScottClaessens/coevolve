@@ -48,7 +48,7 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
   expect_error(
     coev_plot_flowfield(
       object = m01, var1 = "x", var2 = "y", nullclines = "hello"
-      ),
+    ),
     "Argument 'nullclines' must be logical."
   )
   expect_error(
@@ -72,7 +72,7 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
                   limits = c(-2.5, 2.5)) {
     suppressWarnings(
       coev_plot_flowfield(model, var1, var2, nullclines, limits)
-      )
+    )
   }
   expect_no_error(fun(m01, "x", "y"))
   expect_no_error(fun(m02, "w", "x"))

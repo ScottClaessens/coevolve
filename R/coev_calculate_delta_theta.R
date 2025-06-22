@@ -77,32 +77,32 @@ coev_calculate_delta_theta <- function(object, response, predictor) {
       paste0(
         "Argument 'object' must be a fitted coevolutionary model ",
         "of class coevfit."
-        )
       )
+    )
   }
-  if (!is.character(response) | length(response) != 1) {
+  if (!is.character(response) || length(response) != 1) {
     # stop if response not character string of length one
     stop2("Argument 'response' must be a character string of length one.")
   } else if (!(response %in% names(object$variables))) {
     # stop if response not included in model
     stop2(
       "Argument 'response' must be a variable included in the fitted model."
-      )
+    )
   }
-  if (!is.character(predictor) | length(predictor) != 1) {
+  if (!is.character(predictor) || length(predictor) != 1) {
     # stop if predictor not character string of length one
     stop2("Argument 'predictor' must be a character string of length one.")
   } else if (!(predictor %in% names(object$variables))) {
     # stop if predictor not included in model
     stop2(
       "Argument 'predictor' must be a variable included in the fitted model."
-      )
+    )
   }
   # stop if response and predictor are the same variable
   if (response == predictor) {
     stop2(
       "Argument 'response' and 'predictor' must refer to different variables."
-      )
+    )
   }
   # extract posterior draws
   draws <- posterior::as_draws_rvars(object$fit$draws())
@@ -110,13 +110,13 @@ coev_calculate_delta_theta <- function(object, response, predictor) {
   id_resp <- which(response  == names(object$variables))
   id_pred <- which(predictor == names(object$variables))
   # medians and median absolute deviations for all variables
-  eta  <- draws$eta[,1:object$stan_data$N_tips,]
+  eta  <- draws$eta[, 1:object$stan_data$N_tips, ]
   med  <- apply(eta, 3, posterior::rvar_median)
   diff <- apply(eta, 3, posterior::rvar_mad)
   # construct intervention values list
   values1 <- list()
   values2 <- list()
-  for (j in 1:length(names(object$variables))) {
+  for (j in seq_along(names(object$variables))) {
     variables <- names(object$variables)
     if (j == id_resp) {
       # if variable is response, set to NA
@@ -137,9 +137,9 @@ coev_calculate_delta_theta <- function(object, response, predictor) {
   theta1 <- coev_calculate_theta(object, intervention_values = values1)
   theta2 <- coev_calculate_theta(object, intervention_values = values2)
   delta_theta <-
-    (theta2[,id_resp] - theta1[,id_resp]) / stats::median(diff[[id_resp]])
+    (theta2[, id_resp] - theta1[, id_resp]) / stats::median(diff[[id_resp]])
   # save as draws array for output
   delta_theta <- posterior::as_draws_array(as.matrix(delta_theta))
   dimnames(delta_theta)$variable <- "delta_theta"
-  return( delta_theta )
+  delta_theta
 }

@@ -37,7 +37,7 @@ coevfit_example_01 <-
     iter_sampling = iter,
     adapt_delta = 0.99,
     seed = 12345
-    )
+  )
 
 # fit model with distance matrix
 dist_mat <- as.matrix(dist(rnorm(n)))
@@ -57,7 +57,7 @@ coevfit_example_02 <-
     iter_sampling = iter,
     adapt_delta = 0.99,
     seed = 12345
-    )
+  )
 
 # fit prior only model
 coevfit_example_03 <-
@@ -75,7 +75,7 @@ coevfit_example_03 <-
     adapt_delta = 0.99,
     seed = 12345,
     prior_only = TRUE
-    )
+  )
 
 # fit negative binomial model
 coevfit_example_04 <-
@@ -92,16 +92,16 @@ coevfit_example_04 <-
     iter_sampling = iter,
     adapt_delta = 0.99,
     seed = 12345
-    )
+  )
 
 # fit model with effects matrix
 effects_mat <- matrix(
   c(TRUE, TRUE,
-    FALSE,TRUE),
+    FALSE, TRUE),
   byrow = TRUE,
   nrow = 2,
   ncol = 2,
-  dimnames = list(c("w","x"),c("w","x"))
+  dimnames = list(c("w", "x"), c("w", "x"))
 )
 coevfit_example_05 <-
   coev_fit(
@@ -118,11 +118,11 @@ coevfit_example_05 <-
     iter_sampling = iter,
     adapt_delta = 0.99,
     seed = 12345
-    )
+  )
 
 # fit model with missing data
-d$w[c(1,2)] <- NA
-d$x[c(1,3)] <- NA
+d$w[c(1, 2)] <- NA
+d$x[c(1, 3)] <- NA
 coevfit_example_06 <-
   coev_fit(
     data = d,
@@ -137,13 +137,13 @@ coevfit_example_06 <-
     iter_sampling = iter,
     adapt_delta = 0.99,
     seed = 12345
-    )
+  )
 
 # fit model with repeated observations
 d <- data.frame(
   id = rep(tree$tip.label, each = 3),
-  w = rbinom(n*3, size = 1, prob = 0.5),
-  x = ordered(sample(1:4, size = n*3, replace = TRUE))
+  w = rbinom(n * 3, size = 1, prob = 0.5),
+  x = ordered(sample(1:4, size = n * 3, replace = TRUE))
 )
 coevfit_example_07 <-
   coev_fit(
@@ -200,7 +200,7 @@ coevfit_example_09 <-
     ),
     id = "id",
     tree = tree,
-    estimate_Q_offdiag = FALSE,
+    estimate_correlated_drift = FALSE,
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
@@ -266,8 +266,8 @@ save_coevfit_rds <- function(coevfit) {
       "./tests/testthat/fixtures/",
       deparse(substitute(coevfit)),
       ".rds"
-      )
     )
+  )
 }
 save_coevfit_rds(coevfit_example_01)
 save_coevfit_rds(coevfit_example_02)

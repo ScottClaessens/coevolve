@@ -102,12 +102,12 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
       paste0(
         "Argument 'object' must be a fitted coevolutionary model ",
         "of class coevfit."
-        )
       )
+    )
   }
   # extract posterior draws
   post <- posterior::as_draws_rvars(object$fit$draws(variables = c("A", "b")))
-  A <- posterior::draws_of(post$A)
+  a <- posterior::draws_of(post$A)
   b <- posterior::draws_of(post$b)
   # construct theta matrix
   theta <- matrix(NA, nrow = posterior::ndraws(post),
@@ -115,13 +115,12 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
   # non-intervention
   if (is.null(intervention_values)) {
     for (i in 1:posterior::ndraws(post)) {
-      theta[i,] = -solve(A[i,,]) %*% b[i,]
+      theta[i, ] <- -solve(a[i, , ]) %*% b[i, ]
     }
-  }
-  # intervention (at least one value held)
-  else{
+  } else {
+    # intervention (at least one value held)
     # stop if intervention_values argument is not a named list
-    if (!is.list(intervention_values) | is.null(names(intervention_values))) {
+    if (!is.list(intervention_values) || is.null(names(intervention_values))) {
       stop2("Argument 'intervention_values' is not a named list.")
     }
     # stop if intervention_list contains variables not included in the model
@@ -139,14 +138,14 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
         paste0(
           "All coevolving variables must be included in ",
           "argument 'intervention_values'."
-          )
         )
+      )
     }
     # stop if repetition in intervention_values
     if (any(duplicated(names(intervention_values)))) {
       stop2(
         "Argument 'intervention_values' contains duplicated variable names."
-        )
+      )
     }
     # stop if any values in intervention_list are not of length one
     if (any(unlist(lapply(intervention_values, length)) != 1)) {
@@ -164,8 +163,8 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
           "Argument 'intervention_values' must have at least one NA value ",
           "declaring a free variable. If all variables are held constant, the ",
           "system is already at equilibrium and there is nothing to compute."
-          )
         )
+      )
     }
     # stop if all variables in intervention_values are free
     if (mean(is.na(intervention_values)) == 1) {
@@ -173,27 +172,27 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
         paste0(
           "Argument 'intervention_values' must have at least one variable ",
           "held constant (i.e., all values are NA)."
-          )
         )
+      )
     }
     # construct intervention values x_hat
     x_hat <- unlist(intervention_values[names(object$variables)])
     # partition the matrices
     held_indices <- which(!is.na(x_hat))
     free_indices <- which(is.na(x_hat))
-    A_free_free  <- A[,free_indices, free_indices, drop = FALSE]
-    A_free_held  <- A[,free_indices, held_indices, drop = FALSE]
-    b_free       <- b[,free_indices, drop = FALSE]
+    a_free_free  <- a[, free_indices, free_indices, drop = FALSE]
+    a_free_held  <- a[, free_indices, held_indices, drop = FALSE]
+    b_free       <- b[, free_indices, drop = FALSE]
     for (i in 1:posterior::ndraws(post)) {
       # compute the equilibrium for the free variables
       if (length(held_indices) == 1) {
         equilibrium_free <-
-          -solve( A_free_free[i,,] ) %*%
-          (b_free[i,] + as.matrix(A_free_held[i,,]) %*% x_hat[!is.na(x_hat)])
+          -solve(a_free_free[i, , ]) %*%
+          (b_free[i, ] + as.matrix(a_free_held[i, , ]) %*% x_hat[!is.na(x_hat)])
       } else {
         equilibrium_free <-
-          -solve( A_free_free[i,,] ) %*%
-          (b_free[i,] + A_free_held[i,,] %*% x_hat[!is.na(x_hat)])
+          -solve(a_free_free[i, , ]) %*%
+          (b_free[i, ] + a_free_held[i, , ] %*% x_hat[!is.na(x_hat)])
       }
       # initialize the equilibrium vector
       equilibrium <- rep(NA, length(x_hat))
@@ -202,7 +201,7 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
       # fill in the constant values for held variables
       equilibrium[held_indices] <- x_hat[!is.na(x_hat)]
       # add to theta matrix
-      theta[i,] = equilibrium
+      theta[i, ] <- equilibrium
     }
   }
   # add column names to theta matrix

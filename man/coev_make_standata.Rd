@@ -16,7 +16,7 @@ coev_make_standata(
   measurement_error = NULL,
   prior = NULL,
   scale = TRUE,
-  estimate_Q_offdiag = TRUE,
+  estimate_correlated_drift = TRUE,
   estimate_residual = TRUE,
   log_lik = FALSE,
   prior_only = FALSE
@@ -105,7 +105,7 @@ improve efficiency and ensure accurate inferences. If \code{FALSE},
 variables are left unscaled for model fitting. In this case, users should
 take care to set sensible priors on variables.}
 
-\item{estimate_Q_offdiag}{Logical. If \code{TRUE} (default), the model
+\item{estimate_correlated_drift}{Logical. If \code{TRUE} (default), the model
 estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
 are set to zero.}

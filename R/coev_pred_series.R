@@ -90,12 +90,12 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
       paste0(
         "Argument 'object' must be a fitted coevolutionary model of class ",
         "coevfit."
-        )
+      )
     )
   }
   if (!is.null(eta_anc)) {
     # stop if eta_anc argument is not a named list
-    if (!is.list(eta_anc) | is.null(names(eta_anc))) {
+    if (!is.list(eta_anc) || is.null(names(eta_anc))) {
       stop2("Argument 'eta_anc' is not a named list.")
     }
     # stop if eta_anc contains variables not included in the model
@@ -133,7 +133,7 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
     }
   }
   # stop if tmax is not numeric or not positive
-  if (!is.numeric(tmax) | length(tmax) != 1) {
+  if (!is.numeric(tmax) || length(tmax) != 1) {
     stop2("Argument 'tmax' must be a single numeric value.")
   } else if (tmax <= 0) {
     stop2("Argument 'tmax' must be positive.")
@@ -142,9 +142,9 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
   if (!is.null(ndraws)) {
     if (!is.numeric(ndraws)) {
       stop2("Argument 'ndraws' must be numeric.")
-    } else if (!all(as.integer(ndraws) == ndraws)| length(ndraws) != 1) {
+    } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
       stop2("Argument 'ndraws' must be a single integer.")
-    } else if (ndraws < 1 | ndraws > nrow(object$fit$draws())) {
+    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
       stop2(
         "Argument 'ndraws' must be between 1 and the total number of draws."
       )
@@ -161,11 +161,11 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
         paste0(
           "Argument 'stochastic' cannot be `TRUE` when intervention_values",
           " are set."
-          )
         )
+      )
     }
     # stop if intervention_values argument is not a named list
-    if (!is.list(intervention_values) | is.null(names(intervention_values))) {
+    if (!is.list(intervention_values) || is.null(names(intervention_values))) {
       stop2("Argument 'intervention_values' is not a named list.")
     }
     # stop if intervention_values contains variables not included in the model
@@ -223,14 +223,14 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
   }
   # get posterior samples and number of variables
   post <- extract_samples(object)
-  J <- length(object$variables)
+  j <- length(object$variables)
   # get number of samples
   nsamps <- ifelse(is.null(ndraws), length(post$lp__), ndraws)
   # initialize empty array for predictions
   preds <-
     array(
       NA,
-      dim = c(nsamps, ntimes + 1, J),
+      dim = c(nsamps, ntimes + 1, j),
       dimnames = list(
         samps = 1:nsamps,
         time = 1:(ntimes + 1),
@@ -255,12 +255,12 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
     }
   } else {
     # all variables are free
-    x_hat <- rep(NA, J)
+    x_hat <- rep(NA, j)
     held_indices <- integer(0)
-    free_indices <- 1:J
+    free_indices <- 1:j
   }
   if (is.null(intervention_values)) {
-    initial_values <- rep(NA, J)
+    initial_values <- rep(NA, j)
   } else {
     initial_values <- unlist(intervention_values[names(object$variables)])
   }
@@ -272,7 +272,7 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
     conflicting_vars <- intersect(
       names(eta_anc)[!is.na(eta_anc)],
       names(x_hat)[!is.na(x_hat)]
-      )
+    )
     if (length(conflicting_vars) > 0) {
       message(
         paste0(
@@ -280,8 +280,8 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
           ", both 'eta_anc' and 'intervention_values' specify non-NA values. ",
           "The 'intervention_values' will take precedence for these ",
           "variable(s)."
-          )
         )
+      )
       # override eta_anc values for conflicting variables
       # with intervention_values
       eta_anc[conflicting_vars] <- x_hat[conflicting_vars]
@@ -306,55 +306,55 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
       eta_anc_long <- eta_anc_long2
     }
   }
-  for (j in 1:J) {
+  for (j_index in 1:j) {
     for (i in 1:nsamps) {
-      if (is.na(initial_values[j])) {
-        preds[i, 1, j] <- eta_anc_long[i, j]
+      if (is.na(initial_values[j_index])) {
+        preds[i, 1, j_index] <- eta_anc_long[i, j_index]
       } else {
-        preds[i, 1, j] <- initial_values[j]
+        preds[i, 1, j_index] <- initial_values[j_index]
       }
     }
   }
   # iterate over each sample
   for (i in 1:nsamps) {
     # selection parameters for this sample
-    A <- post$A[i, , ]
+    a <- post$A[i, , ]
     b <- post$b[i, ]
     # partition A and b into free and held
-    A_free_free <- A[free_indices, free_indices, drop = FALSE]
+    a_free_free <- a[free_indices, free_indices, drop = FALSE]
     if (length(held_indices) > 0) {
-      A_free_held <- A[free_indices, held_indices, drop = FALSE]
+      a_free_held <- a[free_indices, held_indices, drop = FALSE]
     } else {
-      A_free_held <- matrix(0, nrow = length(free_indices), ncol = 0)
+      a_free_held <- matrix(0, nrow = length(free_indices), ncol = 0)
     }
     b_free <- b[free_indices]
     # compute c = A_free_held * x_hat_held + b_free
     if (length(held_indices) > 0) {
-      c <- A_free_held %*% x_hat[held_indices] + b_free
+      c <- a_free_held %*% x_hat[held_indices] + b_free
     } else {
       c <- b_free
     }
     # compute A_delta_free_free and inv_A_free_free
-    A_delta_free_free <- as.matrix(Matrix::expm(A_free_free * tmax / ntimes))
+    a_delta_free_free <- as.matrix(Matrix::expm(a_free_free * tmax / ntimes))
     # ensure A_free_free is square
-    if (nrow(A_free_free) != ncol(A_free_free)) {
+    if (nrow(a_free_free) != ncol(a_free_free)) {
       stop2("Matrix A_free_free must be square.")
     }
     # Invert A_free_free
-    inv_A_free_free <- tryCatch(
-      solve(A_free_free),
+    inv_a_free_free <- tryCatch(
+      solve(a_free_free),
       error = function(e) {
         stop2("Matrix A_free_free is singular and cannot be inverted.")
       }
     )
     # identity matrix
-    I_free_free <- diag(rep(1, length(free_indices)))
+    i_free_free <- diag(rep(1, length(free_indices)))
     # drift parameters, cannot be used in conjunction
     # with intervention values (currently)
     if (stochastic == TRUE) {
-      Q_inf <- post$Q_inf[i,,]
-      VCV <- Q_inf - ((A_delta_free_free) %*% Q_inf %*% t(A_delta_free_free))
-      chol_VCV <- t(chol(Matrix::nearPD(VCV)$mat))
+      q_inf <- post$Q_inf[i, , ]
+      vcv <- q_inf - ((a_delta_free_free) %*% q_inf %*% t(a_delta_free_free))
+      chol_vcv <- t(chol(Matrix::nearPD(vcv)$mat))
     }
     # initialize preds_free with current state
     preds_free <- preds[i, 1, free_indices]
@@ -362,12 +362,12 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
     for (t in 1:ntimes) {
       # compute expected change for free variables
       preds_free <-
-        (A_delta_free_free %*% preds_free +
-           (inv_A_free_free %*% (A_delta_free_free - I_free_free) %*% c))[, 1]
+        (a_delta_free_free %*% preds_free +
+         (inv_a_free_free %*% (a_delta_free_free - i_free_free) %*% c))[, 1]
       # add drift if stochastic
       if (stochastic == TRUE) {
         preds_free <-
-          preds_free + (chol_VCV %*% stats::rnorm(length(free_indices), 0, 1))
+          preds_free + (chol_vcv %*% stats::rnorm(length(free_indices), 0, 1))
       }
       # update preds for the next time point
       preds[i, t + 1, free_indices] <- preds_free

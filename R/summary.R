@@ -45,11 +45,9 @@
 #' @export
 summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   # stop if prob is outside of range 0 - 1
-  if (prob <= 0 | prob >= 1) {
+  if (prob <= 0 || prob >= 1) {
     stop2("Argument 'prob' is not between 0 and 1.")
   }
-  # percentiles to print
-  probs <- c(((1 - prob) / 2), 1 - ((1 - prob) / 2))
   # get summary of selection and drift parameters from cmdstanr
   s <-
     as.data.frame(
@@ -57,49 +55,49 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
         NULL,
         Estimate = ifelse(robust, "median", "mean"),
         `Est.Error` = ifelse(robust, "mad", "sd"),
-        ~quantile(.x, probs = probs),
+        ~quantile(.x, probs = c(((1 - prob) / 2), 1 - ((1 - prob) / 2))),
         Rhat = "rhat",
         Bulk_ESS = "ess_bulk",
         Tail_ESS = "ess_tail"
-        )
+      )
     )
   # summarise autoregressive selection effects
-  A <- s[stringr::str_starts(s$variable, pattern = "A\\["),]
+  a <- s[stringr::str_starts(s$variable, pattern = "A\\["), ]
   equal <-
     readr::parse_number(
-      stringr::str_extract(A$variable, pattern = "A\\[(\\d+)\\,")
-      ) ==
+      stringr::str_extract(a$variable, pattern = "A\\[(\\d+)\\,")
+    ) ==
     readr::parse_number(
-      stringr::str_extract(A$variable, pattern = "\\,\\d+\\]")
-      )
-  auto <- A[equal,]
+      stringr::str_extract(a$variable, pattern = "\\,\\d+\\]")
+    )
+  auto <- a[equal, ]
   rownames(auto) <- names(object$variables)[
     readr::parse_number(
       stringr::str_extract(auto$variable, pattern = "A\\[(\\d+)\\,")
-      )
-    ]
+    )
+  ]
   auto <- auto[, 2:ncol(auto)]
   # summarise cross selection effects
-  cross <- A[!equal,]
+  cross <- a[!equal, ]
   rownames(cross) <-
     paste0(
       names(object$variables)[
         readr::parse_number(
           stringr::str_extract(cross$variable, pattern = "\\,\\d+\\]")
-          )
-        ],
+        )
+      ],
       " \U27F6 ",
       names(object$variables)[
         readr::parse_number(
           stringr::str_extract(cross$variable, pattern = "A\\[(\\d+)\\,")
-          )
-        ]
+        )
+      ]
     )
   cross <- cross[, 2:ncol(cross)]
   # only include cross selection effects that have been estimated in summary
-  cross <- cross[!is.na(cross$Rhat),]
+  cross <- cross[!is.na(cross$Rhat), ]
   # summarise drift sd parameters
-  sd_drift <- s[stringr::str_starts(s$variable, pattern = "Q_sigma\\["),]
+  sd_drift <- s[stringr::str_starts(s$variable, pattern = "Q_sigma\\["), ]
   rownames(sd_drift) <- paste0(
     "sd(",
     names(object$variables)[
@@ -112,13 +110,13 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   sd_drift <- sd_drift[, 2:ncol(sd_drift)]
   # summarise drift cor parameters
   cor_drift <- NULL
-  if (object$estimate_Q_offdiag) {
-    cor_drift <- s[stringr::str_starts(s$variable, "cor_R"),]
-    for (i in 1:length(object$variables)) {
-      for (j in 1:length(object$variables)) {
+  if (object$estimate_correlated_drift) {
+    cor_drift <- s[stringr::str_starts(s$variable, "cor_R"), ]
+    for (i in seq_along(object$variables)) {
+      for (j in seq_along(object$variables)) {
         if (i >= j) {
           var <- paste0("cor_R[", i, ",", j, "]")
-          cor_drift <- cor_drift[cor_drift$variable != var,]
+          cor_drift <- cor_drift[cor_drift$variable != var, ]
         }
       }
     }
@@ -146,42 +144,43 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
     cor_drift <- cor_drift[, 2:ncol(cor_drift)]
   }
   # summarise SDE intercepts
-  sde_intercepts <- s[stringr::str_starts(s$variable, "b"),]
+  sde_intercepts <- s[stringr::str_starts(s$variable, "b"), ]
   rownames(sde_intercepts) <- names(object$variables)[
     readr::parse_number(sde_intercepts$variable)
-    ]
+  ]
   sde_intercepts <- sde_intercepts[, 2:ncol(sde_intercepts)]
   # summarise ordinal cutpoints
   cutpoints <- NULL
   if ("ordered_logistic" %in% object$variables) {
     cutpoints <- s[stringr::str_starts(s$variable, "c") &
                      !stringr::str_starts(s$variable, "cor_residual") &
-                     !stringr::str_starts(s$variable, "cor_R"),]
+                     !stringr::str_starts(s$variable, "cor_R"), ]
     rownames(cutpoints) <- paste0(
       names(object$variables)[readr::parse_number(cutpoints$variable)],
       stringr::str_extract(cutpoints$variable, pattern = "\\[\\d+\\]")
-      )
+    )
     cutpoints <- cutpoints[, 2:ncol(cutpoints)]
   }
   # summarise overdispersion parameters
   phi <- NULL
   if ("negative_binomial_softplus" %in% object$variables) {
-    phi <- s[stringr::str_starts(s$variable, "phi"),]
+    phi <- s[stringr::str_starts(s$variable, "phi"), ]
     rownames(phi) <- names(object$variables)[readr::parse_number(phi$variable)]
     phi <- phi[, 2:ncol(phi)]
   }
   # summarise shape parameters
   shape <- NULL
   if ("gamma_log" %in% object$variables) {
-    shape <- s[stringr::str_starts(s$variable, "shape"),]
-    rownames(shape) <- names(object$variables)[readr::parse_number(shape$variable)]
+    shape <- s[stringr::str_starts(s$variable, "shape"), ]
+    rownames(shape) <-
+      names(object$variables)[readr::parse_number(shape$variable)]
     shape <- shape[, 2:ncol(shape)]
   }
   # summarise gaussian process parameters
   gpterms <- NULL
   if (!is.null(object$dist_mat)) {
     gpterms <- s[stringr::str_starts(s$variable, "rho_dist") |
-                   stringr::str_starts(s$variable, "sigma_dist"),]
+                   stringr::str_starts(s$variable, "sigma_dist"), ]
     gpvars <- stringr::str_extract(gpterms$variable, pattern = "[^_]+")
     rownames(gpterms) <- paste0(
       ifelse(gpvars == "sigma", "sdgp", gpvars),
@@ -192,22 +191,22 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   # summarise residual sds and correlations
   sd_residual <- NULL
   cor_residual <- NULL
-  if (any(duplicated(object$data[,object$id]))) {
+  if (any(duplicated(object$data[, object$id]))) {
     # sd parameters
-    sd_residual <- s[stringr::str_starts(s$variable, "sigma_residual"),]
+    sd_residual <- s[stringr::str_starts(s$variable, "sigma_residual"), ]
     rownames(sd_residual) <- paste0(
       "sd(",
       names(object$variables)[readr::parse_number(sd_residual$variable)],
       ")"
-      )
+    )
     sd_residual <- sd_residual[, 2:ncol(sd_residual)]
     # correlation parameters
-    cor_residual <- s[stringr::str_starts(s$variable, "cor_residual"),]
-    for (i in 1:length(object$variables)) {
-      for (j in 1:length(object$variables)) {
+    cor_residual <- s[stringr::str_starts(s$variable, "cor_residual"), ]
+    for (i in seq_along(object$variables)) {
+      for (j in seq_along(object$variables)) {
         if (i >= j) {
           var <- paste0("cor_residual[", i, ",", j, "]")
-          cor_residual <- cor_residual[cor_residual$variable != var,]
+          cor_residual <- cor_residual[cor_residual$variable != var, ]
         }
       }
     }
@@ -261,7 +260,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
       cor_residual   = cor_residual,
       num_divergent  = sum(
         object$fit$diagnostic_summary("divergences", quiet = TRUE)$num_divergent
-        ),
+      ),
       rhats          = object$fit$summary(NULL, "rhat")$rhat
     )
   class(out) <- "coevsummary"
@@ -312,7 +311,7 @@ print.coevfit <- function(x, digits = 2, ...) {
 print.coevsummary <- function(x, digits = 2, ...) {
   # print variables and response distributions
   cat("Variables: ")
-  for (j in 1:length(x$variables)) {
+  for (j in seq_along(x$variables)) {
     if (j == 1) {
       cat(names(x$variables)[j], "=", as.character(x$variables)[j], "\n")
     } else {
@@ -373,7 +372,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
     print_format(x$gpterms, digits = digits)
   }
   # print residual sds and correlations
-  if (!is.null(x$sd_residual) & !is.null(x$cor_residual)) {
+  if (!is.null(x$sd_residual) && !is.null(x$cor_residual)) {
     cat("\n")
     cat("Residual parameters:\n")
     print_format(rbind(x$sd_residual, x$cor_residual), digits = digits)
@@ -400,7 +399,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
     cat("\n")
   }
   # warning if complete_cases = TRUE and rows removed
-  if (x$complete_cases & nrow(x$data) != x$nobs) {
+  if (x$complete_cases && nrow(x$data) != x$nobs) {
     warning2("Rows with NAs were excluded from the model.")
     cat("\n")
   }
@@ -420,11 +419,11 @@ print_format <- function(x, digits = 2, no_digits = c("Bulk_ESS", "Tail_ESS")) {
   }
   out <- x
   fmt <- paste0("%.", digits, "f")
-  for (i in 1:ncol(x)) {
+  for (i in seq_len(ncol(x))) {
     if (colnames(x)[i] %in% no_digits) {
-      out[,i] <- sprintf("%.0f", x[,i])
+      out[, i] <- sprintf("%.0f", x[, i])
     } else {
-      out[,i] <- sprintf(fmt, x[,i])
+      out[, i] <- sprintf(fmt, x[, i])
     }
   }
   print(out, quote = FALSE, right = TRUE)

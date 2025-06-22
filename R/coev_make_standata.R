@@ -76,7 +76,7 @@
 #'   improve efficiency and ensure accurate inferences. If \code{FALSE},
 #'   variables are left unscaled for model fitting. In this case, users should
 #'   take care to set sensible priors on variables.
-#' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
+#' @param estimate_correlated_drift Logical. If \code{TRUE} (default), the model
 #'   estimates the off-diagonals for the \deqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \deqn{Q} drift matrix
 #'   are set to zero.
@@ -132,14 +132,14 @@ coev_make_standata <- function(data, variables, id, tree,
                                dist_mat = NULL, dist_cov = "exp_quad",
                                measurement_error = NULL,
                                prior = NULL, scale = TRUE,
-                               estimate_Q_offdiag = TRUE,
+                               estimate_correlated_drift = TRUE,
                                estimate_residual = TRUE,
                                log_lik = FALSE,
                                prior_only = FALSE) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, measurement_error, prior, scale, estimate_Q_offdiag,
-             estimate_residual, log_lik, prior_only)
+             dist_cov, measurement_error, prior, scale,
+             estimate_correlated_drift, estimate_residual, log_lik, prior_only)
   # coerce data argument to data frame
   data <- as.data.frame(data)
   # warning if scale = FALSE
@@ -154,19 +154,19 @@ coev_make_standata <- function(data, variables, id, tree,
   }
   # if complete_cases = TRUE, remove data rows with NAs
   if (complete_cases) {
-    any_missing <- apply(data[,names(variables)], 1, function(x) any(is.na(x)))
-    data <- data[!any_missing,]
+    any_missing <- apply(data[, names(variables)], 1, function(x) any(is.na(x)))
+    data <- data[!any_missing, ]
   }
   # coerce tree object to multiPhylo
   tree <- phytools::as.multiPhylo(tree)
   # ensure that all trees have same tip labels
   tree <- ape::.compressTipLabel(tree)
   # prune tree to dataset
-  tree <- ape::keep.tip.multiPhylo(tree, data[,id])
+  tree <- ape::keep.tip.multiPhylo(tree, data[, id])
   # match data ordering to tree tip label ordering
   matched_data <- data.frame()
   for (tip in tree[[1]]$tip.label) {
-    matched_data <- rbind(matched_data, data[data[,id] == tip,])
+    matched_data <- rbind(matched_data, data[data[, id] == tip, ])
   }
   data <- matched_data
   # match distance matrix to tree tip label ordering
@@ -180,32 +180,32 @@ coev_make_standata <- function(data, variables, id, tree,
              dimnames = list(names(variables), names(variables)))
   }
   # match effects_mat to vector of variables
-  effects_mat <- effects_mat[names(variables),names(variables)]
+  effects_mat <- effects_mat[names(variables), names(variables)]
   # convert effects_mat to integer matrix (unary conversion +)
   effects_mat <- +effects_mat
   # stop for internal mismatches
-  if (!identical(tree[[1]]$tip.label, unique(data[,id]))) {
+  if (!identical(tree[[1]]$tip.label, unique(data[, id]))) {
     stop2("Data and phylogeny tips do not match.")
-  } else if (!is.null(dist_mat) & (
-    !identical(tree[[1]]$tip.label, rownames(dist_mat)) |
-    !identical(tree[[1]]$tip.label, colnames(dist_mat))
-    )) {
+  } else if (!is.null(dist_mat) && (
+    !identical(tree[[1]]$tip.label, rownames(dist_mat)) ||
+      !identical(tree[[1]]$tip.label, colnames(dist_mat))
+  )) {
     stop2("Distance matrix and phylogeny tips do not match.")
-  } else if (!identical(names(variables), rownames(effects_mat)) |
-             !identical(names(variables), colnames(effects_mat))) {
+  } else if (!identical(names(variables), rownames(effects_mat)) ||
+               !identical(names(variables), colnames(effects_mat))) {
     stop2("Effects matrix and variable names do not match.")
   }
   # get number of trees
-  N_tree <- length(tree)
+  n_tree <- length(tree)
   # get number of segments in trees
-  N_seg <- length(ape::node.depth(tree[[1]]))
+  n_seg <- length(ape::node.depth(tree[[1]]))
   # initialise tree variables for stan
-  stan_node_seq <- matrix(NA, N_tree, N_seg)
-  stan_parent <- matrix(NA, N_tree, N_seg)
-  stan_ts <- matrix(NA, N_tree, N_seg)
-  stan_tip <- matrix(NA, N_tree, N_seg)
+  stan_node_seq <- matrix(NA, n_tree, n_seg)
+  stan_parent <- matrix(NA, n_tree, n_seg)
+  stan_ts <- matrix(NA, n_tree, n_seg)
+  stan_tip <- matrix(NA, n_tree, n_seg)
   # loop over phylogenetic trees
-  for (t in 1:length(tree)) {
+  for (t in seq_along(tree)) {
     # cut up tree into segments
     times <- ape::node.depth.edgelength(tree[[t]])
     # line up date of each node with the split points in the tree
@@ -223,33 +223,33 @@ coev_make_standata <- function(data, variables, id, tree,
     for (i in 2:length(parent_time)) {
       parent_time[i] <-
         (ape::node.depth.edgelength(tree[[t]])[node_seq[i]] -
-           ape::node.depth.edgelength(tree[[t]])[parent[i]]) /
+         ape::node.depth.edgelength(tree[[t]])[parent[i]]) /
         max(ape::node.depth.edgelength(tree[[t]]))
     }
     # indicate whether a node in the seq is a tip
     tip <- ifelse(node_seq > length(tree[[t]]$tip.label), 0, 1)
     # save variables for stan
-    stan_node_seq[t,] <- node_seq
-    stan_parent[t,] <- parent
-    stan_ts[t,] <- parent_time
-    stan_tip[t,] <- tip
+    stan_node_seq[t, ] <- node_seq
+    stan_parent[t, ] <- parent
+    stan_ts[t, ] <- parent_time
+    stan_tip[t, ] <- tip
   }
   # get data matrix
   y <- list()
-  for (j in 1:length(variables)) {
-    if (scale & variables[[j]] == "normal") {
+  for (j in seq_along(variables)) {
+    if (scale && variables[[j]] == "normal") {
       # standardised continuous variables
-      y[[names(variables)[j]]] <- as.numeric(scale(data[,names(variables)[j]]))
-    } else if (scale & variables[[j]] == "gamma_log") {
+      y[[names(variables)[j]]] <- as.numeric(scale(data[, names(variables)[j]]))
+    } else if (scale && variables[[j]] == "gamma_log") {
       # positive reals scaled by sample mean
       y[[names(variables)[j]]] <-
         as.numeric(
-          data[,names(variables)[j]] /
-            max(data[,names(variables)[j]], na.rm = TRUE)
-          )
+          data[, names(variables)[j]] /
+            max(data[, names(variables)[j]], na.rm = TRUE)
+        )
     } else {
       # unscaled binary/ordered/count variables
-      y[[names(variables)[j]]] <- as.numeric(data[,names(variables)[j]])
+      y[[names(variables)[j]]] <- as.numeric(data[, names(variables)[j]])
     }
   }
   y <- as.matrix(as.data.frame(y))
@@ -260,7 +260,7 @@ coev_make_standata <- function(data, variables, id, tree,
   # get matrix with squared standard errors
   if (!is.null(measurement_error)) {
     se <- list()
-    for (j in 1:length(variables)) {
+    for (j in seq_along(variables)) {
       if (names(variables)[j] %in% names(measurement_error)) {
         # if standard errors declared for this variable
         # get standard error column
@@ -283,14 +283,14 @@ coev_make_standata <- function(data, variables, id, tree,
   # normalise distance matrix so that maximum distance = 1
   if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
   # match tip ids
-  tip_id <- match(data[,id], tree[[1]]$tip.label)
+  tip_id <- match(data[, id], tree[[1]]$tip.label)
   # data list for stan
   sd <- list(
     N_tips = length(tree[[1]]$tip.label), # number of tips
-    N_tree = N_tree,                      # number of tips
+    N_tree = n_tree,                      # number of tips
     N_obs = nrow(y),                      # number of observations
     J = length(variables),                # number of variables
-    N_seg = N_seg,                        # number of segments in the tree
+    N_seg = n_seg,                        # number of segments in the tree
     node_seq = stan_node_seq,             # sequence of nodes
     parent = stan_parent,                 # parent node for each node
     ts = stan_ts,                         # amount of time since parent node

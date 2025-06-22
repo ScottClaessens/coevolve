@@ -75,8 +75,8 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
       paste0(
         "Argument 'object' must be a fitted coevolutionary model ",
         "of class coevfit."
-        )
       )
+    )
   }
   # if user specifies variables argument:
   if (!is.null(variables)) {
@@ -90,7 +90,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
       # stop if variables not included in model
       stop2(
         "Some variables in 'variables' are not included in the fitted model."
-        )
+      )
     } else if (any(duplicated(variables))) {
       # stop if variables contains duplicates
       stop2("Argument 'variables' contains duplicates.")
@@ -105,7 +105,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
   } else if (length(prob) != 1) {
     # stop if prob not == length 1
     stop2("Argument 'prob' must be of length 1.")
-  } else if (prob <= 0 | prob >= 1) {
+  } else if (prob <= 0 || prob >= 1) {
     # stop if prob not between 0 and 1
     stop2("Argument 'prob' must be between 0 and 1.")
   }
@@ -115,7 +115,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
   } else if (length(prob_outer) != 1) {
     # stop if prob_outer not == length 1
     stop2("Argument 'prob_outer' must be of length 1.")
-  } else if (prob_outer <= 0 | prob_outer >= 1) {
+  } else if (prob_outer <= 0 || prob_outer >= 1) {
     # stop if prob_outer not between 0 and 1
     stop2("Argument 'prob_outer' must be between 0 and 1.")
   } else if (prob_outer <= prob) {
@@ -136,22 +136,24 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
   d <- tidyr::expand_grid(
     response = variables,
     predictor = variables
-    )
+  )
   # remove autocorrelation effects
-  d <- d[d$response != d$predictor,]
+  d <- d[d$response != d$predictor, ]
   # for each combination, calculate delta theta
   d <- dplyr::mutate(
     d,
     delta_theta = purrr::map2(
       .x = .data$response,
       .y = .data$predictor,
-      .f = function(x, y) as.numeric(
-        coev_calculate_delta_theta(
-          object,
-          response = x,
-          predictor = y
+      .f = function(x, y) {
+        as.numeric(
+          coev_calculate_delta_theta(
+            object,
+            response = x,
+            predictor = y
+          )
         )
-      )
+      }
     )
   )
   # unlist result
@@ -207,19 +209,19 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
         y = 0,
         xmin = .data$lower,
         xmax = .data$upper
-        ),
+      ),
       linewidth = 1
     ) +
     ggplot2::geom_vline(
       xintercept = 0,
       linetype = "dashed"
-      ) +
+    ) +
     ggplot2::geom_rect(
       data = data.frame(
         response  = factor(variables, levels = variables),
         predictor = factor(variables, levels = variables),
         delta_theta = 0
-        ),
+      ),
       fill = "grey95",
       xmin = -Inf, xmax = Inf,
       ymin = -Inf, ymax = Inf
@@ -227,12 +229,12 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
     ggplot2::facet_grid(
       .data$predictor ~ .data$response,
       switch = "y"
-      ) +
+    ) +
     ggplot2::labs(
       x = expression(paste(Delta, theta[z])),
       y = "From this variable...",
       title = "... to this variable."
-      ) +
+    ) +
     ggplot2::xlim(limits) +
     ggplot2::theme(
       axis.text.y = ggplot2::element_blank(),

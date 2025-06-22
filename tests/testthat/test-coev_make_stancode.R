@@ -168,7 +168,7 @@ test_that("coev_make_stancode() produces expected errors", {
       data = d,
       variables = list(
         v = "negative_binomial_softplus",
-        z = "negative_binomial_softplus" # sd^2 <= mean
+        z = "negative_binomial_softplus" # sd squared <= mean
       ),
       id = "id",
       tree = tree
@@ -336,8 +336,10 @@ test_that("coev_make_stancode() produces expected errors", {
   )
   expect_error(
     {
-      d2 <- d; d2$id[1] <- NA
-      tree2 <- tree; tree2$tip.label[1] <- NA
+      d2 <- d
+      d2$id[1] <- NA
+      tree2 <- tree
+      tree2$tip.label[1] <- NA
       coev_make_stancode(
         data = d2,
         variables = list(
@@ -402,7 +404,7 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      effects_mat = matrix(TRUE, dimnames = list("fail","fail")) # invalid names
+      effects_mat = matrix(TRUE, dimnames = list("fail", "fail")) # invalid name
     ),
     paste0(
       "Row and column names for argument 'effects_mat' do not match ",
@@ -420,8 +422,9 @@ test_that("coev_make_stancode() produces expected errors", {
       id = "id",
       tree = tree,
       # autoregressive effect = FALSE
-      effects_mat = matrix(c(T,T,T,F), ncol = 2, nrow = 2, byrow = TRUE,
-                           dimnames = list(c("x","y"),c("x","y")))
+      effects_mat = matrix(c(TRUE, TRUE, TRUE, FALSE),
+                           ncol = 2, nrow = 2, byrow = TRUE,
+                           dimnames = list(c("x", "y"), c("x", "y")))
     ),
     "Argument 'effects_mat' must specify TRUE for all autoregressive effects.",
     fixed = TRUE
@@ -553,7 +556,7 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_cov = c("fail","fail")
+      dist_cov = c("fail", "fail")
     ),
     "Argument 'dist_cov' is not of length 1.",
     fixed = TRUE
@@ -745,9 +748,9 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      estimate_Q_offdiag = "testing"
+      estimate_correlated_drift = "testing"
     ),
-    "Argument 'estimate_Q_offdiag' must be a logical of length one.",
+    "Argument 'estimate_correlated_drift' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -827,11 +830,11 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     coev_make_stancode(
       data = d,
       variables = list(
-          v = "negative_binomial_softplus",
-          w = "normal",
-          x = "bernoulli_logit",
-          y = "ordered_logistic",
-          z = "poisson_softplus"
+        v = "negative_binomial_softplus",
+        w = "normal",
+        x = "bernoulli_logit",
+        y = "ordered_logistic",
+        z = "poisson_softplus"
       ),
       id = "id",
       tree = tree
@@ -991,8 +994,8 @@ test_that("coev_make_stancode() works with missing data", {
     )
   })
   # some data are missing
-  d$x[c(1,2)] <- NA
-  d$y[c(1,3)] <- NA
+  d$x[c(1, 2)] <- NA
+  d$y[c(1, 3)] <- NA
   # get stan code
   sc <- coev_make_stancode(
     data = d,
@@ -1021,8 +1024,8 @@ test_that("coev_make_stancode() works with repeated observations", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = rep(tree$tip.label, each = 10),
-      x = rbinom(n*10, size = 1, prob = 0.5),
-      y = rbinom(n*10, size = 1, prob = 0.5)
+      x = rbinom(n * 10, size = 1, prob = 0.5),
+      y = rbinom(n * 10, size = 1, prob = 0.5)
     )
   })
   # get stan code
@@ -1142,7 +1145,7 @@ test_that("coev_make_stancode() works when constraining Q offdiag to zero", {
     ),
     id = "id",
     tree = tree,
-    estimate_Q_offdiag = FALSE # Q off diagonal constrained to zero
+    estimate_correlated_drift = FALSE # Q off diagonal constrained to zero
   )
   # runs without error
   expect_no_error(sc)

@@ -1,4 +1,4 @@
-test_that("coev_plot_selection_gradient() produces expected errors and output", {
+test_that("coev_plot_selection_gradient() produces expected errors & output", {
   # load models
   m01 <- readRDS(test_path("fixtures", "coevfit_example_01.rds"))
   m02 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
@@ -48,7 +48,7 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   expect_error(
     coev_plot_selection_gradient(
       object = m01, var1 = "x", var2 = "y", contour = "hello"
-      ),
+    ),
     "Argument 'contour' must be logical."
   )
   expect_error(
@@ -70,7 +70,7 @@ test_that("coev_plot_selection_gradient() produces expected errors and output", 
   fun <- function(model, var1, var2, contour = FALSE, limits = c(-2.5, 2.5)) {
     suppressWarnings(
       coev_plot_selection_gradient(model, var1, var2, contour, limits)
-      )
+    )
   }
   expect_no_error(fun(m01, "x", "y"))
   expect_no_error(fun(m02, "w", "x"))

@@ -70,7 +70,7 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
     )
   }
   if (!is.null(variables)) {
-    if (!is.character(variables) | !(length(variables) >= 2)) {
+    if (!is.character(variables) || !(length(variables) >= 2)) {
       # stop if variables is not a character string
       stop2(
         paste0(
@@ -92,9 +92,9 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
   if (!is.null(ndraws)) {
     if (!is.numeric(ndraws)) {
       stop2("Argument 'ndraws' must be numeric.")
-    } else if (!all(as.integer(ndraws) == ndraws) | length(ndraws) != 1) {
+    } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
       stop2("Argument 'ndraws' must be a single integer.")
-    } else if (ndraws < 1 | ndraws > nrow(object$fit$draws())) {
+    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
       stop2(
         "Argument 'ndraws' must be between 1 and the total number of draws."
       )
@@ -104,9 +104,9 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
   if (!is.null(tree_id)) {
     if (!is.numeric(tree_id)) {
       stop2("Argument 'tree_id' must be numeric.")
-    } else if (!all(as.integer(tree_id) == tree_id) | length(tree_id) != 1) {
+    } else if (!all(as.integer(tree_id) == tree_id) || length(tree_id) != 1) {
       stop2("Argument 'tree_id' must be a single integer.")
-    } else if (tree_id < 1 | tree_id > object$stan_data$N_tree) {
+    } else if (tree_id < 1 || tree_id > object$stan_data$N_tree) {
       stop2(
         "Argument 'tree_id' must be between 1 and the total number of trees."
       )
@@ -114,13 +114,13 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
   }
   # stop if xlim is not a numeric vector of length 2
   if (!is.null(xlim)) {
-    if (!(is.numeric(xlim) & is.vector(xlim) & length(xlim) == 2)) {
+    if (!(is.numeric(xlim) && is.vector(xlim) && length(xlim) == 2)) {
       stop2("Argument 'xlim' must be a numeric vector of length 2.")
     }
   }
   # stop if ylim is not a numeric vector of length 2
   if (!is.null(ylim)) {
-    if (!(is.numeric(ylim) & is.vector(ylim) & length(ylim) == 2)) {
+    if (!(is.numeric(ylim) && is.vector(ylim) && length(ylim) == 2)) {
       stop2("Argument 'ylim' must be a numeric vector of length 2.")
     }
   }
@@ -130,16 +130,18 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
   # if particular tree defined, subset to that tree
   if (!is.null(tree_id)) eta <- eta[tree_id, , ]
   # average over tree(s)
-  eta <- apply(eta, c(2, 3), function(x)
-    posterior::rvar(as.vector(posterior::draws_of(x)))
-    )
+  eta <- apply(
+    eta, c(2, 3), function(x) {
+      posterior::rvar(as.vector(posterior::draws_of(x)))
+    }
+  )
   # new rvars dimensions: [nodes, variables]
   # subset to taxa (remove internal nodes)
-  eta <- eta[1:object$stan_data$N_tips,]
+  eta <- eta[1:object$stan_data$N_tips, ]
   # new rvars dimensions: [tips, variables]
   # create dataset for plotting
-  d <- tibble::tibble(tip = 1:nrow(eta))
-  for (j in 1:length(object$variables)) {
+  d <- tibble::tibble(tip = seq_len(nrow(eta)))
+  for (j in seq_along(object$variables)) {
     d[[names(object$variables)[j]]] <- eta[, j]
   }
   # if particular variables defined, keep only those
@@ -154,7 +156,7 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
     dplyr::rowwise() |>
     dplyr::mutate(
       dplyr::across(dplyr::where(is.list), function(x) stats::median(x[[1]]))
-      ) |>
+    ) |>
     tidyr::unnest(dplyr::everything())
   # get model summary
   s <- summary(object)
@@ -163,7 +165,7 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
   if (!is.null(ndraws)) {
     draw_ids <- sample(all_draw_ids, size = ndraws)
   } else {
-    draws_ids <- all_draw_ids
+    draw_ids <- all_draw_ids
   }
   # function for plotting in upper triangle
   plot_upper_tri <- function(i, j) {
@@ -172,8 +174,8 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
       mapping = ggplot2::aes(
         x = !!dplyr::sym(colnames(d)[j]),
         y = !!dplyr::sym(colnames(d)[i])
-        )
-      ) +
+      )
+    ) +
       ggplot2::geom_point() +
       ggplot2::scale_x_continuous(
         expand = c(0, 0),
@@ -198,8 +200,8 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
       mapping = ggplot2::aes(
         x = !!dplyr::sym(colnames(d)[j]),
         y = !!dplyr::sym(colnames(d)[i])
-        )
-      ) +
+      )
+    ) +
       ggplot2::stat_density_2d(
         geom = "polygon",
         contour = TRUE,
@@ -234,38 +236,42 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
       tibble::rownames_to_column("taxa") |>
       dplyr::rowwise() |>
       dplyr::mutate(
-        dplyr::across(!.data$taxa, function(x) list(posterior::draws_of(x)[,1]))
-        ) |>
+        dplyr::across(
+          !.data$taxa, function(x) {
+            list(posterior::draws_of(x)[, 1])
+          }
+        )
+      ) |>
       tidyr::unnest(!.data$taxa) |>
       dplyr::mutate(
         iter = rep(all_draw_ids, times = max(as.numeric(.data$taxa)))
-        ) |>
+      ) |>
       dplyr::filter(.data$iter %in% draw_ids) |>
       ggplot2::ggplot() +
       ggplot2::geom_density(
         ggplot2::aes(
           x = !!dplyr::sym(colnames(d)[i]),
           group = .data$iter
-          ),
+        ),
         linewidth = 0.1,
         colour = "lightblue"
-        ) +
+      ) +
       ggplot2::geom_density(
         data = d_med,
         ggplot2::aes(x = !!dplyr::sym(colnames(d)[i])),
         colour = "black"
-        ) +
+      ) +
       ggplot2::scale_x_continuous(
         expand = c(0, 0),
         limits = c(
           ifelse(is.null(xlim), min(d_med), xlim[1]),
           ifelse(is.null(xlim), max(d_med), xlim[2])
-          )
+        )
       ) +
       ggplot2::scale_y_continuous(
         name = colnames(d)[i],
         expand = c(0, 0)
-        ) +
+      ) +
       ggplot2::theme_bw() +
       ggplot2::theme(
         axis.text.y = ggplot2::element_blank(),
@@ -278,8 +284,8 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
   plot_list <- as.list(rep(NA, times = ncol(d) * ncol(d)))
   # loop over plots
   count <- 0
-  for (i in 1:ncol(d)) {
-    for (j in 1:ncol(d)) {
+  for (i in seq_len(ncol(d))) {
+    for (j in seq_len(ncol(d))) {
       # increment count
       count <- count + 1
       # diagonal plots
@@ -293,9 +299,8 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
                                   axis.text.x = ggplot2::element_blank())
         }
         plot_list[[count]] <- p
-      }
-      # upper triangle plots
-      else if (i < j) {
+      } else if (i < j) {
+        # upper triangle plots
         p <- plot_upper_tri(i, j)
         if (i != ncol(d)) {
           p <- p + ggplot2::theme(axis.title.y = ggplot2::element_blank(),
@@ -306,9 +311,8 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
                                   axis.text.x = ggplot2::element_blank())
         }
         plot_list[[count]] <- p
-      }
-      # lower triangle plots
-      else if (i > j) {
+      } else if (i > j) {
+        # lower triangle plots
         p <- plot_lower_tri(i, j)
         if (i != ncol(d)) {
           p <- p + ggplot2::theme(axis.title.x = ggplot2::element_blank(),

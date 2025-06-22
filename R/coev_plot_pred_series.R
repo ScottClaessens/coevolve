@@ -60,8 +60,8 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
       paste0(
         "Argument 'object' must be a fitted coevolutionary model of ",
         "class 'coevfit'."
-        )
       )
+    )
   }
   # check if prob is between 0 and 1
   if (!is.numeric(prob) || length(prob) != 1 || prob <= 0 || prob >= 1) {
@@ -87,19 +87,19 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
         unlist(
           combined_args$intervention_values[
             names(combined_args$intervention_values)
-            ]
-          )
+          ]
         )
       )
+    )
   # check if 'preds' has the necessary dimension names
   if (is.null(dimnames(preds)) ||
-      !all(c("samps", "time", "response") %in% names(dimnames(preds)))) {
+        !all(c("samps", "time", "response") %in% names(dimnames(preds)))) {
     stop2(
       paste0(
         "The 'preds' array must have dimension names: 'samps', 'time', ",
         "'response'."
-        )
       )
+    )
   }
   # convert the 3D array 'preds' to a long-format data frame
   # using tidyr::pivot_longer
@@ -136,7 +136,7 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
           epreds_summary$response %in% names(held_indices),
           paste(epreds_summary$response, "(held)"),
           paste(epreds_summary$response, "(free)")
-          )
+        )
       title <- paste(title, "| intervention")
     }
     # create the deterministic plot
@@ -149,17 +149,17 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
           color = .data$response,
           fill = .data$response,
           linetype = .data$response
-          )
-        ) +
+        )
+      ) +
       ggplot2::geom_line(size = 1) +
       ggplot2::geom_ribbon(
         ggplot2::aes(
           ymin = .data$lower_CI,
           ymax = .data$upper_CI
-          ),
+        ),
         alpha = 0.25,
         color = NA
-        ) +
+      ) +
       ggplot2::theme_classic(base_size = 14) +
       ggplot2::scale_x_continuous(
         breaks = c(1, max(epreds_summary$time)),
@@ -174,26 +174,25 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
         plot.title = ggplot2::element_text(size = 14)
       ) +
       ggplot2::ggtitle(title)
-  }
-  # for stochastic predictions
-  else if (combined_args$stochastic == TRUE) {
+  } else if (combined_args$stochastic == TRUE) {
+    # for stochastic predictions
     # limit to first 15 simulations for clarity
     max_sims <- min(15, max(preds_long$samps))
     sampled_sim <- sample(
       1:max(preds_long$samps),
       size = max_sims,
       replace = FALSE
-      )
+    )
     sims_long <-
       preds_long |>
       dplyr::filter(.data$samps %in% sampled_sim) |>
       dplyr::mutate(
         sim = factor(paste("Sim", match(.data$samps, unique(.data$samps))))
-        )
+      )
     sim_num <- as.numeric(gsub("Sim ", "", unique(sims_long$sim)))
     sims_long$sim <-
       factor(sims_long$sim, levels = unique(sims_long$sim)[order(sim_num)])
-    # create the stochastic plot
+    # print the stochastic plot
     p <-
       ggplot2::ggplot(
         sims_long,
@@ -202,8 +201,8 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
           y = .data$est,
           color = .data$response,
           linetype = .data$response
-          )
-        ) +
+        )
+      ) +
       ggplot2::geom_line(size = 1) +
       ggplot2::facet_wrap(~ sim, ncol = 5) +
       ggplot2::theme_minimal(base_size = 14) +

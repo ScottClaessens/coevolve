@@ -85,7 +85,7 @@
 #'   improve efficiency and ensure accurate inferences. If \code{FALSE},
 #'   variables are left unscaled for model fitting. In this case, users should
 #'   take care to set sensible priors on variables.
-#' @param estimate_Q_offdiag Logical. If \code{TRUE} (default), the model
+#' @param estimate_correlated_drift Logical. If \code{TRUE} (default), the model
 #'   estimates the off-diagonals for the \eqn{Q} drift matrix (i.e., correlated
 #'   drift). If \code{FALSE}, the off-diagonals for the \eqn{Q} drift matrix
 #'   are set to zero.
@@ -223,26 +223,26 @@ coev_fit <- function(data, variables, id, tree,
                      dist_mat = NULL, dist_cov = "exp_quad",
                      measurement_error = NULL,
                      prior = NULL, scale = TRUE,
-                     estimate_Q_offdiag = TRUE,
+                     estimate_correlated_drift = TRUE,
                      estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
                      adapt_delta = 0.95, ...) {
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, measurement_error, prior, scale, estimate_Q_offdiag,
-             estimate_residual, log_lik, prior_only)
+             dist_cov, measurement_error, prior, scale,
+             estimate_correlated_drift, estimate_residual, log_lik, prior_only)
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
                            complete_cases, dist_mat, dist_cov,
                            measurement_error, prior, scale,
-                           estimate_Q_offdiag, estimate_residual, log_lik,
-                           prior_only)
+                           estimate_correlated_drift, estimate_residual,
+                           log_lik, prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
                            complete_cases, dist_mat, dist_cov,
                            measurement_error, prior, scale,
-                           estimate_Q_offdiag, estimate_residual, log_lik,
-                           prior_only)
+                           estimate_correlated_drift, estimate_residual,
+                           log_lik, prior_only)
   # fit model
   model <-
     cmdstanr::cmdstan_model(
@@ -272,7 +272,7 @@ coev_fit <- function(data, variables, id, tree,
       dist_cov = dist_cov,
       measurement_error = measurement_error,
       scale = scale,
-      estimate_Q_offdiag = estimate_Q_offdiag,
+      estimate_correlated_drift = estimate_correlated_drift,
       estimate_residual = estimate_residual,
       prior_only = prior_only
     )

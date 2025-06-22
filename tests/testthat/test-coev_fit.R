@@ -168,7 +168,7 @@ test_that("coev_fit() produces expected errors", {
       data = d,
       variables = list(
         v = "negative_binomial_softplus",
-        z = "negative_binomial_softplus" # sd^2 <= mean
+        z = "negative_binomial_softplus" # sd squared <= mean
       ),
       id = "id",
       tree = tree
@@ -336,8 +336,10 @@ test_that("coev_fit() produces expected errors", {
   )
   expect_error(
     {
-      d2 <- d; d2$id[1] <- NA
-      tree2 <- tree; tree2$tip.label[1] <- NA
+      d2 <- d
+      d2$id[1] <- NA
+      tree2 <- tree
+      tree2$tip.label[1] <- NA
       coev_fit(
         data = d2,
         variables = list(
@@ -402,7 +404,7 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      effects_mat = matrix(TRUE, dimnames = list("fail","fail")) # invalid names
+      effects_mat = matrix(TRUE, dimnames = list("fail", "fail")) # invalid name
     ),
     paste0(
       "Row and column names for argument 'effects_mat' do not match ",
@@ -420,8 +422,9 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree,
       # autoregressive effect = FALSE
-      effects_mat = matrix(c(T,T,T,F), ncol = 2, nrow = 2, byrow = TRUE,
-                           dimnames = list(c("x","y"),c("x","y")))
+      effects_mat = matrix(c(TRUE, TRUE, TRUE, FALSE),
+                           ncol = 2, nrow = 2, byrow = TRUE,
+                           dimnames = list(c("x", "y"), c("x", "y")))
     ),
     "Argument 'effects_mat' must specify TRUE for all autoregressive effects.",
     fixed = TRUE
@@ -553,7 +556,7 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_cov = c("fail","fail")
+      dist_cov = c("fail", "fail")
     ),
     "Argument 'dist_cov' is not of length 1.",
     fixed = TRUE
@@ -660,9 +663,9 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      estimate_Q_offdiag = "testing"
+      estimate_correlated_drift = "testing"
     ),
-    "Argument 'estimate_Q_offdiag' must be a logical of length one.",
+    "Argument 'estimate_correlated_drift' must be a logical of length one.",
     fixed = TRUE
   )
   expect_error(
@@ -706,53 +709,53 @@ test_that("coev_fit() fits the model without error", {
   m3 <- reload_fit(m3, filename = "coevfit_example_03-1.csv")
   m4 <- reload_fit(m4, filename = "coevfit_example_04-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # expect no errors for model fitting or summaries
-  expect_no_error(SW(m1))
-  expect_no_error(SW(m2))
-  expect_no_error(SW(m3))
-  expect_no_error(SW(m4))
-  expect_no_error(SW(summary(m1)))
-  expect_no_error(SW(summary(m2)))
-  expect_no_error(SW(summary(m3)))
-  expect_no_error(SW(summary(m4)))
-  expect_output(SW(print(m1)))
-  expect_output(SW(print(m2)))
-  expect_output(SW(print(m3)))
-  expect_output(SW(print(m4)))
-  expect_output(SW(print(summary(m1))))
-  expect_output(SW(print(summary(m2))))
-  expect_output(SW(print(summary(m3))))
-  expect_output(SW(print(summary(m4))))
+  expect_no_error(sw(m1))
+  expect_no_error(sw(m2))
+  expect_no_error(sw(m3))
+  expect_no_error(sw(m4))
+  expect_no_error(sw(summary(m1)))
+  expect_no_error(sw(summary(m2)))
+  expect_no_error(sw(summary(m3)))
+  expect_no_error(sw(summary(m4)))
+  expect_output(sw(print(m1)))
+  expect_output(sw(print(m2)))
+  expect_output(sw(print(m3)))
+  expect_output(sw(print(m4)))
+  expect_output(sw(print(summary(m1))))
+  expect_output(sw(print(summary(m2))))
+  expect_output(sw(print(summary(m3))))
+  expect_output(sw(print(summary(m4))))
   # expect error if prob for summary is outside of range 0 - 1
-  expect_error(SW(summary(m1, prob = -0.01)))
-  expect_error(SW(summary(m1, prob =  1.01)))
+  expect_error(sw(summary(m1, prob = -0.01)))
+  expect_error(sw(summary(m1, prob =  1.01)))
   # expect no errors for extract_samples method
-  expect_no_error(SW(extract_samples(m1)))
-  expect_no_error(SW(extract_samples(m2)))
-  expect_no_error(SW(extract_samples(m3)))
-  expect_no_error(SW(extract_samples(m4)))
-  expect_true(SW(methods::is(extract_samples(m1), "list")))
-  expect_true(SW(methods::is(extract_samples(m2), "list")))
-  expect_true(SW(methods::is(extract_samples(m3), "list")))
-  expect_true(SW(methods::is(extract_samples(m4), "list")))
+  expect_no_error(sw(extract_samples(m1)))
+  expect_no_error(sw(extract_samples(m2)))
+  expect_no_error(sw(extract_samples(m3)))
+  expect_no_error(sw(extract_samples(m4)))
+  expect_true(sw(methods::is(extract_samples(m1), "list")))
+  expect_true(sw(methods::is(extract_samples(m2), "list")))
+  expect_true(sw(methods::is(extract_samples(m3), "list")))
+  expect_true(sw(methods::is(extract_samples(m4), "list")))
   # expect no error for stancode and standata methods
-  expect_no_error(SW(stancode(m1)))
-  expect_no_error(SW(stancode(m2)))
-  expect_no_error(SW(stancode(m3)))
-  expect_no_error(SW(stancode(m4)))
-  expect_no_error(SW(standata(m1)))
-  expect_no_error(SW(standata(m2)))
-  expect_no_error(SW(standata(m3)))
-  expect_no_error(SW(standata(m4)))
-  expect_output(SW(stancode(m1)))
-  expect_output(SW(stancode(m2)))
-  expect_output(SW(stancode(m3)))
-  expect_output(SW(stancode(m4)))
-  expect_true(SW(methods::is(standata(m1), "list")))
-  expect_true(SW(methods::is(standata(m2), "list")))
-  expect_true(SW(methods::is(standata(m3), "list")))
-  expect_true(SW(methods::is(standata(m4), "list")))
+  expect_no_error(sw(stancode(m1)))
+  expect_no_error(sw(stancode(m2)))
+  expect_no_error(sw(stancode(m3)))
+  expect_no_error(sw(stancode(m4)))
+  expect_no_error(sw(standata(m1)))
+  expect_no_error(sw(standata(m2)))
+  expect_no_error(sw(standata(m3)))
+  expect_no_error(sw(standata(m4)))
+  expect_output(sw(stancode(m1)))
+  expect_output(sw(stancode(m2)))
+  expect_output(sw(stancode(m3)))
+  expect_output(sw(stancode(m4)))
+  expect_true(sw(methods::is(standata(m1), "list")))
+  expect_true(sw(methods::is(standata(m2), "list")))
+  expect_true(sw(methods::is(standata(m3), "list")))
+  expect_true(sw(methods::is(standata(m4), "list")))
 })
 
 test_that("effects_mat argument to coev_fit() works as expected", {
@@ -760,38 +763,38 @@ test_that("effects_mat argument to coev_fit() works as expected", {
   m <- readRDS(test_path("fixtures", "coevfit_example_05.rds"))
   m <- reload_fit(m, filename = "coevfit_example_05-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # expect no errors for model fitting or summaries
-  expect_no_error(SW(m))
-  expect_no_error(SW(summary(m)))
-  expect_output(SW(print(m)))
-  expect_output(SW(print(summary(m))))
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
   # expect no errors for extract_samples method
-  expect_no_error(SW(extract_samples(m)))
-  expect_true(SW(methods::is(extract_samples(m), "list")))
+  expect_no_error(sw(extract_samples(m)))
+  expect_true(sw(methods::is(extract_samples(m), "list")))
   # expect no errors for stancode or standata methods
-  expect_no_error(SW(stancode(m)))
-  expect_no_error(SW(standata(m)))
-  expect_output(SW(stancode(m)))
-  expect_true(SW(methods::is(standata(m), "list")))
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
   # expect effects_mat correct in model output
   effects_mat <- matrix(
     c(TRUE, TRUE,
-      FALSE,TRUE),
+      FALSE, TRUE),
     byrow = TRUE,
     nrow = 2,
     ncol = 2,
-    dimnames = list(c("w","x"),c("w","x"))
+    dimnames = list(c("w", "x"), c("w", "x"))
   )
   expect_true(
     identical(m$effects_mat, +effects_mat)
-    )
+  )
   # correct parameter estimated to be zero (A[2,1])
-  expect_true(all(as.vector(m$fit$draws()[,,"A[2,1]"]) == 0))
+  expect_true(all(as.vector(m$fit$draws()[, , "A[2,1]"]) == 0))
   # other parameters estimated as normal
-  expect_true(!all(as.vector(m$fit$draws()[,,"A[1,1]"]) == 0))
-  expect_true(!all(as.vector(m$fit$draws()[,,"A[1,2]"]) == 0))
-  expect_true(!all(as.vector(m$fit$draws()[,,"A[2,2]"]) == 0))
+  expect_true(!all(as.vector(m$fit$draws()[, , "A[1,1]"]) == 0))
+  expect_true(!all(as.vector(m$fit$draws()[, , "A[1,2]"]) == 0))
+  expect_true(!all(as.vector(m$fit$draws()[, , "A[2,2]"]) == 0))
 })
 
 test_that("coev_fit() works with missing data", {
@@ -799,20 +802,20 @@ test_that("coev_fit() works with missing data", {
   m <- readRDS(test_path("fixtures", "coevfit_example_06.rds"))
   m <- reload_fit(m, filename = "coevfit_example_06-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # fitted without error
-  expect_no_error(SW(m))
-  expect_no_error(SW(summary(m)))
-  expect_output(SW(print(m)))
-  expect_output(SW(print(summary(m))))
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
   # expect no errors for extract_samples method
-  expect_no_error(SW(extract_samples(m)))
-  expect_true(SW(methods::is(extract_samples(m), "list")))
+  expect_no_error(sw(extract_samples(m)))
+  expect_true(sw(methods::is(extract_samples(m), "list")))
   # expect no errors for stancode or standata methods
-  expect_no_error(SW(stancode(m)))
-  expect_no_error(SW(standata(m)))
-  expect_output(SW(stancode(m)))
-  expect_true(SW(methods::is(standata(m), "list")))
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
 })
 
 test_that("coev_fit() works with repeated observations", {
@@ -820,17 +823,17 @@ test_that("coev_fit() works with repeated observations", {
   m <- readRDS(test_path("fixtures", "coevfit_example_07.rds"))
   m <- reload_fit(m, filename = "coevfit_example_07-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # fitted without error
-  expect_no_error(SW(m))
-  expect_no_error(SW(summary(m)))
-  expect_output(SW(print(m)))
-  expect_output(SW(print(summary(m))))
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
   # expect no errors for stancode or standata methods
-  expect_no_error(SW(stancode(m)))
-  expect_no_error(SW(standata(m)))
-  expect_output(SW(stancode(m)))
-  expect_true(SW(methods::is(standata(m), "list")))
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
 })
 
 test_that("coev_fit() works with multiPhylo object", {
@@ -838,17 +841,17 @@ test_that("coev_fit() works with multiPhylo object", {
   m <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
   m <- reload_fit(m, filename = "coevfit_example_08-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # fitted without error
-  expect_no_error(SW(m))
-  expect_no_error(SW(summary(m)))
-  expect_output(SW(print(m)))
-  expect_output(SW(print(summary(m))))
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
   # expect no errors for stancode or standata methods
-  expect_no_error(SW(stancode(m)))
-  expect_no_error(SW(standata(m)))
-  expect_output(SW(stancode(m)))
-  expect_true(SW(methods::is(standata(m), "list")))
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
 })
 
 test_that("coev_fit() works when Q off diagonals == 0", {
@@ -856,17 +859,17 @@ test_that("coev_fit() works when Q off diagonals == 0", {
   m <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
   m <- reload_fit(m, filename = "coevfit_example_09-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # fitted without error
-  expect_no_error(SW(m))
-  expect_no_error(SW(summary(m)))
-  expect_output(SW(print(m)))
-  expect_output(SW(print(summary(m))))
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
   # expect no errors for stancode or standata methods
-  expect_no_error(SW(stancode(m)))
-  expect_no_error(SW(standata(m)))
-  expect_output(SW(stancode(m)))
-  expect_true(SW(methods::is(standata(m), "list")))
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
 })
 
 test_that("coev_fit() works with measurement error", {
@@ -874,15 +877,15 @@ test_that("coev_fit() works with measurement error", {
   m <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
   m <- reload_fit(m, filename = "coevfit_example_10-1.csv")
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # fitted without error
-  expect_no_error(SW(m))
-  expect_no_error(SW(summary(m)))
-  expect_output(SW(print(m)))
-  expect_output(SW(print(summary(m))))
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
   # expect no errors for stancode or standata methods
-  expect_no_error(SW(stancode(m)))
-  expect_no_error(SW(standata(m)))
-  expect_output(SW(stancode(m)))
-  expect_true(SW(methods::is(standata(m), "list")))
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
 })

@@ -57,7 +57,9 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
     fixed = TRUE
   )
   expect_error(
-    coev_plot_predictive_check(object = m01, ndraws = nrow(m01$fit$draws()) + 1),
+    coev_plot_predictive_check(
+      object = m01, ndraws = nrow(m01$fit$draws()) + 1
+    ),
     "Argument 'ndraws' must be between 1 and the total number of draws.",
     fixed = TRUE
   )
@@ -77,55 +79,57 @@ test_that("coev_plot_predictive_check() produces expected errors and output", {
     fixed = TRUE
   )
   expect_error(
-    coev_plot_predictive_check(object = m01, tree_id = m01$stan_data$N_tree + 1),
+    coev_plot_predictive_check(
+      object = m01, tree_id = m01$stan_data$N_tree + 1
+    ),
     "Argument 'tree_id' must be between 1 and the total number of trees.",
     fixed = TRUE
   )
   # suppress warnings
-  SW <- suppressWarnings
+  sw <- suppressWarnings
   # should run without error and produce list of ggplot objects
-  expect_no_error(SW(coev_plot_predictive_check(m01)))
-  expect_no_error(SW(coev_plot_predictive_check(m02)))
-  expect_no_error(SW(coev_plot_predictive_check(m03)))
-  expect_no_error(SW(coev_plot_predictive_check(m04)))
-  expect_no_error(SW(coev_plot_predictive_check(m05)))
-  expect_no_error(SW(coev_plot_predictive_check(m06)))
-  expect_no_error(SW(coev_plot_predictive_check(m07)))
-  expect_no_error(SW(coev_plot_predictive_check(m08)))
-  expect_no_error(SW(coev_plot_predictive_check(m09)))
-  expect_no_error(SW(coev_plot_predictive_check(m10)))
-  expect_no_error(SW(coev_plot_predictive_check(m01, variables = "x")))
-  expect_no_error(SW(coev_plot_predictive_check(m02, variables = "w")))
-  expect_no_error(SW(coev_plot_predictive_check(m03, variables = "w")))
-  expect_no_error(SW(coev_plot_predictive_check(m04, variables = "y")))
-  expect_no_error(SW(coev_plot_predictive_check(m05, variables = "w")))
-  expect_no_error(SW(coev_plot_predictive_check(m06, variables = "w")))
-  expect_no_error(SW(coev_plot_predictive_check(m07, variables = "w")))
-  expect_no_error(SW(coev_plot_predictive_check(m08, variables = "x")))
-  expect_no_error(SW(coev_plot_predictive_check(m09, variables = "x")))
-  expect_no_error(SW(coev_plot_predictive_check(m10, variables = "x")))
-  expect_no_error(SW(coev_plot_predictive_check(m01, ndraws = 1)))
-  expect_no_error(SW(coev_plot_predictive_check(m02, ndraws = 1)))
-  expect_no_error(SW(coev_plot_predictive_check(m03, ndraws = 1)))
-  expect_no_error(SW(coev_plot_predictive_check(m04, ndraws = 1)))
-  expect_no_error(SW(coev_plot_predictive_check(m05, ndraws = 1)))
-  expect_no_error(SW(coev_plot_predictive_check(m06, ndraws = 1)))
-  expect_no_error(SW(coev_plot_predictive_check(m07, ndraws = 1)))
-  expect_no_error(SW(coev_plot_predictive_check(m08, ndraws = 1)))
-  expect_no_error(SW(coev_plot_predictive_check(m09, ndraws = 1)))
-  expect_no_error(SW(coev_plot_predictive_check(m10, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m01)))
+  expect_no_error(sw(coev_plot_predictive_check(m02)))
+  expect_no_error(sw(coev_plot_predictive_check(m03)))
+  expect_no_error(sw(coev_plot_predictive_check(m04)))
+  expect_no_error(sw(coev_plot_predictive_check(m05)))
+  expect_no_error(sw(coev_plot_predictive_check(m06)))
+  expect_no_error(sw(coev_plot_predictive_check(m07)))
+  expect_no_error(sw(coev_plot_predictive_check(m08)))
+  expect_no_error(sw(coev_plot_predictive_check(m09)))
+  expect_no_error(sw(coev_plot_predictive_check(m10)))
+  expect_no_error(sw(coev_plot_predictive_check(m01, variables = "x")))
+  expect_no_error(sw(coev_plot_predictive_check(m02, variables = "w")))
+  expect_no_error(sw(coev_plot_predictive_check(m03, variables = "w")))
+  expect_no_error(sw(coev_plot_predictive_check(m04, variables = "y")))
+  expect_no_error(sw(coev_plot_predictive_check(m05, variables = "w")))
+  expect_no_error(sw(coev_plot_predictive_check(m06, variables = "w")))
+  expect_no_error(sw(coev_plot_predictive_check(m07, variables = "w")))
+  expect_no_error(sw(coev_plot_predictive_check(m08, variables = "x")))
+  expect_no_error(sw(coev_plot_predictive_check(m09, variables = "x")))
+  expect_no_error(sw(coev_plot_predictive_check(m10, variables = "x")))
+  expect_no_error(sw(coev_plot_predictive_check(m01, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m02, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m03, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m04, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m05, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m06, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m07, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m08, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m09, ndraws = 1)))
+  expect_no_error(sw(coev_plot_predictive_check(m10, ndraws = 1)))
   # should work with multiPhylo
-  expect_no_error(SW(coev_plot_predictive_check(m08, tree_id = 2)))
+  expect_no_error(sw(coev_plot_predictive_check(m08, tree_id = 2)))
   # should work as expected with missing data
   # lower limit of plot should not be -9999.45
   expect_false(
     isTRUE(
       all.equal(
         ggplot2::layer_scales(
-          SW(coev_plot_predictive_check(m06, variables = "x"))[[1]]
-          )$x$range$range[1],
+          sw(coev_plot_predictive_check(m06, variables = "x"))[[1]]
+        )$x$range$range[1],
         -9999.45
-        )
       )
     )
+  )
 })

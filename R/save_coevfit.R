@@ -44,7 +44,7 @@ save_coevfit <- function(object, file, ...) {
     )
   }
   # stop if file is not a string of length one
-  if (!is.character(file) | length(file) != 1) {
+  if (!is.character(file) || length(file) != 1) {
     stop2("Argument 'file' must be a string of length one.")
   }
   # save cmdstanr model object to temporary rds file

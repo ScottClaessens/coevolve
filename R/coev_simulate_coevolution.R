@@ -94,13 +94,13 @@ coev_simulate_coevolution <- function(n,
     stop2("Argument 'variables' is not a character vector.")
   } else if (length(variables) < 2) {
     stop2("Argument 'variables' must specify at least two variable names.")
-  } else if (any(c("ts","species","parent","split") %in% variables)) {
+  } else if (any(c("ts", "species", "parent", "split") %in% variables)) {
     stop2(
       paste0(
         "Argument 'variables' uses variable names reserved internally for ",
         "simulation ('ts','species','parent','split')."
-        )
       )
+    )
   }
   # stop if selection matrix is not a numeric matrix with correct dims and names
   if (!methods::is(selection_matrix, "matrix")) {
@@ -113,16 +113,16 @@ coev_simulate_coevolution <- function(n,
       paste0(
         "Argument 'selection_matrix' has number of rows or columns not equal ",
         "to the number of variables."
-        )
       )
-  } else if (!(all(variables %in% rownames(selection_matrix)) &
-              all(variables %in% colnames(selection_matrix)))) {
+    )
+  } else if (!(all(variables %in% rownames(selection_matrix)) &&
+                 all(variables %in% colnames(selection_matrix)))) {
     stop2(
       paste0(
         "Argument 'selection_matrix' has row or column names not equal to ",
         "variable names."
-        )
       )
+    )
   }
   # stop if drift is not named numeric vector with correct dims and var names
   if (!methods::is(drift, "numeric")) {
@@ -130,7 +130,7 @@ coev_simulate_coevolution <- function(n,
   } else if (length(drift) != length(variables)) {
     stop2(
       "Argument 'drift' has length different to specified number of variables."
-      )
+    )
   } else if (!all(variables %in% names(drift))) {
     stop2("Argument 'drift' has names different to specified variable names.")
   }
@@ -139,7 +139,7 @@ coev_simulate_coevolution <- function(n,
     stop2("Argument 'prob_split' is not numeric.")
   } else if (length(prob_split) != 1) {
     stop2("Argument 'prob_split' must be of length 1.")
-  } else if (prob_split <= 0 | prob_split >= 1) {
+  } else if (prob_split <= 0 || prob_split >= 1) {
     stop2("Argument 'prob_split' must be between 0 and 1.")
   }
   # stop if intercepts not a named numeric vector with correct dims and vars
@@ -151,12 +151,12 @@ coev_simulate_coevolution <- function(n,
         paste0(
           "Argument 'intercepts' has length different to specified number of ",
           "variables."
-          )
+        )
       )
     } else if (!all(variables %in% names(intercepts))) {
       stop2(
         "Argument 'intercepts' has names different to specified variable names."
-        )
+      )
     }
   } else {
     # if not set, intercepts are zero for all variables by default
@@ -179,7 +179,7 @@ coev_simulate_coevolution <- function(n,
         paste0(
           "Argument 'ancestral_states' has names different to specified ",
           "variable names."
-          )
+        )
       )
     }
   } else {
@@ -189,10 +189,10 @@ coev_simulate_coevolution <- function(n,
   }
   # ensure selection_matrix and drift vector have names
   # in the same order as "variables" vector
-  selection_matrix <- selection_matrix[variables,variables]
+  selection_matrix <- selection_matrix[variables, variables]
   drift <- drift[variables]
-  if (!(identical(variables, rownames(selection_matrix)) &
-        identical(variables, colnames(selection_matrix)))) {
+  if (!(identical(variables, rownames(selection_matrix)) &&
+          identical(variables, colnames(selection_matrix)))) {
     stop2("Selection matrix names are not equal to variable names.")
   } else if (!identical(variables, names(drift))) {
     stop2("Drift vector names are not equal to variable names.")
@@ -204,7 +204,7 @@ coev_simulate_coevolution <- function(n,
     species = "t1",
     parent = NA,
     split = FALSE
-    )
+  )
   for (i in variables) sim[i] <- as.numeric(ancestral_states[i])
   # initial tree in text form
   tree <- "(t1:1);"
@@ -224,7 +224,7 @@ coev_simulate_coevolution <- function(n,
       # get previous values of variables
       prev <- c()
       for (i in variables) {
-        prev[i] <- sim[sim$ts == (ts-1) & sim$species == sp, i]
+        prev[i] <- sim[sim$ts == (ts - 1) & sim$species == sp, i]
       }
       # randomly generate split
       if (stats::runif(1) < prob_split) {
@@ -241,7 +241,7 @@ coev_simulate_coevolution <- function(n,
         for (i in variables) {
           mean <- 0
           # loop over predictor variables
-          for (j in variables) mean <- mean + selection_matrix[i,j]*prev[j]
+          for (j in variables) mean <- mean + selection_matrix[i, j] * prev[j]
           new_values[i] <- stats::rnorm(1, mean, drift[i])
         }
         sim <- rbind(sim, new_values)
@@ -265,7 +265,7 @@ coev_simulate_coevolution <- function(n,
         for (i in variables) {
           mean <- as.numeric(intercepts[i])
           # loop over predictor variables
-          for (j in variables) mean <- mean + selection_matrix[i,j]*prev[j]
+          for (j in variables) mean <- mean + selection_matrix[i, j] * prev[j]
           new_values[i] <- stats::rnorm(1, mean, drift[i])
         }
         sim <- rbind(sim, new_values)
@@ -274,7 +274,7 @@ coev_simulate_coevolution <- function(n,
           string = stringr::str_extract(
             string = tree,
             pattern = paste0(sp, ":\\d+")
-            ),
+          ),
           pattern = ":\\d+"
         )
         tree <- stringr::str_replace(
@@ -298,6 +298,6 @@ coev_simulate_coevolution <- function(n,
     data = d,
     simulation = sim,
     tree = tree
-    )
+  )
   return(out)
 }
