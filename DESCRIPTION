@@ -18,7 +18,6 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Suggests: 
-    cmdstanr,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
@@ -28,6 +27,7 @@ Config/testthat/edition: 3
 Imports: 
     ape,
     bayesplot,
+    cmdstanr,
     colorspace,
     dplyr,
     ggplot2,
@@ -49,3 +49,4 @@ Depends:
     R (>= 3.5.0)
 LazyData: true
 Additional_repositories: https://stan-dev.r-universe.dev/
+Remotes: stan-dev/cmdstanr
