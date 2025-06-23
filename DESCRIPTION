@@ -11,7 +11,7 @@ Description: Fit Bayesian generalized dynamic phylogenetic models using 'Stan'.
     distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck 
     evolutionary process, allowing users to assess directionality between 
     coevolving variables.
-License: file LICENSE
+License: GPL (>= 3)
 URL: https://github.com/ScottClaessens/coevolve, https://scottclaessens.github.io/coevolve/
 BugReports: https://github.com/ScottClaessens/coevolve/issues
 Encoding: UTF-8
