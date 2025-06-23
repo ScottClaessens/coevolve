@@ -19,4 +19,10 @@ jobs:
     permissions:
       issues: write
     steps:
+
+      - name: Install cmdstanr
+        run: |
+          install.packages("cmdstanr", repos = c('https://stan-dev.r-universe.dev', getOption("repos")))
+        shell: Rscript {0}
+
       - uses: ropensci-review-tools/pkgcheck-action@main
