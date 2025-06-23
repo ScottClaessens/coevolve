@@ -2,7 +2,7 @@
 reload_fit <- function(coevfit, filename) {
   coevfit$fit <-
     cmdstanr::as_cmdstan_fit(
-      test_path("fixtures", filename)
+      testthat::test_path("fixtures", filename)
     )
   coevfit
 }
