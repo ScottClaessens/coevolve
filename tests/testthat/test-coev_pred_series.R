@@ -27,6 +27,37 @@ test_that("coev_pred_series() produces expected errors and output", {
     fixed = TRUE
   )
   expect_error(
+    coev_pred_series(object = m02, eta_anc = c(1, 2)),
+    "Argument 'eta_anc' is not a named list",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(object = m02, eta_anc = list(fail = 0)),
+    "At least one variable in 'eta_anc' is not included in the fitted model.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(object = m02, eta_anc = list(x = 0)),
+    "All coevolving variables must be included in argument 'eta_anc'.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(
+      object = m01,
+      eta_anc = list(x = 0, y = 0, u = 0, v = 0, w = 0, w = 0) # repetition
+    ),
+    "Argument 'eta_anc' contains duplicated variable names.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(
+      object = m01,
+      eta_anc = list(x = 0, y = 0, u = 0, v = 0, w = c(0, 0)) # not length 1
+    ),
+    "Values in 'eta_anc' must each be of length one.",
+    fixed = TRUE
+  )
+  expect_error(
     coev_pred_series(
       object = m01,
       eta_anc = list(x = "LCA", y = 0, u = 0, v = 0, w = 0)
@@ -37,18 +68,8 @@ test_that("coev_pred_series() produces expected errors and output", {
     fixed = TRUE
   )
   expect_error(
-    coev_pred_series(object = m02, eta_anc = c(1, 2)),
-    "Argument 'eta_anc' is not a named list",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_pred_series(
-      object = m01,
-      eta_anc = list(var1 = 0, y = 0, v = 0, w = 0)
-    ),
-    paste0(
-      "At least one variable in 'eta_anc' is not included in the fitted model."
-    ),
+    coev_pred_series(object = m01, tmax = "fail"),
+    "Argument 'tmax' must be a single numeric value",
     fixed = TRUE
   )
   expect_error(
@@ -59,6 +80,11 @@ test_that("coev_pred_series() produces expected errors and output", {
   expect_error(
     coev_pred_series(object = m01, ndraws = "fail"),
     "Argument 'ndraws' must be numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(object = m01, ndraws = c(0, 0)),
+    "Argument 'ndraws' must be a single integer",
     fixed = TRUE
   )
   expect_error(
@@ -76,6 +102,86 @@ test_that("coev_pred_series() produces expected errors and output", {
   expect_error(
     coev_pred_series(object = m01, stochastic = "only"),
     "Argument 'stochastic' must be logical.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(
+      object = m01,
+      intervention_values = list(u = NA, v = 0, w = 0, x = 0, y = 0),
+      stochastic = TRUE
+    ),
+    "Argument 'stochastic' cannot be `TRUE` when intervention_values are set.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(object = m01, intervention_values = "fail"),
+    "Argument 'intervention_values' is not a named list.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(object = m01, intervention_values = list(fail = 0)),
+    paste0(
+      "At least one variable in 'intervention_values' is not ",
+      "included in the fitted model."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(
+      object = m01,
+      intervention_values = list(x = 0)
+    ),
+    paste0(
+      "All coevolving variables must be included in ",
+      "argument 'intervention_values'."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(
+      object = m01,
+      intervention_values = list(x = 0, y = 0, u = 0, v = 0, w = 0, w = 0)
+    ),
+    "Argument 'intervention_values' contains duplicated variable names.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(
+      object = m01,
+      intervention_values = list(x = 0, y = 0, u = 0, v = 0, w = c(0, 0))
+    ),
+    "Values in 'intervention_values' must each be of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(
+      object = m01,
+      intervention_values = list(x = 0, y = 0, u = 0, v = 0, w = "fail")
+    ),
+    "Values in 'intervention_values' must each be NA or numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(
+      object = m01,
+      intervention_values = list(x = 0, y = 0, u = 0, v = 0, w = 0)
+    ),
+    paste0(
+      "Argument 'intervention_values' must have at least one NA value ",
+      "declaring a free variable. If all variables are held constant, the ",
+      "system is already at equilibrium and there is nothing to compute."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_pred_series(
+      object = m01,
+      intervention_values = list(x = NA, y = NA, u = NA, v = NA, w = NA)
+    ),
+    paste0(
+      "Argument 'intervention_values' must have at least one variable ",
+      "held constant (i.e., not all values are NA)."
+    ),
     fixed = TRUE
   )
   # suppress warnings

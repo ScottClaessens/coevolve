@@ -91,6 +91,16 @@ test_that("coev_plot_delta_theta() produces expected errors and output", {
     "Argument 'prob_outer' must be greater than argument 'prob'.",
     fixed = TRUE
   )
+  expect_error(
+    coev_plot_delta_theta(object = m01, limits = FALSE),
+    "Argument 'limits' must be a numeric vector.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_delta_theta(object = m01, limits = 0),
+    "Argument 'limits' must be of length 2.",
+    fixed = TRUE
+  )
   # suppress warnings
   sw <- suppressWarnings
   # should run without error and produce ggplot object

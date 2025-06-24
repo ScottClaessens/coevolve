@@ -691,6 +691,20 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      log_lik = "testing"
+    ),
+    "Argument 'log_lik' must be a logical of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       prior_only = "testing"
     ),
     "Argument 'prior_only' must be a logical of length one.",

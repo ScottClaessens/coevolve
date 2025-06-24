@@ -776,6 +776,20 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      log_lik = "testing"
+    ),
+    "Argument 'log_lik' must be a logical of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       prior_only = "testing"
     ),
     "Argument 'prior_only' must be a logical of length one.",
@@ -1025,11 +1039,12 @@ test_that("coev_make_stancode() works with repeated observations", {
     d <- data.frame(
       id = rep(tree$tip.label, each = 10),
       x = rbinom(n * 10, size = 1, prob = 0.5),
-      y = rbinom(n * 10, size = 1, prob = 0.5)
+      y = rbinom(n * 10, size = 1, prob = 0.5),
+      z = rnorm(n * 10)
     )
   })
   # get stan code
-  sc <- coev_make_stancode(
+  sc1 <- coev_make_stancode(
     data = d,
     variables = list(
       x = "bernoulli_logit",
@@ -1039,11 +1054,11 @@ test_that("coev_make_stancode() works with repeated observations", {
     tree = tree
   )
   # runs without error
-  expect_no_error(sc)
+  expect_no_error(sc1)
   # syntactically correct
   expect_true(
     cmdstanr::cmdstan_model(
-      stan_file = cmdstanr::write_stan_file(sc),
+      stan_file = cmdstanr::write_stan_file(sc1),
       compile = FALSE
     )$check_syntax(quiet = TRUE)
   )
@@ -1062,6 +1077,23 @@ test_that("coev_make_stancode() works with repeated observations", {
       "Note: Repeated observations detected. Residual standard deviations ",
       "and correlations have been included in the model."
     )
+  )
+  # runs with gaussian variable
+  sc2 <- coev_make_stancode(
+    data = d,
+    variables = list(
+      x = "bernoulli_logit",
+      z = "normal"
+    ),
+    id = "id",
+    tree = tree
+  )
+  expect_no_error(sc2)
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc2),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
   )
 })
 
@@ -1278,7 +1310,7 @@ test_that("coev_make_stancode() works with measurement error", {
       x = rnorm(n),
       y = rnorm(n),
       x_se = 0,
-      y_se = rexp(20, 5)
+      y_se = rexp(n, 5)
     )
   })
   # make stan code with measurement error
@@ -1295,6 +1327,77 @@ test_that("coev_make_stancode() works with measurement error", {
         x = "x_se",
         y = "y_se"
       )
+    )
+  # check stan code is syntactically correct
+  expect_no_error(sc)
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+})
+
+test_that("coev_make_stancode() works with meas error and rep measures", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = rep(tree$tip.label, each = 10),
+      x = rnorm(n * 10),
+      y = rnorm(n * 10),
+      x_se = 0,
+      y_se = rexp(n * 10, 5)
+    )
+  })
+  # make stan code with measurement error
+  sc <-
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(
+        x = "x_se",
+        y = "y_se"
+      )
+    )
+  # check stan code is syntactically correct
+  expect_no_error(sc)
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+})
+
+test_that("coev_make_stancode() works with log_lik", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rbinom(n, size = 1, prob = 0.5)
+    )
+  })
+  # make stan code with log_lik
+  sc <-
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "bernoulli_logit"
+      ),
+      id = "id",
+      tree = tree,
+      log_lik = TRUE
     )
   # check stan code is syntactically correct
   expect_no_error(sc)

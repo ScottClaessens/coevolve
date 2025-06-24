@@ -77,6 +77,16 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
     "Argument 'tree_id' must be between 1 and the total number of trees.",
     fixed = TRUE
   )
+  expect_error(
+    coev_plot_trait_values(object = m01, tree_id = 1, xlim = 0),
+    "Argument 'xlim' must be a numeric vector of length 2.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_trait_values(object = m01, tree_id = 1, xlim = c(0, 1), ylim = 0),
+    "Argument 'ylim' must be a numeric vector of length 2.",
+    fixed = TRUE
+  )
   # should run without error and produce ggplot object
   fun <- function(model, variables = NULL, ndraws = 50, tree_id = NULL,
                   xlim = NULL, ylim = NULL) {
