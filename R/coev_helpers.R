@@ -60,11 +60,12 @@ run_checks_variables <- function(data, variables) {
   if (!(length(variables) >= 2)) {
     stop2("Must be at least two coevolving variables.")
   }
-  # stop if any bernoulli variables are not 0/1 integers
+  # check distributional constraints
   for (i in seq_along(distributions)) {
     if (distributions[i] == "bernoulli_logit" &&
           (!is.integer(data[, variables[i]]) ||
              !all(data[, variables[i]] %in% c(0, 1, NA)))) {
+      # stop if any bernoulli variables are not 0/1 integers
       stop2(
         paste0(
           "Variables following the 'bernoulli_logit' response distribution ",
@@ -72,12 +73,9 @@ run_checks_variables <- function(data, variables) {
           "as.integer() function to convert variables to integers."
         )
       )
-    }
-  }
-  # stop if any ordinal variables are not ordered factors in data
-  for (i in seq_along(distributions)) {
-    if (distributions[i] == "ordered_logistic" &&
-          !is.ordered(data[, variables[i]])) {
+    } else if (distributions[i] == "ordered_logistic" &&
+                 !is.ordered(data[, variables[i]])) {
+      # stop if any ordinal variables are not ordered factors in data
       stop2(
         paste0(
           "Variables following the 'ordered_logistic' response distribution ",
@@ -85,14 +83,11 @@ run_checks_variables <- function(data, variables) {
           "function to convert variables to ordered factors."
         )
       )
-    }
-  }
-  # stop if any count variables are not integers greater than or equal to 0
-  for (i in seq_along(distributions)) {
-    if (distributions[i] == "poisson_softplus" &&
+    } else if (distributions[i] == "poisson_softplus" &&
         (!is.integer(data[, variables[i]]) ||
            !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
     ) {
+      # stop if any count variables are not integers greater than or equal to 0
       stop2(
         paste0(
           "Variables following the 'poisson_softplus' response distribution ",
@@ -100,11 +95,11 @@ run_checks_variables <- function(data, variables) {
           "using the as.integer() function to convert variables to integers."
         )
       )
-    }
-    if (distributions[i] == "negative_binomial_softplus" &&
+    } else if (distributions[i] == "negative_binomial_softplus" &&
         (!is.integer(data[, variables[i]]) ||
            !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
     ) {
+      # stop if any count variables are not integers greater than or equal to 0
       stop2(
         paste0(
           "Variables following the 'negative_binomial_softplus' response ",
@@ -113,12 +108,8 @@ run_checks_variables <- function(data, variables) {
           "to integers."
         )
       )
-    }
-  }
-  # stop if any negative binomial variables are not overdispersed
-  for (i in seq_along(distributions)) {
-    if (distributions[i] == "negative_binomial_softplus") {
-      # if variance <= mean
+    } else if (distributions[i] == "negative_binomial_softplus") {
+      # stop if any negative binomial variables are not overdispersed
       if (stats::sd(data[, variables[i]])^2 <= mean(data[, variables[i]])) {
         stop2(
           paste0(
@@ -129,24 +120,19 @@ run_checks_variables <- function(data, variables) {
           )
         )
       }
-    }
-  }
-  # stop if any normal variables are not numeric
-  for (i in seq_along(distributions)) {
-    if (distributions[i] == "normal" && !is.numeric(data[, variables[i]])) {
+    } else if (distributions[i] == "normal" &&
+                 !is.numeric(data[, variables[i]])) {
+      # stop if any normal variables are not numeric
       stop2(
         paste0(
           "Variables following the 'normal' response distribution must be ",
           "numeric in the data."
         )
       )
-    }
-  }
-  # stop if any gamma variables are not numeric and positive
-  for (i in seq_along(distributions)) {
-    if (distributions[i] == "gamma_log") {
+    } else if (distributions[i] == "gamma_log") {
       if (!is.numeric(data[, variables[i]]) ||
             !all(data[, variables[i]] > 0, na.rm = TRUE)) {
+        # stop if any gamma variables are not numeric and positive
         stop2(
           paste0(
             "Variables following the 'gamma_log' response distribution must ",
