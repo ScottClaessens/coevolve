@@ -1,16 +1,13 @@
-#' Internal helper function for checking arguments
+#' Internal helper function for checking data argument
 #'
-#' @description Checks the arguments for the functions
+#' @description Checks the data argument for the functions
 #'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
 #'   \code{\link{coev_fit}}.
 #'
 #' @returns Error message if any of the checks fail
 #'
 #' @noRd
-run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
-                       dist_mat, dist_cov, measurement_error, prior, scale,
-                       estimate_correlated_drift, estimate_residual, log_lik,
-                       prior_only) {
+run_checks_data <- function(data) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
@@ -21,6 +18,20 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   if (!(nrow(data) > 0L)) {
     stop2("Argument 'data' does not contain observations.")
   }
+}
+
+#' Internal helper function for checking variables argument
+#'
+#' @description Checks the variables argument for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_variables <- function(data, variables) {
+  # as data frame
+  data <- as.data.frame(data)
   # stop if variables argument is not a named list
   if (!is.list(variables) || is.null(names(variables))) {
     stop2("Argument 'variables' is not a named list.")
@@ -52,8 +63,8 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   # stop if any bernoulli variables are not 0/1 integers
   for (i in seq_along(distributions)) {
     if (distributions[i] == "bernoulli_logit" &&
-          (!is.integer(data[, variables[i]]) ||
-             !all(data[, variables[i]] %in% c(0, 1, NA)))) {
+        (!is.integer(data[, variables[i]]) ||
+         !all(data[, variables[i]] %in% c(0, 1, NA)))) {
       stop2(
         paste0(
           "Variables following the 'bernoulli_logit' response distribution ",
@@ -66,7 +77,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   # stop if any ordinal variables are not ordered factors in data
   for (i in seq_along(distributions)) {
     if (distributions[i] == "ordered_logistic" &&
-          !is.ordered(data[, variables[i]])) {
+        !is.ordered(data[, variables[i]])) {
       stop2(
         paste0(
           "Variables following the 'ordered_logistic' response distribution ",
@@ -80,7 +91,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   for (i in seq_along(distributions)) {
     if (distributions[i] == "poisson_softplus" &&
         (!is.integer(data[, variables[i]]) ||
-           !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
+         !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
     ) {
       stop2(
         paste0(
@@ -92,7 +103,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
     }
     if (distributions[i] == "negative_binomial_softplus" &&
         (!is.integer(data[, variables[i]]) ||
-           !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
+         !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
     ) {
       stop2(
         paste0(
@@ -135,7 +146,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   for (i in seq_along(distributions)) {
     if (distributions[i] == "gamma_log") {
       if (!is.numeric(data[, variables[i]]) ||
-            !all(data[, variables[i]] > 0, na.rm = TRUE)) {
+          !all(data[, variables[i]] > 0, na.rm = TRUE)) {
         stop2(
           paste0(
             "Variables following the 'gamma_log' response distribution must ",
@@ -145,6 +156,20 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
       }
     }
   }
+}
+
+#' Internal helper function for checking id argument
+#'
+#' @description Checks the id argument for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_id <- function(data, id) {
+  # as data frame
+  data <- as.data.frame(data)
   # stop if id is not a character of length one
   if (length(id) != 1 || !is.character(id)) {
     stop2("Argument 'id' must be a character of length one.")
@@ -153,6 +178,24 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   if (!(id %in% colnames(data))) {
     stop2("Argument 'id' is not a valid column name in the data.")
   }
+  # stop if id in data contains missing values
+  if (any(is.na(data[, id]))) {
+    stop2("The id variable in the data must not contain NAs.")
+  }
+}
+
+#' Internal helper function for checking tree argument
+#'
+#' @description Checks the tree argument for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_tree <- function(data, id, tree) {
+  # as data frame
+  data <- as.data.frame(data)
   # stop if tree is not a phylo or multiPhylo object
   if (!(methods::is(tree, "phylo") || methods::is(tree, "multiPhylo"))) {
     stop2(
@@ -190,7 +233,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   }
   # stop if trees have different numbers of internal nodes or branches
   if (length(unique(lapply(tree, function(x) x$Nnode))) != 1 ||
-        length(unique(lapply(tree, function(x) length(x$edge.length)))) != 1) {
+      length(unique(lapply(tree, function(x) length(x$edge.length)))) != 1) {
     stop2(
       paste0(
         "All trees in 'tree' argument must have the same number of ",
@@ -198,12 +241,22 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
       )
     )
   }
-  # stop if id in data contains missing values
-  if (any(is.na(data[, id]))) {
-    stop2("The id variable in the data must not contain NAs.")
-  }
+}
+
+#' Internal helper function for checking effects_mat argument
+#'
+#' @description Checks the effects_mat argument for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_effects_mat <- function(variables, effects_mat) {
   # if user entered an effects matrix
   if (!is.null(effects_mat)) {
+    # extract variable names from named list
+    variables <- names(variables)
     # stop if effects_mat is not a matrix
     if (!methods::is(effects_mat, "matrix")) {
       stop2("Argument 'effects_mat' must be a matrix.")
@@ -218,7 +271,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
     }
     # stop if row or column names do not match variable names exactly
     if (!identical(sort(variables), sort(rownames(effects_mat))) ||
-          !identical(sort(variables), sort(colnames(effects_mat)))) {
+        !identical(sort(variables), sort(colnames(effects_mat)))) {
       stop2(
         paste0(
           "Row and column names for argument 'effects_mat' do not match ",
@@ -238,12 +291,22 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
       }
     }
   }
-  # stop if complete_cases is not logical of length one
-  if (!is.logical(complete_cases) || length(complete_cases) != 1) {
-    stop2("Argument 'complete_cases' must be a logical of length one.")
-  }
+}
+
+#' Internal helper function for checking dist_mat argument
+#'
+#' @description Checks the dist_mat argument for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_dist_mat <- function(data, dist_mat, id) {
   # if user entered a distance matrix
   if (!is.null(dist_mat)) {
+    # as data frame
+    data <- as.data.frame(data)
     # stop if dist_mat is not a matrix
     if (!methods::is(dist_mat, "matrix")) {
       stop2("Argument 'dist_mat' must be a matrix.")
@@ -268,7 +331,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
     }
     # stop if row and column names do not match tip labels exactly
     if (!identical(sort(unique(data[, id])), sort(rownames(dist_mat))) ||
-          !identical(sort(unique(data[, id])), sort(colnames(dist_mat)))) {
+        !identical(sort(unique(data[, id])), sort(colnames(dist_mat)))) {
       stop2(
         paste0(
           "Row and column names for argument 'dist_mat' do not match tree ",
@@ -277,6 +340,18 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
       )
     }
   }
+}
+
+#' Internal helper function for checking dist_cov argument
+#'
+#' @description Checks the dist_cov argument for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_dist_cov <- function(dist_cov) {
   # stop if dist_cov is not a character string
   if (!methods::is(dist_cov, "character")) {
     stop2("Argument 'dist_cov' is not a character string.")
@@ -294,8 +369,22 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
       )
     )
   }
+}
+
+#' Internal helper function for checking measurement_error argument
+#'
+#' @description Checks the measurement_error argument for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_measurement_error <- function(data, variables, measurement_error) {
   # if user declares measurement error
   if (!is.null(measurement_error)) {
+    # as data frame
+    data <- as.data.frame(data)
     # stop if measurement_error argument is not a named list
     if (!is.list(measurement_error) || is.null(names(measurement_error))) {
       stop2("Argument 'measurement_error' is not a named list.")
@@ -303,6 +392,9 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
     # extract standard error columns and variable names from named list
     error_columns <- as.character(measurement_error)
     error_variables <- names(measurement_error)
+    # extract distributions and variable names from named list
+    distributions <- as.character(variables)
+    variables <- names(variables)
     # stop if any variables are not valid or normally distributed
     if (!all(error_variables %in% variables[distributions == "normal"])) {
       stop2(
@@ -325,7 +417,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
     for (i in seq_along(error_columns)) {
       # stop if error column is non-numeric or contains any non-positive-reals
       if (!is.numeric(data[[error_columns[i]]]) ||
-            !all(data[[error_columns[i]]] >= 0, na.rm = TRUE)) {
+          !all(data[[error_columns[i]]] >= 0, na.rm = TRUE)) {
         stop2(
           paste0(
             "Standard errors in measurement error columns must be zero or ",
@@ -348,6 +440,18 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
       }
     }
   }
+}
+
+#' Internal helper function for checking prior argument
+#'
+#' @description Checks the prior argument for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_prior <- function(prior) {
   # if user entered a list of priors
   if (!is.null(prior)) {
     # stop if prior not a list
@@ -377,26 +481,50 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
       stop2("Argument 'prior' contains duplicate names.")
     }
   }
-  # stop if scale is not logical of length one
+}
+
+#' Internal helper function for checking all arguments
+#'
+#' @description Checks all arguments for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
+                       dist_mat, dist_cov, measurement_error, prior, scale,
+                       estimate_correlated_drift, estimate_residual, log_lik,
+                       prior_only) {
+  # run checks from previous functions
+  run_checks_data(data)
+  run_checks_variables(data, variables)
+  run_checks_id(data, id)
+  run_checks_tree(data, id, tree)
+  run_checks_effects_mat(variables, effects_mat)
+  run_checks_dist_mat(data, dist_mat, id)
+  run_checks_dist_cov(dist_cov)
+  run_checks_measurement_error(data, variables, measurement_error)
+  run_checks_prior(prior)
+  # check that other arguments are logical of length one
+  if (!is.logical(complete_cases) || length(complete_cases) != 1) {
+    stop2("Argument 'complete_cases' must be a logical of length one.")
+  }
   if (!is.logical(scale) || length(scale) != 1) {
     stop2("Argument 'scale' must be a logical of length one.")
   }
-  # stop if estimate_correlated_drift is not logical of length one
   if (!is.logical(estimate_correlated_drift) ||
         length(estimate_correlated_drift) != 1) {
     stop2(
       "Argument 'estimate_correlated_drift' must be a logical of length one."
     )
   }
-  # stop if estimate_residual is not logical of length one
   if (!is.logical(estimate_residual) || length(estimate_residual) != 1) {
     stop2("Argument 'estimate_residual' must be a logical of length one.")
   }
-  # stop if log_lik is not logical of length one
   if (!is.logical(log_lik) || length(log_lik) != 1) {
     stop2("Argument 'log_lik' must be a logical of length one.")
   }
-  # stop if prior_only is not logical of length one
   if (!is.logical(prior_only) || length(prior_only) != 1) {
     stop2("Argument 'prior_only' must be a logical of length one.")
   }
