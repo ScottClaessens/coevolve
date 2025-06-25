@@ -172,8 +172,83 @@ coev_make_stancode <- function(data, variables, id, tree,
       priors[[i]] <- prior[[i]]
     }
   }
-  # write functions block
-  sc_functions <- paste0(
+  # put stan code together
+  sc <- paste0(
+    "// Generated with coevolve ",
+    utils::packageVersion("coevolve"),
+    "\n",
+    write_functions_block(),
+    "\n",
+    write_data_block(measurement_error, dist_mat),
+    "\n",
+    write_transformed_data_block(distributions, priors),
+    "\n",
+    write_parameters_block(data, variables, distributions, id, dist_mat,
+                           estimate_correlated_drift, estimate_residual),
+    "\n",
+    write_transformed_pars_block(data, distributions, id, dist_mat,
+                                 dist_cov, estimate_correlated_drift,
+                                 estimate_residual),
+    "\n",
+    write_model_block(data, distributions, id, dist_mat, priors,
+                      measurement_error, estimate_correlated_drift,
+                      estimate_residual),
+    "\n",
+    write_gen_quantities_block(data, distributions, id, dist_mat,
+                               measurement_error, estimate_correlated_drift,
+                               estimate_residual, log_lik)
+  )
+  # check that stan code is syntactically correct
+  # if not (likely due to invalid prior string) return error
+  cmdstanr::cmdstan_model(
+    stan_file = cmdstanr::write_stan_file(sc),
+    compile = FALSE
+  )$check_syntax(quiet = TRUE)
+  # produce warnings for gaussian processes and/or random effects
+  if (!is.null(dist_mat)) {
+    message(
+      paste0(
+        "Note: Distance matrix detected. Gaussian processes over spatial ",
+        "distances have been included for each variable in the model ",
+        "using the '", dist_cov, "' covariance kernel."
+      )
+    )
+  }
+  if (any(duplicated(data[, id])) && estimate_residual) {
+    message(
+      paste0(
+        "Note: Repeated observations detected. Residual standard deviations ",
+        "and correlations have been included in the model. To turn off this ",
+        "behaviour, set estimate_residual = FALSE."
+      )
+    )
+  }
+  # produce warning that repeated models with mix of gaussian and non-gaussian
+  # is experimental at this stage
+  if (any(duplicated(data[, id])) && estimate_residual &&
+        "normal" %in% distributions && !all(distributions == "normal")) {
+    message(
+      paste0(
+        "Note: Repeated observations models with a mixture of ",
+        "normally-distributed and non-normally-distributed variables are ",
+        "currently experimental. Be sure to check models for convergence."
+      )
+    )
+  }
+  # return stan code
+  return(sc)
+}
+
+#' Internal function for writing the Stan functions block
+#'
+#' @description Writes the Stan functions block for
+#'   \code{\link{coev_make_stancode}}.
+#'
+#' @returns Character string
+#'
+#' @noRd
+write_functions_block <- function() {
+  paste0(
     "functions {\n",
     "  // Charles Driver's solver for the asymptotic Q matrix\n",
     "  matrix ksolve (matrix A, matrix Q) {\n",
@@ -269,7 +344,16 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  }\n",
     "}"
   )
-  # write data block
+}
+
+#' Internal function for writing the Stan data block
+#'
+#' @description Writes the Stan data block for \code{\link{coev_make_stancode}}.
+#'
+#' @returns Character string
+#'
+#' @noRd
+write_data_block <- function(measurement_error, dist_mat) {
   sc_data <- paste0(
     "data{\n",
     "  int<lower=1> N_tips; // number of tips\n",
@@ -300,12 +384,21 @@ coev_make_stancode <- function(data, variables, id, tree,
       )
   }
   # add prior_only data variable
-  sc_data <-
-    paste0(
-      sc_data,
-      "  int<lower=0,upper=1> prior_only; // should likelihood be ignored?\n}"
-    )
-  # write transformed data block
+  paste0(
+    sc_data,
+    "  int<lower=0,upper=1> prior_only; // should likelihood be ignored?\n}"
+  )
+}
+
+#' Internal function for writing the Stan transformed data block
+#'
+#' @description Writes the Stan transformed data block for
+#'   \code{\link{coev_make_stancode}}.
+#'
+#' @returns Character string
+#'
+#' @noRd
+write_transformed_data_block <- function(distributions, priors) {
   sc_transformed_data <- "transformed data{\n"
   for (j in seq_along(distributions)) {
     sc_transformed_data <- paste0(
@@ -341,8 +434,20 @@ coev_make_stancode <- function(data, variables, id, tree,
         )
     }
   }
-  sc_transformed_data <- paste0(sc_transformed_data, "}")
-  # write parameters block
+  paste0(sc_transformed_data, "}")
+}
+
+#' Internal function for writing the Stan parameters block
+#'
+#' @description Writes the Stan parameters block for
+#'   \code{\link{coev_make_stancode}}.
+#'
+#' @returns Character string
+#'
+#' @noRd
+write_parameters_block <- function(data, variables, distributions, id, dist_mat,
+                                   estimate_correlated_drift,
+                                   estimate_residual) {
   sc_parameters <- paste0(
     "parameters{\n",
     "  vector<upper=0>[J] A_diag; // autoregressive terms of A\n",
@@ -412,8 +517,20 @@ coev_make_stancode <- function(data, variables, id, tree,
       "  cholesky_factor_corr[J] L_residual;\n"
     )
   }
-  sc_parameters <- paste0(sc_parameters, "}")
-  # write transformed parameters block
+  paste0(sc_parameters, "}")
+}
+
+#' Internal function for writing the Stan transformed parameters block
+#'
+#' @description Writes the Stan transformed parameters block for
+#'   \code{\link{coev_make_stancode}}.
+#'
+#' @returns Character string
+#'
+#' @noRd
+write_transformed_pars_block <- function(data, distributions, id, dist_mat,
+                                         dist_cov, estimate_correlated_drift,
+                                         estimate_residual) {
   sc_transformed_parameters <- paste0(
     "transformed parameters{\n",
     "  array[N_tree, N_seg] vector[J] eta;\n",
@@ -555,8 +672,31 @@ coev_make_stancode <- function(data, variables, id, tree,
       "  }\n"
     )
   }
-  sc_transformed_parameters <- paste0(sc_transformed_parameters, "}")
-  # write model block
+  paste0(sc_transformed_parameters, "}")
+}
+
+#' Internal function for writing the Stan model block
+#'
+#' @description Writes the Stan model block for
+#'   \code{\link{coev_make_stancode}}.
+#'
+#' @returns Character string
+#'
+#' @noRd
+write_model_block <- function(data, distributions, id, dist_mat, priors,
+                              measurement_error, estimate_correlated_drift,
+                              estimate_residual) {
+  # function to get linear model
+  lmod <- function(j) {
+    paste0(
+      "eta[t,tip_id[i]][", j, "]",
+      ifelse(
+        !is.null(dist_mat),
+        paste0(" + dist_v[tip_id[i],", j, "]"),
+        ""
+      )
+    )
+  }
   sc_model <- paste0(
     "model{\n",
     "  b ~ ", priors$b, ";\n",
@@ -652,17 +792,6 @@ coev_make_stancode <- function(data, variables, id, tree,
       sc_model,
       "  sigma_residual ~ ", priors$sigma_residual, ";\n",
       "  L_residual ~ ", priors$L_residual, ";\n"
-    )
-  }
-  # function to get linear model
-  lmod <- function(j) {
-    paste0(
-      "eta[t,tip_id[i]][", j, "]",
-      ifelse(
-        !is.null(dist_mat),
-        paste0(" + dist_v[tip_id[i],", j, "]"),
-        ""
-      )
     )
   }
   # add likelihood
@@ -887,7 +1016,7 @@ coev_make_stancode <- function(data, variables, id, tree,
       )
     }
   }
-  sc_model <- paste0(
+  paste0(
     sc_model,
     "      }\n",
     "      target += log_sum_exp(lp);\n",
@@ -895,7 +1024,31 @@ coev_make_stancode <- function(data, variables, id, tree,
     "  }\n",
     "}"
   )
-  # generated quantities block
+}
+
+#' Internal function for writing the Stan generated quantities block
+#'
+#' @description Writes the Stan generated quantities block for
+#'   \code{\link{coev_make_stancode}}.
+#'
+#' @returns Character string
+#'
+#' @noRd
+write_gen_quantities_block <- function(data, distributions, id, dist_mat,
+                                       measurement_error,
+                                       estimate_correlated_drift,
+                                       estimate_residual, log_lik) {
+  # function to get linear model
+  lmod <- function(j) {
+    paste0(
+      "eta[t,tip_id[i]][", j, "]",
+      ifelse(
+        !is.null(dist_mat),
+        paste0(" + dist_v[tip_id[i],", j, "]"),
+        ""
+      )
+    )
+  }
   sc_generated_quantities <-
     paste0(
       "generated quantities{\n",
@@ -1230,76 +1383,21 @@ coev_make_stancode <- function(data, variables, id, tree,
       )
     }
   }
-  sc_generated_quantities <-
-    paste0(
-      sc_generated_quantities,
-      "      }\n",
-      ifelse(
-        log_lik,
-        "    for (j in 1:J) log_lik_temp[i,j] += log_sum_exp(lp[,i,j]);\n",
-        ""
-      ),
-      "    }\n",
-      ifelse(
-        log_lik,
-        "  log_lik = to_vector(log_lik_temp);\n",
-        ""
-      ),
-      "  }\n",
-      "}"
-    )
-  # put stan code together
-  sc <- paste0(
-    "// Generated with coevolve ", utils::packageVersion("coevolve"), "\n",
-    sc_functions, "\n",
-    sc_data, "\n",
+  paste0(
+    sc_generated_quantities,
+    "      }\n",
     ifelse(
-      is.null(sc_transformed_data),
-      "",
-      paste0(sc_transformed_data, "\n")
+      log_lik,
+      "    for (j in 1:J) log_lik_temp[i,j] += log_sum_exp(lp[,i,j]);\n",
+      ""
     ),
-    sc_parameters, "\n",
-    sc_transformed_parameters, "\n",
-    sc_model, "\n",
-    sc_generated_quantities
+    "    }\n",
+    ifelse(
+      log_lik,
+      "  log_lik = to_vector(log_lik_temp);\n",
+      ""
+    ),
+    "  }\n",
+    "}"
   )
-  # check that stan code is syntactically correct
-  # if not (likely due to invalid prior string) return error
-  cmdstanr::cmdstan_model(
-    stan_file = cmdstanr::write_stan_file(sc),
-    compile = FALSE
-  )$check_syntax(quiet = TRUE)
-  # produce warnings for gaussian processes and/or random effects
-  if (!is.null(dist_mat)) {
-    message(
-      paste0(
-        "Note: Distance matrix detected. Gaussian processes over spatial ",
-        "distances have been included for each variable in the model ",
-        "using the '", dist_cov, "' covariance kernel."
-      )
-    )
-  }
-  if (any(duplicated(data[, id])) && estimate_residual) {
-    message(
-      paste0(
-        "Note: Repeated observations detected. Residual standard deviations ",
-        "and correlations have been included in the model. To turn off this ",
-        "behaviour, set estimate_residual = FALSE."
-      )
-    )
-  }
-  # produce warning that repeated models with mix of gaussian and non-gaussian
-  # is experimental at this stage
-  if (any(duplicated(data[, id])) && estimate_residual &&
-        "normal" %in% distributions && !all(distributions == "normal")) {
-    message(
-      paste0(
-        "Note: Repeated observations models with a mixture of ",
-        "normally-distributed and non-normally-distributed variables are ",
-        "currently experimental. Be sure to check models for convergence."
-      )
-    )
-  }
-  # return stan code
-  return(sc)
 }

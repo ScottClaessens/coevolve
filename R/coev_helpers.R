@@ -63,8 +63,8 @@ run_checks_variables <- function(data, variables) {
   # stop if any bernoulli variables are not 0/1 integers
   for (i in seq_along(distributions)) {
     if (distributions[i] == "bernoulli_logit" &&
-        (!is.integer(data[, variables[i]]) ||
-         !all(data[, variables[i]] %in% c(0, 1, NA)))) {
+          (!is.integer(data[, variables[i]]) ||
+             !all(data[, variables[i]] %in% c(0, 1, NA)))) {
       stop2(
         paste0(
           "Variables following the 'bernoulli_logit' response distribution ",
@@ -77,7 +77,7 @@ run_checks_variables <- function(data, variables) {
   # stop if any ordinal variables are not ordered factors in data
   for (i in seq_along(distributions)) {
     if (distributions[i] == "ordered_logistic" &&
-        !is.ordered(data[, variables[i]])) {
+          !is.ordered(data[, variables[i]])) {
       stop2(
         paste0(
           "Variables following the 'ordered_logistic' response distribution ",
@@ -91,7 +91,7 @@ run_checks_variables <- function(data, variables) {
   for (i in seq_along(distributions)) {
     if (distributions[i] == "poisson_softplus" &&
         (!is.integer(data[, variables[i]]) ||
-         !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
+           !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
     ) {
       stop2(
         paste0(
@@ -103,7 +103,7 @@ run_checks_variables <- function(data, variables) {
     }
     if (distributions[i] == "negative_binomial_softplus" &&
         (!is.integer(data[, variables[i]]) ||
-         !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
+           !all(data[, variables[i]] >= 0 | is.na(data[, variables[i]])))
     ) {
       stop2(
         paste0(
@@ -146,7 +146,7 @@ run_checks_variables <- function(data, variables) {
   for (i in seq_along(distributions)) {
     if (distributions[i] == "gamma_log") {
       if (!is.numeric(data[, variables[i]]) ||
-          !all(data[, variables[i]] > 0, na.rm = TRUE)) {
+            !all(data[, variables[i]] > 0, na.rm = TRUE)) {
         stop2(
           paste0(
             "Variables following the 'gamma_log' response distribution must ",
@@ -233,7 +233,7 @@ run_checks_tree <- function(data, id, tree) {
   }
   # stop if trees have different numbers of internal nodes or branches
   if (length(unique(lapply(tree, function(x) x$Nnode))) != 1 ||
-      length(unique(lapply(tree, function(x) length(x$edge.length)))) != 1) {
+        length(unique(lapply(tree, function(x) length(x$edge.length)))) != 1) {
     stop2(
       paste0(
         "All trees in 'tree' argument must have the same number of ",
@@ -271,7 +271,7 @@ run_checks_effects_mat <- function(variables, effects_mat) {
     }
     # stop if row or column names do not match variable names exactly
     if (!identical(sort(variables), sort(rownames(effects_mat))) ||
-        !identical(sort(variables), sort(colnames(effects_mat)))) {
+          !identical(sort(variables), sort(colnames(effects_mat)))) {
       stop2(
         paste0(
           "Row and column names for argument 'effects_mat' do not match ",
@@ -331,7 +331,7 @@ run_checks_dist_mat <- function(data, dist_mat, id) {
     }
     # stop if row and column names do not match tip labels exactly
     if (!identical(sort(unique(data[, id])), sort(rownames(dist_mat))) ||
-        !identical(sort(unique(data[, id])), sort(colnames(dist_mat)))) {
+          !identical(sort(unique(data[, id])), sort(colnames(dist_mat)))) {
       stop2(
         paste0(
           "Row and column names for argument 'dist_mat' do not match tree ",
@@ -417,7 +417,7 @@ run_checks_measurement_error <- function(data, variables, measurement_error) {
     for (i in seq_along(error_columns)) {
       # stop if error column is non-numeric or contains any non-positive-reals
       if (!is.numeric(data[[error_columns[i]]]) ||
-          !all(data[[error_columns[i]]] >= 0, na.rm = TRUE)) {
+            !all(data[[error_columns[i]]] >= 0, na.rm = TRUE)) {
         stop2(
           paste0(
             "Standard errors in measurement error columns must be zero or ",
