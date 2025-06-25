@@ -84,106 +84,15 @@ coev_simulate_coevolution <- function(n,
                                       intercepts = NULL,
                                       ancestral_states = NULL) {
   # check arguments
-  # stop if n is not numeric
-  if (!methods::is(n, "numeric")) {
-    stop2("Argument 'n' is not numeric.")
-  }
-  # stop if variables is not a character vector or has length < 2
-  # must also have non-reserved names
-  if (!methods::is(variables, "character")) {
-    stop2("Argument 'variables' is not a character vector.")
-  } else if (length(variables) < 2) {
-    stop2("Argument 'variables' must specify at least two variable names.")
-  } else if (any(c("ts", "species", "parent", "split") %in% variables)) {
-    stop2(
-      paste0(
-        "Argument 'variables' uses variable names reserved internally for ",
-        "simulation ('ts','species','parent','split')."
-      )
-    )
-  }
-  # stop if selection matrix is not a numeric matrix with correct dims and names
-  if (!methods::is(selection_matrix, "matrix")) {
-    stop2("Argument 'selection_matrix' is not a matrix.")
-  } else if (!methods::is(as.vector(selection_matrix), "numeric")) {
-    stop2("Argument 'selection_matrix' is not a numeric matrix.")
-  } else if (!identical(as.numeric(dim(selection_matrix)),
-                        rep(as.numeric(length(variables)), 2))) {
-    stop2(
-      paste0(
-        "Argument 'selection_matrix' has number of rows or columns not equal ",
-        "to the number of variables."
-      )
-    )
-  } else if (!(all(variables %in% rownames(selection_matrix)) &&
-                 all(variables %in% colnames(selection_matrix)))) {
-    stop2(
-      paste0(
-        "Argument 'selection_matrix' has row or column names not equal to ",
-        "variable names."
-      )
-    )
-  }
-  # stop if drift is not named numeric vector with correct dims and var names
-  if (!methods::is(drift, "numeric")) {
-    stop2("Argument 'drift' is not numeric.")
-  } else if (length(drift) != length(variables)) {
-    stop2(
-      "Argument 'drift' has length different to specified number of variables."
-    )
-  } else if (!all(variables %in% names(drift))) {
-    stop2("Argument 'drift' has names different to specified variable names.")
-  }
-  # stop if prob_split is not numeric of length 1
-  if (!methods::is(prob_split, "numeric")) {
-    stop2("Argument 'prob_split' is not numeric.")
-  } else if (length(prob_split) != 1) {
-    stop2("Argument 'prob_split' must be of length 1.")
-  } else if (prob_split <= 0 || prob_split >= 1) {
-    stop2("Argument 'prob_split' must be between 0 and 1.")
-  }
-  # stop if intercepts not a named numeric vector with correct dims and vars
-  if (!is.null(intercepts)) {
-    if (!methods::is(intercepts, "numeric")) {
-      stop2("Argument 'intercepts' is not numeric.")
-    } else if (length(intercepts) != length(variables)) {
-      stop2(
-        paste0(
-          "Argument 'intercepts' has length different to specified number of ",
-          "variables."
-        )
-      )
-    } else if (!all(variables %in% names(intercepts))) {
-      stop2(
-        "Argument 'intercepts' has names different to specified variable names."
-      )
-    }
-  } else {
-    # if not set, intercepts are zero for all variables by default
+  run_checks_sim(n, variables, selection_matrix, drift,
+                 prob_split, intercepts, ancestral_states)
+  # if not set, intercepts are zero for all variables by default
+  if (is.null(intercepts)) {
     intercepts <- rep(0, length(variables))
     names(intercepts) <- variables
   }
-  # stop if ancestral_states not a named numeric vector with correct dims/vars
-  if (!is.null(ancestral_states)) {
-    if (!methods::is(ancestral_states, "numeric")) {
-      stop2("Argument 'ancestral_states' is not numeric.")
-    } else if (length(ancestral_states) != length(variables)) {
-      stop2(
-        paste0(
-          "Argument 'ancestral_states' has length different to specified ",
-          "number of variables."
-        )
-      )
-    } else if (!all(variables %in% names(ancestral_states))) {
-      stop2(
-        paste0(
-          "Argument 'ancestral_states' has names different to specified ",
-          "variable names."
-        )
-      )
-    }
-  } else {
-    # if not set, ancestral states are zero for all variables by default
+  # if not set, ancestral states are zero for all variables by default
+  if (is.null(ancestral_states)) {
     ancestral_states <- rep(0, length(variables))
     names(ancestral_states) <- variables
   }
@@ -197,8 +106,7 @@ coev_simulate_coevolution <- function(n,
   } else if (!identical(variables, names(drift))) {
     stop2("Drift vector names are not equal to variable names.")
   }
-  # begin simulation
-  # first timestep
+  # first simulation timestep
   sim <- data.frame(
     ts = 1,
     species = "t1",
@@ -300,4 +208,110 @@ coev_simulate_coevolution <- function(n,
     tree = tree
   )
   return(out)
+}
+
+#' Internal helper function for checking coev_simulate_coevolution() arguments
+#'
+#' @description Checks arguments for coev_simulate_coevolution()
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_sim <- function(n, variables, selection_matrix, drift, prob_split,
+                           intercepts, ancestral_states) {
+  # stop if n is not numeric
+  if (!methods::is(n, "numeric")) {
+    stop2("Argument 'n' is not numeric.")
+  }
+  # stop if variables is not a character vector or has length < 2
+  # must also have non-reserved names
+  if (!methods::is(variables, "character")) {
+    stop2("Argument 'variables' is not a character vector.")
+  } else if (length(variables) < 2) {
+    stop2("Argument 'variables' must specify at least two variable names.")
+  } else if (any(c("ts", "species", "parent", "split") %in% variables)) {
+    stop2(
+      paste0(
+        "Argument 'variables' uses variable names reserved internally for ",
+        "simulation ('ts','species','parent','split')."
+      )
+    )
+  }
+  # stop if selection matrix is not a numeric matrix with correct dims and names
+  if (!methods::is(selection_matrix, "matrix")) {
+    stop2("Argument 'selection_matrix' is not a matrix.")
+  } else if (!methods::is(as.vector(selection_matrix), "numeric")) {
+    stop2("Argument 'selection_matrix' is not a numeric matrix.")
+  } else if (!identical(as.numeric(dim(selection_matrix)),
+                        rep(as.numeric(length(variables)), 2))) {
+    stop2(
+      paste0(
+        "Argument 'selection_matrix' has number of rows or columns not equal ",
+        "to the number of variables."
+      )
+    )
+  } else if (!(all(variables %in% rownames(selection_matrix)) &&
+                 all(variables %in% colnames(selection_matrix)))) {
+    stop2(
+      paste0(
+        "Argument 'selection_matrix' has row or column names not equal to ",
+        "variable names."
+      )
+    )
+  }
+  # stop if drift is not named numeric vector with correct dims and var names
+  if (!methods::is(drift, "numeric")) {
+    stop2("Argument 'drift' is not numeric.")
+  } else if (length(drift) != length(variables)) {
+    stop2(
+      "Argument 'drift' has length different to specified number of variables."
+    )
+  } else if (!all(variables %in% names(drift))) {
+    stop2("Argument 'drift' has names different to specified variable names.")
+  }
+  # stop if prob_split is not numeric of length 1
+  if (!methods::is(prob_split, "numeric")) {
+    stop2("Argument 'prob_split' is not numeric.")
+  } else if (length(prob_split) != 1) {
+    stop2("Argument 'prob_split' must be of length 1.")
+  } else if (prob_split <= 0 || prob_split >= 1) {
+    stop2("Argument 'prob_split' must be between 0 and 1.")
+  }
+  # stop if intercepts not a named numeric vector with correct dims and vars
+  if (!is.null(intercepts)) {
+    if (!methods::is(intercepts, "numeric")) {
+      stop2("Argument 'intercepts' is not numeric.")
+    } else if (length(intercepts) != length(variables)) {
+      stop2(
+        paste0(
+          "Argument 'intercepts' has length different to specified number of ",
+          "variables."
+        )
+      )
+    } else if (!all(variables %in% names(intercepts))) {
+      stop2(
+        "Argument 'intercepts' has names different to specified variable names."
+      )
+    }
+  }
+  # stop if ancestral_states not a named numeric vector with correct dims/vars
+  if (!is.null(ancestral_states)) {
+    if (!methods::is(ancestral_states, "numeric")) {
+      stop2("Argument 'ancestral_states' is not numeric.")
+    } else if (length(ancestral_states) != length(variables)) {
+      stop2(
+        paste0(
+          "Argument 'ancestral_states' has length different to specified ",
+          "number of variables."
+        )
+      )
+    } else if (!all(variables %in% names(ancestral_states))) {
+      stop2(
+        paste0(
+          "Argument 'ancestral_states' has names different to specified ",
+          "variable names."
+        )
+      )
+    }
+  }
 }

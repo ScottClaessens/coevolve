@@ -60,70 +60,8 @@
 #' @export
 coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
                                    tree_id = NULL, xlim = NULL, ylim = NULL) {
-  # stop if object is not of class coevfit
-  if (!methods::is(object, "coevfit")) {
-    stop2(
-      paste0(
-        "Argument 'object' must be a fitted coevolutionary model ",
-        "of class coevfit."
-      )
-    )
-  }
-  if (!is.null(variables)) {
-    if (!is.character(variables) || !(length(variables) >= 2)) {
-      # stop if variables is not a character string
-      stop2(
-        paste0(
-          "Argument 'variables' must be a character vector ",
-          "of at least length 2."
-        )
-      )
-    } else if (!all(variables %in% names(object$variables))) {
-      # stop if variables not included in the fitted model
-      stop2(
-        paste0(
-          "Argument 'variables' contains variable names that are not ",
-          "included in the fitted model."
-        )
-      )
-    }
-  }
-  # stop if ndraws is not a single integer between 1 and the total num draws
-  if (!is.null(ndraws)) {
-    if (!is.numeric(ndraws)) {
-      stop2("Argument 'ndraws' must be numeric.")
-    } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
-      stop2("Argument 'ndraws' must be a single integer.")
-    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
-      stop2(
-        "Argument 'ndraws' must be between 1 and the total number of draws."
-      )
-    }
-  }
-  # stop if tree_id is not a single integer between 1 and the total num trees
-  if (!is.null(tree_id)) {
-    if (!is.numeric(tree_id)) {
-      stop2("Argument 'tree_id' must be numeric.")
-    } else if (!all(as.integer(tree_id) == tree_id) || length(tree_id) != 1) {
-      stop2("Argument 'tree_id' must be a single integer.")
-    } else if (tree_id < 1 || tree_id > object$stan_data$N_tree) {
-      stop2(
-        "Argument 'tree_id' must be between 1 and the total number of trees."
-      )
-    }
-  }
-  # stop if xlim is not a numeric vector of length 2
-  if (!is.null(xlim)) {
-    if (!(is.numeric(xlim) && is.vector(xlim) && length(xlim) == 2)) {
-      stop2("Argument 'xlim' must be a numeric vector of length 2.")
-    }
-  }
-  # stop if ylim is not a numeric vector of length 2
-  if (!is.null(ylim)) {
-    if (!(is.numeric(ylim) && is.vector(ylim) && length(ylim) == 2)) {
-      stop2("Argument 'ylim' must be a numeric vector of length 2.")
-    }
-  }
+  # run checks
+  run_checks_plot_trait_values(object, variables, ndraws, tree_id, xlim, ylim)
   # get posterior trait values
   eta <- posterior::as_draws_rvars(object$fit)$eta
   # initial rvars dimensions: [trees, nodes, variables]
@@ -332,4 +270,79 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
     nrow = ncol(d),
     ncol = ncol(d)
   )
+}
+
+#' Internal helper function for checking coev_plot_trait_values() arguments
+#'
+#' @description Checks arguments for coev_plot_trait_values()
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_plot_trait_values <- function(object, variables, ndraws, tree_id,
+                                         xlim, ylim) {
+  # stop if object is not of class coevfit
+  if (!methods::is(object, "coevfit")) {
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "of class coevfit."
+      )
+    )
+  }
+  if (!is.null(variables)) {
+    if (!is.character(variables) || !(length(variables) >= 2)) {
+      # stop if variables is not a character string
+      stop2(
+        paste0(
+          "Argument 'variables' must be a character vector ",
+          "of at least length 2."
+        )
+      )
+    } else if (!all(variables %in% names(object$variables))) {
+      # stop if variables not included in the fitted model
+      stop2(
+        paste0(
+          "Argument 'variables' contains variable names that are not ",
+          "included in the fitted model."
+        )
+      )
+    }
+  }
+  # stop if ndraws is not a single integer between 1 and the total num draws
+  if (!is.null(ndraws)) {
+    if (!is.numeric(ndraws)) {
+      stop2("Argument 'ndraws' must be numeric.")
+    } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
+      stop2("Argument 'ndraws' must be a single integer.")
+    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
+      stop2(
+        "Argument 'ndraws' must be between 1 and the total number of draws."
+      )
+    }
+  }
+  # stop if tree_id is not a single integer between 1 and the total num trees
+  if (!is.null(tree_id)) {
+    if (!is.numeric(tree_id)) {
+      stop2("Argument 'tree_id' must be numeric.")
+    } else if (!all(as.integer(tree_id) == tree_id) || length(tree_id) != 1) {
+      stop2("Argument 'tree_id' must be a single integer.")
+    } else if (tree_id < 1 || tree_id > object$stan_data$N_tree) {
+      stop2(
+        "Argument 'tree_id' must be between 1 and the total number of trees."
+      )
+    }
+  }
+  # stop if xlim is not a numeric vector of length 2
+  if (!is.null(xlim)) {
+    if (!(is.numeric(xlim) && is.vector(xlim) && length(xlim) == 2)) {
+      stop2("Argument 'xlim' must be a numeric vector of length 2.")
+    }
+  }
+  # stop if ylim is not a numeric vector of length 2
+  if (!is.null(ylim)) {
+    if (!(is.numeric(ylim) && is.vector(ylim) && length(ylim) == 2)) {
+      stop2("Argument 'ylim' must be a numeric vector of length 2.")
+    }
+  }
 }

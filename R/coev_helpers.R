@@ -1,8 +1,7 @@
 #' Internal helper function for checking data argument
 #'
-#' @description Checks the data argument for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#' @description Checks the data argument for the functions coev_make_stancode(),
+#'   coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
@@ -23,8 +22,7 @@ run_checks_data <- function(data) {
 #' Internal helper function for checking variables argument
 #'
 #' @description Checks the variables argument for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
@@ -146,9 +144,8 @@ run_checks_variables <- function(data, variables) {
 
 #' Internal helper function for checking id argument
 #'
-#' @description Checks the id argument for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#' @description Checks the id argument for the functions coev_make_stancode(),
+#'   coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
@@ -172,9 +169,8 @@ run_checks_id <- function(data, id) {
 
 #' Internal helper function for checking tree argument
 #'
-#' @description Checks the tree argument for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#' @description Checks the tree argument for the functions coev_make_stancode(),
+#'   coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
@@ -232,8 +228,7 @@ run_checks_tree <- function(data, id, tree) {
 #' Internal helper function for checking effects_mat argument
 #'
 #' @description Checks the effects_mat argument for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
@@ -282,8 +277,7 @@ run_checks_effects_mat <- function(variables, effects_mat) {
 #' Internal helper function for checking dist_mat argument
 #'
 #' @description Checks the dist_mat argument for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
@@ -331,8 +325,7 @@ run_checks_dist_mat <- function(data, dist_mat, id) {
 #' Internal helper function for checking dist_cov argument
 #'
 #' @description Checks the dist_cov argument for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
@@ -360,8 +353,7 @@ run_checks_dist_cov <- function(dist_cov) {
 #' Internal helper function for checking measurement_error argument
 #'
 #' @description Checks the measurement_error argument for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
@@ -431,8 +423,7 @@ run_checks_measurement_error <- function(data, variables, measurement_error) {
 #' Internal helper function for checking prior argument
 #'
 #' @description Checks the prior argument for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
@@ -471,9 +462,8 @@ run_checks_prior <- function(prior) {
 
 #' Internal helper function for checking all arguments
 #'
-#' @description Checks all arguments for the functions
-#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
-#'   \code{\link{coev_fit}}.
+#' @description Checks all arguments for the functions coev_make_stancode(),
+#'   coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'

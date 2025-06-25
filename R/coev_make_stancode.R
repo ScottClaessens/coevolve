@@ -686,6 +686,8 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
 write_model_block <- function(data, distributions, id, dist_mat, priors,
                               measurement_error, estimate_correlated_drift,
                               estimate_residual) {
+  # check for repeated
+  repeated <- any(duplicated(data[, id])) && estimate_residual
   # function to get linear model
   lmod <- function(j) {
     paste0(
@@ -708,7 +710,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
     # 2. there are repeated measures and estimate_residual = TRUE
     ifelse(
       (!any(duplicated(data[, id])) && !("normal" %in% distributions)) ||
-        (any(duplicated(data[, id])) && estimate_residual),
+        (repeated),
       "    to_vector(terminal_drift[t]) ~ std_normal();\n",
       ""
     ),
@@ -762,27 +764,24 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
     )
   }
   # add priors for any residual sds and cors
-  if (any(duplicated(data[, id])) && estimate_residual) {
+  if (repeated) {
     sc_model <- paste0(sc_model, "  // priors for residual sds and cors\n")
     if ("normal" %in% distributions) {
       sc_model <- paste0(sc_model, "  for (i in 1:N_obs) {\n")
       for (j in seq_along(distributions)) {
-        if (distributions[j] == "normal") {
-          sc_model <- paste0(
-            sc_model,
+        sc_model <- paste0(
+          sc_model,
+          ifelse(
+            distributions[j] == "normal",
             paste0(
               "    if (miss[i,", j, "] == 0) residual_z[", j,
               ",i] ~ std_normal();\n"
-            )
-          )
-        } else {
-          sc_model <- paste0(
-            sc_model,
+            ),
             paste0(
               "    residual_z[", j, ",i] ~ std_normal();\n"
             )
           )
-        }
+        )
       }
       sc_model <- paste0(sc_model, "  }\n")
     } else {
@@ -803,21 +802,21 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
     "      for (t in 1:N_tree) {\n",
     # only initialise tdrift vector when no repeated observations and gaussian
     ifelse(
-      !(any(duplicated(data[, id])) && estimate_residual) &&
+      !(repeated) &&
         "normal" %in% distributions,
       "        vector[J] tdrift;\n",
       ""
     ),
     # only initialise residuals vector when repeated observations and gaussian
     ifelse(
-      any(duplicated(data[, id])) && estimate_residual &&
+      repeated &&
         ("normal" %in% distributions),
       "        vector[J] residuals;\n",
       ""
     )
   )
   # set residuals when there are repeated observations:
-  if (any(duplicated(data[, id])) && estimate_residual) {
+  if (repeated) {
     if ("normal" %in% distributions) {
       for (j in seq_along(distributions)) {
         if (distributions[j] == "normal") {
@@ -903,18 +902,18 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
         "        if (miss[i,", j, "] == 0) lp[t] += ",
         "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
         ifelse(
-          !(any(duplicated(data[, id])) && estimate_residual) &&
+          !(repeated) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
@@ -926,18 +925,18 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
         "        if (miss[i,", j, "] == 0) lp[t] += ",
         "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
         ifelse(
-          !(any(duplicated(data[, id])) && estimate_residual) &&
+          !(repeated) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
@@ -950,18 +949,18 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
         "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j, ") * log1p_exp(",
         lmod(j),
         ifelse(
-          !(any(duplicated(data[, id])) && estimate_residual) &&
+          !(repeated) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
@@ -974,18 +973,18 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
         "neg_binomial_2_lpmf(to_int(y[i,", j,
         "]) | mean(obs", j, ") * log1p_exp(", lmod(j),
         ifelse(
-          !(any(duplicated(data[, id])) && estimate_residual) &&
+          !(repeated) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
@@ -997,18 +996,18 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
         "        if (miss[i,", j, "] == 0) lp[t] += ",
         "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(", lmod(j),
         ifelse(
-          !(any(duplicated(data[, id])) && estimate_residual) &&
+          !(repeated) &&
             "normal" %in% distributions,
           paste0(" + tdrift[", j, "]"),
           paste0(" + tdrift[t,tip_id[i]][", j, "]")
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             !("normal" %in% distributions),
           paste0(" + residual_v[i,", j, "]"), ""
         ),
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual &&
+          repeated &&
             "normal" %in% distributions,
           paste0(" + residuals[", j, "]"), ""
         ),
@@ -1038,6 +1037,8 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
                                        measurement_error,
                                        estimate_correlated_drift,
                                        estimate_residual, log_lik) {
+  # check if repeated
+  repeated <- any(duplicated(data[, id])) && estimate_residual
   # function to get linear model
   lmod <- function(j) {
     paste0(
@@ -1063,7 +1064,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
         "  cor_R = multiply_lower_tri_self_transpose(L_R);\n"
       )
   }
-  if (any(duplicated(data[, id])) && estimate_residual) {
+  if (repeated) {
     sc_generated_quantities <-
       paste0(
         sc_generated_quantities,
@@ -1123,14 +1124,14 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
     sc_generated_quantities <- paste0(
       sc_generated_quantities,
       ifelse(
-        any(duplicated(data[, id])) && estimate_residual,
+        repeated,
         "        vector[J] residuals;\n",
         "        vector[J] tdrifts;\n"
       )
     )
   }
   # calculate residuals_rep for yrep if repeated observations
-  if (any(duplicated(data[, id])) && estimate_residual) {
+  if (repeated) {
     sc_generated_quantities <- paste0(
       sc_generated_quantities,
       "        vector[J] residuals_rep;\n",
@@ -1146,7 +1147,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
         sc_generated_quantities <- paste0(
           sc_generated_quantities,
           ifelse(
-            any(duplicated(data[, id])) && estimate_residual,
+            repeated,
             paste0(
               "        residuals[", j, "] = y[i][", j, "] - (", lmod(j),
               " + tdrift[t,tip_id[i]][", j, "]);\n"
@@ -1160,7 +1161,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
         sc_generated_quantities <- paste0(
           sc_generated_quantities,
           ifelse(
-            any(duplicated(data[, id])) && estimate_residual,
+            repeated,
             ifelse(
               "normal" %in% distributions,
               paste0("        residuals[", j, "] = residual_z[", j, ",i];\n"),
@@ -1178,7 +1179,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
   }
   # only calculate if there are gaussian distributions and log_lik = TRUE
   if ("normal" %in% distributions && log_lik) {
-    if (any(duplicated(data[, id])) && estimate_residual) {
+    if (repeated) {
       sc_generated_quantities <- paste0(
         sc_generated_quantities,
         ifelse(
@@ -1229,7 +1230,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
             "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
             "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
             ifelse(
-              any(duplicated(data[, id])) && estimate_residual,
+              repeated,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
@@ -1240,7 +1241,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
         "        yrep[t,i,", j, "] = bernoulli_logit_rng(", lmod(j),
         " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual,
+          repeated,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1255,7 +1256,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
             "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
             "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
             ifelse(
-              any(duplicated(data[, id])) && estimate_residual,
+              repeated,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
@@ -1266,7 +1267,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
         "        yrep[t,i,", j, "] = ", "ordered_logistic_rng(", lmod(j),
         " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual,
+          repeated,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1282,7 +1283,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
             "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
             ") * log1p_exp(", lmod(j),
             ifelse(
-              any(duplicated(data[, id])) && estimate_residual,
+              repeated,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
@@ -1293,7 +1294,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
         "        yrep[t,i,", j, "] = poisson_rng(mean(obs", j, ") * log1p_exp(",
         lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual,
+          repeated,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1308,7 +1309,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
             "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
             "normal_lpdf(",
             ifelse(
-              any(duplicated(data[, id])) && estimate_residual,
+              repeated,
               paste0("residuals[", j, "]"),
               paste0("tdrifts[", j, "]")
             ),
@@ -1320,7 +1321,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
         "        yrep[t,i,", j, "] = ", lmod(j),
         " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual,
+          repeated,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1336,7 +1337,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
             "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
             ") * log1p_exp(", lmod(j),
             ifelse(
-              any(duplicated(data[, id])) && estimate_residual,
+              repeated,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
@@ -1348,7 +1349,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
         ") * log1p_exp(", lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j,
         "]",
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual,
+          repeated,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),
@@ -1364,7 +1365,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
             "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(",
             lmod(j),
             ifelse(
-              any(duplicated(data[, id])) && estimate_residual,
+              repeated,
               paste0(" + residuals[", j, "]"),
               paste0(" + tdrifts[", j, "]")
             ),
@@ -1375,7 +1376,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
         "        yrep[t,i,", j, "] = gamma_rng(shape", j, ", shape", j,
         " / exp(", lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j, "]",
         ifelse(
-          any(duplicated(data[, id])) && estimate_residual,
+          repeated,
           paste0(" + residuals_rep[", j, "]"),
           ""
         ),

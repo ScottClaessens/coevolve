@@ -84,143 +84,9 @@
 coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
                              tmax = 1, ntimes = 30, ndraws = NULL,
                              stochastic = FALSE) {
-  # stop if object is not of class coevfit
-  if (!methods::is(object, "coevfit")) {
-    stop2(
-      paste0(
-        "Argument 'object' must be a fitted coevolutionary model of class ",
-        "coevfit."
-      )
-    )
-  }
-  if (!is.null(eta_anc)) {
-    # stop if eta_anc argument is not a named list
-    if (!is.list(eta_anc) || is.null(names(eta_anc))) {
-      stop2("Argument 'eta_anc' is not a named list.")
-    }
-    # stop if eta_anc contains variables not included in the model
-    if (!all(names(eta_anc) %in% names(object$variables))) {
-      stop2(
-        paste0(
-          "At least one variable in 'eta_anc' is not included in ",
-          "the fitted model."
-        )
-      )
-    }
-    # stop if any coevolving variables are not listed in eta_anc
-    if (any(!(names(object$variables) %in% names(eta_anc)))) {
-      stop2(
-        paste0(
-          "All coevolving variables must be included in ",
-          "argument 'eta_anc'."
-        )
-      )
-    }
-    # stop if repetition in eta_anc
-    if (any(duplicated(names(eta_anc)))) {
-      stop2(
-        "Argument 'eta_anc' contains duplicated variable names."
-      )
-    }
-    # stop if any values in eta_anc are not of length one
-    if (any(unlist(lapply(eta_anc, length)) != 1)) {
-      stop2("Values in 'eta_anc' must each be of length one.")
-    }
-    # stop if any values in eta_anc are not numeric
-    if (any(unlist(lapply(eta_anc,
-                          function(x) !is.numeric(x))))) {
-      stop2("Values in 'eta_anc' must each be numeric.")
-    }
-  }
-  # stop if tmax is not numeric or not positive
-  if (!is.numeric(tmax) || length(tmax) != 1) {
-    stop2("Argument 'tmax' must be a single numeric value.")
-  } else if (tmax <= 0) {
-    stop2("Argument 'tmax' must be positive.")
-  }
-  # stop if ndraws is not a single integer between 1 and the total num draws
-  if (!is.null(ndraws)) {
-    if (!is.numeric(ndraws)) {
-      stop2("Argument 'ndraws' must be numeric.")
-    } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
-      stop2("Argument 'ndraws' must be a single integer.")
-    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
-      stop2(
-        "Argument 'ndraws' must be between 1 and the total number of draws."
-      )
-    }
-  }
-  # stop if stochastic not logical
-  if (!is.logical(stochastic)) {
-    stop2("Argument 'stochastic' must be logical.")
-  }
-  if (!is.null(intervention_values)) {
-    # stop if stochastic and intervention
-    if (stochastic == TRUE) {
-      stop2(
-        paste0(
-          "Argument 'stochastic' cannot be `TRUE` when intervention_values",
-          " are set."
-        )
-      )
-    }
-    # stop if intervention_values argument is not a named list
-    if (!is.list(intervention_values) || is.null(names(intervention_values))) {
-      stop2("Argument 'intervention_values' is not a named list.")
-    }
-    # stop if intervention_values contains variables not included in the model
-    if (!all(names(intervention_values) %in% names(object$variables))) {
-      stop2(
-        paste0(
-          "At least one variable in 'intervention_values' is not included in ",
-          "the fitted model."
-        )
-      )
-    }
-    # stop if any coevolving variables are not listed in intervention_values
-    if (any(!(names(object$variables) %in% names(intervention_values)))) {
-      stop2(
-        paste0(
-          "All coevolving variables must be included in ",
-          "argument 'intervention_values'."
-        )
-      )
-    }
-    # stop if repetition in intervention_values
-    if (any(duplicated(names(intervention_values)))) {
-      stop2(
-        "Argument 'intervention_values' contains duplicated variable names."
-      )
-    }
-    # stop if any values in intervention_values are not of length one
-    if (any(unlist(lapply(intervention_values, length)) != 1)) {
-      stop2("Values in 'intervention_values' must each be of length one.")
-    }
-    # stop if any values in intervention_values are not NA or numeric
-    if (any(unlist(lapply(intervention_values,
-                          function(x) !is.na(x) & !is.numeric(x))))) {
-      stop2("Values in 'intervention_values' must each be NA or numeric.")
-    }
-    # stop if all variables are held constant in intervention_values
-    if (mean(is.na(intervention_values)) == 0) {
-      stop2(
-        paste0(
-          "Argument 'intervention_values' must have at least one NA value ",
-          "declaring a free variable. If all variables are held constant, the ",
-          "system is already at equilibrium and there is nothing to compute."
-        )
-      )
-    }
-    # stop if all variables in intervention_values are free (all NA)
-    if (mean(is.na(intervention_values)) == 1) {
-      stop2(
-        paste0(
-          "Argument 'intervention_values' must have at least one variable ",
-          "held constant (i.e., not all values are NA)."
-        )
-      )
-    }
-  }
+  # run checks
+  run_checks_pred_series(object, eta_anc, intervention_values,
+                         tmax, ntimes, ndraws, stochastic)
   # get posterior samples and number of variables
   post <- extract_samples(object)
   j <- length(object$variables)
@@ -378,4 +244,152 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
     }
   }
   return(preds)
+}
+
+#' Internal helper function for checking coev_pred_series() arguments
+#'
+#' @description Checks arguments for coev_pred_series()
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_pred_series <- function(object, eta_anc, intervention_values,
+                                   tmax, ntimes, ndraws, stochastic) {
+  # stop if object is not of class coevfit
+  if (!methods::is(object, "coevfit")) {
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model of class ",
+        "coevfit."
+      )
+    )
+  }
+  if (!is.null(eta_anc)) {
+    # stop if eta_anc argument is not a named list
+    if (!is.list(eta_anc) || is.null(names(eta_anc))) {
+      stop2("Argument 'eta_anc' is not a named list.")
+    }
+    # stop if eta_anc contains variables not included in the model
+    if (!all(names(eta_anc) %in% names(object$variables))) {
+      stop2(
+        paste0(
+          "At least one variable in 'eta_anc' is not included in ",
+          "the fitted model."
+        )
+      )
+    }
+    # stop if any coevolving variables are not listed in eta_anc
+    if (any(!(names(object$variables) %in% names(eta_anc)))) {
+      stop2(
+        paste0(
+          "All coevolving variables must be included in ",
+          "argument 'eta_anc'."
+        )
+      )
+    }
+    # stop if repetition in eta_anc
+    if (any(duplicated(names(eta_anc)))) {
+      stop2(
+        "Argument 'eta_anc' contains duplicated variable names."
+      )
+    }
+    # stop if any values in eta_anc are not of length one
+    if (any(unlist(lapply(eta_anc, length)) != 1)) {
+      stop2("Values in 'eta_anc' must each be of length one.")
+    }
+    # stop if any values in eta_anc are not numeric
+    if (any(unlist(lapply(eta_anc,
+                          function(x) !is.numeric(x))))) {
+      stop2("Values in 'eta_anc' must each be numeric.")
+    }
+  }
+  # stop if tmax is not numeric or not positive
+  if (!is.numeric(tmax) || length(tmax) != 1) {
+    stop2("Argument 'tmax' must be a single numeric value.")
+  } else if (tmax <= 0) {
+    stop2("Argument 'tmax' must be positive.")
+  }
+  # stop if ndraws is not a single integer between 1 and the total num draws
+  if (!is.null(ndraws)) {
+    if (!is.numeric(ndraws)) {
+      stop2("Argument 'ndraws' must be numeric.")
+    } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
+      stop2("Argument 'ndraws' must be a single integer.")
+    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
+      stop2(
+        "Argument 'ndraws' must be between 1 and the total number of draws."
+      )
+    }
+  }
+  # stop if stochastic not logical
+  if (!is.logical(stochastic)) {
+    stop2("Argument 'stochastic' must be logical.")
+  }
+  if (!is.null(intervention_values)) {
+    # stop if stochastic and intervention
+    if (stochastic == TRUE) {
+      stop2(
+        paste0(
+          "Argument 'stochastic' cannot be `TRUE` when intervention_values",
+          " are set."
+        )
+      )
+    }
+    # stop if intervention_values argument is not a named list
+    if (!is.list(intervention_values) || is.null(names(intervention_values))) {
+      stop2("Argument 'intervention_values' is not a named list.")
+    }
+    # stop if intervention_values contains variables not included in the model
+    if (!all(names(intervention_values) %in% names(object$variables))) {
+      stop2(
+        paste0(
+          "At least one variable in 'intervention_values' is not included in ",
+          "the fitted model."
+        )
+      )
+    }
+    # stop if any coevolving variables are not listed in intervention_values
+    if (any(!(names(object$variables) %in% names(intervention_values)))) {
+      stop2(
+        paste0(
+          "All coevolving variables must be included in ",
+          "argument 'intervention_values'."
+        )
+      )
+    }
+    # stop if repetition in intervention_values
+    if (any(duplicated(names(intervention_values)))) {
+      stop2(
+        "Argument 'intervention_values' contains duplicated variable names."
+      )
+    }
+    # stop if any values in intervention_values are not of length one
+    if (any(unlist(lapply(intervention_values, length)) != 1)) {
+      stop2("Values in 'intervention_values' must each be of length one.")
+    }
+    # stop if any values in intervention_values are not NA or numeric
+    if (any(unlist(lapply(intervention_values,
+                          function(x) !is.na(x) & !is.numeric(x))))) {
+      stop2("Values in 'intervention_values' must each be NA or numeric.")
+    }
+    # stop if all variables are held constant in intervention_values
+    if (mean(is.na(intervention_values)) == 0) {
+      stop2(
+        paste0(
+          "Argument 'intervention_values' must have at least one NA value ",
+          "declaring a free variable. If all variables are held constant, the ",
+          "system is already at equilibrium and there is nothing to compute."
+        )
+      )
+    }
+    # stop if all variables in intervention_values are free (all NA)
+    if (mean(is.na(intervention_values)) == 1) {
+      stop2(
+        paste0(
+          "Argument 'intervention_values' must have at least one variable ",
+          "held constant (i.e., not all values are NA)."
+        )
+      )
+    }
+  }
 }
