@@ -1,4 +1,12 @@
-# helper function for checking arguments
+#' Internal helper function for checking arguments
+#'
+#' @description Checks the arguments for the functions
+#'   \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}, and
+#'   \code{\link{coev_fit}}.
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
 run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
                        dist_mat, dist_cov, measurement_error, prior, scale,
                        estimate_correlated_drift, estimate_residual, log_lik,
@@ -394,12 +402,26 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   }
 }
 
-# helper function for producing errors
+#' Internal helper function for producing errors
+#'
+#' @description Stops execution of the current expression and executes an
+#'   error action, without the call becoming part of the error message.
+#'
+#' @returns Error message
+#'
+#' @noRd
 stop2 <- function(...) {
   stop(..., call. = FALSE)
 }
 
-# helper function for producing warnings
+#' Internal helper function for producing warnings
+#'
+#' @description Generates a warning message that corresponds to its argument,
+#'   without the call becoming part of the warning message.
+#'
+#' @returns Warning message
+#'
+#' @noRd
 warning2 <- function(...) {
   warning(..., call. = FALSE)
 }
