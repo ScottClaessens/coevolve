@@ -150,10 +150,73 @@ stan_code <- coev_make_stancode(
   ),
   id = "language",
   tree = authority$phylogeny
-  )
+)
 
-# print Stan code
-cat(stan_code)
+# include effects matrix
+effects_mat <-
+  matrix(
+    c(TRUE, TRUE,
+      FALSE, TRUE),
+    nrow = 2,
+    dimnames = list(
+      c("political_authority", "religious_authority"),
+      c("political_authority", "religious_authority")
+    )
+  )
+stan_code <- coev_make_stancode(
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  effects_mat = effects_mat
+)
+
+# include distance matrix
+stan_code <- coev_make_stancode(
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  dist_mat = authority$distance_matrix
+)
+
+# include measurement error
+d <- authority$data
+d$x <- rnorm(nrow(d))
+d$y <- rnorm(nrow(d))
+d$x_std_err <- rexp(nrow(d))
+d$y_std_err <- rexp(nrow(d))
+stan_code <- coev_make_stancode(
+  data = d,
+  variables = list(
+    x = "normal",
+    y = "normal"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  measurement_error = list(
+    x = "x_std_err",
+    y = "y_std_err"
+  )
+)
+
+# set manual priors
+stan_code <- coev_make_stancode(
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  prior = list(A_offdiag = "normal(0, 2)")
+)
 
 }
 \references{

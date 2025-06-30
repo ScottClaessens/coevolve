@@ -76,7 +76,7 @@ intended sample size of species has been reached.
 \examples{
 # simulate coevolution of x and y
 n <- 100
-variables <- c("x","y")
+variables <- c("x", "y")
 # x -> y but not vice versa
 selection_matrix <- matrix(
   c(
@@ -89,12 +89,26 @@ selection_matrix <- matrix(
 )
 drift <- c("x" = 0.05, "y" = 0.05)
 prob_split <- 0.05
-# run simulation
-sim <-
-  coev_simulate_coevolution(
-    n, variables, selection_matrix,
-    drift, prob_split
-  )
+
+# run simulation with default parameters
+coev_simulate_coevolution(
+  n, variables, selection_matrix,
+  drift, prob_split
+)
+
+# set intercepts manually
+coev_simulate_coevolution(
+  n, variables, selection_matrix,
+  drift, prob_split,
+  intercepts = c("x" = 1, "y" = -1)
+)
+
+# set ancestral states manually
+coev_simulate_coevolution(
+  n, variables, selection_matrix,
+  drift, prob_split,
+  ancestral_states = c("x" = 1, "y" = -1)
+)
 
 }
 \author{

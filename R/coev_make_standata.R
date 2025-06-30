@@ -116,7 +116,7 @@
 #'
 #' @examples
 #' # make stan data
-#' coev_make_standata(
+#' stan_data <- coev_make_standata(
 #'   data = authority$data,
 #'   variables = list(
 #'     political_authority = "ordered_logistic",
@@ -124,7 +124,73 @@
 #'   ),
 #'   id = "language",
 #'   tree = authority$phylogeny
+#' )
+#'
+#' # include effects matrix
+#' effects_mat <-
+#'   matrix(
+#'     c(TRUE, TRUE,
+#'       FALSE, TRUE),
+#'     nrow = 2,
+#'     dimnames = list(
+#'       c("political_authority", "religious_authority"),
+#'       c("political_authority", "religious_authority")
+#'     )
 #'   )
+#' stan_data <- coev_make_standata(
+#'   data = authority$data,
+#'   variables = list(
+#'     political_authority = "ordered_logistic",
+#'     religious_authority = "ordered_logistic"
+#'   ),
+#'   id = "language",
+#'   tree = authority$phylogeny,
+#'   effects_mat = effects_mat
+#' )
+#'
+#' # include distance matrix
+#' stan_data <- coev_make_standata(
+#'   data = authority$data,
+#'   variables = list(
+#'     political_authority = "ordered_logistic",
+#'     religious_authority = "ordered_logistic"
+#'   ),
+#'   id = "language",
+#'   tree = authority$phylogeny,
+#'   dist_mat = authority$distance_matrix
+#' )
+#'
+#' # include measurement error
+#' d <- authority$data
+#' d$x <- rnorm(nrow(d))
+#' d$y <- rnorm(nrow(d))
+#' d$x_std_err <- rexp(nrow(d))
+#' d$y_std_err <- rexp(nrow(d))
+#' stan_data <- coev_make_standata(
+#'   data = d,
+#'   variables = list(
+#'     x = "normal",
+#'     y = "normal"
+#'   ),
+#'   id = "language",
+#'   tree = authority$phylogeny,
+#'   measurement_error = list(
+#'     x = "x_std_err",
+#'     y = "y_std_err"
+#'   )
+#' )
+#'
+#' # set manual priors
+#' stan_data <- coev_make_standata(
+#'   data = authority$data,
+#'   variables = list(
+#'     political_authority = "ordered_logistic",
+#'     religious_authority = "ordered_logistic"
+#'   ),
+#'   id = "language",
+#'   tree = authority$phylogeny,
+#'   prior = list(A_offdiag = "normal(0, 2)")
+#' )
 #'
 #' @export
 coev_make_standata <- function(data, variables, id, tree,
@@ -146,7 +212,7 @@ coev_make_standata <- function(data, variables, id, tree,
   if (!scale) {
     warning2(
       paste0(
-        "When scale = FALSE, continuous variables are left unstandardised in ",
+        "When scale is FALSE, continuous variables are left unstandardised in ",
         "the Stan data list. Users should take care to set sensible priors ",
         "for model fitting, rather than use default priors."
       )

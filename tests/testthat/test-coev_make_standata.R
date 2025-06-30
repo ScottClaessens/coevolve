@@ -925,7 +925,7 @@ test_that("coev_make_stancode() scales data correctly", {
       z = rlnorm(n, 1, 1.5)
     )
   })
-  # check stan data is the same as real data when scale = FALSE
+  # check stan data is the same as real data when scale is FALSE
   expect_warning(
     {sd1 <-
       coev_make_standata(
@@ -939,7 +939,7 @@ test_that("coev_make_stancode() scales data correctly", {
         scale = FALSE
       )},
     paste0(
-      "When scale = FALSE, continuous variables are left unstandardised in ",
+      "When scale is FALSE, continuous variables are left unstandardised in ",
       "the Stan data list. Users should take care to set sensible priors ",
       "for model fitting, rather than use default priors."
     )
@@ -1061,7 +1061,7 @@ test_that("coev_make_standata() works with measurement error", {
         y = "y_se"
       )
     )
-  # make stan data with measurement error when scale = FALSE
+  # make stan data with measurement error when scale is FALSE
   sd2 <-
     suppressWarnings(
       coev_make_standata(
