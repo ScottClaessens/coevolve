@@ -1,5 +1,7 @@
 #' Create a summary of a fitted model represented by a \code{coevfit} object
 #'
+#' @srrstats {G1.4, G2.1a} Function is documented with expected data types
+#'
 #' @param object An object of class \code{coevfit}.
 #' @param prob A value between 0 and 1 indicating the desired probability
 #'   to be covered by the uncertainty intervals. The default is 0.95.
@@ -269,6 +271,8 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
 
 #' Print a summary of a fitted model represented by a \code{coevfit} object
 #'
+#' @srrstats {G1.4} Function is documented
+#'
 #' @aliases print.coevsummary
 #'
 #' @param x An object of class \code{coevfit}
@@ -415,6 +419,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
 print_format <- function(x, digits = 2, no_digits = c("Bulk_ESS", "Tail_ESS")) {
   digits <- as.numeric(digits)
   if (length(digits) != 1L) {
+    #' @srrstats {G2.0, G2.2} Assertion on length of input
     stop2("'digits' should be a single numeric value.")
   }
   out <- x

@@ -6,6 +6,9 @@
 #' of the marginal distributions for each variable with associated posterior
 #' uncertainty.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#'
 #' @param object An object of class \code{coevfit}
 #' @param variables If NULL (default), the function returns a pairs plot
 #'   including all coevolving variables from the model. Otherwise, a character
@@ -274,6 +277,8 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
 
 #' Internal helper function for checking coev_plot_trait_values() arguments
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
 #' @description Checks arguments for coev_plot_trait_values()
 #'
 #' @returns Error message if any of the checks fail
@@ -281,7 +286,9 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
 #' @noRd
 run_checks_plot_trait_values <- function(object, variables, ndraws, tree_id,
                                          xlim, ylim) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -293,6 +300,7 @@ run_checks_plot_trait_values <- function(object, variables, ndraws, tree_id,
   if (!is.null(variables)) {
     if (!is.character(variables) || !(length(variables) >= 2)) {
       # stop if variables is not a character string
+      #' @srrstats {G2.0, G2.1} Assertion on length and type of input
       stop2(
         paste0(
           "Argument 'variables' must be a character vector ",
@@ -312,8 +320,11 @@ run_checks_plot_trait_values <- function(object, variables, ndraws, tree_id,
   # stop if ndraws is not a single integer between 1 and the total num draws
   if (!is.null(ndraws)) {
     if (!is.numeric(ndraws)) {
+      #' @srrstats {G2.1} Assertion on type of input
       stop2("Argument 'ndraws' must be numeric.")
     } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
+      #' @srrstats {G2.0, G2.1, G2.2, G2.4, G2.4a} Assertion on length and type
+      #' of input, convert to integer
       stop2("Argument 'ndraws' must be a single integer.")
     } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
       stop2(
@@ -324,8 +335,11 @@ run_checks_plot_trait_values <- function(object, variables, ndraws, tree_id,
   # stop if tree_id is not a single integer between 1 and the total num trees
   if (!is.null(tree_id)) {
     if (!is.numeric(tree_id)) {
+      #' @srrstats {G2.1} Assertion on type of input
       stop2("Argument 'tree_id' must be numeric.")
     } else if (!all(as.integer(tree_id) == tree_id) || length(tree_id) != 1) {
+      #' @srrstats {G2.0, G2.1, G2.2, G2.4, G2.4a} Assertion on length and type
+      #' of input, convert to integer
       stop2("Argument 'tree_id' must be a single integer.")
     } else if (tree_id < 1 || tree_id > object$stan_data$N_tree) {
       stop2(
@@ -334,12 +348,14 @@ run_checks_plot_trait_values <- function(object, variables, ndraws, tree_id,
     }
   }
   # stop if xlim is not a numeric vector of length 2
+  #' @srrstats {G2.0, G2.1} Assertion on length and type of input
   if (!is.null(xlim)) {
     if (!(is.numeric(xlim) && is.vector(xlim) && length(xlim) == 2)) {
       stop2("Argument 'xlim' must be a numeric vector of length 2.")
     }
   }
   # stop if ylim is not a numeric vector of length 2
+  #' @srrstats {G2.0, G2.1} Assertion on length and type of input
   if (!is.null(ylim)) {
     if (!(is.numeric(ylim) && is.vector(ylim) && length(ylim) == 2)) {
       stop2("Argument 'ylim' must be a numeric vector of length 2.")

@@ -13,6 +13,7 @@ test_that("coev_fit() produces expected errors", {
     )
   })
   # expect the following errors
+  #' @srrstats {G5.2, G5.2b} Test all error messages
   expect_error(
     coev_fit(
       data = log, # should not accept functions

@@ -4,6 +4,9 @@
 #' object. This plot can be used to visually assess contingencies and
 #' directionality between different variables in the coevolutionary process.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#'
 #' @param object An object of class \code{coevfit}
 #' @param variables If NULL (default), the plot includes all coevolving
 #'   variables from the model. Otherwise, a character vector of length >= 2
@@ -69,7 +72,9 @@
 #' @export
 coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
                                   prob_outer = 0.95, limits = NULL) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -82,9 +87,12 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
   if (!is.null(variables)) {
     if (!methods::is(variables, "character")) {
       # stop if variables not character vector
+      #' @srrstats {G2.1, G2.6} Assertion on type of input, vector checked for
+      #' class structure
       stop2("Argument 'variables' must be a character vector.")
     } else if (!(length(variables) > 1)) {
       # stop if variables not > length 1
+      #' @srrstats {G2.0} Assertion on length of input
       stop2("Argument 'variables' must be of length > 1.")
     } else if (!all(variables %in% names(object$variables))) {
       # stop if variables not included in model
@@ -101,9 +109,11 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
   }
   if (!methods::is(prob, "numeric")) {
     # stop if prob not numeric
+    #' @srrstats {G2.1} Assertion on type of input
     stop2("Argument 'prob' must be numeric.")
   } else if (length(prob) != 1) {
     # stop if prob not == length 1
+    #' @srrstats {G2.0, G2.2} Assertion on length of input
     stop2("Argument 'prob' must be of length 1.")
   } else if (prob <= 0 || prob >= 1) {
     # stop if prob not between 0 and 1

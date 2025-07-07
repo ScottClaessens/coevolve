@@ -9,11 +9,11 @@ coev_calculate_delta_theta(object, response, predictor)
 \arguments{
 \item{object}{An object of class \code{coevfit}}
 
-\item{response}{A character string equal to one of the coevolving variables
-in the model}
+\item{response}{A character string of length one equal to one of the
+coevolving variables in the model (strictly case-sensitive)}
 
-\item{predictor}{A character string equal to one of the coevolving variables
-in the model}
+\item{predictor}{A character string of length one equal to one of the
+coevolving variables in the model (strictly case-sensitive)}
 }
 \value{
 Posterior samples in the draws_array format

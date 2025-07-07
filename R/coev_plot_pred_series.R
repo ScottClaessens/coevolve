@@ -9,6 +9,9 @@
 #' details on the underlying predictive function, see
 #' \code{help(coev_pred_series)}.
 #'
+#' @srrstats {G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types
+#'
 #' @param object An object of class \code{coevfit}
 #' @param prob A value between 0 and 1 indicating the desired probability
 #'   to be covered by the uncertainty intervals. The default is 0.95.
@@ -54,7 +57,9 @@
 #'
 #' @export
 coev_plot_pred_series <- function(object, prob = 0.95, ...) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # check if object is of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -64,6 +69,7 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
     )
   }
   # check if prob is between 0 and 1
+  #' @srrstats {G2.0, G2.1, G2.2} Assertion on length and type of input
   if (!is.numeric(prob) || length(prob) != 1 || prob <= 0 || prob >= 1) {
     stop2("Argument 'prob' must be a single numeric value between 0 and 1.")
   }

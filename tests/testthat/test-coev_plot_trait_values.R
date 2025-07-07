@@ -21,6 +21,7 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
   m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
   m10 <- reload_fit(m10, filename = "coevfit_example_10-1.csv")
   # expect the following errors
+  #' @srrstats {G5.2, G5.2b} Test all error messages
   expect_error(
     coev_plot_trait_values(object = "fail"),
     "Argument 'object' must be a fitted coevolutionary model of class coevfit.",

@@ -1,5 +1,8 @@
 #' Internal helper function for checking data argument
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
 #' @description Checks the data argument for the functions coev_make_stancode(),
 #'   coev_make_standata(), and coev_fit().
 #'
@@ -10,16 +13,21 @@ run_checks_data <- function(data) {
   # coerce data argument to data frame
   data <- try(as.data.frame(data), silent = TRUE)
   # stop if data not coercible to data frame
+  #' @srrstats {G2.7} Accepts multiple tabular forms
   if (methods::is(data, "try-error") || !is.data.frame(data)) {
     stop2("Argument 'data' must be coercible to a data.frame.")
   }
   # stop if data does not contain observations
+  #' @srrstats {G2.0} Assertion on number of data rows
   if (!(nrow(data) > 0L)) {
     stop2("Argument 'data' does not contain observations.")
   }
 }
 
 #' Internal helper function for checking variables argument
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
 #'
 #' @description Checks the variables argument for the functions
 #'   coev_make_stancode(), coev_make_standata(), and coev_fit().
@@ -31,6 +39,8 @@ run_checks_variables <- function(data, variables) {
   # as data frame
   data <- as.data.frame(data)
   # stop if variables argument is not a named list
+  #' @srrstats {G2.1} Assertion on type of input
+  #' @srrstats {G2.8} Input to sub-function is of class 'list'
   if (!is.list(variables) || is.null(names(variables))) {
     stop2("Argument 'variables' is not a named list.")
   }
@@ -55,11 +65,27 @@ run_checks_variables <- function(data, variables) {
     )
   }
   # stop if not at least two variables
+  #' @srrstats {G2.0} Assertion on length of input
   if (!(length(variables) >= 2)) {
     stop2("Must be at least two coevolving variables.")
   }
+  # stop if data contains list columns
+  #' @srrstats {G2.12} Checking for list columns
+  if ("list" %in% sapply(data[, variables], class)) {
+    stop2("Data must not contain list columns.")
+  }
+  # stop if data contains undefined values
+  #' @srrstats {G2.16} Checking for undefined values
+  if (any(data[, variables] == Inf, na.rm = TRUE) ||
+        any(data[, variables] == -Inf, na.rm = TRUE)) {
+    stop2("Data must not contain undefined values (i.e., Inf or -Inf).")
+  }
   # check distributional constraints
+  #' @srrstats {G2.11} The following checks ensure that data columns meet the
+  #' requirements for different response distributions and are thus
+  #' appropriately processed, will also ensure that columns are not lists
   for (i in seq_along(distributions)) {
+    #' @srrstats {G2.15} Software does not assume non-missingness
     if (distributions[i] == "bernoulli_logit" &&
           (!is.integer(data[, variables[i]]) ||
              !all(data[, variables[i]] %in% c(0, 1, NA)))) {
@@ -74,6 +100,7 @@ run_checks_variables <- function(data, variables) {
     } else if (distributions[i] == "ordered_logistic" &&
                  !is.ordered(data[, variables[i]])) {
       # stop if any ordinal variables are not ordered factors in data
+      #' @srrstats {G2.5} Checking ordered factors
       stop2(
         paste0(
           "Variables following the 'ordered_logistic' response distribution ",
@@ -108,7 +135,9 @@ run_checks_variables <- function(data, variables) {
       )
     } else if (distributions[i] == "negative_binomial_softplus") {
       # stop if any negative binomial variables are not overdispersed
-      if (stats::sd(data[, variables[i]])^2 <= mean(data[, variables[i]])) {
+      #' @srrstats {G2.15} Software does not assume non-missingness (na.rm)
+      if (stats::sd(data[, variables[i]], na.rm = TRUE)^2 <=
+            mean(data[, variables[i]], na.rm = TRUE)) {
         stop2(
           paste0(
             "No overdispersion or potentially underdispersion for ",
@@ -128,6 +157,7 @@ run_checks_variables <- function(data, variables) {
         )
       )
     } else if (distributions[i] == "gamma_log") {
+      #' @srrstats {G2.15} Software does not assume non-missingness (na.rm)
       if (!is.numeric(data[, variables[i]]) ||
             !all(data[, variables[i]] > 0, na.rm = TRUE)) {
         # stop if any gamma variables are not numeric and positive
@@ -144,6 +174,9 @@ run_checks_variables <- function(data, variables) {
 
 #' Internal helper function for checking id argument
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
 #' @description Checks the id argument for the functions coev_make_stancode(),
 #'   coev_make_standata(), and coev_fit().
 #'
@@ -154,10 +187,13 @@ run_checks_id <- function(data, id) {
   # as data frame
   data <- as.data.frame(data)
   # stop if id is not a character of length one
+  #' @srrstats {G2.0, G2.1, G2.2} Assertion on type and length of input
+  #' @srrstats {G2.8} Input to sub-function is of class 'character'
   if (length(id) != 1 || !is.character(id)) {
     stop2("Argument 'id' must be a character of length one.")
   }
   # stop if id is not a valid column name
+  #' @srrstats {G2.3, G2.3a} Permit only expected character input
   if (!(id %in% colnames(data))) {
     stop2("Argument 'id' is not a valid column name in the data.")
   }
@@ -169,6 +205,9 @@ run_checks_id <- function(data, id) {
 
 #' Internal helper function for checking tree argument
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
 #' @description Checks the tree argument for the functions coev_make_stancode(),
 #'   coev_make_standata(), and coev_fit().
 #'
@@ -179,6 +218,8 @@ run_checks_tree <- function(data, id, tree) {
   # as data frame
   data <- as.data.frame(data)
   # stop if tree is not a phylo or multiPhylo object
+  #' @srrstats {G2.1} Assertion on type of input
+  #' @srrstats {G2.8} Input to sub-function is of class 'phylo' or 'multiPhylo'
   if (!(methods::is(tree, "phylo") || methods::is(tree, "multiPhylo"))) {
     stop2(
       paste0(
@@ -227,6 +268,9 @@ run_checks_tree <- function(data, id, tree) {
 
 #' Internal helper function for checking effects_mat argument
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
 #' @description Checks the effects_mat argument for the functions
 #'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
@@ -239,10 +283,12 @@ run_checks_effects_mat <- function(variables, effects_mat) {
     # extract variable names from named list
     variables <- names(variables)
     # stop if effects_mat is not a matrix
+    #' @srrstats {G2.1, G2.8} Assertion on matrix input
     if (!methods::is(effects_mat, "matrix")) {
       stop2("Argument 'effects_mat' must be a matrix.")
     }
     # stop if effects_mat is not logical
+    #' @srrstats {G2.1} Assertion on type of input
     if (!is.logical(effects_mat)) {
       stop2("Argument 'effects_mat' must be a boolean matrix.")
     }
@@ -276,6 +322,9 @@ run_checks_effects_mat <- function(variables, effects_mat) {
 
 #' Internal helper function for checking dist_mat argument
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
 #' @description Checks the dist_mat argument for the functions
 #'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
@@ -288,6 +337,7 @@ run_checks_dist_mat <- function(data, dist_mat, id) {
     # as data frame
     data <- as.data.frame(data)
     # stop if dist_mat is not a matrix
+    #' @srrstats {G2.1, G2.8} Assertion on matrix input
     if (!methods::is(dist_mat, "matrix")) {
       stop2("Argument 'dist_mat' must be a matrix.")
     }
@@ -300,6 +350,7 @@ run_checks_dist_mat <- function(data, dist_mat, id) {
       stop2("Argument 'dist_mat' must be a symmetric matrix.")
     }
     # stop if diagonal of dist_mat is not 0
+    #' @srrstats {G2.4, G2.4b} Convert to continuous for checking
     if (!identical(as.numeric(diag(dist_mat)), rep(0, nrow(dist_mat)))) {
       stop2(
         "Argument 'dist_mat' must have zeroes on the diagonal of the matrix."
@@ -324,6 +375,9 @@ run_checks_dist_mat <- function(data, dist_mat, id) {
 
 #' Internal helper function for checking dist_cov argument
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
 #' @description Checks the dist_cov argument for the functions
 #'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
@@ -332,14 +386,17 @@ run_checks_dist_mat <- function(data, dist_mat, id) {
 #' @noRd
 run_checks_dist_cov <- function(dist_cov) {
   # stop if dist_cov is not a character string
+  #' @srrstats {G2.1, G2.8} Assertion on character input
   if (!methods::is(dist_cov, "character")) {
     stop2("Argument 'dist_cov' is not a character string.")
   }
   # stop if dist_cov is not of length 1
+  #' @srrstats {G2.0, G2.2} Assertion on length of input
   if (length(dist_cov) != 1) {
     stop2("Argument 'dist_cov' is not of length 1.")
   }
   # stop if specified dist_cov is not supported
+  #' @srrstats {G2.3, G2.3a} Permit only expected character input
   if (!(dist_cov %in% c("exp_quad", "exponential", "matern32"))) {
     stop2(
       paste0(
@@ -351,6 +408,9 @@ run_checks_dist_cov <- function(dist_cov) {
 }
 
 #' Internal helper function for checking measurement_error argument
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
 #'
 #' @description Checks the measurement_error argument for the functions
 #'   coev_make_stancode(), coev_make_standata(), and coev_fit().
@@ -364,13 +424,16 @@ run_checks_measurement_error <- function(data, variables, measurement_error) {
     # as data frame
     data <- as.data.frame(data)
     # stop if measurement_error argument is not a named list
+    #' @srrstats {G2.1, G2.8} Assertion on named list input
     if (!is.list(measurement_error) || is.null(names(measurement_error))) {
       stop2("Argument 'measurement_error' is not a named list.")
     }
     # extract standard error columns and variable names from named list
+    #' @srrstats {G2.4, G2.4b} Convert to character for checking
     error_columns <- as.character(measurement_error)
     error_variables <- names(measurement_error)
     # extract distributions and variable names from named list
+    #' @srrstats {G2.4, G2.4b} Convert to character for checking
     distributions <- as.character(variables)
     variables <- names(variables)
     # stop if any variables are not valid or normally distributed
@@ -394,6 +457,7 @@ run_checks_measurement_error <- function(data, variables, measurement_error) {
     # loop over all error columns
     for (i in seq_along(error_columns)) {
       # stop if error column is non-numeric or contains any non-positive-reals
+      #' @srrstats {G2.15} Software does not assume non-missingness (na.rm)
       if (!is.numeric(data[[error_columns[i]]]) ||
             !all(data[[error_columns[i]]] >= 0, na.rm = TRUE)) {
         stop2(
@@ -422,6 +486,9 @@ run_checks_measurement_error <- function(data, variables, measurement_error) {
 
 #' Internal helper function for checking prior argument
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
 #' @description Checks the prior argument for the functions
 #'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
@@ -432,6 +499,7 @@ run_checks_prior <- function(prior) {
   # if user entered a list of priors
   if (!is.null(prior)) {
     # stop if prior not a list
+    #' @srrstats {G2.1, G2.8} Assertion on list input
     if (!methods::is(prior, "list")) {
       stop2("Argument 'prior' is not a list.")
     }
@@ -462,6 +530,9 @@ run_checks_prior <- function(prior) {
 
 #' Internal helper function for checking all arguments
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
 #' @description Checks all arguments for the functions coev_make_stancode(),
 #'   coev_make_standata(), and coev_fit().
 #'
@@ -483,6 +554,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   run_checks_measurement_error(data, variables, measurement_error)
   run_checks_prior(prior)
   # check that other arguments are logical of length one
+  #' @srrstats {G2.0, G2.1, G2.2, G2.8} Assertion on length and type of inputs
   if (!is.logical(complete_cases) || length(complete_cases) != 1) {
     stop2("Argument 'complete_cases' must be a logical of length one.")
   }
@@ -508,6 +580,8 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
 
 #' Internal helper function for producing errors
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
 #' @description Stops execution of the current expression and executes an
 #'   error action, without the call becoming part of the error message.
 #'
@@ -519,6 +593,8 @@ stop2 <- function(...) {
 }
 
 #' Internal helper function for producing warnings
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Generates a warning message that corresponds to its argument,
 #'   without the call becoming part of the warning message.

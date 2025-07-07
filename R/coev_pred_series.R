@@ -4,6 +4,9 @@
 #' the estimated parameters for a \code{coevfit} model. This function is used
 #' under the hood by the plotting function \code{\link{coev_pred_series}}.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#'
 #' @param object An object of class \code{coevfit}
 #' @param eta_anc If \code{NULL} (default), the starting values for the latent
 #'   states \eqn{\eta} will be set to the estimated ancestral states at the
@@ -248,6 +251,8 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
 
 #' Internal helper function for checking coev_pred_series() arguments
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
 #' @description Checks arguments for coev_pred_series()
 #'
 #' @returns Error message if any of the checks fail
@@ -255,7 +260,9 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
 #' @noRd
 run_checks_pred_series <- function(object, eta_anc, intervention_values,
                                    tmax, ntimes, ndraws, stochastic) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -266,6 +273,7 @@ run_checks_pred_series <- function(object, eta_anc, intervention_values,
   }
   if (!is.null(eta_anc)) {
     # stop if eta_anc argument is not a named list
+    #' @srrstats {G2.1} Assertion on type of input
     if (!is.list(eta_anc) || is.null(names(eta_anc))) {
       stop2("Argument 'eta_anc' is not a named list.")
     }
@@ -304,6 +312,7 @@ run_checks_pred_series <- function(object, eta_anc, intervention_values,
     }
   }
   # stop if tmax is not numeric or not positive
+  #' @srrstats {G2.1} Assertion on type of input
   if (!is.numeric(tmax) || length(tmax) != 1) {
     stop2("Argument 'tmax' must be a single numeric value.")
   } else if (tmax <= 0) {
@@ -312,8 +321,11 @@ run_checks_pred_series <- function(object, eta_anc, intervention_values,
   # stop if ndraws is not a single integer between 1 and the total num draws
   if (!is.null(ndraws)) {
     if (!is.numeric(ndraws)) {
+      #' @srrstats {G2.1} Assertion on type of input
       stop2("Argument 'ndraws' must be numeric.")
     } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
+      #' @srrstats {G2.0, G2.1, G2.2, G2.4, G2.4a} Assertion on length and type
+      #' of input, convert to integer
       stop2("Argument 'ndraws' must be a single integer.")
     } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
       stop2(
@@ -322,6 +334,7 @@ run_checks_pred_series <- function(object, eta_anc, intervention_values,
     }
   }
   # stop if stochastic not logical
+  #' @srrstats {G2.1} Assertion on type of input
   if (!is.logical(stochastic)) {
     stop2("Argument 'stochastic' must be logical.")
   }
@@ -336,6 +349,7 @@ run_checks_pred_series <- function(object, eta_anc, intervention_values,
       )
     }
     # stop if intervention_values argument is not a named list
+    #' @srrstats {G2.1} Assertion on type of input
     if (!is.list(intervention_values) || is.null(names(intervention_values))) {
       stop2("Argument 'intervention_values' is not a named list.")
     }

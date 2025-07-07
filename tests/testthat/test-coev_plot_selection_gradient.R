@@ -21,6 +21,7 @@ test_that("coev_plot_selection_gradient() produces expected errors & output", {
   m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
   m10 <- reload_fit(m10, filename = "coevfit_example_10-1.csv")
   # expect the following errors
+  #' @srrstats {G5.2, G5.2b} Test all error messages
   expect_error(
     coev_plot_selection_gradient(object = "fail", var1 = "x", var2 = "y"),
     "Argument 'object' must be a fitted coevolutionary model of class coevfit."

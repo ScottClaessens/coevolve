@@ -6,11 +6,17 @@
 #' another "predictor" trait. This value can be used to assess contingencies
 #' and directionality between variables in the coevolutionary process.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#' @srrstats {G2.0a} Secondary documentation on expected argument length
+#' @srrstats {G2.3, G2.3b} Documenting that character parameters are
+#'   strictly case-sensitive
+#'
 #' @param object An object of class \code{coevfit}
-#' @param response A character string equal to one of the coevolving variables
-#'   in the model
-#' @param predictor A character string equal to one of the coevolving variables
-#'   in the model
+#' @param response A character string of length one equal to one of the
+#'   coevolving variables in the model (strictly case-sensitive)
+#' @param predictor A character string of length one equal to one of the
+#'   coevolving variables in the model (strictly case-sensitive)
 #'
 #' @returns Posterior samples in the draws_array format
 #'
@@ -71,7 +77,9 @@
 #'
 #' @export
 coev_calculate_delta_theta <- function(object, response, predictor) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -82,23 +90,28 @@ coev_calculate_delta_theta <- function(object, response, predictor) {
   }
   if (!is.character(response) || length(response) != 1) {
     # stop if response not character string of length one
+    #' @srrstats {G2.0, G2.1, G2.2} Assertion on type and length of input
     stop2("Argument 'response' must be a character string of length one.")
   } else if (!(response %in% names(object$variables))) {
     # stop if response not included in model
+    #' @srrstats {G2.3, G2.3a} Permit only expected character input
     stop2(
       "Argument 'response' must be a variable included in the fitted model."
     )
   }
   if (!is.character(predictor) || length(predictor) != 1) {
     # stop if predictor not character string of length one
+    #' @srrstats {G2.0, G2.1, G2.2} Assertion on type and length of input
     stop2("Argument 'predictor' must be a character string of length one.")
   } else if (!(predictor %in% names(object$variables))) {
     # stop if predictor not included in model
+    #' @srrstats {G2.3, G2.3a} Permit only expected character input
     stop2(
       "Argument 'predictor' must be a variable included in the fitted model."
     )
   }
   # stop if response and predictor are the same variable
+  #' @srrstats {G2.3, G2.3a} Permit only expected character input
   if (response == predictor) {
     stop2(
       "Argument 'response' and 'predictor' must refer to different variables."

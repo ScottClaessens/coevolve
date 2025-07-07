@@ -3,6 +3,9 @@
 #' Plot posterior (or prior) predictive checks for variables from a fitted
 #' \code{coevfit} object, with help from the \pkg{bayesplot} package.
 #'
+#' @srrstats {G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types
+#'
 #' @param object An object of class \code{coevfit}
 #' @param variables If NULL (default), the function returns a list of plots for
 #'   all coevolving variables from the model. Otherwise, a character vector
@@ -42,7 +45,9 @@
 #' @export
 coev_plot_predictive_check <- function(object, variables = NULL,
                                        ndraws = NULL, tree_id = NULL) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -54,6 +59,7 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   if (!is.null(variables)) {
     if (!is.character(variables)) {
       # stop if variables is not a character string
+      #' @srrstats {G2.1} Assertion on type of input
       stop2(
         paste0(
           "Argument 'variables' must be a character string or a ",
@@ -73,8 +79,11 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   # stop if ndraws is not a single integer between 1 and the total num draws
   if (!is.null(ndraws)) {
     if (!is.numeric(ndraws)) {
+      #' @srrstats {G2.1} Assertion on type of input
       stop2("Argument 'ndraws' must be numeric.")
     } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
+      #' @srrstats {G2.0, G2.1, G2.2, G2.4, G2.4a} Assertion on length and type
+      #' of input, convert to integer
       stop2("Argument 'ndraws' must be a single integer.")
     } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
       stop2(
@@ -85,8 +94,11 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   # stop if tree_id is not a single integer between 1 and the total num trees
   if (!is.null(tree_id)) {
     if (!is.numeric(tree_id)) {
+      #' @srrstats {G2.1} Assertion on type of input
       stop2("Argument 'tree_id' must be numeric.")
     } else if (!all(as.integer(tree_id) == tree_id) || length(tree_id) != 1) {
+      #' @srrstats {G2.0, G2.1, G2.2, G2.4, G2.4a} Assertion on length and type
+      #' of input, convert to integer
       stop2("Argument 'tree_id' must be a single integer.")
     } else if (tree_id < 1 || tree_id > object$stan_data$N_tree) {
       stop2(

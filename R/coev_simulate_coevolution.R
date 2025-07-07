@@ -7,6 +7,9 @@
 #' returns a phylogeny, the results of the simulation run, and a dataset of
 #' contemporary trait values.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#'
 #' @param n Number of data points in the resulting data frame.
 #' @param variables A character vector of variable names (e.g.,
 #'   \code{c("x","y")})
@@ -127,6 +130,7 @@ coev_simulate_coevolution <- function(n,
     parent = NA,
     split = FALSE
   )
+  #' @srrstats {G2.4, G2.4b} Convert to continuous
   for (i in variables) sim[i] <- as.numeric(ancestral_states[i])
   # initial tree in text form
   tree <- "(t1:1);"
@@ -135,6 +139,7 @@ coev_simulate_coevolution <- function(n,
   current_species <- unique(sim$species)
   current_number <- length(current_species)
   # run timesteps until there are at least n species
+  #' @srrstats {G2.4, G2.4a} Convert to integer
   while (current_number < as.integer(n)) {
     # increment timestep
     ts <- ts + 1
@@ -185,6 +190,7 @@ coev_simulate_coevolution <- function(n,
         )
         # loop over outcome variables
         for (i in variables) {
+          #' @srrstats {G2.4, G2.4b} Convert to continuous
           mean <- as.numeric(intercepts[i])
           # loop over predictor variables
           for (j in variables) mean <- mean + selection_matrix[i, j] * prev[j]
@@ -226,6 +232,8 @@ coev_simulate_coevolution <- function(n,
 
 #' Internal helper function for checking coev_simulate_coevolution() arguments
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
 #' @description Checks arguments for coev_simulate_coevolution()
 #'
 #' @returns Error message if any of the checks fail
@@ -233,12 +241,15 @@ coev_simulate_coevolution <- function(n,
 #' @noRd
 run_checks_sim <- function(n, variables, selection_matrix, drift, prob_split,
                            intercepts, ancestral_states) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # stop if n is not numeric
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(n, "numeric")) {
     stop2("Argument 'n' is not numeric.")
   }
   # stop if variables is not a character vector or has length < 2
   # must also have non-reserved names
+  #' @srrstats {G2.0, G2.1} Assertion on length and type of input
   if (!methods::is(variables, "character")) {
     stop2("Argument 'variables' is not a character vector.")
   } else if (length(variables) < 2) {
@@ -252,6 +263,7 @@ run_checks_sim <- function(n, variables, selection_matrix, drift, prob_split,
     )
   }
   # stop if selection matrix is not a numeric matrix with correct dims and names
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(selection_matrix, "matrix")) {
     stop2("Argument 'selection_matrix' is not a matrix.")
   } else if (!methods::is(as.vector(selection_matrix), "numeric")) {
@@ -274,6 +286,7 @@ run_checks_sim <- function(n, variables, selection_matrix, drift, prob_split,
     )
   }
   # stop if drift is not named numeric vector with correct dims and var names
+  #' @srrstats {G2.0, G2.1} Assertion on length and type of input
   if (!methods::is(drift, "numeric")) {
     stop2("Argument 'drift' is not numeric.")
   } else if (length(drift) != length(variables)) {
@@ -284,6 +297,7 @@ run_checks_sim <- function(n, variables, selection_matrix, drift, prob_split,
     stop2("Argument 'drift' has names different to specified variable names.")
   }
   # stop if prob_split is not numeric of length 1
+  #' @srrstats {G2.0, G2.1} Assertion on length and type of input
   if (!methods::is(prob_split, "numeric")) {
     stop2("Argument 'prob_split' is not numeric.")
   } else if (length(prob_split) != 1) {
@@ -292,6 +306,7 @@ run_checks_sim <- function(n, variables, selection_matrix, drift, prob_split,
     stop2("Argument 'prob_split' must be between 0 and 1.")
   }
   # stop if intercepts not a named numeric vector with correct dims and vars
+  #' @srrstats {G2.0, G2.1} Assertion on length and type of input
   if (!is.null(intercepts)) {
     if (!methods::is(intercepts, "numeric")) {
       stop2("Argument 'intercepts' is not numeric.")
@@ -309,6 +324,7 @@ run_checks_sim <- function(n, variables, selection_matrix, drift, prob_split,
     }
   }
   # stop if ancestral_states not a named numeric vector with correct dims/vars
+  #' @srrstats {G2.0, G2.1} Assertion on length and type of input
   if (!is.null(ancestral_states)) {
     if (!methods::is(ancestral_states, "numeric")) {
       stop2("Argument 'ancestral_states' is not numeric.")

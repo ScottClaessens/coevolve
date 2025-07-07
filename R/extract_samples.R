@@ -1,5 +1,7 @@
 #' Extract samples (draws) from a fitted \code{coevfit} object
 #'
+#' @srrstats {G1.4} Function is documented
+#'
 #' @param object An object of class \code{coevfit}
 #'
 #' @returns Samples in 'rethinking' style list format

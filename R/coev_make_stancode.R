@@ -4,6 +4,17 @@
 #' \pkg{Stan} code is generated, checked for syntactical errors, and then
 #' returned as a character string.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#' @srrstats {G2.0a} Secondary documentation on expected argument length (see
+#'   "id" and "dist_cov")
+#' @srrstats {G2.3, G2.3b} Documenting that character parameters are
+#'   strictly case-sensitive (see "id" and "dist_cov")
+#' @srrstats {G2.5} Secondary documentation of ordered factors (see "variables")
+#' @srrstats {G2.14} Option for missing data handling (see "complete_cases")
+#' @srrstats {G3.1, G3.1a} Users can choose the covariance function underlying
+#'   the spatial Gaussian Process (see "dist_cov")
+#'
 #' @param data An object of class \code{data.frame} (or one that can be coerced
 #'   to that class) containing data of all variables used in the model.
 #' @param variables A named list identifying variables that should coevolve in
@@ -13,10 +24,14 @@
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
 #'   \code{poisson_softplus}, \code{negative_binomial_softplus}, \code{normal},
-#'   and \code{gamma_log}.
+#'   and \code{gamma_log}. Bernoulli variables must be 0/1 integers, ordered
+#'   variables must be ordered factors, Poisson and negative binomial variables
+#'   must be positive integers, normal variables must be continuous numeric,
+#'   and gamma variables must be positive numeric.
 #' @param id A character of length one identifying the variable in the data that
-#'   links rows to tips on the phylogeny. Must refer to a valid column name in
-#'   the data. The id column must exactly match the tip labels in the phylogeny.
+#'   links rows to tips on the phylogeny (strictly case-sensitive). Must refer
+#'   to a valid column name in the data. The id column must exactly match the
+#'   tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo} or
 #'   \code{multiPhylo}. The tree(s) must be rooted and must include positive
 #'   non-zero branch lengths. All trees in \code{multiPhylo} objects must have
@@ -36,10 +51,11 @@
 #'   exactly matching the tip labels in the phylogeny. If specified, the model
 #'   will additionally control for spatial location by including a separate
 #'   Gaussian Process over locations for every coevolving variable in the model.
-#' @param dist_cov A string specifying the covariance kernel used for Gaussian
-#'   Processes over locations. Currently supported are \code{"exp_quad"}
-#'   (exponentiated-quadratic kernel; default), \code{"exponential"}
-#'   (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).
+#' @param dist_cov A string of length one specifying the covariance kernel used
+#'   for Gaussian Processes over locations (strictly case-sensitive). Currently
+#'   supported are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
+#'   \code{"exponential"} (exponential kernel), and \code{"matern32"}
+#'   (Matern 3/2 kernel).
 #' @param measurement_error (optional) A named list of coevolving variables and
 #'   their associated columns in the dataset containing standard errors. Only
 #'   valid for normally-distributed variables. For example, if we declare
@@ -208,8 +224,10 @@ coev_make_stancode <- function(data, variables, id, tree,
              dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only)
   # coerce data argument to data frame
+  #' @srrstats {G2.7, G2.10} Accepts multiple tabular forms, ensures data frame
   data <- as.data.frame(data)
   # extract distributions and variable names from named list
+  #' @srrstats {G2.4, G2.4c} Convert to character
   distributions <- as.character(variables)
   variables <- names(variables)
   # get default priors
@@ -303,6 +321,8 @@ coev_make_stancode <- function(data, variables, id, tree,
 }
 
 #' Internal function for writing the Stan functions block
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Writes the Stan functions block for
 #'   \code{\link{coev_make_stancode}}.
@@ -411,6 +431,8 @@ write_functions_block <- function() {
 
 #' Internal function for writing the Stan data block
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
 #' @description Writes the Stan data block for \code{\link{coev_make_stancode}}.
 #'
 #' @returns Character string
@@ -454,6 +476,8 @@ write_data_block <- function(measurement_error, dist_mat) {
 }
 
 #' Internal function for writing the Stan transformed data block
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Writes the Stan transformed data block for
 #'   \code{\link{coev_make_stancode}}.
@@ -502,6 +526,8 @@ write_transformed_data_block <- function(distributions, priors) {
 
 #' Internal function for writing the Stan parameters block
 #'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
 #' @description Writes the Stan parameters block for
 #'   \code{\link{coev_make_stancode}}.
 #'
@@ -535,6 +561,8 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
     # add cut points for ordinal_logistic distributions
     if (distributions[i] == "ordered_logistic") {
       # calculate number of cut points (number of levels - 1)
+      #' @srrstats {G2.4, G2.4b} Convert to continuous to calculate cutpoints
+      #' @srrstats {G2.15} Software does not assume non-missingness (na.rm)
       num_cuts <- max(as.numeric(data[, variables[i]]), na.rm = TRUE) - 1
       sc_parameters <-
         paste0(
@@ -584,6 +612,8 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
 }
 
 #' Internal function for writing the Stan transformed parameters block
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Writes the Stan transformed parameters block for
 #'   \code{\link{coev_make_stancode}}.
@@ -739,6 +769,8 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
 }
 
 #' Internal function for writing the Stan model block
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Writes the Stan model block for
 #'   \code{\link{coev_make_stancode}}.
@@ -1089,6 +1121,8 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
 }
 
 #' Internal function for writing the Stan generated quantities block
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Writes the Stan generated quantities block for
 #'   \code{\link{coev_make_stancode}}.

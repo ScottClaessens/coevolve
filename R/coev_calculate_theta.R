@@ -4,6 +4,9 @@
 #' a set of intervention values for other traits from a fitted \code{coevfit}
 #' object.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#'
 #' @param object An object of class \code{coevfit}
 #' @param intervention_values Either \code{NULL} (the default) or a named list
 #'   of variables and associated intervention values for calculating equilibrium
@@ -96,7 +99,9 @@
 #'
 #' @export
 coev_calculate_theta <- function(object, intervention_values = NULL) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -120,6 +125,7 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
   } else {
     # intervention (at least one value held)
     # stop if intervention_values argument is not a named list
+    #' @srrstats {G2.1} Assertion on type of input
     if (!is.list(intervention_values) || is.null(names(intervention_values))) {
       stop2("Argument 'intervention_values' is not a named list.")
     }
@@ -148,6 +154,7 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
       )
     }
     # stop if any values in intervention_list are not of length one
+    #' @srrstats {G2.2} Assertion on length of input
     if (any(unlist(lapply(intervention_values, length)) != 1)) {
       stop2("Values in 'intervention_values' must each be of length one.")
     }

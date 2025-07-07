@@ -4,6 +4,8 @@
 #' \code{coevfit} model object while ensuring that all posterior draws and
 #' diagnostics are correctly saved by \pkg{cmdstanr}.
 #'
+#' @srrstats {G1.4, G2.1a} Function is documented with expected data types
+#'
 #' @param object An object of class \code{coevfit}
 #' @param file A string declaring the path where the file should be saved
 #' @param ... Other arguments to pass to \code{\link[base]{saveRDS}} besides
@@ -35,6 +37,7 @@
 #' @export
 save_coevfit <- function(object, file, ...) {
   # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -44,8 +47,14 @@ save_coevfit <- function(object, file, ...) {
     )
   }
   # stop if file is not a string of length one
+  #' @srrstats {G2.0, G2.1} Assertion on length and type of input
   if (!is.character(file) || length(file) != 1) {
     stop2("Argument 'file' must be a string of length one.")
+  }
+  # if file does not end in .rds, add suffix
+  #' @srrstats {G4.0} Provide .rds suffix where not provided
+  if (!grepl("\\.rds$", file)) {
+    file <- paste0(file, ".rds")
   }
   # save cmdstanr model object to temporary rds file
   temp_rds_file <- tempfile(fileext = ".rds")

@@ -3,11 +3,16 @@
 #' Plot a heatmap of the selection gradient for two variables from a fitted
 #' \code{coevfit} object.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#' @srrstats {G2.3, G2.3b} Documenting that character parameters are
+#'   strictly case-sensitive
+#'
 #' @param object An object of class \code{coevfit}
-#' @param var1 A character string equal to one of the coevolving variables in
-#'   the model
-#' @param var2 A character string equal to one of the coevolving variables in
-#'   the model
+#' @param var1 A character string of length one equal to one of the coevolving
+#'   variables in the model (strictly case-sensitive)
+#' @param var2 A character string of length one equal to one of the coevolving
+#'   variables in the model (strictly case-sensitive)
 #' @param contour Logical (defaults to FALSE); whether to show white contour
 #'   lines to indicate where selection is stronger than drift
 #' @param limits A numeric vector of length 2 (defaults to \code{c(-2.5, 2.5)});
@@ -77,7 +82,9 @@
 coev_plot_selection_gradient <- function(object, var1, var2,
                                          contour = FALSE,
                                          limits = c(-2.5, 2.5)) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -88,27 +95,34 @@ coev_plot_selection_gradient <- function(object, var1, var2,
   }
   if (!is.character(var1) || length(var1) != 1) {
     # stop if var1 not character string of length one
+    #' @srrstats {G2.0, G2.1, G2.2} Assertion on length and type of input
     stop2("Argument 'var1' must be a character string of length one.")
   } else if (!(var1 %in% names(object$variables))) {
     # stop if var1 not included in model
+    #' @srrstats {G2.3, G2.3a} Permit only expected character input
     stop2("Argument 'var1' must be a variable included in the fitted model.")
   }
   if (!is.character(var2) || length(var2) != 1) {
     # stop if var2 not character string of length one
+    #' @srrstats {G2.0, G2.1, G2.2} Assertion on length and type of input
     stop2("Argument 'var2' must be a character string of length one.")
   } else if (!(var2 %in% names(object$variables))) {
     # stop if var2 not included in model
+    #' @srrstats {G2.3, G2.3a} Permit only expected character input
     stop2("Argument 'var2' must be a variable included in the fitted model.")
   }
   # stop if var1 and var2 are the same variable
+  #' @srrstats {G2.3, G2.3a} Permit only expected character input
   if (var1 == var2) {
     stop2("Argument 'var1' and 'var2' must refer to different variables.")
   }
   # stop if contour not logical
+  #' @srrstats {G2.1} Assertion on type of input
   if (!is.logical(contour)) {
     stop2("Argument 'contour' must be logical.")
   }
   # stop if limits is not a numeric vector of length 2
+  #' @srrstats {G2.0, G2.1} Assertion on length and type of input
   if (!(is.numeric(limits) && is.vector(limits) && length(limits) == 2)) {
     stop2("Argument 'limits' must be a numeric vector of length 2.")
   }

@@ -35,11 +35,15 @@ Must identify at least two variables. Variable names must refer to valid
 column names in data. Currently, the only supported response distributions
 are \code{bernoulli_logit}, \code{ordered_logistic},
 \code{poisson_softplus}, \code{negative_binomial_softplus}, \code{normal},
-and \code{gamma_log}.}
+and \code{gamma_log}. Bernoulli variables must be 0/1 integers, ordered
+variables must be ordered factors, Poisson and negative binomial variables
+must be positive integers, normal variables must be continuous numeric,
+and gamma variables must be positive numeric.}
 
 \item{id}{A character of length one identifying the variable in the data that
-links rows to tips on the phylogeny. Must refer to a valid column name in
-the data. The id column must exactly match the tip labels in the phylogeny.}
+links rows to tips on the phylogeny (strictly case-sensitive). Must refer
+to a valid column name in the data. The id column must exactly match the
+tip labels in the phylogeny.}
 
 \item{tree}{A phylogenetic tree object of class \code{phylo} or
 \code{multiPhylo}. The tree(s) must be rooted and must include positive
@@ -64,10 +68,11 @@ exactly matching the tip labels in the phylogeny. If specified, the model
 will additionally control for spatial location by including a separate
 Gaussian Process over locations for every coevolving variable in the model.}
 
-\item{dist_cov}{A string specifying the covariance kernel used for Gaussian
-Processes over locations. Currently supported are \code{"exp_quad"}
-(exponentiated-quadratic kernel; default), \code{"exponential"}
-(exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).}
+\item{dist_cov}{A string of length one specifying the covariance kernel used
+for Gaussian Processes over locations (strictly case-sensitive). Currently
+supported are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
+\code{"exponential"} (exponential kernel), and \code{"matern32"}
+(Matern 3/2 kernel).}
 
 \item{measurement_error}{(optional) A named list of coevolving variables and
 their associated columns in the dataset containing standard errors. Only

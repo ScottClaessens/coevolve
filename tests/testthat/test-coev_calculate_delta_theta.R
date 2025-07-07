@@ -13,6 +13,7 @@ test_that("coev_calculate_delta_theta() produces expected errors and output", {
   m5 <- reload_fit(m5, filename = "coevfit_example_05-1.csv")
   m6 <- reload_fit(m6, filename = "coevfit_example_06-1.csv")
   # expect the following errors
+  #' @srrstats {G5.2, G5.2b} Test all error messages
   expect_error(
     coev_calculate_delta_theta(object = "fail"),
     "Argument 'object' must be a fitted coevolutionary model of class coevfit."

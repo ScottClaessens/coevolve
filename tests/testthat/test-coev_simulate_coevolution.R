@@ -6,6 +6,7 @@ test_that("coev_simulate_coevolution() produces expected errors", {
   drift <- c("x" = 0.05, "y" = 0.05)
   prob_split <- 0.05
   # expect the following errors
+  #' @srrstats {G5.2, G5.2b} Test all error messages
   expect_error(
     # n is not numeric
     coev_simulate_coevolution(n = "fail", variables, selection_matrix,

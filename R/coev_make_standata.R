@@ -5,6 +5,17 @@
 #' (e.g., cutting up the tree into segments, computing branch lengths,
 #' determining parent and child nodes) for the \pkg{Stan} model.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#' @srrstats {G2.0a} Secondary documentation on expected argument length (see
+#'   "id" and "dist_cov")
+#' @srrstats {G2.3, G2.3b} Documenting that character parameters are
+#'   strictly case-sensitive (see "id" and "dist_cov")
+#' @srrstats {G2.5} Secondary documentation of ordered factors (see "variables")
+#' @srrstats {G2.14} Option for missing data handling (see "complete_cases")
+#' @srrstats {G3.1, G3.1a} Users can choose the covariance function underlying
+#'   the spatial Gaussian Process (see "dist_cov")
+#'
 #' @param data An object of class \code{data.frame} (or one that can be coerced
 #'   to that class) containing data of all variables used in the model.
 #' @param variables A named list identifying variables that should coevolve in
@@ -14,10 +25,14 @@
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
 #'   \code{poisson_softplus}, \code{negative_binomial_softplus}, \code{normal},
-#'   and \code{gamma_log}.
+#'   and \code{gamma_log}. Bernoulli variables must be 0/1 integers, ordered
+#'   variables must be ordered factors, Poisson and negative binomial variables
+#'   must be positive integers, normal variables must be continuous numeric,
+#'   and gamma variables must be positive numeric.
 #' @param id A character of length one identifying the variable in the data that
-#'   links rows to tips on the phylogeny. Must refer to a valid column name in
-#'   the data. The id column must exactly match the tip labels in the phylogeny.
+#'   links rows to tips on the phylogeny (strictly case-sensitive). Must refer
+#'   to a valid column name in the data. The id column must exactly match the
+#'   tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo} or
 #'   \code{multiPhylo}. The tree(s) must be rooted and must include positive
 #'   non-zero branch lengths. All trees in \code{multiPhylo} objects must have
@@ -37,10 +52,11 @@
 #'   exactly matching the tip labels in the phylogeny. If specified, the model
 #'   will additionally control for spatial location by including a separate
 #'   Gaussian Process over locations for every coevolving variable in the model.
-#' @param dist_cov A string specifying the covariance kernel used for Gaussian
-#'   Processes over locations. Currently supported are \code{"exp_quad"}
-#'   (exponentiated-quadratic kernel; default), \code{"exponential"}
-#'   (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).
+#' @param dist_cov A string of length one specifying the covariance kernel used
+#'   for Gaussian Processes over locations (case-sensitive). Currently supported
+#'   are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
+#'   \code{"exponential"} (exponential kernel), and \code{"matern32"}
+#'   (Matern 3/2 kernel).
 #' @param measurement_error (optional) A named list of coevolving variables and
 #'   their associated columns in the dataset containing standard errors. Only
 #'   valid for normally-distributed variables. For example, if we declare
@@ -207,6 +223,7 @@ coev_make_standata <- function(data, variables, id, tree,
              dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only)
   # coerce data argument to data frame
+  #' @srrstats {G2.7, G2.10} Accepts multiple tabular forms, ensures data frame
   data <- as.data.frame(data)
   # warning if scale = FALSE
   if (!scale) {
@@ -222,6 +239,16 @@ coev_make_standata <- function(data, variables, id, tree,
   if (complete_cases) {
     any_missing <- apply(data[, names(variables)], 1, function(x) any(is.na(x)))
     data <- data[!any_missing, ]
+    if (sum(any_missing) > 0) {
+      #' @srrstats {G2.14, G2.14b} Message when missing data are removed
+      message(
+        paste0(
+          "Note: Missing values (NAs) detected. Rows with missing data have ",
+          "been excluded from the Stan data list. Set complete_cases = FALSE ",
+          "to exclude taxa with missing values."
+        )
+      )
+    }
   }
   # coerce tree object to multiPhylo
   tree <- phytools::as.multiPhylo(tree)
@@ -305,9 +332,12 @@ coev_make_standata <- function(data, variables, id, tree,
   for (j in seq_along(variables)) {
     if (scale && variables[[j]] == "normal") {
       # standardised continuous variables
+      #' @srrstats {G2.4, G2.4b} Convert to continuous
       y[[names(variables)[j]]] <- as.numeric(scale(data[, names(variables)[j]]))
     } else if (scale && variables[[j]] == "gamma_log") {
       # positive reals scaled by sample mean
+      #' @srrstats {G2.4, G2.4b} Convert to continuous
+      #' @srrstats {G2.15} Software does not assume non-missingness (na.rm)
       y[[names(variables)[j]]] <-
         as.numeric(
           data[, names(variables)[j]] /
@@ -315,11 +345,14 @@ coev_make_standata <- function(data, variables, id, tree,
         )
     } else {
       # unscaled binary/ordered/count variables
+      #' @srrstats {G2.4, G2.4b, G2.4e} Convert to continuous (from ordered
+      #' factor, if applicable)
       y[[names(variables)[j]]] <- as.numeric(data[, names(variables)[j]])
     }
   }
   y <- as.matrix(as.data.frame(y))
   # get missing matrix
+  #' @srrstats {G2.13} Checking for missing data
   miss <- ifelse(is.na(y), 1, 0)
   # replace y with -9999 if missing
   y[miss == 1] <- -9999
@@ -335,6 +368,7 @@ coev_make_standata <- function(data, variables, id, tree,
         se_values <- data[[se_column]]
         if (scale) {
           # if scale = TRUE, need to also scale the standard errors correctly
+          #' @srrstats {G2.15} Software does not assume non-missingness (na.rm)
           se_values <- se_values / sd(data[[names(variables)[j]]], na.rm = TRUE)
         }
         # add squared standard errors to matrix, set any NAs to zero
@@ -372,9 +406,11 @@ coev_make_standata <- function(data, variables, id, tree,
   # add squared standard errors if measurement_error specified
   if (!is.null(measurement_error)) sd[["se"]] <- se
   # add prior_only
+  #' @srrstats {G2.4, G2.4b} Convert logical to continuous for Stan
   sd[["prior_only"]] <- as.numeric(prior_only)
   # produce warnings for missing data
   if (sum(miss) > 0) {
+    #' @srrstats {G2.14, G2.14c} Message when missing data are imputed
     message(
       paste0(
         "Note: Missing values (NAs) detected. These values have been included ",

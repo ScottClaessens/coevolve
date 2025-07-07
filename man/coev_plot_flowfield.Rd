@@ -16,11 +16,11 @@ coev_plot_flowfield(
 \arguments{
 \item{object}{An object of class \code{coevfit}}
 
-\item{var1}{A character string equal to one of the coevolving variables in
-the model}
+\item{var1}{A character string of length one equal to one of the coevolving
+variables in the model (strictly case-sensitive)}
 
-\item{var2}{A character string equal to one of the coevolving variables in
-the model}
+\item{var2}{A character string of length one equal to one of the coevolving
+variables in the model (strictly case-sensitive)}
 
 \item{nullclines}{Logical (defaults to FALSE); whether to show coloured
 nullclines to indicate where each variable is at equilibrium, depending on

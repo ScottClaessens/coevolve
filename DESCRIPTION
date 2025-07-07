@@ -15,7 +15,7 @@ License: GPL (>= 3)
 URL: https://github.com/ScottClaessens/coevolve, https://scottclaessens.github.io/coevolve/
 BugReports: https://github.com/ScottClaessens/coevolve/issues
 Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
+Roxygen: list(markdown = TRUE, roclets = c("namespace", "rd", "srr::srr_stats_roclet"))
 RoxygenNote: 7.3.2
 Suggests: 
     knitr,

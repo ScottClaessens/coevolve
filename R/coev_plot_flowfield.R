@@ -4,11 +4,17 @@
 #' Plot a flowfield of the expected evolutionary dynamics from a fitted
 #' \code{coevfit} object, with help from the \pkg{phaseR} package.
 #'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#' @srrstats {G2.0a} Secondary documentation on expected argument length
+#' @srrstats {G2.3, G2.3b} Documenting that character parameters are
+#'   strictly case-sensitive
+#'
 #' @param object An object of class \code{coevfit}
-#' @param var1 A character string equal to one of the coevolving variables in
-#'   the model
-#' @param var2 A character string equal to one of the coevolving variables in
-#'   the model
+#' @param var1 A character string of length one equal to one of the coevolving
+#'   variables in the model (strictly case-sensitive)
+#' @param var2 A character string of length one equal to one of the coevolving
+#'   variables in the model (strictly case-sensitive)
 #' @param nullclines Logical (defaults to FALSE); whether to show coloured
 #'   nullclines to indicate where each variable is at equilibrium, depending on
 #'   the state of the other
@@ -75,7 +81,9 @@
 #' @export
 coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
                                 limits = c(-2.5, 2.5)) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
   # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(
@@ -86,9 +94,11 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
   }
   if (!is.character(var1) || length(var1) != 1) {
     # stop if var1 not character string of length one
+    #' @srrstats {G2.0, G2.1, G2.2} Assertion on length and type of input
     stop2("Argument 'var1' must be a character string of length one.")
   } else if (!(var1 %in% names(object$variables))) {
     # stop if var1 not included in model
+    #' @srrstats {G2.3, G2.3a} Permit only expected character input
     stop2("Argument 'var1' must be a variable included in the fitted model.")
   }
   if (!is.character(var2) || length(var2) != 1) {
@@ -96,9 +106,11 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
     stop2("Argument 'var2' must be a character string of length one.")
   } else if (!(var2 %in% names(object$variables))) {
     # stop if var2 not included in model
+    #' @srrstats {G2.3, G2.3a} Permit only expected character input
     stop2("Argument 'var2' must be a variable included in the fitted model.")
   }
   # stop if var1 and var2 are the same variable
+  #' @srrstats {G2.3, G2.3a} Permit only expected character input
   if (var1 == var2) {
     stop2("Argument 'var1' and 'var2' must refer to different variables.")
   }

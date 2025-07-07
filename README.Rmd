@@ -30,6 +30,14 @@ knitr::opts_chunk$set(
   [![lint](https://github.com/ScottClaessens/coevolve/actions/workflows/lint.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions?query=workflow%3Alint)
 <!-- badges: end -->
 
+```{r srr-tags, eval = FALSE, echo = FALSE}
+#' srr_standards_in_readme
+#'
+#' @srrstats {G1.0} This README contains references to primary literature
+#' @srrstats {G1.2} This README contains a repo status badge highlighting the 
+#' current state of development. We have also added a lifecycle statement to .github/CONTRIBUTING.md.
+```
+
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian generalized dynamic

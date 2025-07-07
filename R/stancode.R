@@ -1,5 +1,7 @@
 #' Expose the Stan code of a fitted model represented by a \code{coevfit} object
 #'
+#' @srrstats {G1.4, G2.1a} Function is documented with expected data type
+#'
 #' @param object An object of class \code{coevfit}.
 #'
 #' @returns Printed Stan code

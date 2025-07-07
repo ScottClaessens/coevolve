@@ -15,11 +15,11 @@ coev_plot_selection_gradient(
 \arguments{
 \item{object}{An object of class \code{coevfit}}
 
-\item{var1}{A character string equal to one of the coevolving variables in
-the model}
+\item{var1}{A character string of length one equal to one of the coevolving
+variables in the model (strictly case-sensitive)}
 
-\item{var2}{A character string equal to one of the coevolving variables in
-the model}
+\item{var2}{A character string of length one equal to one of the coevolving
+variables in the model (strictly case-sensitive)}
 
 \item{contour}{Logical (defaults to FALSE); whether to show white contour
 lines to indicate where selection is stronger than drift}

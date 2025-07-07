@@ -12,6 +12,18 @@
 #' generates the data list, and then compiles and fits the model using the
 #' \pkg{cmdstanr} package.
 #'
+#' @srrstats {G1.1} This is the first implementation of a novel algorithm
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#' @srrstats {G2.0a} Secondary documentation on expected argument length (see
+#'   "id" and "dist_cov")
+#' @srrstats {G2.3, G2.3b} Documenting that character parameters are
+#'   strictly case-sensitive (see "id" and "dist_cov")
+#' @srrstats {G2.5} Secondary documentation of ordered factors (see "variables")
+#' @srrstats {G2.14} Option for missing data handling (see "complete_cases")
+#' @srrstats {G3.1, G3.1a} Users can choose the covariance function underlying
+#'   the spatial Gaussian Process (see "dist_cov")
+#'
 #' @param data An object of class \code{data.frame} (or one that can be coerced
 #'   to that class) containing data of all variables used in the model.
 #' @param variables A named list identifying variables that should coevolve in
@@ -21,10 +33,14 @@
 #'   column names in data. Currently, the only supported response distributions
 #'   are \code{bernoulli_logit}, \code{ordered_logistic},
 #'   \code{poisson_softplus}, \code{negative_binomial_softplus}, \code{normal},
-#'   and \code{gamma_log}.
+#'   and \code{gamma_log}. Bernoulli variables must be 0/1 integers, ordered
+#'   variables must be ordered factors, Poisson and negative binomial variables
+#'   must be positive integers, normal variables must be continuous numeric,
+#'   and gamma variables must be positive numeric.
 #' @param id A character of length one identifying the variable in the data that
-#'   links rows to tips on the phylogeny. Must refer to a valid column name in
-#'   the data. The id column must exactly match the tip labels in the phylogeny.
+#'   links rows to tips on the phylogeny (strictly case-sensitive). Must refer
+#'   to a valid column name in the data. The id column must exactly match the
+#'   tip labels in the phylogeny.
 #' @param tree A phylogenetic tree object of class \code{phylo} or
 #'   \code{multiPhylo}. The tree(s) must be rooted and must include positive
 #'   non-zero branch lengths. All trees in \code{multiPhylo} objects must have
@@ -44,10 +60,11 @@
 #'   exactly matching the tip labels in the phylogeny. If specified, the model
 #'   will additionally control for spatial location by including a separate
 #'   Gaussian Process over locations for every coevolving variable in the model.
-#' @param dist_cov A string specifying the covariance kernel used for Gaussian
-#'   Processes over locations. Currently supported are \code{"exp_quad"}
-#'   (exponentiated-quadratic kernel; default), \code{"exponential"}
-#'   (exponential kernel), and \code{"matern32"} (Matern 3/2 kernel).
+#' @param dist_cov A string of length one specifying the covariance kernel used
+#'   for Gaussian Processes over locations (strictly case-sensitive). Currently
+#'   supported are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
+#'   \code{"exponential"} (exponential kernel), and \code{"matern32"}
+#'   (Matern 3/2 kernel).
 #' @param measurement_error (optional) A named list of coevolving variables and
 #'   their associated columns in the dataset containing standard errors. Only
 #'   valid for normally-distributed variables. For example, if we declare
