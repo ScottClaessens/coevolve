@@ -184,4 +184,9 @@ test_that("coev_calculate_theta() produces expected errors and output", {
   # free variables should not be constant in output
   expect_false(all(theta01_null[, "y"] == 0))
   expect_false(all(theta09_null[, "y"] == 0))
+  # test for no NA, NaN, or Inf
+  #' @srrstats {G5.3} Ensure no missing or undefined values
+  expect_equal(sum(is.na(theta01)), 0)
+  expect_equal(sum(is.nan(theta01)), 0)
+  expect_equal(sum(is.infinite(theta01)), 0)
 })

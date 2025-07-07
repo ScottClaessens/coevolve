@@ -56,6 +56,11 @@ test_that("coev_calculate_delta_theta() produces expected errors and output", {
   expect_true(methods::is(fun(m4, "y", "z"), "draws_array"))
   expect_true(methods::is(fun(m5, "w", "x"), "draws_array"))
   expect_true(methods::is(fun(m6, "w", "x"), "draws_array"))
+  # test for no NA, NaN, or Inf
+  #' @srrstats {G5.3} Ensure no missing or undefined values
+  expect_equal(sum(is.na(fun(m1, "x", "y"))), 0)
+  expect_equal(sum(is.nan(fun(m1, "x", "y"))), 0)
+  expect_equal(sum(is.infinite(fun(m1, "x", "y"))), 0)
 })
 
 test_that("coev_calculate_delta_theta() works with repeated observations", {

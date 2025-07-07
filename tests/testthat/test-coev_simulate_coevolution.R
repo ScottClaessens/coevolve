@@ -197,6 +197,9 @@ test_that("coev_simulate_coevolution() returns named list", {
   expect_true(is.data.frame(sim$data))
   # which should have num columns = number of variables + 1
   expect_true(ncol(sim$data) == length(variables) + 1)
+  # and should have no missing values
+  #' @srrstats {G5.3} Ensure no missing values
+  expect_equal(sum(is.na(sim$data)), 0)
   # second element is data frame
   expect_true(is.data.frame(sim$simulation))
   # third element is phylo

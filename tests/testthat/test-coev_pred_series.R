@@ -264,4 +264,9 @@ test_that("coev_pred_series() produces expected errors and output", {
   expect_no_error(sw(coev_pred_series(m08, eta_anc = list(x = 0, y = 0))))
   expect_no_error(sw(coev_pred_series(m09, eta_anc = list(x = 0, y = 0))))
   expect_no_error(sw(coev_pred_series(m10, eta_anc = list(x = 0, y = 0))))
+  # test for no NA, NaN, or Inf
+  #' @srrstats {G5.3} Ensure no missing or undefined values
+  expect_equal(sum(is.na(sw(coev_pred_series(m01)))), 0)
+  expect_equal(sum(is.nan(sw(coev_pred_series(m01)))), 0)
+  expect_equal(sum(is.infinite(sw(coev_pred_series(m01)))), 0)
 })
