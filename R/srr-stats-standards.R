@@ -9,12 +9,6 @@
 #'
 #' @srrstatsVerbose TRUE
 #'
-#' @srrstatsTODO {G5.3} *For functions which are expected to return objects containing no missing (`NA`) or undefined (`NaN`, `Inf`) values, the absence of any such values in return objects should be explicitly tested.*
-#' @srrstatsTODO {G5.4} **Correctness tests** *to test that statistical algorithms produce expected results to some fixed test data sets (potentially through comparisons using binding frameworks such as [RStata](https://github.com/lbraglia/RStata)).*
-#' @srrstatsTODO {G5.4a} *For new methods, it can be difficult to separate out correctness of the method from the correctness of the implementation, as there may not be reference for comparison. In this case, testing may be implemented against simple, trivial cases or against multiple implementations such as an initial R implementation compared with results from a C/C++ implementation.*
-#' @srrstatsTODO {G5.4b} *For new implementations of existing methods, correctness tests should include tests against previous implementations. Such testing may explicitly call those implementations in testing, preferably from fixed-versions of other software, or use stored outputs from those where that is not possible.*
-#' @srrstatsTODO {G5.4c} *Where applicable, stored values may be drawn from published paper outputs when applicable and where code from original implementations is not available*
-#' @srrstatsTODO {G5.5} *Correctness tests should be run with a fixed random seed*
 #' @srrstatsTODO {G5.6} **Parameter recovery tests** *to test that the implementation produce expected results given data with known properties. For instance, a linear regression algorithm should return expected coefficient values for a simulated data set generated from a linear model.*
 #' @srrstatsTODO {G5.6a} *Parameter recovery tests should generally be expected to succeed within a defined tolerance rather than recovering exact values.*
 #' @srrstatsTODO {G5.6b} *Parameter recovery tests should be run with multiple random seeds when either data simulation or the algorithm contains a random component. (When long-running, such tests may be part of an extended, rather than regular, test suite; see G5.10-4.12, below).*
@@ -134,15 +128,19 @@ NULL
 #'   publications
 #' @srrstatsNA {G1.6} There are no alternative implementations of this algorithm
 #'   in other R packages
-#' @srrstatsNA {G2.4d} We do not explicitly convert input data to factor in the
+#' @srrstatsNA {G2.4d} We do not explicitly convert input data to factors in the
 #'   code
 #' @srrstatsNA {G2.9} The package does not do any type conversions that would
 #'   result in lost data
 #' @srrstatsNA {G2.14a} NAs are important information, and so the package does
 #'   not error when they are present
 #' @srrstatsNA {G3.0} The package does not compare floating points for equality
-#' @srrstatsNA {G5.0} This package is applicable to specific data (i.e.,
-#'   phylogenetic data) so NIST datasets would not be applicable
+#' @srrstatsNA {G5.0} This package is designed to be used with specific data
+#'   (i.e., phylogenetic data) so NIST datasets would not be applicable
+#' @srrstatsNA {G5.4b} This package is not a new implementation of an existing
+#'   method
+#' @srrstatsNA {G5.4c} It is not necessary to draw stored values from published
+#'   outputs
 #'
 #' @noRd
 NULL
