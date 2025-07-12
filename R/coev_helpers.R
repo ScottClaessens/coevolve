@@ -18,7 +18,7 @@ run_checks_data <- function(data) {
     stop2("Argument 'data' must be coercible to a data.frame.")
   }
   # stop if data does not contain observations
-  #' @srrstats {G2.0} Assertion on number of data rows
+  #' @srrstats {G2.0, G5.8, G5.8a} Assertion on number of data rows
   if (!(nrow(data) > 0L)) {
     stop2("Argument 'data' does not contain observations.")
   }
@@ -80,10 +80,14 @@ run_checks_variables <- function(data, variables) {
         any(data[, variables] == -Inf, na.rm = TRUE)) {
     stop2("Data must not contain undefined values (i.e., Inf or -Inf).")
   }
+  # stop if any columns contain only NAs
+  if (any(apply(data[, variables], 2, function(x) all(is.na(x))))) {
+    stop2("Data must not contain columns with only NA values.")
+  }
   # check distributional constraints
   #' @srrstats {G2.11} The following checks ensure that data columns meet the
-  #' requirements for different response distributions and are thus
-  #' appropriately processed, will also ensure that columns are not lists
+  #'   requirements for different response distributions and are thus
+  #'   appropriately processed
   for (i in seq_along(distributions)) {
     #' @srrstats {G2.15} Software does not assume non-missingness
     if (distributions[i] == "bernoulli_logit" &&

@@ -325,7 +325,7 @@ run_checks_pred_series <- function(object, eta_anc, intervention_values,
       stop2("Argument 'ndraws' must be numeric.")
     } else if (!all(as.integer(ndraws) == ndraws) || length(ndraws) != 1) {
       #' @srrstats {G2.0, G2.1, G2.2, G2.4, G2.4a} Assertion on length and type
-      #' of input, convert to integer
+      #'   of input, convert to integer
       stop2("Argument 'ndraws' must be a single integer.")
     } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
       stop2(

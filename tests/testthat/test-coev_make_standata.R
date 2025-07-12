@@ -27,6 +27,7 @@ test_that("coev_make_standata() produces expected errors", {
     "Argument 'data' must be coercible to a data.frame.",
     fixed = TRUE
   )
+  #' @srrstats {G5.8, G5.8a} Test for zero-length data
   expect_error(
     coev_make_standata(
       data = data.frame(), # empty
@@ -95,6 +96,59 @@ test_that("coev_make_standata() produces expected errors", {
     "Must be at least two coevolving variables.",
     fixed = TRUE
   )
+  expect_error(
+    coev_make_standata(
+      data = dplyr::tibble(
+        id = tree$tip.label,
+        x = list("test"),
+        y = list("test")
+      ),
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Data must not contain list columns.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = data.frame(
+        id = tree$tip.label,
+        x = Inf,
+        y = -Inf
+      ),
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Data must not contain undefined values (i.e., Inf or -Inf).",
+    fixed = TRUE
+  )
+  #' @srrstats {G5.8, G5.8c} Test for columns with only NA values
+  expect_error(
+    coev_make_standata(
+      data = data.frame(
+        id = tree$tip.label,
+        x = NA,
+        y = NA
+      ),
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Data must not contain columns with only NA values.",
+    fixed = TRUE
+  )
+  #' @srrstats {G5.8, G5.8b, G5.8d} Tests for data of unsupported types
   expect_error(
     coev_make_standata(
       data = d,
@@ -798,6 +852,36 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
       "tip", "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
   )
   expect_equal(sd3$prior_only, 1)
+})
+
+#' @srrstats {BS2.1a} Testing that input data is dimensionally commensurate
+test_that("coev_make_standata() produces dimensionally commensurate data", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rbinom(n, size = 1, prob = 0.5),
+      y = ordered(sample(1:4, size = n, replace = TRUE))
+    )
+  })
+  # make stan data
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    )
+  # test for dimensionally commensurate data list
+  expect_true(is.matrix(sd$y))
+  expect_equal(length(sd$y[, 1]), length(sd$y[, 2]))
+  expect_equal(nrow(sd$y), n)
+  expect_equal(ncol(sd$y), 2)
 })
 
 test_that("coev_make_standata() works with missing data", {

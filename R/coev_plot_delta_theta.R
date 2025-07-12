@@ -88,7 +88,7 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
     if (!methods::is(variables, "character")) {
       # stop if variables not character vector
       #' @srrstats {G2.1, G2.6} Assertion on type of input, vector checked for
-      #' class structure
+      #'   class structure
       stop2("Argument 'variables' must be a character vector.")
     } else if (!(length(variables) > 1)) {
       # stop if variables not > length 1

@@ -1,10 +1,18 @@
-#' Trace and density plots for dynamic coevolutionary model
+#' Trace and density plots for \code{coevfit} objects
+#'
+#' @srrstats {G1.3, G1.4, G2.1a} Function documentation begins here, with
+#'   expected data types and definitions of statistical terminology and inputs
+#' @srrstats {G2.3, G2.3b} Documenting that character parameters are
+#'   strictly case-sensitive
+#' @srrstats {BS6.1, BS6.2, BS6.3, BS6.5} This plot method displays
+#'   distributional estimates (densities) and sequences of samples (trace plots)
+#'   from the model object
 #'
 #' @param object An object of class \code{coevfit}.
 #' @param parameters If NULL (default), the function returns a list of plots for
 #'   the main parameters from the model (the selection matrix "A", the drift
 #'   matrix "Q", and the continuous time intercepts "b"). Otherwise, a character
-#'   vector declaring the parameters to plot.
+#'   vector declaring the parameters to plot (strictly case-sensitive).
 #' @param combo A character vector with at least two elements. Each element of
 #'   \code{combo} corresponds to a column in the resulting plot and should be
 #'   the name of one of the available

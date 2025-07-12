@@ -27,6 +27,7 @@ test_that("coev_make_stancode() produces expected errors", {
     "Argument 'data' must be coercible to a data.frame.",
     fixed = TRUE
   )
+  #' @srrstats {G5.8, G5.8a} Test for zero-length data
   expect_error(
     coev_make_stancode(
       data = data.frame(), # empty
@@ -95,6 +96,59 @@ test_that("coev_make_stancode() produces expected errors", {
     "Must be at least two coevolving variables.",
     fixed = TRUE
   )
+  expect_error(
+    coev_make_stancode(
+      data = dplyr::tibble(
+        id = tree$tip.label,
+        x = list("test"),
+        y = list("test")
+      ),
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Data must not contain list columns.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = data.frame(
+        id = tree$tip.label,
+        x = Inf,
+        y = -Inf
+      ),
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Data must not contain undefined values (i.e., Inf or -Inf).",
+    fixed = TRUE
+  )
+  #' @srrstats {G5.8, G5.8c} Test for columns with only NA values
+  expect_error(
+    coev_make_stancode(
+      data = data.frame(
+        id = tree$tip.label,
+        x = NA,
+        y = NA
+      ),
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Data must not contain columns with only NA values.",
+    fixed = TRUE
+  )
+  #' @srrstats {G5.8, G5.8b, G5.8d} Tests for data of unsupported types
   expect_error(
     coev_make_stancode(
       data = d,

@@ -1,6 +1,9 @@
 #' Create a summary of a fitted model represented by a \code{coevfit} object
 #'
 #' @srrstats {G1.4, G2.1a} Function is documented with expected data types
+#' @srrstats {BS4.3, BS5.3, BS5.5} Rhat and effective sample sizes in summary
+#'   output can be used to check convergence
+#' @srrstats {BS6.4} summary method for coevfit objects
 #'
 #' @param object An object of class \code{coevfit}.
 #' @param prob A value between 0 and 1 indicating the desired probability
@@ -272,6 +275,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
 #' Print a summary of a fitted model represented by a \code{coevfit} object
 #'
 #' @srrstats {G1.4} Function is documented
+#' @srrstats {BS6.0} Default print method for coevfit objects
 #'
 #' @aliases print.coevsummary
 #'
@@ -382,6 +386,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
     print_format(rbind(x$sd_residual, x$cor_residual), digits = digits)
   }
   # warnings for high rhats or divergences
+  #' @srrstats {BS4.5} Warnings for divergences or high Rhats
   if (max(x$rhats, na.rm = TRUE) > 1.05) {
     warning2(
       paste0(

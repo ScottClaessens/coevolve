@@ -767,43 +767,43 @@ test_that("coev_fit() produces expected errors", {
   )
 })
 
-# test_that("coev_fit() fits simple model without error", {
-#   # simulate data
-#   withr::with_seed(1, {
-#     n <- 3
-#     tree <- ape::rcoal(n)
-#     d <- data.frame(
-#       id = tree$tip.label,
-#       x = rnorm(n),
-#       y = rnorm(n)
-#     )
-#   })
-#   # fit model
-#   fit <-
-#     coev_fit(
-#       data = d,
-#       variables = list(
-#         x = "normal",
-#         y = "normal"
-#       ),
-#       id = "id",
-#       tree = tree,
-#       chains = 1,
-#       seed = 1,
-#       refresh = 0
-#     )
-#   # expect no errors for model fitting or summaries
-#   sw <- suppressWarnings
-#   expect_no_error(sw(fit))
-#   expect_no_error(sw(summary(fit)))
-#   expect_no_error(sw(print(fit)))
-#   expect_no_error(sw(print(summary(fit))))
-#   # expect no error for stancode and standata methods
-#   expect_no_error(sw(stancode(fit)))
-#   expect_no_error(sw(standata(fit)))
-#   expect_output(sw(stancode(fit)))
-#   expect_true(sw(methods::is(standata(fit), "list")))
-# })
+test_that("coev_fit() fits simple model without error", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 3
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+  })
+  # fit model
+  fit <-
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      chains = 1,
+      seed = 1,
+      refresh = 0
+    )
+  # expect no errors for model fitting or summaries
+  sw <- suppressWarnings
+  expect_no_error(sw(fit))
+  expect_no_error(sw(summary(fit)))
+  expect_no_error(sw(print(fit)))
+  expect_no_error(sw(print(summary(fit))))
+  # expect no error for stancode and standata methods
+  expect_no_error(sw(stancode(fit)))
+  expect_no_error(sw(standata(fit)))
+  expect_output(sw(stancode(fit)))
+  expect_true(sw(methods::is(standata(fit), "list")))
+})
 
 test_that("coev_fit() fits test fixtures", {
   # load models

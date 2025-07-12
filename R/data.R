@@ -25,7 +25,7 @@
 #'    authority is absent, sublocal, local, or supralocal in each society}
 #' }
 #'
-#' @srrstats {G5.1} Example dataset for testing the package
+#' @srrstats {G5.1} Example dataset for package
 #'
 #' @source Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S.,
 #'   Ringen, E. J., & Atkinson, Q. D. (2023). Coevolution of religious and
@@ -87,7 +87,7 @@
 #'  \item{group_size}{Average group size}
 #' }
 #'
-#' @srrstats {G5.1} Example dataset for testing the package
+#' @srrstats {G5.1} Example dataset for package
 #'
 #' @source DeCasien, A. R., Williams, S. A., & Higham, J. P. (2017). Primate
 #'   brain size is predicted by diet but not sociality. \emph{Nature Ecology &
@@ -136,7 +136,7 @@
 #'  \item{y}{An example continuous variable}
 #' }
 #'
-#' @srrstats {G5.1} Example dataset for testing the package
+#' @srrstats {G5.1} Example dataset for package
 #'
 #' @source de Villemeruil P. & Nakagawa, S. (2014). General quantitative genetic
 #'   methods for comparative biology. In L. Garamszegi (Ed.), \emph{Modern

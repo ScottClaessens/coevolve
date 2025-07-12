@@ -35,7 +35,12 @@ knitr::opts_chunk$set(
 #'
 #' @srrstats {G1.0} This README contains references to primary literature
 #' @srrstats {G1.2} This README contains a repo status badge highlighting the 
-#' current state of development. We have also added a lifecycle statement to .github/CONTRIBUTING.md.
+#'   current state of development. We have also added a lifecycle statement to 
+#'   .github/CONTRIBUTING.md.
+#' @srrstats {BS1.2, BS1.2a} This README contains an example of specifying prior
+#'   distributions
+#' @srrstats {BS1.4, BS4.3} This README contains a model summary output with 
+#'   Rhat and effective sample size statistics for checking convergence
 ```
 
 ## Overview

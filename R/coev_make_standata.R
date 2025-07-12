@@ -12,9 +12,14 @@
 #' @srrstats {G2.3, G2.3b} Documenting that character parameters are
 #'   strictly case-sensitive (see "id" and "dist_cov")
 #' @srrstats {G2.5} Secondary documentation of ordered factors (see "variables")
-#' @srrstats {G2.14} Option for missing data handling (see "complete_cases")
+#' @srrstats {G2.14, BS3.0} Option for missing data handling (see
+#'   "complete_cases") and documentation of missing data handling
 #' @srrstats {G3.1, G3.1a} Users can choose the covariance function underlying
 #'   the spatial Gaussian Process (see "dist_cov")
+#' @srrstats {BS1.1} Data entry is described in the secondary documentation for
+#'   the "data" parameter and in code examples
+#' @srrstats {BS1.2, BS1.2c} Specification of prior distributions is described
+#'   in secondary documentation for the "prior" parameter
 #'
 #' @param data An object of class \code{data.frame} (or one that can be coerced
 #'   to that class) containing data of all variables used in the model.
@@ -218,6 +223,8 @@ coev_make_standata <- function(data, variables, id, tree,
                                estimate_residual = TRUE,
                                log_lik = FALSE,
                                prior_only = FALSE) {
+  #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
+  #'   input data is dimensionally commensurate
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, measurement_error, prior, scale,

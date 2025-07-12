@@ -20,9 +20,28 @@
 #' @srrstats {G2.3, G2.3b} Documenting that character parameters are
 #'   strictly case-sensitive (see "id" and "dist_cov")
 #' @srrstats {G2.5} Secondary documentation of ordered factors (see "variables")
-#' @srrstats {G2.14} Option for missing data handling (see "complete_cases")
+#' @srrstats {G2.14, BS3.0} Option for missing data handling (see
+#'   "complete_cases") and documentation of missing data handling
 #' @srrstats {G3.1, G3.1a} Users can choose the covariance function underlying
 #'   the spatial Gaussian Process (see "dist_cov")
+#' @srrstats {BS1.1} Data entry is described in the secondary documentation for
+#'   the "data" parameter and in code examples
+#' @srrstats {BS1.2, BS1.2c} Specification of prior distributions is described
+#'   in secondary documentation for the "prior" parameter
+#' @srrstats {BS1.3, BS1.3b, BS2.6} Sampling parameters can be set via
+#'   additional arguments to cmdstanr::sample(), described via "..." below and
+#'   in code examples, and are checked by cmdstanr
+#' @srrstats {BS2.7} Starting values can be controlled via "..."
+#' @srrstats {BS2.9} cmdstanr uses different starting values for different
+#'   chains by default
+#' @srrstats {BS2.12} Verbosity of output can be controlled via "..."
+#' @srrstats {BS2.13} Progress indicators can be suppressed without suppressing
+#'   other output via "..."
+#' @srrstats {BS2.14} Warnings can be suppressed via "..."
+#' @srrstats {BS4.0} We refer to Stan and cmdstanr regarding the sampling
+#'   algorithm
+#' @srrstats {BS5.0, BS5.1, BS5.2} Starting values, seeds, and input data can be
+#'   retrieved from the coevfit object returned by this function
 #'
 #' @param data An object of class \code{data.frame} (or one that can be coerced
 #'   to that class) containing data of all variables used in the model.
@@ -244,6 +263,8 @@ coev_fit <- function(data, variables, id, tree,
                      estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
                      adapt_delta = 0.95, ...) {
+  #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
+  #'   input data is dimensionally commensurate
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, measurement_error, prior, scale,
@@ -261,6 +282,7 @@ coev_fit <- function(data, variables, id, tree,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
   # fit model
+  #' @srrstats {BS2.15} Any errors in model fitting will be reported by cmdstanr
   model <-
     cmdstanr::cmdstan_model(
       stan_file = cmdstanr::write_stan_file(sc),

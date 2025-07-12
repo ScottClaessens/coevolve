@@ -13,7 +13,14 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-
+```{r srr-tags, eval = FALSE, echo = FALSE}
+#' srr_standards_in_readme
+#'
+#' @srrstats {BS1.2, BS1.2b} This vignette contains examples of specifying prior
+#'   distributions
+#' @srrstats {BS1.4, BS4.3} This vignette contains a model summary output with
+#'   Rhat and effective sample size statistics for checking convergence
+```
 
 ## Introduction
 
