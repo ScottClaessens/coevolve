@@ -18,6 +18,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE, roclets = c("namespace", "rd", "srr::srr_stats_roclet"))
 RoxygenNote: 7.3.2
 Suggests: 
+    gridExtra,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0),
