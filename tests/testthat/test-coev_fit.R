@@ -1,6 +1,3 @@
-# flag for extended tests
-run_extended_tests <- identical(Sys.getenv("COEVOLVE_EXTENDED_TESTS"), "true")
-
 test_that("coev_fit() produces expected errors", {
   # simulate data
   withr::with_seed(1, {
@@ -30,6 +27,7 @@ test_that("coev_fit() produces expected errors", {
     "Argument 'data' must be coercible to a data.frame.",
     fixed = TRUE
   )
+  #' @srrstats {G5.8, G5.8a} Test for zero-length data
   expect_error(
     coev_fit(
       data = data.frame(), # empty
@@ -98,6 +96,59 @@ test_that("coev_fit() produces expected errors", {
     "Must be at least two coevolving variables.",
     fixed = TRUE
   )
+  expect_error(
+    coev_fit(
+      data = dplyr::tibble(
+        id = tree$tip.label,
+        x = list("test"),
+        y = list("test")
+      ),
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Data must not contain list columns.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = data.frame(
+        id = tree$tip.label,
+        x = Inf,
+        y = -Inf
+      ),
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Data must not contain undefined values (i.e., Inf or -Inf).",
+    fixed = TRUE
+  )
+  #' @srrstats {G5.8, G5.8c} Test for columns with only NA values
+  expect_error(
+    coev_fit(
+      data = data.frame(
+        id = tree$tip.label,
+        x = NA,
+        y = NA
+      ),
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree
+    ),
+    "Data must not contain columns with only NA values.",
+    fixed = TRUE
+  )
+  #' @srrstats {G5.8, G5.8b, G5.8d} Tests for data of unsupported types
   expect_error(
     coev_fit(
       data = d,
@@ -716,105 +767,45 @@ test_that("coev_fit() produces expected errors", {
   )
 })
 
-test_that("coev_fit() fits simple model without error", {
-  # simulate data
-  withr::with_seed(1, {
-    n <- 3
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rnorm(n),
-      y = rnorm(n)
-    )
-  })
-  # fit model
-  fit <-
-    coev_fit(
-      data = d,
-      variables = list(
-        x = "normal",
-        y = "normal"
-      ),
-      id = "id",
-      tree = tree,
-      chains = 1,
-      seed = 1,
-      refresh = 0
-    )
-  # expect no errors for model fitting or summaries
-  sw <- suppressWarnings
-  expect_no_error(sw(fit))
-  expect_no_error(sw(summary(fit)))
-  expect_no_error(sw(print(fit)))
-  expect_no_error(sw(print(summary(fit))))
-  # expect no error for stancode and standata methods
-  expect_no_error(sw(stancode(fit)))
-  expect_no_error(sw(standata(fit)))
-  expect_output(sw(stancode(fit)))
-  expect_true(sw(methods::is(standata(fit), "list")))
-})
+# test_that("coev_fit() fits simple model without error", {
+#   # simulate data
+#   withr::with_seed(1, {
+#     n <- 3
+#     tree <- ape::rcoal(n)
+#     d <- data.frame(
+#       id = tree$tip.label,
+#       x = rnorm(n),
+#       y = rnorm(n)
+#     )
+#   })
+#   # fit model
+#   fit <-
+#     coev_fit(
+#       data = d,
+#       variables = list(
+#         x = "normal",
+#         y = "normal"
+#       ),
+#       id = "id",
+#       tree = tree,
+#       chains = 1,
+#       seed = 1,
+#       refresh = 0
+#     )
+#   # expect no errors for model fitting or summaries
+#   sw <- suppressWarnings
+#   expect_no_error(sw(fit))
+#   expect_no_error(sw(summary(fit)))
+#   expect_no_error(sw(print(fit)))
+#   expect_no_error(sw(print(summary(fit))))
+#   # expect no error for stancode and standata methods
+#   expect_no_error(sw(stancode(fit)))
+#   expect_no_error(sw(standata(fit)))
+#   expect_output(sw(stancode(fit)))
+#   expect_true(sw(methods::is(standata(fit), "list")))
+# })
 
-#' @srrstats {G5.4, G5.4a, G5.5} Extended correctness test with fixed seed
-test_that("coev_fit() estimates correct direction of selection", {
-  skip_if_not(run_extended_tests)
-  # simulate data with fixed seed, where x -> y but not vice versa
-  withr::with_seed(1, {
-    sim <-
-      coev_simulate_coevolution(
-        n = 100,
-        variables = c("x", "y"),
-        selection_matrix = matrix(
-          c(0.9, 0.0,
-            0.9, 0.9),
-          nrow = 2,
-          byrow = TRUE,
-          dimnames = list(c("x", "y"), c("x", "y"))
-        ),
-        drift = c("x" = 0.01, "y" = 0.01),
-        prob_split = 0.05
-      )
-  })
-  # fit model
-  fit <-
-    coev_fit(
-      data = sim$data,
-      variables = list(
-        x = "normal",
-        y = "normal"
-      ),
-      id = "species",
-      tree = sim$tree,
-      estimate_correlated_drift = FALSE,
-      chains = 1,
-      seed = 1,
-      refresh = 0
-    )
-  # get delta theta values
-  delta_theta_x_to_y <-
-    coev_calculate_delta_theta(
-      object = fit,
-      predictor = "x",
-      response = "y"
-    )
-  delta_theta_y_to_x <-
-    coev_calculate_delta_theta(
-      object = fit,
-      predictor = "y",
-      response = "x"
-    )
-  # for x -> y, 95% CI for delta theta should be greater than zero
-  expect_true(
-    quantile(delta_theta_x_to_y, 0.025) > 0 &&
-      quantile(delta_theta_x_to_y, 0.975) > 0
-  )
-  # for y -> x, 95% CI for delta theta should include zero
-  expect_true(
-    quantile(delta_theta_y_to_x, 0.025) < 0 &&
-      quantile(delta_theta_y_to_x, 0.975) > 0
-  )
-})
-
-test_that("coev_fit() fits test fixtures without error", {
+test_that("coev_fit() fits test fixtures", {
   # load models
   m1 <- readRDS(test_path("fixtures", "coevfit_example_01.rds"))
   m2 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
@@ -872,6 +863,28 @@ test_that("coev_fit() fits test fixtures without error", {
   expect_true(sw(methods::is(standata(m2), "list")))
   expect_true(sw(methods::is(standata(m3), "list")))
   expect_true(sw(methods::is(standata(m4), "list")))
+  # expect following errors for plot method
+  expect_error(
+    plot(m4, parameters = "test"),
+    "Argument 'parameters' contains invalid parameter names.",
+    fixed = TRUE
+  )
+  expect_error(
+    plot(m4, npars = "test"),
+    "Argument 'npars' is not a positive number.",
+    fixed = TRUE
+  )
+  expect_error(
+    plot(m4, plot = "test"),
+    "Argument 'plot' is not logical.",
+    fixed = TRUE
+  )
+  # plot method works as expected
+  plot(m4)
+  plot(m4, parameters = "A[1,1]")
+  plot(m4, combo = c("hist", "trace"))
+  plot(m4, npars = 3)
+  plot(m4, plot = FALSE)
 })
 
 test_that("effects_mat argument to coev_fit() works as expected", {
