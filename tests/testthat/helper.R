@@ -9,7 +9,7 @@ reload_fit <- function(coevfit, filename) {
 
 # manually fix parameters in stan code
 manually_fix_parameters <- function(scode) {
-  scode %>%
+  scode |>
     stringr::str_remove(
       stringr::fixed(
         paste0(
@@ -21,7 +21,7 @@ manually_fix_parameters <- function(scode) {
           "  array[N_tree] vector[J] eta_anc; // ancestral states\n"
         )
       )
-    ) %>%
+    ) |>
     stringr::str_replace(
       pattern = stringr::fixed(
         paste0(
@@ -35,7 +35,7 @@ manually_fix_parameters <- function(scode) {
         "  matrix[J,J] A = diag_matrix(rep_vector(-0.5, J));\n",
         "  matrix[J,J] Q = diag_matrix(rep_vector(1.5, J));\n"
       )
-    ) %>%
+    ) |>
     stringr::str_replace(
       pattern = stringr::fixed(
         paste0(
@@ -62,10 +62,10 @@ manually_fix_parameters <- function(scode) {
         "  A[1,2] = 0;\n",
         "  for (t in 1:N_tree) eta_anc[t] = rep_vector(0.0, J);\n"
       )
-    ) %>%
-    stringr::str_remove(stringr::fixed("  b ~ std_normal();\n")) %>%
-    stringr::str_remove(stringr::fixed("    eta_anc[t] ~ std_normal();\n")) %>%
-    stringr::str_remove(stringr::fixed("  A_offdiag ~ std_normal();\n")) %>%
-    stringr::str_remove(stringr::fixed("  A_diag ~ std_normal();\n")) %>%
+    ) |>
+    stringr::str_remove(stringr::fixed("  b ~ std_normal();\n")) |>
+    stringr::str_remove(stringr::fixed("    eta_anc[t] ~ std_normal();\n")) |>
+    stringr::str_remove(stringr::fixed("  A_offdiag ~ std_normal();\n")) |>
+    stringr::str_remove(stringr::fixed("  A_diag ~ std_normal();\n")) |>
     stringr::str_remove(stringr::fixed("  Q_sigma ~ std_normal();\n"))
 }

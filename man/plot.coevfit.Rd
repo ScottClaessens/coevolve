@@ -5,15 +5,16 @@
 \title{Trace and density plots for \code{coevfit} objects}
 \usage{
 \method{plot}{coevfit}(
-  object,
+  x,
   parameters = NULL,
   combo = c("dens", "trace"),
   npars = 5,
-  plot = TRUE
+  plot = TRUE,
+  ...
 )
 }
 \arguments{
-\item{object}{An object of class \code{coevfit}.}
+\item{x}{An object of class \code{coevfit}.}
 
 \item{parameters}{If NULL (default), the function returns a list of plots for
 the main parameters from the model (the selection matrix "A", the drift
@@ -30,6 +31,8 @@ the name of one of the available
 
 \item{plot}{Logical. If TRUE (default), plots are plotted in the active
 graphic device. If FALSE, plots are not plotted.}
+
+\item{...}{Not used.}
 }
 \value{
 A list of \code{ggplot} objects

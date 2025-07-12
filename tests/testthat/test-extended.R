@@ -61,14 +61,15 @@ test_that("coev_fit() estimates correct direction of selection", {
   )
 })
 
-#' @srrstats {G5.6, G5.6a, G5.6b, G5.9, G5.9a, G5.9b} Extended parameter
+#' @srrstats {G5.6, G5.6a, G5.6b, G5.9, G5.9a, G5.9b, BS7.2} Extended parameter
 #'   recovery tests with multiple fixed seeds for data simulation and cmdstanr
+#' @srrstats {BS7.4, BS7.4a} Predicted values are on same scale as input data
 for (seed in 1:3) {
   test_that(paste0("coev_fit() recovers parameters (seed = ", seed, ")"), {
     skip_if_not(run_extended_tests)
     # get dummy data
     withr::with_seed(seed, {
-      n <- 50
+      n <- 60
       tree <- ape::rcoal(n)
       d <- data.frame(
         id = tree$tip.label,
@@ -143,19 +144,26 @@ for (seed in 1:3) {
     )
     post <- extract_samples(fit)
     # posterior medians should recover fixed parameters within tolerance
-    expect_equal(median(post$A[, 1, 1]), -0.5, tolerance = 1)
-    expect_equal(median(post$A[, 2, 2]), -0.5, tolerance = 1)
-    expect_equal(median(post$A[, 2, 1]),  3.0, tolerance = 1)
-    expect_equal(median(post$Q[, 1, 1]),  1.5, tolerance = 1)
-    expect_equal(median(post$Q[, 2, 2]),  1.5, tolerance = 1)
-    expect_equal(median(post$b[, 1]), 0.0, tolerance = 1)
-    expect_equal(median(post$b[, 2]), 0.0, tolerance = 1)
+    expect_equal(median(post$A[, 1, 1]), -0.5, tolerance = 0.5)
+    expect_equal(median(post$A[, 2, 2]), -0.5, tolerance = 0.5)
+    expect_equal(median(post$A[, 2, 1]),  3.0, tolerance = 0.5)
+    expect_equal(median(post$Q[, 1, 1]),  1.5, tolerance = 0.5)
+    expect_equal(median(post$Q[, 2, 2]),  1.5, tolerance = 0.5)
+    expect_equal(median(post$b[, 1]), 0.0, tolerance = 0.5)
+    expect_equal(median(post$b[, 2]), 0.0, tolerance = 0.5)
+    # median predicted values on same scale as input data
+    pred <- apply(post$yrep, c(3, 4), median)
+    expect_equal(median(d_sim$x), median(pred[, 1]), tolerance = 0.1)
+    expect_equal(median(d_sim$y), median(pred[, 2]), tolerance = 0.1)
+    expect_equal(sd(d_sim$x), sd(pred[, 1]), tolerance = 0.1)
+    expect_equal(sd(d_sim$y), sd(pred[, 2]), tolerance = 0.1)
   })
 }
 
 #' @srrstats {G5.7} Standard errors for posterior estimates are smaller as
 #'   number of observations increases
-test_that("coev_fit() estimates smaller posterior SEs with more observations", {
+#' @srrstats {BS7.3} Algorithm scaling test
+test_that("coev_fit() scales with increasing observations", {
   skip_if_not(run_extended_tests)
   # get smaller dataset
   withr::with_seed(1, {
@@ -214,4 +222,53 @@ test_that("coev_fit() estimates smaller posterior SEs with more observations", {
   expect_lt(s_large$cross[2, "Est.Error"], s_small$cross[2, "Est.Error"])
   expect_lt(s_large$sd_drift[1, "Est.Error"], s_small$sd_drift[1, "Est.Error"])
   expect_lt(s_large$sd_drift[2, "Est.Error"], s_small$sd_drift[2, "Est.Error"])
+  # larger data set takes longer to converge
+  expect_lt(
+    fit_small$fit$time()$total,
+    fit_large$fit$time()$total
+  )
+})
+
+#' @srrstats {BS7.0, BS7.1} Prior recovery tests
+test_that("coev_fit() recovers prior distribution", {
+  skip_if_not(run_extended_tests)
+  # get dummy dataset
+  withr::with_seed(1, {
+    n <- 5
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+  })
+  # fit model with prior_only = TRUE
+  fit <-
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      prior = list(
+        A_offdiag = "normal(2, 0.5)",
+        b = "normal(-1, 0.5)"
+      ),
+      prior_only = TRUE,
+      chains = 1,
+      refresh = 0,
+      seed = 1
+    )
+  prior <- extract_samples(fit)
+  # estimates should recover prior within tolerance
+  expect_equal(median(prior$A[, 1, 2]), 2, tolerance = 0.1)
+  expect_equal(median(prior$A[, 2, 1]), 2, tolerance = 0.1)
+  expect_equal(median(prior$b[, 1]), -1, tolerance = 0.1)
+  expect_equal(median(prior$b[, 2]), -1, tolerance = 0.1)
+  expect_equal(sd(prior$A[, 1, 2]), 0.5, tolerance = 0.1)
+  expect_equal(sd(prior$A[, 2, 1]), 0.5, tolerance = 0.1)
+  expect_equal(sd(prior$b[, 1]), 0.5, tolerance = 0.1)
+  expect_equal(sd(prior$b[, 2]), 0.5, tolerance = 0.1)
 })

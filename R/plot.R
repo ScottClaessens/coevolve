@@ -8,7 +8,7 @@
 #'   distributional estimates (densities) and sequences of samples (trace plots)
 #'   from the model object
 #'
-#' @param object An object of class \code{coevfit}.
+#' @param x An object of class \code{coevfit}.
 #' @param parameters If NULL (default), the function returns a list of plots for
 #'   the main parameters from the model (the selection matrix "A", the drift
 #'   matrix "Q", and the continuous time intercepts "b"). Otherwise, a character
@@ -21,6 +21,7 @@
 #' @param npars Number of parameters displayed per page (default = 5).
 #' @param plot Logical. If TRUE (default), plots are plotted in the active
 #'   graphic device. If FALSE, plots are not plotted.
+#' @param ... Not used.
 #'
 #' @return A list of \code{ggplot} objects
 #'
@@ -47,15 +48,15 @@
 #'
 #' @method plot coevfit
 #' @export
-plot.coevfit <- function(object, parameters = NULL, combo = c("dens", "trace"),
-                         npars = 5, plot = TRUE) {
+plot.coevfit <- function(x, parameters = NULL, combo = c("dens", "trace"),
+                         npars = 5, plot = TRUE, ...) {
   if (!is.null(parameters)) {
-    if (!all(parameters %in% object$fit$metadata()$model_params)) {
+    if (!all(parameters %in% x$fit$metadata()$model_params)) {
       stop2("Argument 'parameters' contains invalid parameter names.")
     }
   } else {
     # keep only main parameters: A, Q, and b
-    parameters <- object$fit$metadata()$model_params
+    parameters <- x$fit$metadata()$model_params
     parameters <- parameters[
       stringr::str_starts(parameters, stringr::fixed("A[")) |
         stringr::str_starts(parameters, stringr::fixed("Q[")) |
@@ -75,7 +76,7 @@ plot.coevfit <- function(object, parameters = NULL, combo = c("dens", "trace"),
     sub_pars <- parameters[sub]
     plots[[i]] <- bayesplot::mcmc_combo(
       posterior::as_draws(
-        object$fit,
+        x$fit,
         variable = sub_pars
       ),
       combo = combo
