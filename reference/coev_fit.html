@@ -106,13 +106,17 @@ Must identify at least two variables. Variable names must refer to valid
 column names in data. Currently, the only supported response distributions
 are <code>bernoulli_logit</code>, <code>ordered_logistic</code>,
 <code>poisson_softplus</code>, <code>negative_binomial_softplus</code>, <code>normal</code>,
-and <code>gamma_log</code>.</p></dd>
+and <code>gamma_log</code>. Bernoulli variables must be 0/1 integers, ordered
+variables must be ordered factors, Poisson and negative binomial variables
+must be positive integers, normal variables must be continuous numeric,
+and gamma variables must be positive numeric.</p></dd>
 
 
 <dt id="arg-id">id<a class="anchor" aria-label="anchor" href="#arg-id"></a></dt>
 <dd><p>A character of length one identifying the variable in the data that
-links rows to tips on the phylogeny. Must refer to a valid column name in
-the data. The id column must exactly match the tip labels in the phylogeny.</p></dd>
+links rows to tips on the phylogeny (strictly case-sensitive). Must refer
+to a valid column name in the data. The id column must exactly match the
+tip labels in the phylogeny.</p></dd>
 
 
 <dt id="arg-tree">tree<a class="anchor" aria-label="anchor" href="#arg-tree"></a></dt>
@@ -147,10 +151,11 @@ Gaussian Process over locations for every coevolving variable in the model.</p><
 
 
 <dt id="arg-dist-cov">dist_cov<a class="anchor" aria-label="anchor" href="#arg-dist-cov"></a></dt>
-<dd><p>A string specifying the covariance kernel used for Gaussian
-Processes over locations. Currently supported are <code>"exp_quad"</code>
-(exponentiated-quadratic kernel; default), <code>"exponential"</code>
-(exponential kernel), and <code>"matern32"</code> (Matern 3/2 kernel).</p></dd>
+<dd><p>A string of length one specifying the covariance kernel used
+for Gaussian Processes over locations (strictly case-sensitive). Currently
+supported are <code>"exp_quad"</code> (exponentiated-quadratic kernel; default),
+<code>"exponential"</code> (exponential kernel), and <code>"matern32"</code>
+(Matern 3/2 kernel).</p></dd>
 
 
 <dt id="arg-measurement-error">measurement_error<a class="anchor" aria-label="anchor" href="#arg-measurement-error"></a></dt>

@@ -96,13 +96,17 @@ Must identify at least two variables. Variable names must refer to valid
 column names in data. Currently, the only supported response distributions
 are <code>bernoulli_logit</code>, <code>ordered_logistic</code>,
 <code>poisson_softplus</code>, <code>negative_binomial_softplus</code>, <code>normal</code>,
-and <code>gamma_log</code>.</p></dd>
+and <code>gamma_log</code>. Bernoulli variables must be 0/1 integers, ordered
+variables must be ordered factors, Poisson and negative binomial variables
+must be positive integers, normal variables must be continuous numeric,
+and gamma variables must be positive numeric.</p></dd>
 
 
 <dt id="arg-id">id<a class="anchor" aria-label="anchor" href="#arg-id"></a></dt>
 <dd><p>A character of length one identifying the variable in the data that
-links rows to tips on the phylogeny. Must refer to a valid column name in
-the data. The id column must exactly match the tip labels in the phylogeny.</p></dd>
+links rows to tips on the phylogeny (strictly case-sensitive). Must refer
+to a valid column name in the data. The id column must exactly match the
+tip labels in the phylogeny.</p></dd>
 
 
 <dt id="arg-tree">tree<a class="anchor" aria-label="anchor" href="#arg-tree"></a></dt>
@@ -137,10 +141,11 @@ Gaussian Process over locations for every coevolving variable in the model.</p><
 
 
 <dt id="arg-dist-cov">dist_cov<a class="anchor" aria-label="anchor" href="#arg-dist-cov"></a></dt>
-<dd><p>A string specifying the covariance kernel used for Gaussian
-Processes over locations. Currently supported are <code>"exp_quad"</code>
-(exponentiated-quadratic kernel; default), <code>"exponential"</code>
-(exponential kernel), and <code>"matern32"</code> (Matern 3/2 kernel).</p></dd>
+<dd><p>A string of length one specifying the covariance kernel used
+for Gaussian Processes over locations (strictly case-sensitive). Currently
+supported are <code>"exp_quad"</code> (exponentiated-quadratic kernel; default),
+<code>"exponential"</code> (exponential kernel), and <code>"matern32"</code>
+(Matern 3/2 kernel).</p></dd>
 
 
 <dt id="arg-measurement-error">measurement_error<a class="anchor" aria-label="anchor" href="#arg-measurement-error"></a></dt>
@@ -258,240 +263,74 @@ authority in Austronesian societies. <em>Nature Human Behaviour</em>,
 <span class="r-in"><span>  <span class="op">)</span>,</span></span>
 <span class="r-in"><span>  id <span class="op">=</span> <span class="st">"language"</span>,</span></span>
 <span class="r-in"><span>  tree <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># print Stan code</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="va">stan_code</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> // Generated with coevolve 0.1.0.9002</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> functions {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   // Charles Driver's solver for the asymptotic Q matrix</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   matrix ksolve (matrix A, matrix Q) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     int d = rows(A);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     int d2 = (d * d - d) %/% 2;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     matrix [d + d2, d + d2] O;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     vector [d + d2] triQ;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     matrix[d,d] AQ;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     int z = 0;         // z is row of output</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (j in 1:d) {   // for column reference of solution vector</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       for (i in 1:j) { // and row reference...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         if (j &gt;= i) {  // if i and j denote a covariance parameter</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           int y = 0;   // start new output row</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           z += 1;      // shift current output row down</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           for (ci in 1:d) {   // for columns and</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             for (ri in 1:d) { // rows of solution</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               if (ci &gt;= ri) { // when in upper tri (inc diag)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 y += 1;       // move to next column of output</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 if (i == j) { // if output row is a diag element</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   if (ri == i) O[z, y] = 2 * A[ri, ci];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   if (ci == i) O[z, y] = 2 * A[ci, ri];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 if (i != j) { // if output row is not a diag element</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   //if column matches row, sum both A diags</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   if (y == z) O[z, y] = A[ri, ri] + A[ci, ci];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   if (y != z) { // otherwise...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     // if solution element is related to output row...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     if (ci == ri) { // if solution element is variance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       // if variance of solution corresponds to row</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       if (ci == i) O[z, y] = A[j, ci];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       // if variance of solution corresponds to col</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       if (ci == j) O[z, y] = A[i, ci];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     //if solution element is a related covariance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     if (ci != ri &amp;&amp; (ri == i || ri == j || ci == i || ci == j )) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       // for row 1,2 / 2,1 of output,</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       // if solution row ri 1 (match)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       // and column ci 3, we need A[2,3]</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       if (ri == i) O[z, y] = A[j, ci];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       if (ri == j) O[z, y] = A[i, ci];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       if (ci == i) O[z, y] = A[j, ri];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                       if (ci == j) O[z, y] = A[i, ri];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                   }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                 if (is_nan(O[z, y])) O[z, y] = 0;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>               }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     z = 0; // get upper tri of Q</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (j in 1:d) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       for (i in 1:j) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         z += 1;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         triQ[z] = Q[i, j];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     triQ = -O \ triQ; // get upper tri of asymQ</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     z = 0; // put upper tri of asymQ into matrix</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (j in 1:d) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       for (i in 1:j) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         z += 1;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         AQ[i, j] = triQ[z];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         if (i != j) AQ[j, i] = triQ[z];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     return AQ;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   // return number of matches of y in vector x</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   int num_matches(vector x, real y) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     int n = 0;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (i in 1:rows(x))</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       if (x[i] == y)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         n += 1;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     return n;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   // return indices in vector x where x == y</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[] int which_equal(vector x, real y) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     array [num_matches(x, y)] int match_positions;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     int pos = 1;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (i in 1:rows(x)) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       if (x[i] == y) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         match_positions[pos] = i;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         pos += 1;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     return match_positions;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> data{</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   int&lt;lower=1&gt; N_tips; // number of tips</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   int&lt;lower=1&gt; N_tree; // number of trees</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   int&lt;lower=1&gt; N_obs; // number of observations</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   int&lt;lower=2&gt; J; // number of response traits</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   int&lt;lower=1&gt; N_seg; // total number of segments in the trees</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree, N_seg] int&lt;lower=1&gt; node_seq; // index of tree nodes</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree, N_seg] int&lt;lower=0&gt; parent; // index of parent nodes</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree, N_seg] real ts; // time since parent</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree, N_seg] int&lt;lower=0,upper=1&gt; tip; // segment ends in tip</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[J,J] int&lt;lower=0,upper=1&gt; effects_mat; // effects matrix</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   int&lt;lower=2&gt; num_effects; // number of effects being estimated</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   matrix[N_obs,J] y; // observed data</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   matrix[N_obs,J] miss; // are data points missing?</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_obs] int&lt;lower=1&gt; tip_id; // group index between 1 and N_tips</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   int&lt;lower=0,upper=1&gt; prior_only; // should likelihood be ignored?</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> transformed data{</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   vector[to_int(N_obs - sum(col(miss, 1)))] obs1; // observed data for variable 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   vector[to_int(N_obs - sum(col(miss, 2)))] obs2; // observed data for variable 2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   obs1 = col(y, 1)[which_equal(col(miss, 1), 0)];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   obs2 = col(y, 2)[which_equal(col(miss, 2), 0)];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> parameters{</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   vector&lt;upper=0&gt;[J] A_diag; // autoregressive terms of A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   vector[num_effects - J] A_offdiag; // cross-lagged terms of A</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   cholesky_factor_corr[J] L_R; // lower-tri choleksy decomp corr mat</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   vector&lt;lower=0&gt;[J] Q_sigma; // std deviation parameters of the Q mat</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   vector[J] b; // SDE intercepts</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree] vector[J] eta_anc; // ancestral states</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree, N_seg - 1] vector[J] z_drift; // stochastic drift</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree] matrix[N_tips, J] terminal_drift; // drift for the tips</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ordered[3] c1; // cut points for variable 1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ordered[3] c2; // cut points for variable 2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> transformed parameters{</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree, N_seg] vector[J] eta;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   matrix[J,J] A = diag_matrix(A_diag); // selection matrix</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   matrix[J,J] Q = diag_matrix(Q_sigma) * (L_R * L_R') * diag_matrix(Q_sigma); // drift matrix</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   matrix[J,J] Q_inf; // asymptotic covariance matrix</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree, N_seg] matrix[J,J] VCV_tips; // vcov matrix for drift</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree,N_tips] vector[J] tdrift; // terminal drift</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   // fill off diagonal of A matrix</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     int ticker = 1;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (i in 1:J) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       for (j in 1:J) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         if (i != j) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           if (effects_mat[i,j] == 1) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             A[i,j] = A_offdiag[ticker];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             ticker += 1;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           } else if (effects_mat[i,j] == 0) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>             A[i,j] = 0;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   // calculate asymptotic covariance</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Q_inf = ksolve(A, Q);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   // loop over phylogenetic trees</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   for (t in 1:N_tree) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     // setting ancestral states and placeholders</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     eta[t, node_seq[t, 1]] = eta_anc[t];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(-99, J));</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (i in 2:N_seg) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       matrix[J,J] A_delta; // amount of deterministic change</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       matrix[J,J] VCV; // vcov matrix of stochastic change</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       vector[J] drift_seg; // accumulated drift over the segment</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       A_delta = matrix_exp(A * ts[t, i]);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       VCV = Q_inf - quad_form_sym(Q_inf, A_delta');</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       drift_seg = cholesky_decompose(VCV) * z_drift[t, i-1];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       // if not a tip, add the drift parameter</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       if (tip[t, i] == 0) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         eta[t, node_seq[t, i]] = to_vector(</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           A_delta * eta[t, parent[t, i]] + ((A \ add_diag(A_delta, -1)) * b) + drift_seg</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         );</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         VCV_tips[t, node_seq[t, i]] = diag_matrix(rep_vector(-99, J));</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       // if is a tip, omit, we'll deal with it in the model block;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       else {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         eta[t, node_seq[t, i]] = to_vector(</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>           A_delta * eta[t, parent[t, i]] + ((A \ add_diag(A_delta, -1)) * b)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         );</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         VCV_tips[t, node_seq[t, i]] = VCV;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (i in 1:N_tips) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       tdrift[t,i] = cholesky_decompose(VCV_tips[t,i]) * to_vector(terminal_drift[t][i,]);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> model{</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   b ~ std_normal();</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   for (t in 1:N_tree) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     eta_anc[t] ~ std_normal();</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (i in 1:(N_seg - 1)) z_drift[t, i] ~ std_normal();</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     to_vector(terminal_drift[t]) ~ std_normal();</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   A_offdiag ~ std_normal();</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   A_diag ~ std_normal();</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   L_R ~ lkj_corr_cholesky(4);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Q_sigma ~ std_normal();</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   c1 ~ normal(0, 2);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   c2 ~ normal(0, 2);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   if (!prior_only) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (i in 1:N_obs) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       vector[N_tree] lp = rep_vector(0.0, N_tree);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       for (t in 1:N_tree) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         if (miss[i,1] == 0) lp[t] += ordered_logistic_lpmf(to_int(y[i,1]) | eta[t,tip_id[i]][1] + tdrift[t,tip_id[i]][1], c1);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         if (miss[i,2] == 0) lp[t] += ordered_logistic_lpmf(to_int(y[i,2]) | eta[t,tip_id[i]][2] + tdrift[t,tip_id[i]][2], c2);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       target += log_sum_exp(lp);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> generated quantities{</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   array[N_tree,N_obs,J] real yrep; // predictive checks</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   matrix[J,J] cor_R; // correlated drift</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   cor_R = multiply_lower_tri_self_transpose(L_R);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     array[N_tree,N_tips] vector[J] terminal_drift_rep;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (i in 1:N_tips) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       for (t in 1:N_tree) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         for (j in 1:J) terminal_drift_rep[t,i][j] = normal_rng(0, 1);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         terminal_drift_rep[t,i] = cholesky_decompose(VCV_tips[t, i]) * terminal_drift_rep[t,i];</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     for (i in 1:N_obs) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       for (t in 1:N_tree) {</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         yrep[t,i,1] = ordered_logistic_rng(eta[t,tip_id[i]][1] + terminal_drift_rep[t,tip_id[i]][1], c1);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         yrep[t,i,2] = ordered_logistic_rng(eta[t,tip_id[i]][2] + terminal_drift_rep[t,tip_id[i]][2], c2);</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>       }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
+<span class="r-in"><span><span class="co"># include effects matrix</span></span></span>
+<span class="r-in"><span><span class="va">effects_mat</span> <span class="op">&lt;-</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>,</span></span>
+<span class="r-in"><span>      <span class="cn">FALSE</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>    nrow <span class="op">=</span> <span class="fl">2</span>,</span></span>
+<span class="r-in"><span>    dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>      <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"political_authority"</span>, <span class="st">"religious_authority"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>      <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"political_authority"</span>, <span class="st">"religious_authority"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">stan_code</span> <span class="op">&lt;-</span> <span class="fu">coev_make_stancode</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">data</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    political_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span>,</span></span>
+<span class="r-in"><span>    religious_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  id <span class="op">=</span> <span class="st">"language"</span>,</span></span>
+<span class="r-in"><span>  tree <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span>,</span></span>
+<span class="r-in"><span>  effects_mat <span class="op">=</span> <span class="va">effects_mat</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># include distance matrix</span></span></span>
+<span class="r-in"><span><span class="va">stan_code</span> <span class="op">&lt;-</span> <span class="fu">coev_make_stancode</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">data</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    political_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span>,</span></span>
+<span class="r-in"><span>    religious_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  id <span class="op">=</span> <span class="st">"language"</span>,</span></span>
+<span class="r-in"><span>  tree <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span>,</span></span>
+<span class="r-in"><span>  dist_mat <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">distance_matrix</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: Distance matrix detected. Gaussian processes over spatial distances have been included for each variable in the model using the 'exp_quad' covariance kernel.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># include measurement error</span></span></span>
+<span class="r-in"><span><span class="va">d</span> <span class="op">&lt;-</span> <span class="va">authority</span><span class="op">$</span><span class="va">data</span></span></span>
+<span class="r-in"><span><span class="va">d</span><span class="op">$</span><span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">d</span><span class="op">$</span><span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">d</span><span class="op">$</span><span class="va">x_std_err</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Exponential.html" class="external-link">rexp</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">d</span><span class="op">$</span><span class="va">y_std_err</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Exponential.html" class="external-link">rexp</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">d</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">stan_code</span> <span class="op">&lt;-</span> <span class="fu">coev_make_stancode</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">d</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    x <span class="op">=</span> <span class="st">"normal"</span>,</span></span>
+<span class="r-in"><span>    y <span class="op">=</span> <span class="st">"normal"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  id <span class="op">=</span> <span class="st">"language"</span>,</span></span>
+<span class="r-in"><span>  tree <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span>,</span></span>
+<span class="r-in"><span>  measurement_error <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    x <span class="op">=</span> <span class="st">"x_std_err"</span>,</span></span>
+<span class="r-in"><span>    y <span class="op">=</span> <span class="st">"y_std_err"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># set manual priors</span></span></span>
+<span class="r-in"><span><span class="va">stan_code</span> <span class="op">&lt;-</span> <span class="fu">coev_make_stancode</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">data</span>,</span></span>
+<span class="r-in"><span>  variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>    political_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span>,</span></span>
+<span class="r-in"><span>    religious_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span></span></span>
+<span class="r-in"><span>  <span class="op">)</span>,</span></span>
+<span class="r-in"><span>  id <span class="op">=</span> <span class="st">"language"</span>,</span></span>
+<span class="r-in"><span>  tree <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span>,</span></span>
+<span class="r-in"><span>  prior <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>A_offdiag <span class="op">=</span> <span class="st">"normal(0, 2)"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
