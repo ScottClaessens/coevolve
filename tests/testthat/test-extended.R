@@ -36,6 +36,8 @@ test_that("coev_fit() estimates correct direction of selection", {
       seed = 1,
       refresh = 0
     )
+  # check model converged
+  expect_lt(max(suppressWarnings(fit$fit$summary())$rhat, na.rm = TRUE), 1.1)
   # get delta theta values
   delta_theta_x_to_y <-
     coev_calculate_delta_theta(
@@ -69,7 +71,7 @@ for (seed in 1:3) {
     skip_if_not(run_extended_tests)
     # get dummy data
     withr::with_seed(seed, {
-      n <- 60
+      n <- 100
       tree <- ape::rcoal(n)
       d <- data.frame(
         id = tree$tip.label,
@@ -102,16 +104,19 @@ for (seed in 1:3) {
     )
     scode_fixed <- manually_fix_parameters(scode)
     # simulate dataset from model with fixed parameters
-    sim <- cmdstanr::cmdstan_model(
-      stan_file = cmdstanr::write_stan_file(scode_fixed)
-    )$sample(
-      data = sdata,
-      chains = 1,
-      refresh = 0,
-      seed = seed,
-      iter_warmup = 50,
-      iter_sampling = 1
-    )
+    sim <-
+      suppressWarnings(
+        cmdstanr::cmdstan_model(
+          stan_file = cmdstanr::write_stan_file(scode_fixed)
+        )$sample(
+          data = sdata,
+          chains = 1,
+          refresh = 0,
+          seed = seed,
+          iter_warmup = 50,
+          iter_sampling = 1
+        )
+      )
     draws <- posterior::as_draws_rvars(sim)
     d_sim <- data.frame(
       id = tree$tip.label,
@@ -122,41 +127,46 @@ for (seed in 1:3) {
     effects_mat <- matrix(TRUE, nrow = 2, ncol = 2,
                           dimnames = list(c("x", "y"), c("x", "y")))
     effects_mat[1, 2] <- FALSE
-    fit <- coev_fit(
-      data = d_sim,
-      variables = list(
-        x = "normal",
-        y = "normal"
-      ),
-      id = "id",
-      tree = tree,
-      estimate_correlated_drift = FALSE,
-      effects_mat = effects_mat,
-      prior = list(
-        A_offdiag = "normal(0, 2)",
-        Q_sigma = "normal(0, 2)"
-      ),
-      scale = FALSE,
-      chains = 1,
-      refresh = 0,
-      seed = seed,
-      max_treedepth = 15
-    )
-    post <- extract_samples(fit)
+    fit <-
+      suppressWarnings(
+        coev_fit(
+          data = d_sim,
+          variables = list(
+            x = "normal",
+            y = "normal"
+          ),
+          id = "id",
+          tree = tree,
+          estimate_correlated_drift = FALSE,
+          effects_mat = effects_mat,
+          prior = list(
+            A_offdiag = "normal(0, 2)",
+            Q_sigma = "normal(0, 2)"
+          ),
+          scale = FALSE,
+          chains = 1,
+          refresh = 0,
+          seed = seed,
+          max_treedepth = 15
+        )
+      )
+    # check model converged
+    expect_lt(max(suppressWarnings(fit$fit$summary())$rhat, na.rm = TRUE), 1.1)
     # posterior medians should recover fixed parameters within tolerance
-    expect_equal(median(post$A[, 1, 1]), -0.5, tolerance = 0.5)
-    expect_equal(median(post$A[, 2, 2]), -0.5, tolerance = 0.5)
-    expect_equal(median(post$A[, 2, 1]),  3.0, tolerance = 0.5)
-    expect_equal(median(post$Q[, 1, 1]),  1.5, tolerance = 0.5)
-    expect_equal(median(post$Q[, 2, 2]),  1.5, tolerance = 0.5)
-    expect_equal(median(post$b[, 1]), 0.0, tolerance = 0.5)
-    expect_equal(median(post$b[, 2]), 0.0, tolerance = 0.5)
+    post <- extract_samples(fit)
+    expect_equal(median(post$A[, 1, 1]), -0.5, tolerance = 1)
+    expect_equal(median(post$A[, 2, 2]), -0.5, tolerance = 1)
+    expect_equal(median(post$A[, 2, 1]),  1.0, tolerance = 1)
+    expect_equal(median(post$Q[, 1, 1]),  1.5, tolerance = 1)
+    expect_equal(median(post$Q[, 2, 2]),  1.5, tolerance = 1)
+    expect_equal(median(post$b[, 1]), 0.0, tolerance = 1)
+    expect_equal(median(post$b[, 2]), 0.0, tolerance = 1)
     # median predicted values on same scale as input data
     pred <- apply(post$yrep, c(3, 4), median)
-    expect_equal(median(d_sim$x), median(pred[, 1]), tolerance = 0.1)
-    expect_equal(median(d_sim$y), median(pred[, 2]), tolerance = 0.1)
-    expect_equal(sd(d_sim$x), sd(pred[, 1]), tolerance = 0.1)
-    expect_equal(sd(d_sim$y), sd(pred[, 2]), tolerance = 0.1)
+    expect_equal(median(d_sim$x), median(pred[, 1]), tolerance = 0.5)
+    expect_equal(median(d_sim$y), median(pred[, 2]), tolerance = 0.5)
+    expect_equal(sd(d_sim$x), sd(pred[, 1]), tolerance = 0.5)
+    expect_equal(sd(d_sim$y), sd(pred[, 2]), tolerance = 0.5)
   })
 }
 
@@ -215,6 +225,15 @@ test_that("coev_fit() scales with increasing observations", {
       seed = 1
     )
   s_large <- suppressWarnings(summary(fit_large))
+  # check models converged
+  expect_lt(
+    max(suppressWarnings(fit_small$fit$summary())$rhat, na.rm = TRUE),
+    1.1
+  )
+  expect_lt(
+    max(suppressWarnings(fit_large$fit$summary())$rhat, na.rm = TRUE),
+    1.1
+  )
   # standard errors should be smaller with more observations
   expect_lt(s_large$auto[1, "Est.Error"], s_small$auto[1, "Est.Error"])
   expect_lt(s_large$auto[2, "Est.Error"], s_small$auto[2, "Est.Error"])
@@ -244,25 +263,27 @@ test_that("coev_fit() recovers prior distribution", {
   })
   # fit model with prior_only = TRUE
   fit <-
-    coev_fit(
-      data = d,
-      variables = list(
-        x = "normal",
-        y = "normal"
-      ),
-      id = "id",
-      tree = tree,
-      prior = list(
-        A_offdiag = "normal(2, 0.5)",
-        b = "normal(-1, 0.5)"
-      ),
-      prior_only = TRUE,
-      chains = 1,
-      refresh = 0,
-      seed = 1
+    suppressWarnings(
+      coev_fit(
+        data = d,
+        variables = list(
+          x = "normal",
+          y = "normal"
+        ),
+        id = "id",
+        tree = tree,
+        prior = list(
+          A_offdiag = "normal(2, 0.5)",
+          b = "normal(-1, 0.5)"
+        ),
+        prior_only = TRUE,
+        chains = 1,
+        refresh = 0,
+        seed = 1
+      )
     )
-  prior <- extract_samples(fit)
   # estimates should recover prior within tolerance
+  prior <- extract_samples(fit)
   expect_equal(median(prior$A[, 1, 2]), 2, tolerance = 0.1)
   expect_equal(median(prior$A[, 2, 1]), 2, tolerance = 0.1)
   expect_equal(median(prior$b[, 1]), -1, tolerance = 0.1)

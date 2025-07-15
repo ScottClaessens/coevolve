@@ -58,7 +58,7 @@ manually_fix_parameters <- function(scode) {
         )
       ),
       replacement = paste0(
-        "  A[2,1] = 3;\n",
+        "  A[2,1] = 1;\n",
         "  A[1,2] = 0;\n",
         "  for (t in 1:N_tree) eta_anc[t] = rep_vector(0.0, J);\n"
       )
