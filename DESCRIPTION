@@ -51,5 +51,5 @@ Depends:
 LazyData: true
 Additional_repositories: https://stan-dev.r-universe.dev/
 Remotes:
-    stan-dev/cmdstanr
+    stan-dev/cmdstanr,
     mjg211/phaseR
