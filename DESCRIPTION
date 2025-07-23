@@ -50,4 +50,6 @@ Depends:
     R (>= 3.5.0)
 LazyData: true
 Additional_repositories: https://stan-dev.r-universe.dev/
-Remotes: stan-dev/cmdstanr
+Remotes:
+    stan-dev/cmdstanr
+    mjg211/phaseR
