@@ -62,7 +62,7 @@ jobs:
             knitr
             methods
             phangorn
-            phaseR
+            mjg211/phaseR
             pkgdown
             posterior
             purrr
