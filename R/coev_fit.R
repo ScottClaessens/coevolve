@@ -138,8 +138,23 @@
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
-#' @param adapt_delta Argument for \pkg{cmdstanr::sample()}. Default is 0.95.
-#' @param ... Additional arguments for \pkg{cmdstanr::sample()}.
+#' @param adapt_delta Target acceptance probability for the NUTS sampler.
+#'   Default is 0.95. For \code{sampler = "cmdstanr"}, this is passed directly
+#'   to \pkg{cmdstanr::sample()}. For \code{sampler = "nutpie"}, this is mapped
+#'   to the \code{target_accept} parameter.
+#' @param sampler Character string specifying which sampler to use. Options are
+#'   \code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
+#'   specified, the model will be sampled using nutpie via reticulate. Note
+#'   that nutpie must be installed in your Python environment.
+#' @param low_rank_modified_mass_matrix Logical. If \code{TRUE}, enables
+#'   low-rank modified mass matrix adaptation for models with strong parameter
+#'   correlations (default: \code{FALSE}). Only used when \code{sampler =
+#'   "nutpie"}. This is an experimental feature in nutpie that can improve
+#'   sampling efficiency for models with strong posterior correlations.
+#' @param ... Additional arguments for \pkg{cmdstanr::sample()} (when
+#'   \code{sampler = "cmdstanr"}) or \code{nutpie.sample()} (when
+#'   \code{sampler = "nutpie"}). Common arguments include \code{chains},
+#'   \code{iter_sampling}, \code{iter_warmup}, and \code{seed}.
 #'
 #' @returns Fitted model of class \code{coevfit}
 #'
@@ -262,13 +277,23 @@ coev_fit <- function(data, variables, id, tree,
                      estimate_correlated_drift = TRUE,
                      estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
-                     adapt_delta = 0.95, ...) {
+                     adapt_delta = 0.95, sampler = "cmdstanr",
+                     low_rank_modified_mass_matrix = FALSE, ...) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only)
+  
+  # check sampler argument
+  if (!is.character(sampler) || length(sampler) != 1) {
+    stop2("Argument 'sampler' must be a character string of length one.")
+  }
+  if (!sampler %in% c("cmdstanr", "nutpie")) {
+    stop2("Argument 'sampler' must be either 'cmdstanr' or 'nutpie'.")
+  }
+  
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
                            complete_cases, dist_mat, dist_cov,
@@ -281,18 +306,125 @@ coev_fit <- function(data, variables, id, tree,
                            measurement_error, prior, scale,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
-  # fit model
-  #' @srrstats {BS2.15} Any errors in model fitting will be reported by cmdstanr
-  model <-
-    cmdstanr::cmdstan_model(
-      stan_file = cmdstanr::write_stan_file(sc),
-      compile = TRUE
-    )$sample(
-      data = sd,
-      adapt_delta = adapt_delta,
-      show_exceptions = FALSE,
-      ...
+  
+  # fit model using specified sampler
+  if (sampler == "nutpie") {
+    # Check if nutpie is available
+    if (!check_nutpie_available()) {
+      stop2(
+        "nutpie is not available. Please install nutpie with: ",
+        "pip install 'nutpie[stan]'. ",
+        "You may also need to configure reticulate to find your Python installation."
+      )
+    }
+    
+    # Extract sampling arguments from ...
+    # Map cmdstanr argument names to nutpie argument names
+    sample_args <- list(...)
+    
+    # Default values
+    num_chains <- if ("chains" %in% names(sample_args)) {
+      as.integer(sample_args$chains)
+    } else {
+      4L
+    }
+    
+    num_samples <- if ("iter_sampling" %in% names(sample_args)) {
+      as.integer(sample_args$iter_sampling)
+    } else {
+      1000L
+    }
+    
+    num_warmup <- if ("iter_warmup" %in% names(sample_args)) {
+      as.integer(sample_args$iter_warmup)
+    } else {
+      1000L  # Match cmdstanr's default
+    }
+    
+    seed <- if ("seed" %in% names(sample_args)) {
+      as.integer(sample_args$seed)
+    } else {
+      NULL
+    }
+    
+    # Additional arguments for nutpie (remove cmdstanr-specific ones)
+    nutpie_args <- sample_args
+    nutpie_args$chains <- NULL
+    nutpie_args$iter_sampling <- NULL
+    nutpie_args$iter_warmup <- NULL
+    nutpie_args$seed <- NULL
+    nutpie_args$parallel_chains <- NULL  # nutpie handles this differently
+    nutpie_args$refresh <- NULL  # nutpie has its own progress display
+    nutpie_args$adapt_delta <- NULL  # Will be mapped to target_accept below
+    
+    # Map adapt_delta to target_accept for nutpie
+    # In Stan: adapt_delta is the target acceptance probability
+    # In nutpie: target_accept is the same parameter
+    target_accept <- adapt_delta
+    
+    # Sample with nutpie
+    #' @srrstats {BS2.15} Any errors in model fitting will be reported by nutpie
+    trace <- do.call(
+      nutpie_sample,
+      c(
+        list(
+          stan_code = sc,
+          data_list = sd,
+          num_chains = num_chains,
+          num_samples = num_samples,
+          num_warmup = num_warmup,
+          seed = seed,
+          target_accept = target_accept,
+          low_rank_modified_mass_matrix = low_rank_modified_mass_matrix
+        ),
+        nutpie_args
+      )
     )
+    
+    # Convert draws to draws_array format
+    draws_array <- convert_nutpie_draws(trace)
+    
+    # Extract variable names from draws
+    stan_variables <- posterior::variables(draws_array)
+    
+    # Create wrapper object
+    model <- create_nutpie_wrapper(
+      trace = trace,
+      draws_array = draws_array,
+      stan_variables = stan_variables,
+      iter_sampling = num_samples,
+      iter_warmup = num_warmup,
+      chains = num_chains,
+      seed = seed
+    )
+    
+    # Extract metadata for coevfit object
+    # Number of samples (total draws across all chains)
+    nsamples <- posterior::ndraws(draws_array)
+    # Check if lp__ exists (nutpie typically doesn't include it)
+    has_lp__ <- "lp__" %in% stan_variables
+  } else {
+    # Use cmdstanr (default)
+    #' @srrstats {BS2.15} Any errors in model fitting will be reported by cmdstanr
+    model <-
+      cmdstanr::cmdstan_model(
+        stan_file = cmdstanr::write_stan_file(sc),
+        compile = TRUE
+      )$sample(
+        data = sd,
+        adapt_delta = adapt_delta,
+        show_exceptions = FALSE,
+        ...
+      )
+    
+    # Extract metadata for coevfit object
+    # Number of samples (total draws across all chains)
+    draws_obj <- model$draws()
+    nsamples <- posterior::ndraws(draws_obj)
+    # Check if lp__ exists (cmdstanr typically includes it)
+    stan_vars <- posterior::variables(draws_obj)
+    has_lp__ <- "lp__" %in% stan_vars
+  }
   # return object of class 'coevfit'
   out <-
     list(
@@ -313,7 +445,9 @@ coev_fit <- function(data, variables, id, tree,
       scale = scale,
       estimate_correlated_drift = estimate_correlated_drift,
       estimate_residual = estimate_residual,
-      prior_only = prior_only
+      prior_only = prior_only,
+      nsamples = nsamples,  # Total number of draws across all chains
+      has_lp__ = has_lp__   # Whether lp__ variable exists
     )
   class(out) <- "coevfit"
   return(out)
