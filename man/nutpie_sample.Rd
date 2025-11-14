@@ -48,12 +48,14 @@ string). Useful parameters when using \code{low_rank_modified_mass_matrix =
 ~0.05) and \code{mass_matrix_eigval_cutoff} (eigenvalue cutoff, default
 ~0.01). For compilation, valid parameters include:
 \itemize{
-\item \code{extra_stanc_args}: List of strings. Arguments for stanc3 compiler.
-Example: \code{extra_stanc_args = list("--O1")} for optimization level 1.
-\item \code{extra_compile_args}: List of strings. Arguments for Make/C++ compiler.
-Example: \code{extra_compile_args = list("STAN_THREADS=true")} to enable threading.
-\item Other compilation parameters: \code{filename}, \code{dims}, \code{coords},
-\code{model_name}, \code{cleanup}.
+\item \code{extra_stanc_args}: List of strings. Arguments for stanc3
+compiler. Example: \code{extra_stanc_args = list("--O1")} for
+optimization level 1.
+\item \code{extra_compile_args}: List of strings. Arguments for Make/C++
+compiler. Example: \code{extra_compile_args =
+      list("STAN_THREADS=true")} to enable threading.
+\item Other compilation parameters: \code{filename}, \code{dims},
+\code{coords}, \code{model_name}, \code{cleanup}.
 }}
 }
 \value{

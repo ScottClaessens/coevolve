@@ -18,8 +18,9 @@
 #'
 #' @noRd
 create_nutpie_wrapper <- function(trace, draws_array, stan_variables,
-                                  iter_sampling, iter_warmup, chains, seed = NULL) {
-  # Create wrapper object
+                                  iter_sampling, iter_warmup, chains,
+                                  seed = NULL) {
+  # create wrapper object
   wrapper <- list(
     trace = trace,
     draws_array = draws_array,
@@ -29,78 +30,71 @@ create_nutpie_wrapper <- function(trace, draws_array, stan_variables,
     chains = chains,
     seed = seed
   )
-  
   class(wrapper) <- "nutpie_fit"
-  
-  # Add $draws() method for compatibility with cmdstanr interface
-  # This allows code like object$fit$draws() to work for both samplers
+  # add $draws() method for compatibility with cmdstanr interface
+  # this allows code like object$fit$draws() to work for both samplers
   wrapper$draws <- function(variables = NULL, ...) {
     draws.nutpie_fit(wrapper, variables = variables, ...)
   }
-  
-  # Add $summary() method for compatibility with cmdstanr interface
-  # This allows code like object$fit$summary() to work for both samplers
+  # add $summary() method for compatibility with cmdstanr interface
+  # this allows code like object$fit$summary() to work for both samplers
   wrapper$summary <- function(variables = NULL, ...) {
     summary.nutpie_fit(wrapper, variables = variables, ...)
   }
-  
-  # Add $metadata() method for compatibility with cmdstanr interface
-  # This allows code like object$fit$metadata() to work for both samplers
+  # add $metadata() method for compatibility with cmdstanr interface
+  # this allows code like object$fit$metadata() to work for both samplers
   wrapper$metadata <- function() {
     metadata.nutpie_fit(wrapper)
   }
-  
-  # Add $num_chains() method for compatibility with cmdstanr interface
+  # add $num_chains() method for compatibility with cmdstanr interface
   wrapper$num_chains <- function() {
-    return(wrapper$chains)
+    wrapper$chains
   }
-  
-  # Add $diagnostic_summary() method for compatibility with cmdstanr interface
+  # add $diagnostic_summary() method for compatibility with cmdstanr interface
   # nutpie stores divergence information in trace$sample_stats$diverging
-  wrapper$diagnostic_summary <- function(diagnostic = "divergences", quiet = TRUE) {
+  wrapper$diagnostic_summary <- function(diagnostic = "divergences",
+                                         quiet = TRUE) {
     if (diagnostic == "divergences") {
-      # Extract divergence information from nutpie InferenceData
-      # Divergences are stored in trace$sample_stats$diverging
+      # extract divergence information from nutpie InferenceData
+      # divergences are stored in trace$sample_stats$diverging
       tryCatch({
         if (reticulate::py_has_attr(wrapper$trace, "sample_stats")) {
           sample_stats <- wrapper$trace$sample_stats
           if (reticulate::py_has_attr(sample_stats, "data_vars")) {
-            # Check if diverging variable exists
+            # check if diverging variable exists
             py_builtins <- reticulate::import_builtins()
             keys_obj <- sample_stats$data_vars$keys()
             var_names <- reticulate::py_to_r(py_builtins$list(keys_obj))
-            
             if ("diverging" %in% var_names) {
-              # Extract diverging array
+              # extract diverging array
               diverging_xarray <- sample_stats[["diverging"]]
               diverging_array <- diverging_xarray$values
               diverging_r <- reticulate::py_to_r(diverging_array)
-              
-              # Count total number of divergences across all chains and draws
+              # count total number of divergences across all chains and draws
               # diverging_r should be [chains, draws] or similar
               num_divergent <- sum(diverging_r, na.rm = TRUE)
-              
               return(list(num_divergent = as.integer(num_divergent)))
             }
           }
         }
-        # If we can't find divergence info, return 0
+        # if we can't find divergence info, return 0
         return(list(num_divergent = 0L))
       }, error = function(e) {
-        # If there's an error extracting divergence info, return 0
+        # if there's an error extracting divergence info, return 0
         if (!quiet) {
-          warning("Could not extract divergence information from nutpie trace: ", 
-                  conditionMessage(e))
+          warning(
+            "Could not extract divergence information from nutpie trace: ",
+            conditionMessage(e)
+          )
         }
-        return(list(num_divergent = 0L))
+        list(num_divergent = 0L)
       })
     } else {
-      # For other diagnostics, return empty structure
+      # for other diagnostics, return empty structure
       return(list())
     }
   }
-  
-  return(wrapper)
+  wrapper
 }
 
 #' Extract draws from nutpie_fit object
@@ -143,25 +137,25 @@ draws.nutpie_fit <- function(x, variables = NULL, ...) {
 #' @param ... Named arguments where names are output column names and values
 #'   are function names (strings) or formulas for computing statistics.
 #'
-#' @returns A data.frame with summary statistics, compatible with cmdstanr format.
+#' @returns A data.frame with summary statistics, compatible with cmdstanr
+#'   format.
 #'
 #' @method summary nutpie_fit
 #' @export
 summary.nutpie_fit <- function(object, variables = NULL, ...) {
-  # Handle cmdstanr-style call where first argument might be NULL
-  # If variables is explicitly NULL or missing, use all variables
+  # handle cmdstanr-style call where first argument might be NULL
+  # if variables is explicitly NULL or missing, use all variables
   if (missing(variables) || is.null(variables)) {
     draws <- object$draws_array
   } else {
     draws <- posterior::subset_draws(object$draws_array, variable = variables)
   }
-  
-  # Extract summary arguments from ...
+  # extract summary arguments from ...
   # cmdstanr format: column_name = "function_name" or column_name = ~formula
   summary_specs <- list(...)
-  
-  # Map cmdstanr function names to posterior function names (as strings)
-  # posterior::default_summary_measures() returns character vectors, not functions
+  # map cmdstanr function names to posterior function names (as strings)
+  # posterior::default_summary_measures() returns character vectors, not
+  # functions
   function_map <- list(
     "mean" = "mean",
     "median" = "median",
@@ -171,30 +165,27 @@ summary.nutpie_fit <- function(object, variables = NULL, ...) {
     "ess_bulk" = "ess_bulk",
     "ess_tail" = "ess_tail"
   )
-  
-  # Convert summary specs to posterior format
+  # convert summary specs to posterior format
   posterior_args <- list()
   for (col_name in names(summary_specs)) {
     spec <- summary_specs[[col_name]]
-    
     if (is.character(spec) && length(spec) == 1) {
-      # String function name - map to posterior function name
+      # string function name - map to posterior function name
       if (spec %in% names(function_map)) {
         posterior_args[[col_name]] <- function_map[[spec]]
       } else {
-        # Unknown function name - try to use as-is
+        # unknown function name - try to use as-is
         posterior_args[[col_name]] <- spec
       }
     } else if (inherits(spec, "formula")) {
-      # Formula - use as-is
+      # formula - use as-is
       posterior_args[[col_name]] <- spec
     } else {
-      # Other - use as-is
+      # other - use as-is
       posterior_args[[col_name]] <- spec
     }
   }
-  
-  # If no arguments provided, use default summary statistics
+  # if no arguments provided, use default summary statistics
   if (length(posterior_args) == 0) {
     posterior_args <- list(
       mean = "mean",
@@ -204,21 +195,18 @@ summary.nutpie_fit <- function(object, variables = NULL, ...) {
       ess_tail = "ess_tail"
     )
   }
-  
-  # Compute summary statistics using posterior package
+  # compute summary statistics using posterior package
   summary_df <- do.call(
     posterior::summarise_draws,
     c(list(.x = draws), posterior_args)
   )
-  
-  # Ensure 'variable' column exists (posterior uses this by default)
+  # ensure 'variable' column exists (posterior uses this by default)
   if (!"variable" %in% names(summary_df)) {
-    # If variable column doesn't exist, it means we have a single variable
+    # if variable column doesn't exist, it means we have a single variable
     # or the format is different - this shouldn't happen but handle it
     summary_df$variable <- rownames(summary_df)
   }
-  
-  return(summary_df)
+  summary_df
 }
 
 #' Extract metadata from nutpie_fit object
@@ -235,23 +223,23 @@ summary.nutpie_fit <- function(object, variables = NULL, ...) {
 #' @method metadata nutpie_fit
 #' @export
 metadata.nutpie_fit <- function(x) {
-  # Extract model parameters (all variables except generated quantities)
-  # For now, we'll include all variables
-  # In the future, we might want to distinguish parameters from generated quantities
+  # extract model parameters (all variables except generated quantities)
+  # for now, we'll include all variables
+  # in the future, we might want to distinguish parameters from generated
+  # quantities
   model_params <- x$stan_variables
-  
-  # Return metadata list compatible with cmdstanr
+  # return metadata list compatible with cmdstanr
   # cmdstanr uses num_chains, not chains
-  return(list(
+  list(
     stan_variables = x$stan_variables,
     model_params = model_params,
     iter_sampling = x$iter_sampling,
     iter_warmup = x$iter_warmup,
     num_chains = x$chains,  # cmdstanr uses num_chains
-    chains = x$chains,  # Also include chains for compatibility
+    chains = x$chains,  # also include chains for compatibility
     thin = 1L,  # nutpie doesn't use thinning by default
     seed = x$seed
-  ))
+  )
 }
 
 #' Generic method for extracting draws
@@ -286,4 +274,3 @@ draws <- function(x, ...) {
 metadata <- function(x) {
   UseMethod("metadata")
 }
-

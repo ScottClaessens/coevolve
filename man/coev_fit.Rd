@@ -158,11 +158,12 @@ via \code{...} arguments.}
 \item{...}{Additional arguments. For sampling: arguments passed to
 \pkg{cmdstanr::sample()} (when \code{sampler = "cmdstanr"}) or
 \pkg{nutpie.sample()} (when \code{sampler = "nutpie"}). For compilation:
-\code{extra_stanc_args} and \code{extra_compile_args} work for both samplers.
-Common sampling arguments include \code{chains}, \code{iter_sampling},
-\code{iter_warmup}, and \code{seed}. Common compilation arguments include
-\code{extra_stanc_args = list("--O1")} for optimization and
-\code{extra_compile_args = list("STAN_THREADS=true")} for threading.}
+\code{extra_stanc_args} and \code{extra_compile_args} work for both
+samplers. Common sampling arguments include \code{chains},
+\code{iter_sampling}, \code{iter_warmup}, and \code{seed}. Common
+compilation arguments include \code{extra_stanc_args = list("--O1")} for
+optimization and \code{extra_compile_args = list("STAN_THREADS=true")} for
+threading.}
 }
 \value{
 Fitted model of class \code{coevfit}

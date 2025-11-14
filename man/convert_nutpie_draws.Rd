@@ -19,7 +19,7 @@ dimension ordering and variable extraction.
 }
 \examples{
 \dontrun{
-# After sampling with nutpie
+# after sampling with nutpie
 trace <- nutpie_sample(stan_code, data_list)
 draws <- convert_nutpie_draws(trace)
 }

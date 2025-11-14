@@ -12,17 +12,21 @@ nutpie_compile_stan_model(stan_code, ...)
 \item{...}{Additional arguments passed to \code{nutpie.compile_stan_model()}.
 Valid parameters include:
 \itemize{
-\item \code{extra_stanc_args}: List of strings. Arguments passed to stanc3
-(Stan compiler). Common options include \code{"--O0"} (no optimization),
-\code{"--O1"} (optimization level 1). Example: \code{extra_stanc_args = list("--O1")}.
-\item \code{extra_compile_args}: List of strings. Arguments passed to Make
-(C++ compiler). Common options include \code{"STAN_THREADS=true"} to enable
-threading. Example: \code{extra_compile_args = list("STAN_THREADS=true")}.
-\item \code{filename}: Character string. Path to Stan file (alternative to \code{stan_code}).
+\item \code{extra_stanc_args}: List of strings. Arguments passed to
+stanc3 (Stan compiler). Common options include \code{"--O0"} (no
+optimization), \code{"--O1"} (optimization level 1). Example:
+\code{extra_stanc_args = list("--O1")}.
+\item \code{extra_compile_args}: List of strings. Arguments passed to
+Make (C++ compiler). Common options include \code{"STAN_THREADS=true"}
+to enable threading. Example: \code{extra_compile_args =
+      list("STAN_THREADS=true")}.
+\item \code{filename}: Character string. Path to Stan file (alternative
+to \code{stan_code}).
 \item \code{dims}: Named list. Dimension information.
 \item \code{coords}: Named list. Coordinate information.
 \item \code{model_name}: Character string. Name for the compiled model.
-\item \code{cleanup}: Logical. Whether to clean up temporary files (default: TRUE).
+\item \code{cleanup}: Logical. Whether to clean up temporary files
+(default: TRUE).
 }}
 }
 \value{
@@ -47,13 +51,16 @@ model {
   y ~ normal(mu, 1);
 }
 "
-# Compile Stan model with default settings
+# compile Stan model with default settings
 compiled <- nutpie_compile_stan_model(stan_code)
 
-# Compile with optimization level 1
-compiled_o1 <- nutpie_compile_stan_model(stan_code, extra_stanc_args = list("--O1"))
+# compile with optimization level 1
+compiled_o1 <- nutpie_compile_stan_model(
+  stan_code,
+  extra_stanc_args = list("--O1")
+)
 
-# Compile with threading enabled
+# compile with threading enabled
 compiled_threads <- nutpie_compile_stan_model(
   stan_code,
   extra_compile_args = list("STAN_THREADS=true")

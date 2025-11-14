@@ -12,17 +12,20 @@ Logical. TRUE if nutpie is available, FALSE otherwise.
 \description{
 Checks if nutpie can be imported via reticulate. This function
 attempts to import nutpie using the currently configured Python environment
-(via reticulate). Users must configure reticulate to use a Python environment
-with nutpie installed before using this function.
+(via reticulate). Users must configure reticulate to use a Python
+environment with nutpie installed before using this function.
 }
 \details{
 To configure nutpie, you must:
 \enumerate{
-\item Install nutpie in a Python environment: \code{pip install "nutpie[stan]"}
+\item Install nutpie in a Python environment: \code{pip install
+    "nutpie[stan]"}
 \item Configure reticulate to use that Python environment:
 \itemize{
-\item Set \code{RETICULATE_PYTHON} environment variable to the Python executable path
-\item Or use \code{reticulate::use_python()} or \code{reticulate::use_virtualenv()}
+\item Set \code{RETICULATE_PYTHON} environment variable to the Python
+executable path
+\item Or use \code{reticulate::use_python()} or
+\code{reticulate::use_virtualenv()}
 }
 }
 }

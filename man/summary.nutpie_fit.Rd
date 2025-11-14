@@ -16,7 +16,8 @@ summarizes all variables.}
 are function names (strings) or formulas for computing statistics.}
 }
 \value{
-A data.frame with summary statistics, compatible with cmdstanr format.
+A data.frame with summary statistics, compatible with cmdstanr
+format.
 }
 \description{
 Computes summary statistics from a nutpie_fit object,
