@@ -151,12 +151,18 @@ that nutpie must be installed in your Python environment.}
 low-rank modified mass matrix adaptation for models with strong parameter
 correlations (default: \code{FALSE}). Only used when \code{sampler =
   "nutpie"}. This is an experimental feature in nutpie that can improve
-sampling efficiency for models with strong posterior correlations.}
+sampling efficiency for models with strong posterior correlations.
+You can tune \code{mass_matrix_gamma} and \code{mass_matrix_eigval_cutoff}
+via \code{...} arguments.}
 
-\item{...}{Additional arguments for \pkg{cmdstanr::sample()} (when
-\code{sampler = "cmdstanr"}) or \code{nutpie.sample()} (when
-\code{sampler = "nutpie"}). Common arguments include \code{chains},
-\code{iter_sampling}, \code{iter_warmup}, and \code{seed}.}
+\item{...}{Additional arguments. For sampling: arguments passed to
+\pkg{cmdstanr::sample()} (when \code{sampler = "cmdstanr"}) or
+\pkg{nutpie.sample()} (when \code{sampler = "nutpie"}). For compilation:
+\code{extra_stanc_args} and \code{extra_compile_args} work for both samplers.
+Common sampling arguments include \code{chains}, \code{iter_sampling},
+\code{iter_warmup}, and \code{seed}. Common compilation arguments include
+\code{extra_stanc_args = list("--O1")} for optimization and
+\code{extra_compile_args = list("STAN_THREADS=true")} for threading.}
 }
 \value{
 Fitted model of class \code{coevfit}

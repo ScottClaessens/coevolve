@@ -66,6 +66,21 @@ check_nutpie_available <- function() {
 #'   function. This is a wrapper around nutpie's Python API via reticulate.
 #'
 #' @param stan_code Character string containing Stan model code.
+#' @param ... Additional arguments passed to \code{nutpie.compile_stan_model()}.
+#'   Valid parameters include:
+#'   \itemize{
+#'     \item \code{extra_stanc_args}: List of strings. Arguments passed to stanc3
+#'       (Stan compiler). Common options include \code{"--O0"} (no optimization),
+#'       \code{"--O1"} (optimization level 1). Example: \code{extra_stanc_args = list("--O1")}.
+#'     \item \code{extra_compile_args}: List of strings. Arguments passed to Make
+#'       (C++ compiler). Common options include \code{"STAN_THREADS=true"} to enable
+#'       threading. Example: \code{extra_compile_args = list("STAN_THREADS=true")}.
+#'     \item \code{filename}: Character string. Path to Stan file (alternative to \code{stan_code}).
+#'     \item \code{dims}: Named list. Dimension information.
+#'     \item \code{coords}: Named list. Coordinate information.
+#'     \item \code{model_name}: Character string. Name for the compiled model.
+#'     \item \code{cleanup}: Logical. Whether to clean up temporary files (default: TRUE).
+#'   }
 #'
 #' @returns Compiled Stan model object (Python object via reticulate).
 #'
@@ -84,11 +99,21 @@ check_nutpie_available <- function() {
 #'   y ~ normal(mu, 1);
 #' }
 #' "
+#' # Compile Stan model with default settings
 #' compiled <- nutpie_compile_stan_model(stan_code)
+#'
+#' # Compile with optimization level 1
+#' compiled_o1 <- nutpie_compile_stan_model(stan_code, extra_stanc_args = list("--O1"))
+#'
+#' # Compile with threading enabled
+#' compiled_threads <- nutpie_compile_stan_model(
+#'   stan_code,
+#'   extra_compile_args = list("STAN_THREADS=true")
+#' )
 #' }
 #'
 #' @export
-nutpie_compile_stan_model <- function(stan_code) {
+nutpie_compile_stan_model <- function(stan_code, ...) {
   # Check if nutpie is available
   if (!check_nutpie_available()) {
     stop2(
@@ -100,9 +125,16 @@ nutpie_compile_stan_model <- function(stan_code) {
   # Import nutpie
   nutpie <- reticulate::import("nutpie", convert = FALSE)
   
+  # Prepare compilation arguments
+  compile_args <- list(code = stan_code)
+  
+  # Add any additional arguments from ...
+  additional_args <- list(...)
+  compile_args <- c(compile_args, additional_args)
+  
   # Compile Stan model
   tryCatch({
-    compiled <- nutpie$compile_stan_model(code = stan_code)
+    compiled <- do.call(nutpie$compile_stan_model, compile_args)
     return(compiled)
   }, error = function(e) {
     # Convert Python error to R error
@@ -227,8 +259,23 @@ convert_r_to_python_data <- function(data_list) {
 #' @param low_rank_modified_mass_matrix Logical. If \code{TRUE}, enables
 #'   low-rank modified mass matrix adaptation for models with strong parameter
 #'   correlations (default: \code{FALSE}). This is an experimental feature in
-#'   nutpie.
-#' @param ... Additional arguments passed to nutpie.sample().
+#'   nutpie. When enabled, consider increasing \code{target_accept} (e.g., 0.95
+#'   or 0.99) and adjusting \code{mass_matrix_gamma} and
+#'   \code{mass_matrix_eigval_cutoff} via \code{...} to reduce divergences.
+#' @param ... Additional arguments passed to \code{nutpie.sample()} or
+#'   \code{nutpie.compile_stan_model()} (when \code{stan_code} is a character
+#'   string). Useful parameters when using \code{low_rank_modified_mass_matrix =
+#'   TRUE} include: \code{mass_matrix_gamma} (regularization parameter, default
+#'   ~0.05) and \code{mass_matrix_eigval_cutoff} (eigenvalue cutoff, default
+#'   ~0.01). For compilation, valid parameters include:
+#'   \itemize{
+#'     \item \code{extra_stanc_args}: List of strings. Arguments for stanc3 compiler.
+#'       Example: \code{extra_stanc_args = list("--O1")} for optimization level 1.
+#'     \item \code{extra_compile_args}: List of strings. Arguments for Make/C++ compiler.
+#'       Example: \code{extra_compile_args = list("STAN_THREADS=true")} to enable threading.
+#'     \item Other compilation parameters: \code{filename}, \code{dims}, \code{coords},
+#'       \code{model_name}, \code{cleanup}.
+#'   }
 #'
 #' @returns Nutpie trace object (Python object via reticulate).
 #'
@@ -275,9 +322,34 @@ nutpie_sample <- function(stan_code, data_list,
   # Import nutpie
   nutpie <- reticulate::import("nutpie", convert = FALSE)
   
+  # Separate compilation arguments from sampling arguments
+  all_additional_args <- list(...)
+  
+  # Known compilation arguments for compile_stan_model
+  # These are the valid parameters for nutpie.compile_stan_model
+  compile_param_names <- c("filename", "extra_compile_args", "extra_stanc_args",
+                          "dims", "coords", "model_name", "cleanup")
+  
+  # Split args into compilation and sampling args
+  compile_args <- list()
+  sampling_args <- list()
+  
+  for (arg_name in names(all_additional_args)) {
+    if (arg_name %in% compile_param_names) {
+      compile_args[[arg_name]] <- all_additional_args[[arg_name]]
+    } else {
+      # Assume it's a sampling argument
+      sampling_args[[arg_name]] <- all_additional_args[[arg_name]]
+    }
+  }
+  
   # Compile model if stan_code is a character string
   if (is.character(stan_code)) {
-    compiled <- nutpie_compile_stan_model(stan_code)
+    # Pass compilation args to compile_stan_model
+    compiled <- do.call(
+      nutpie_compile_stan_model,
+      c(list(stan_code = stan_code), compile_args)
+    )
   } else {
     # Assume it's already compiled
     compiled <- stan_code
@@ -315,7 +387,8 @@ nutpie_sample <- function(stan_code, data_list,
   # nutpie returns InferenceData by default (not raw trace)
   # We'll extract draws from trace$posterior in convert_nutpie_draws()
   # Only set return_raw_trace if user explicitly requests it
-  additional_args <- list(...)
+  # For sampling, use the sampling_args we separated out
+  additional_args <- sampling_args
   
   # Ensure tune, draws, and chains are not overridden by additional_args
   # These are core parameters that should come from the function arguments
@@ -551,11 +624,12 @@ convert_nutpie_draws <- function(trace) {
     
     # Combine all arrays into a single 3D array [iterations, chains, variables]
     # All arrays should have the same first two dimensions [iterations, chains]
+    # Set proper iteration and chain indices for ESS calculation
     combined_array <- array(
       dim = c(n_draws, n_chains, n_vars),
       dimnames = list(
-        iteration = NULL,
-        chain = NULL,
+        iteration = seq_len(n_draws),
+        chain = seq_len(n_chains),
         variable = var_names_ordered
       )
     )

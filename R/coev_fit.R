@@ -151,10 +151,16 @@
 #'   correlations (default: \code{FALSE}). Only used when \code{sampler =
 #'   "nutpie"}. This is an experimental feature in nutpie that can improve
 #'   sampling efficiency for models with strong posterior correlations.
-#' @param ... Additional arguments for \pkg{cmdstanr::sample()} (when
-#'   \code{sampler = "cmdstanr"}) or \code{nutpie.sample()} (when
-#'   \code{sampler = "nutpie"}). Common arguments include \code{chains},
-#'   \code{iter_sampling}, \code{iter_warmup}, and \code{seed}.
+#'   You can tune \code{mass_matrix_gamma} and \code{mass_matrix_eigval_cutoff}
+#'   via \code{...} arguments.
+#' @param ... Additional arguments. For sampling: arguments passed to
+#'   \pkg{cmdstanr::sample()} (when \code{sampler = "cmdstanr"}) or
+#'   \pkg{nutpie.sample()} (when \code{sampler = "nutpie"}). For compilation:
+#'   \code{extra_stanc_args} and \code{extra_compile_args} work for both samplers.
+#'   Common sampling arguments include \code{chains}, \code{iter_sampling},
+#'   \code{iter_warmup}, and \code{seed}. Common compilation arguments include
+#'   \code{extra_stanc_args = list("--O1")} for optimization and
+#'   \code{extra_compile_args = list("STAN_THREADS=true")} for threading.
 #'
 #' @returns Fitted model of class \code{coevfit}
 #'
@@ -405,17 +411,55 @@ coev_fit <- function(data, variables, id, tree,
     has_lp__ <- "lp__" %in% stan_variables
   } else {
     # Use cmdstanr (default)
+    # Extract compilation and sampling arguments
+    all_args <- list(...)
+    
+    # Convert extra_stanc_args to cmdstanr's stanc_options format
+    # nutpie uses: extra_stanc_args = list("--O1")
+    # cmdstanr uses: stanc_options = list("O1")  (without -- prefix)
+    stanc_options <- NULL
+    if (!is.null(all_args$extra_stanc_args)) {
+      # Convert "--O1" format to "O1" format for cmdstanr
+      stanc_options <- gsub("^--", "", unlist(all_args$extra_stanc_args))
+      stanc_options <- as.list(stanc_options)
+    }
+    
+    # Extract cpp_options from extra_compile_args if needed
+    # cmdstanr uses cpp_options = list(stan_threads = TRUE) format
+    cpp_options <- NULL
+    if (!is.null(all_args$extra_compile_args)) {
+      compile_args <- unlist(all_args$extra_compile_args)
+      # Check for STAN_THREADS=true and convert to cmdstanr format
+      if (any(grepl("STAN_THREADS\\s*=\\s*true", compile_args, ignore.case = TRUE))) {
+        cpp_options <- list(stan_threads = TRUE)
+      }
+    }
+    
+    # Remove nutpie-specific arguments from sampling args
+    cmdstanr_args <- all_args
+    cmdstanr_args$extra_stanc_args <- NULL
+    cmdstanr_args$extra_compile_args <- NULL
+    # Remove NULL elements
+    cmdstanr_args <- cmdstanr_args[!sapply(cmdstanr_args, is.null)]
+    
     #' @srrstats {BS2.15} Any errors in model fitting will be reported by cmdstanr
-    model <-
-      cmdstanr::cmdstan_model(
-        stan_file = cmdstanr::write_stan_file(sc),
-        compile = TRUE
-      )$sample(
-        data = sd,
-        adapt_delta = adapt_delta,
-        show_exceptions = FALSE,
-        ...
+    compiled_model <- cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = TRUE,
+      stanc_options = stanc_options,
+      cpp_options = cpp_options
+    )
+    model <- do.call(
+      compiled_model$sample,
+      c(
+        list(
+          data = sd,
+          adapt_delta = adapt_delta,
+          show_exceptions = FALSE
+        ),
+        cmdstanr_args
       )
+    )
     
     # Extract metadata for coevfit object
     # Number of samples (total draws across all chains)

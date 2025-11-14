@@ -37,9 +37,24 @@ corresponds to Stan's \code{adapt_delta} parameter.}
 \item{low_rank_modified_mass_matrix}{Logical. If \code{TRUE}, enables
 low-rank modified mass matrix adaptation for models with strong parameter
 correlations (default: \code{FALSE}). This is an experimental feature in
-nutpie.}
+nutpie. When enabled, consider increasing \code{target_accept} (e.g., 0.95
+or 0.99) and adjusting \code{mass_matrix_gamma} and
+\code{mass_matrix_eigval_cutoff} via \code{...} to reduce divergences.}
 
-\item{...}{Additional arguments passed to nutpie.sample().}
+\item{...}{Additional arguments passed to \code{nutpie.sample()} or
+\code{nutpie.compile_stan_model()} (when \code{stan_code} is a character
+string). Useful parameters when using \code{low_rank_modified_mass_matrix =
+  TRUE} include: \code{mass_matrix_gamma} (regularization parameter, default
+~0.05) and \code{mass_matrix_eigval_cutoff} (eigenvalue cutoff, default
+~0.01). For compilation, valid parameters include:
+\itemize{
+\item \code{extra_stanc_args}: List of strings. Arguments for stanc3 compiler.
+Example: \code{extra_stanc_args = list("--O1")} for optimization level 1.
+\item \code{extra_compile_args}: List of strings. Arguments for Make/C++ compiler.
+Example: \code{extra_compile_args = list("STAN_THREADS=true")} to enable threading.
+\item Other compilation parameters: \code{filename}, \code{dims}, \code{coords},
+\code{model_name}, \code{cleanup}.
+}}
 }
 \value{
 Nutpie trace object (Python object via reticulate).
