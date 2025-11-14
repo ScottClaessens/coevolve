@@ -56,13 +56,19 @@ save_coevfit <- function(object, file, ...) {
   if (!grepl("\\.rds$", file)) {
     file <- paste0(file, ".rds")
   }
-  # save cmdstanr model object to temporary rds file
-  temp_rds_file <- tempfile(fileext = ".rds")
-  object$fit$save_object(file = temp_rds_file)
-  # replace fit in coevfit object with read-in rds file
-  object$fit <- readRDS(temp_rds_file)
-  # remove temporary file
-  file.remove(temp_rds_file)
+  # save fit object - handle both cmdstanr and nutpie
+  if (inherits(object$fit, "nutpie_fit")) {
+    # For nutpie, we can save the fit directly (it's already an R object)
+    # No need for intermediate save/load
+  } else {
+    # For cmdstanr, save to temporary rds file first
+    temp_rds_file <- tempfile(fileext = ".rds")
+    object$fit$save_object(file = temp_rds_file)
+    # replace fit in coevfit object with read-in rds file
+    object$fit <- readRDS(temp_rds_file)
+    # remove temporary file
+    file.remove(temp_rds_file)
+  }
   # save coevfit as rds
   saveRDS(object, file = file, ...)
 }

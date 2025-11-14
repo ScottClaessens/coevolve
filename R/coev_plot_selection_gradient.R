@@ -140,7 +140,15 @@ coev_plot_selection_gradient <- function(object, var1, var2,
   id_var1 <- which(names(object$variables) == var1)
   id_var2 <- which(names(object$variables) == var2)
   # get posterior draws
-  draws <- posterior::as_draws_rvars(object$fit)
+  # Handle both cmdstanr and nutpie
+  if (inherits(object$fit, "nutpie_fit")) {
+    # For nutpie, extract draws first
+    draws_obj <- object$fit$draws()
+    draws <- posterior::as_draws_rvars(draws_obj)
+  } else {
+    # For cmdstanr, use as_draws_rvars method
+    draws <- posterior::as_draws_rvars(object$fit)
+  }
   # medians and median absolute deviations for all variables
   eta  <- apply(
     draws$eta[, 1:object$stan_data$N_tips, ], 3, posterior::rvar_median
