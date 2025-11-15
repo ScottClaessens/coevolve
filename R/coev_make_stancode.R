@@ -276,7 +276,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "\n",
     write_transformed_pars_block(data, distributions, id, dist_mat,
                                  dist_cov, estimate_correlated_drift,
-                                 estimate_residual, measurement_error),
+                                 estimate_residual),
     "\n",
     write_model_block(data, distributions, id, dist_mat, priors,
                       measurement_error, estimate_correlated_drift,
@@ -636,7 +636,7 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
 #' @noRd
 write_transformed_pars_block <- function(data, distributions, id, dist_mat,
                                          dist_cov, estimate_correlated_drift,
-                                         estimate_residual, measurement_error) {
+                                         estimate_residual) {
   sc_transformed_parameters <- paste0(
     "transformed parameters{\n",
     "  array[N_tree, N_seg] vector[J] eta;\n",
@@ -699,29 +699,16 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "  }\n",
     "  // calculate asymptotic covariance\n",
     "  Q_inf = ksolve(A, Q);\n",
-    ifelse(
-      estimate_residual && any(duplicated(data[, id])),
-      paste0(
-        "  // cache residual covariance components (computed once per iteration)\n",
-        ifelse(
-          !is.null(measurement_error),
-          "  matrix[J,J] residual_cov_base = quad_form_diag(L_residual * L_residual', sigma_residual);\n",
-          ""
-        ),
-        "  matrix[J,J] L_residual_scaled = diag_pre_multiply(sigma_residual, L_residual);\n"
-      ),
-      ""
-    ),
     "  array[N_unique_lengths] matrix[J,J] L_VCV_tips_cache;\n",
     "  {\n",
     "    array[N_unique_lengths] matrix[J,J] A_delta_cache;\n",
     "    array[N_unique_lengths] matrix[J,J] VCV_cache;\n",
+    "    array[N_unique_lengths] matrix[J,J] L_VCV_cache;\n",
     "    array[N_unique_lengths] matrix[J,J] A_solve_cache;\n",
-    "    array[N_unique_lengths] vector[J] A_solve_b_cache;\n",
     "    for (u in 1:N_unique_lengths) {\n",
     "      A_delta_cache[u] = matrix_exp(A * unique_lengths[u]);\n",
     "      VCV_cache[u] = Q_inf - quad_form_sym(Q_inf, A_delta_cache[u]');\n",
-    "      L_VCV_tips_cache[u] = cholesky_decompose(VCV_cache[u]);\n",
+    "      L_VCV_cache[u] = cholesky_decompose(VCV_cache[u]);\n",
       "      A_solve_cache[u] = A \\ add_diag(A_delta_cache[u], -1);\n",
     "      for (i in 1:J) {\n",
     "        for (j in 1:i) {\n",
@@ -729,9 +716,9 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "          A_solve_cache[u][i, j] = val;\n",
     "          A_solve_cache[u][j, i] = val;\n",
     "        }\n",
-    "      }\n",
-      "      A_solve_b_cache[u] = A_solve_cache[u] * b;\n",
+      "      }\n",
     "    }\n",
+    "    L_VCV_tips_cache = L_VCV_cache;\n",
     "    for (t in 1:N_tree) {\n",
     "    // setting ancestral states and placeholders\n",
     "    eta[t, node_seq[t, 1]] = eta_anc[t];\n",
@@ -741,30 +728,30 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "      matrix[J,J] VCV;\n",
     "      vector[J] drift_seg;\n",
     "      matrix[J,J] L_VCV;\n",
-    "      vector[J] A_solve_b;\n",
+    "      matrix[J,J] A_solve;\n",
       "      if (length_index[t, i] > 0) {\n",
       "        A_delta = A_delta_cache[length_index[t, i]];\n",
       "        VCV = VCV_cache[length_index[t, i]];\n",
-      "        L_VCV = L_VCV_tips_cache[length_index[t, i]];\n",
-      "        A_solve_b = A_solve_b_cache[length_index[t, i]];\n",
+      "        L_VCV = L_VCV_cache[length_index[t, i]];\n",
+      "        A_solve = A_solve_cache[length_index[t, i]];\n",
     "      } else {\n",
     "        A_delta = matrix_exp(A * ts[t, i]);\n",
     "        VCV = Q_inf - quad_form_sym(Q_inf, A_delta');\n",
     "        L_VCV = cholesky_decompose(VCV);\n",
-    "        A_solve_b = (A \\ add_diag(A_delta, -1)) * b;\n",
+    "        A_solve = A \\ add_diag(A_delta, -1);\n",
     "      }\n",
     "      drift_seg = L_VCV * z_drift[t, i-1];\n",
     "      // if not a tip, add the drift parameter\n",
     "      if (tip[t, i] == 0) {\n",
     "        eta[t, node_seq[t, i]] = to_vector(\n",
-    "          A_delta * eta[t, parent[t, i]] + A_solve_b + drift_seg\n",
+    "          A_delta * eta[t, parent[t, i]] + (A_solve * b) + drift_seg\n",
     "        );\n",
     "        VCV_tips[t, node_seq[t, i]] = diag_matrix(rep_vector(-99, J));\n",
     "      }\n",
     "      // if is a tip, omit, we'll deal with it in the model block;\n",
     "      else {\n",
     "        eta[t, node_seq[t, i]] = to_vector(\n",
-    "          A_delta * eta[t, parent[t, i]] + A_solve_b\n",
+    "          A_delta * eta[t, parent[t, i]] + (A_solve * b)\n",
     "        );\n",
     "        VCV_tips[t, node_seq[t, i]] = VCV;\n",
     "      }\n",
@@ -998,7 +985,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
         sc_model <- paste0(
           sc_model,
           "        matrix[J,J] residual_cov = diag_matrix(to_vector(se[i,]))",
-          " + residual_cov_base;\n"
+          " + quad_form_diag(L_residual * L_residual', sigma_residual);\n"
         )
       }
       # add multi-normal prior for residuals
@@ -1009,7 +996,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
         ifelse(
           !is.null(measurement_error),
           "cholesky_decompose(residual_cov)",
-          "L_residual_scaled"
+          "diag_pre_multiply(sigma_residual, L_residual)"
         ),
         ");\n"
       )
@@ -1295,7 +1282,8 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
       sc_generated_quantities,
       "        vector[J] residuals_rep;\n",
       "        for (j in 1:J) residuals_rep[j] = normal_rng(0, 1);\n",
-      "        residuals_rep = L_residual_scaled * residuals_rep;\n"
+      "        residuals_rep = diag_pre_multiply(sigma_residual, L_residual)",
+      " * residuals_rep;\n"
     )
   }
   # get tdrifts/residuals if log_lik = TRUE
@@ -1344,7 +1332,8 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
           !is.null(measurement_error),
           paste0(
             "        matrix[J,J] residual_cov = ",
-            "diag_matrix(to_vector(se[i,])) + residual_cov_base;\n"
+            "diag_matrix(to_vector(se[i,])) + ",
+            "quad_form_diag(L_residual * L_residual', sigma_residual);\n"
           ),
           ""
         ),
@@ -1352,7 +1341,8 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
           !is.null(measurement_error),
           "        matrix[J,J] cov_inv = inverse_spd(residual_cov);\n",
           paste0(
-            "        matrix[J,J] cov_inv = chol2inv(L_residual_scaled);\n"
+            "        matrix[J,J] cov_inv = ",
+            "chol2inv(diag_pre_multiply(sigma_residual, L_residual));\n"
           )
         ),
         "        mu_cond = residuals - (cov_inv * residuals) ./ ",
