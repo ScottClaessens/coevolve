@@ -700,10 +700,15 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "  // calculate asymptotic covariance\n",
     "  Q_inf = ksolve(A, Q);\n",
     ifelse(
-      estimate_residual && any(duplicated(data[, id])) && !is.null(measurement_error),
+      estimate_residual && any(duplicated(data[, id])),
       paste0(
-        "  // cache residual covariance base (computed once per iteration)\n",
-        "  matrix[J,J] residual_cov_base = quad_form_diag(L_residual * L_residual', sigma_residual);\n"
+        "  // cache residual covariance components (computed once per iteration)\n",
+        ifelse(
+          !is.null(measurement_error),
+          "  matrix[J,J] residual_cov_base = quad_form_diag(L_residual * L_residual', sigma_residual);\n",
+          ""
+        ),
+        "  matrix[J,J] L_residual_scaled = diag_pre_multiply(sigma_residual, L_residual);\n"
       ),
       ""
     ),
@@ -1004,7 +1009,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
         ifelse(
           !is.null(measurement_error),
           "cholesky_decompose(residual_cov)",
-          "diag_pre_multiply(sigma_residual, L_residual)"
+          "L_residual_scaled"
         ),
         ");\n"
       )
@@ -1290,8 +1295,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
       sc_generated_quantities,
       "        vector[J] residuals_rep;\n",
       "        for (j in 1:J) residuals_rep[j] = normal_rng(0, 1);\n",
-      "        residuals_rep = diag_pre_multiply(sigma_residual, L_residual)",
-      " * residuals_rep;\n"
+      "        residuals_rep = L_residual_scaled * residuals_rep;\n"
     )
   }
   # get tdrifts/residuals if log_lik = TRUE
@@ -1348,8 +1352,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
           !is.null(measurement_error),
           "        matrix[J,J] cov_inv = inverse_spd(residual_cov);\n",
           paste0(
-            "        matrix[J,J] cov_inv = ",
-            "chol2inv(diag_pre_multiply(sigma_residual, L_residual));\n"
+            "        matrix[J,J] cov_inv = chol2inv(L_residual_scaled);\n"
           )
         ),
         "        mu_cond = residuals - (cov_inv * residuals) ./ ",
