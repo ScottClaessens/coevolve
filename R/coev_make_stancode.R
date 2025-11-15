@@ -276,7 +276,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "\n",
     write_transformed_pars_block(data, distributions, id, dist_mat,
                                  dist_cov, estimate_correlated_drift,
-                                 estimate_residual),
+                                 estimate_residual, measurement_error),
     "\n",
     write_model_block(data, distributions, id, dist_mat, priors,
                       measurement_error, estimate_correlated_drift,
@@ -636,7 +636,7 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
 #' @noRd
 write_transformed_pars_block <- function(data, distributions, id, dist_mat,
                                          dist_cov, estimate_correlated_drift,
-                                         estimate_residual) {
+                                         estimate_residual, measurement_error) {
   sc_transformed_parameters <- paste0(
     "transformed parameters{\n",
     "  array[N_tree, N_seg] vector[J] eta;\n",
@@ -699,6 +699,14 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "  }\n",
     "  // calculate asymptotic covariance\n",
     "  Q_inf = ksolve(A, Q);\n",
+    ifelse(
+      estimate_residual && any(duplicated(data[, id])) && !is.null(measurement_error),
+      paste0(
+        "  // cache residual covariance base (computed once per iteration)\n",
+        "  matrix[J,J] residual_cov_base = quad_form_diag(L_residual * L_residual', sigma_residual);\n"
+      ),
+      ""
+    ),
     "  array[N_unique_lengths] matrix[J,J] L_VCV_tips_cache;\n",
     "  {\n",
     "    array[N_unique_lengths] matrix[J,J] A_delta_cache;\n",
@@ -985,7 +993,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
         sc_model <- paste0(
           sc_model,
           "        matrix[J,J] residual_cov = diag_matrix(to_vector(se[i,]))",
-          " + quad_form_diag(L_residual * L_residual', sigma_residual);\n"
+          " + residual_cov_base;\n"
         )
       }
       # add multi-normal prior for residuals
@@ -1332,8 +1340,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
           !is.null(measurement_error),
           paste0(
             "        matrix[J,J] residual_cov = ",
-            "diag_matrix(to_vector(se[i,])) + ",
-            "quad_form_diag(L_residual * L_residual', sigma_residual);\n"
+            "diag_matrix(to_vector(se[i,])) + residual_cov_base;\n"
           ),
           ""
         ),
