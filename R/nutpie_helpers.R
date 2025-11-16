@@ -496,17 +496,32 @@ convert_nutpie_draws <- function(trace) {
         # xarray format: (chain, draw, ...) -> numpy array
         var_array <- var_xarray$values
         var_r <- reticulate::py_to_r(var_array)
+        # ensure it's fully converted (not a Python reference)
+        if (inherits(var_r, "python.builtin.object")) {
+          var_r <- reticulate::py_to_r(var_r)
+        }
       } else {
         # extract from raw trace draws dict
         draws_dict <- trace$draws()
         draws_list <- reticulate::py_to_r(draws_dict)
         var_array <- draws_list[[var_name]]
         var_r <- reticulate::py_to_r(var_array)
+        # ensure it's fully converted (not a Python reference)
+        if (inherits(var_r, "python.builtin.object")) {
+          var_r <- reticulate::py_to_r(var_r)
+        }
       }
     }, error = function(e) {
       stop2("Failed to convert variable '", var_name, "' to R format: ",
             conditionMessage(e))
     })
+    # check for NULL or empty variables
+    if (is.null(var_r)) {
+      stop2("Variable '", var_name, "' is NULL after conversion from nutpie.")
+    }
+    if (length(var_r) == 0) {
+      stop2("Variable '", var_name, "' is empty (length 0) after conversion from nutpie.")
+    }
     # nutpie/ArviZ format: [chains, draws, dims...]
     # posterior draws_array format: [iterations, chains, dims...]
     # so we need to swap first two dimensions:
@@ -514,9 +529,22 @@ convert_nutpie_draws <- function(trace) {
     if (is.array(var_r)) {
       dims_var <- dim(var_r)
       n_dims <- length(dims_var)
-      if (n_dims == 2) {
+      if (n_dims == 1) {
+        # 1D array: unexpected format from nutpie
+        # nutpie should return [chains, draws, ...] format
+        # If we get 1D, assume it's malformed and reshape to [length, 1]
+        # representing [draws=length, chains=1]
+        # This will be caught by dimension validation if inconsistent
+        var_length <- length(var_r)
+        var_r <- array(var_r, dim = c(var_length, 1))
+        draws_arrays[[var_name]] <- var_r
+      } else if (n_dims == 2) {
         # scalar variable: [chains, draws] -> [draws, chains]
         var_r <- aperm(var_r, c(2, 1))
+        # ensure it's still a 2D array (R might drop dimensions)
+        if (is.null(dim(var_r)) || length(dim(var_r)) != 2) {
+          var_r <- array(var_r, dim = dims_var[c(2, 1)])
+        }
         # add as single variable
         draws_arrays[[var_name]] <- var_r
       } else if (n_dims > 2) {
@@ -546,12 +574,55 @@ convert_nutpie_draws <- function(trace) {
           }
           # extract this element:
           # [iterations, chains, element] -> [iterations, chains]
-          draws_arrays[[var_name_indexed]] <- var_reshaped[, , i]
+          # R will drop dimensions when extracting, so we need to ensure
+          # the result is always a 2D array [draws, chains]
+          extracted <- var_reshaped[, , i]
+          # check dimensions and restore if dropped
+          extracted_dims <- dim(extracted)
+          if (is.null(extracted_dims)) {
+            # dimension was dropped - it's now a vector
+            # restore as [draws, chains=1] or [draws=1, chains]
+            # we know original shape was [n_draws_perm, n_chains_perm]
+            extracted <- array(extracted, dim = c(n_draws_perm, n_chains_perm))
+          } else if (length(extracted_dims) == 1) {
+            # one dimension was dropped
+            # restore as [draws, chains=1] or [draws=1, chains]
+            extracted <- array(extracted, dim = c(n_draws_perm, n_chains_perm))
+          } else if (length(extracted_dims) != 2) {
+            # unexpected number of dimensions
+            stop2(
+              "Unexpected dimensions when extracting variable '", var_name_indexed,
+              "'. Expected 2D array [draws, chains], got ", length(extracted_dims),
+              " dimensions: [", paste(extracted_dims, collapse = ", "), "]"
+            )
+          }
+          draws_arrays[[var_name_indexed]] <- extracted
         }
       }
     } else {
-      # not an array - add as-is
-      draws_arrays[[var_name]] <- var_r
+      # not an array - convert to array format
+      # This shouldn't happen with nutpie (should always return arrays)
+      # but handle gracefully for debugging
+      tryCatch({
+        # try to convert to numeric array
+        var_numeric <- as.numeric(var_r)
+        if (any(is.na(var_numeric)) && !is.null(var_r)) {
+          stop2(
+            "Variable '", var_name, "' could not be converted to numeric. ",
+            "Type: ", typeof(var_r), ", Class: ", paste(class(var_r), collapse = ", ")
+          )
+        }
+        # create 1x1 array [draws=1, chains=1]
+        # dimension validation will catch if this is inconsistent
+        var_r <- array(var_numeric, dim = c(1, 1))
+        draws_arrays[[var_name]] <- var_r
+      }, error = function(e) {
+        stop2(
+          "Failed to convert variable '", var_name, "' to array format. ",
+          "Original error: ", conditionMessage(e), ". ",
+          "Variable type: ", typeof(var_r), ", Class: ", paste(class(var_r), collapse = ", ")
+        )
+      })
     }
   }
   # validate that all variables have consistent dimensions
@@ -563,7 +634,22 @@ convert_nutpie_draws <- function(trace) {
   # get dimensions from first variable
   first_var <- draws_arrays[[1]]
   if (!is.array(first_var)) {
-    stop2("Unexpected format for nutpie draws.")
+    # provide detailed error message for debugging
+    var_info <- paste(
+      sapply(names(draws_arrays), function(nm) {
+        var_obj <- draws_arrays[[nm]]
+        paste0(
+          nm, ": type=", typeof(var_obj), ", class=",
+          paste(class(var_obj), collapse = ","), ", is.array=", is.array(var_obj)
+        )
+      }),
+      collapse = "; "
+    )
+    stop2(
+      "Unexpected format for nutpie draws. ",
+      "First variable is not an array. ",
+      "Variable details: ", var_info
+    )
   }
   first_dims <- dim(first_var)
   n_draws <- first_dims[1]  # after permutation: [draws, chains, ...]
