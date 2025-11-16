@@ -469,9 +469,18 @@ write_data_block <- function(measurement_error, dist_mat) {
     ),
     "  array[N_obs] int<lower=1> tip_id; // group index between 1 and N_tips\n",
     "  int<lower=1> N_unique_lengths; // number of unique branch lengths\n",
-    "  array[N_unique_lengths] real unique_lengths; // unique branch lengths for caching\n",
-    "  array[N_tree, N_seg] int<lower=0> length_index; // mapping from segments to unique lengths\n",
-    "  array[N_tree, N_tips] int<lower=0> tip_to_seg; // mapping from tips to segments\n"
+    paste0(
+      "  array[N_unique_lengths] real unique_lengths; ",
+      "// unique branch lengths for caching\n"
+    ),
+    paste0(
+      "  array[N_tree, N_seg] int<lower=0> length_index; ",
+      "// mapping from segments to unique lengths\n"
+    ),
+    paste0(
+      "  array[N_tree, N_tips] int<lower=0> tip_to_seg; ",
+      "// mapping from tips to segments\n"
+    )
   )
   # add distance matrix if user has defined one
   if (!is.null(dist_mat)) {
@@ -709,14 +718,17 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "      A_delta_cache[u] = matrix_exp(A * unique_lengths[u]);\n",
     "      VCV_cache[u] = Q_inf - quad_form_sym(Q_inf, A_delta_cache[u]');\n",
     "      L_VCV_cache[u] = cholesky_decompose(VCV_cache[u]);\n",
-      "      A_solve_cache[u] = A \\ add_diag(A_delta_cache[u], -1);\n",
+    "      A_solve_cache[u] = A \\ add_diag(A_delta_cache[u], -1);\n",
     "      for (i in 1:J) {\n",
     "        for (j in 1:i) {\n",
-    "          real val = 0.5 * (A_solve_cache[u][i, j] + A_solve_cache[u][j, i]);\n",
+    paste0(
+      "          real val = 0.5 * (A_solve_cache[u][i, j] + ",
+      "A_solve_cache[u][j, i]);\n"
+    ),
     "          A_solve_cache[u][i, j] = val;\n",
     "          A_solve_cache[u][j, i] = val;\n",
     "        }\n",
-      "      }\n",
+    "      }\n",
     "    }\n",
     "    L_VCV_tips_cache = L_VCV_cache;\n",
     "    for (t in 1:N_tree) {\n",
@@ -729,11 +741,11 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "      vector[J] drift_seg;\n",
     "      matrix[J,J] L_VCV;\n",
     "      matrix[J,J] A_solve;\n",
-      "      if (length_index[t, i] > 0) {\n",
-      "        A_delta = A_delta_cache[length_index[t, i]];\n",
-      "        VCV = VCV_cache[length_index[t, i]];\n",
-      "        L_VCV = L_VCV_cache[length_index[t, i]];\n",
-      "        A_solve = A_solve_cache[length_index[t, i]];\n",
+    "      if (length_index[t, i] > 0) {\n",
+    "        A_delta = A_delta_cache[length_index[t, i]];\n",
+    "        VCV = VCV_cache[length_index[t, i]];\n",
+    "        L_VCV = L_VCV_cache[length_index[t, i]];\n",
+    "        A_solve = A_solve_cache[length_index[t, i]];\n",
     "      } else {\n",
     "        A_delta = matrix_exp(A * ts[t, i]);\n",
     "        VCV = Q_inf - quad_form_sym(Q_inf, A_delta');\n",
@@ -755,9 +767,9 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "        );\n",
     "        VCV_tips[t, node_seq[t, i]] = VCV;\n",
     "      }\n",
-      "    }\n",
-      "    }\n",
-      "  }\n"
+    "    }\n",
+    "    }\n",
+    "  }\n"
   )
   # if repeated observations or no gaussian traits, calculate tdrift
   if ((any(duplicated(data[, id])) && estimate_residual) ||
@@ -766,9 +778,15 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
       sc_transformed_parameters,
       "  for (t in 1:N_tree) {\n",
       "    for (i in 1:N_tips) {\n",
-      "      if (tip_to_seg[t, i] > 0 && length_index[t, tip_to_seg[t, i]] > 0) {\n",
-      "        tdrift[t,i] = L_VCV_tips_cache[length_index[t, tip_to_seg[t, i]]] * ",
-      "to_vector(terminal_drift[t][i,]);\n",
+      paste0(
+        "      if (tip_to_seg[t, i] > 0 && ",
+        "length_index[t, tip_to_seg[t, i]] > 0) {\n"
+      ),
+      paste0(
+        "        tdrift[t,i] = L_VCV_tips_cache[",
+        "length_index[t, tip_to_seg[t, i]]] * ",
+        "to_vector(terminal_drift[t][i,]);\n"
+      ),
       "      } else {\n",
       "        tdrift[t,i] = cholesky_decompose(VCV_tips[t,i]) * ",
       "to_vector(terminal_drift[t][i,]);\n",
