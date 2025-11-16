@@ -520,7 +520,10 @@ convert_nutpie_draws <- function(trace) {
       stop2("Variable '", var_name, "' is NULL after conversion from nutpie.")
     }
     if (length(var_r) == 0) {
-      stop2("Variable '", var_name, "' is empty (length 0) after conversion from nutpie.")
+      stop2(
+        "Variable '", var_name,
+        "' is empty (length 0) after conversion from nutpie."
+      )
     }
     # nutpie/ArviZ format: [chains, draws, dims...]
     # posterior draws_array format: [iterations, chains, dims...]
@@ -533,7 +536,6 @@ convert_nutpie_draws <- function(trace) {
         # 1D array: unexpected format from nutpie
         # nutpie should return [chains, draws, ...] format
         # If we get 1D, assume it's malformed and reshape to [length, 1]
-        # representing [draws=length, chains=1]
         # This will be caught by dimension validation if inconsistent
         var_length <- length(var_r)
         var_r <- array(var_r, dim = c(var_length, 1))
@@ -591,9 +593,10 @@ convert_nutpie_draws <- function(trace) {
           } else if (length(extracted_dims) != 2) {
             # unexpected number of dimensions
             stop2(
-              "Unexpected dimensions when extracting variable '", var_name_indexed,
-              "'. Expected 2D array [draws, chains], got ", length(extracted_dims),
-              " dimensions: [", paste(extracted_dims, collapse = ", "), "]"
+              "Unexpected dimensions when extracting variable '",
+              var_name_indexed, "'. Expected 2D array [draws, chains], ",
+              "got ", length(extracted_dims), " dimensions: [",
+              paste(extracted_dims, collapse = ", "), "]"
             )
           }
           draws_arrays[[var_name_indexed]] <- extracted
@@ -608,8 +611,10 @@ convert_nutpie_draws <- function(trace) {
         var_numeric <- as.numeric(var_r)
         if (any(is.na(var_numeric)) && !is.null(var_r)) {
           stop2(
-            "Variable '", var_name, "' could not be converted to numeric. ",
-            "Type: ", typeof(var_r), ", Class: ", paste(class(var_r), collapse = ", ")
+            "Variable '", var_name,
+            "' could not be converted to numeric. ",
+            "Type: ", typeof(var_r), ", Class: ",
+            paste(class(var_r), collapse = ", ")
           )
         }
         # create 1x1 array [draws=1, chains=1]
@@ -618,9 +623,11 @@ convert_nutpie_draws <- function(trace) {
         draws_arrays[[var_name]] <- var_r
       }, error = function(e) {
         stop2(
-          "Failed to convert variable '", var_name, "' to array format. ",
+          "Failed to convert variable '", var_name,
+          "' to array format. ",
           "Original error: ", conditionMessage(e), ". ",
-          "Variable type: ", typeof(var_r), ", Class: ", paste(class(var_r), collapse = ", ")
+          "Variable type: ", typeof(var_r), ", Class: ",
+          paste(class(var_r), collapse = ", ")
         )
       })
     }
@@ -640,7 +647,8 @@ convert_nutpie_draws <- function(trace) {
         var_obj <- draws_arrays[[nm]]
         paste0(
           nm, ": type=", typeof(var_obj), ", class=",
-          paste(class(var_obj), collapse = ","), ", is.array=", is.array(var_obj)
+          paste(class(var_obj), collapse = ","),
+          ", is.array=", is.array(var_obj)
         )
       }),
       collapse = "; "
