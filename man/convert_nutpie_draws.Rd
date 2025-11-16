@@ -25,3 +25,4 @@ draws <- convert_nutpie_draws(trace)
 }
 
 }
+\keyword{internal}

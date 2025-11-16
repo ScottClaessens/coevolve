@@ -89,3 +89,4 @@ trace <- nutpie_sample(stan_code, data_list,
 }
 
 }
+\keyword{internal}

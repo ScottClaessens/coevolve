@@ -16,3 +16,4 @@ A list containing metadata.
 Generic function for extracting metadata from fit objects.
 Currently supports nutpie_fit objects.
 }
+\keyword{internal}

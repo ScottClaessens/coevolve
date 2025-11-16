@@ -68,3 +68,4 @@ compiled_threads <- nutpie_compile_stan_model(
 }
 
 }
+\keyword{internal}

@@ -18,3 +18,4 @@ A draws_array object.
 Generic function for extracting draws from fit objects.
 Currently supports nutpie_fit objects.
 }
+\keyword{internal}
