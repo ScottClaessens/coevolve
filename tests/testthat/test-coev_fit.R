@@ -765,6 +765,34 @@ test_that("coev_fit() produces expected errors", {
     "Argument 'prior_only' must be a logical of length one.",
     fixed = TRUE
   )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      backend = 0
+    ),
+    "Argument 'backend' must be a character string of length one.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      backend = "testing"
+    ),
+    "Argument 'backend' must be either 'cmdstanr' or 'nutpie'.",
+    fixed = TRUE
+  )
 })
 
 test_that("coev_fit() fits simple model without error", {
