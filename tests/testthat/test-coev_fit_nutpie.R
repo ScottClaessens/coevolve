@@ -1,14 +1,14 @@
 test_that("check_nutpie_available() detects nutpie installation", {
   # this test checks if we can detect nutpie availability
   # initially will fail until we implement check_nutpie_available()
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   # if we get here, nutpie should be available
-  expect_true(check_nutpie_available())
+  expect_true(coevolve:::check_nutpie_available())
 })
 
 test_that("nutpie can compile simple Stan model", {
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   # simple Stan model for testing
   stan_code <- "
@@ -34,7 +34,7 @@ test_that("nutpie can compile simple Stan model", {
 })
 
 test_that("nutpie can sample from simple model", {
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   stan_code <- "
   data {
@@ -64,7 +64,7 @@ test_that("nutpie can sample from simple model", {
 })
 
 test_that("nutpie draws can be converted to draws_array", {
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   # fit a simple model with nutpie
   stan_code <- "
@@ -99,7 +99,7 @@ test_that("nutpie draws can be converted to draws_array", {
 })
 
 test_that("coev_fit() works with backend = 'nutpie'", {
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   # simple coevolutionary model
   withr::with_seed(1, {
@@ -134,7 +134,7 @@ test_that("coev_fit() works with backend = 'nutpie'", {
 })
 
 test_that("summary() works with nutpie-fitted models", {
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   withr::with_seed(1, {
     n <- 5
@@ -162,13 +162,19 @@ test_that("summary() works with nutpie-fitted models", {
     s <- summary(fit)
   })
   expect_s3_class(s, "coevsummary")
-  expect_true("Estimate" %in% names(s))
-  expect_true("Rhat" %in% names(s))
-  expect_true("Bulk_ESS" %in% names(s))
+  # summary.coevfit returns a list with elements like auto, cross, etc.
+  # Each element is a data.frame with columns Estimate, Rhat, Bulk_ESS
+  # Check that the summary structure is correct
+  expect_true("auto" %in% names(s))
+  if (nrow(s$auto) > 0) {
+    expect_true("Estimate" %in% names(s$auto))
+    expect_true("Rhat" %in% names(s$auto))
+    expect_true("Bulk_ESS" %in% names(s$auto))
+  }
 })
 
 test_that("extract_samples() works with nutpie-fitted models", {
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   withr::with_seed(1, {
     n <- 5
@@ -201,7 +207,7 @@ test_that("extract_samples() works with nutpie-fitted models", {
 })
 
 test_that("plot() works with nutpie-fitted models", {
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   withr::with_seed(1, {
     n <- 5
@@ -232,7 +238,7 @@ test_that("plot() works with nutpie-fitted models", {
 })
 
 test_that("nutpie and cmdstanr produce similar results", {
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   withr::with_seed(1, {
     n <- 5
@@ -284,7 +290,7 @@ test_that("nutpie and cmdstanr produce similar results", {
 })
 
 test_that("nutpie handles errors gracefully", {
-  skip_if_not(check_nutpie_available(),
+  skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   # invalid Stan code should produce informative error
   invalid_code <- "invalid stan code here"
@@ -343,6 +349,40 @@ test_that("coev_fit() defaults to cmdstanr when backend not specified", {
   expect_s3_class(fit, "coevfit")
 })
 
+test_that("coev_fit() converts parallel_chains to cores for nutpie", {
+  skip_if_not(coevolve:::check_nutpie_available(),
+              message = "nutpie not available - skipping nutpie tests")
+  withr::with_seed(1, {
+    n <- 5
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+  })
+  # Test that parallel_chains argument is accepted and converted to cores
+  # If conversion fails, nutpie would error on unknown argument
+  expect_no_error({
+    fit <- coev_fit(
+      data = d,
+      variables = list(x = "normal", y = "normal"),
+      id = "id",
+      tree = tree,
+      backend = "nutpie",
+      chains = 2,
+      iter_sampling = 50,
+      iter_warmup = 25,
+      seed = 12345,
+      parallel_chains = 2,  # Should be converted to cores=2 for nutpie
+      refresh = 0
+    )
+  })
+  # Verify fit succeeded
+  expect_s3_class(fit, "coevfit")
+  expect_true(!is.null(fit$fit))
+})
+
 test_that("coev_fit() errors when backend = 'nutpie' but nutpie unavailable", {
   # mock check_nutpie_available to return FALSE
   # this test ensures proper error message when nutpie not available
@@ -358,7 +398,7 @@ test_that("coev_fit() errors when backend = 'nutpie' but nutpie unavailable", {
     )
   })
   # if nutpie is actually available, skip this test
-  skip_if(check_nutpie_available(),
+  skip_if(coevolve:::check_nutpie_available(),
           message = "nutpie is available - skipping unavailable test")
   expect_error(
     coev_fit(

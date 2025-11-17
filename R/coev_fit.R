@@ -323,9 +323,9 @@ coev_fit <- function(data, variables, id, tree,
       )
     }
     # extract sampling arguments from ...
-    # map cmdstanr argument names to nutpie argument names
+    # Only map essential cmdstanr arguments; pass everything else generically
     sample_args <- list(...)
-    # default values
+    # Extract and map essential arguments
     num_chains <- if ("chains" %in% names(sample_args)) {
       as.integer(sample_args$chains)
     } else {
@@ -339,26 +339,46 @@ coev_fit <- function(data, variables, id, tree,
     num_warmup <- if ("iter_warmup" %in% names(sample_args)) {
       as.integer(sample_args$iter_warmup)
     } else {
-      1000L  # match cmdstanr's default
+      1000L
     }
     seed <- if ("seed" %in% names(sample_args)) {
       as.integer(sample_args$seed)
     } else {
       NULL
     }
-    # additional arguments for nutpie (remove cmdstanr-specific ones)
+    # Map cmdstanr argument names to nutpie argument names
+    # adapt_delta -> target_accept (nutpie uses target_accept)
+    target_accept <- if ("adapt_delta" %in% names(sample_args)) {
+      as.double(sample_args$adapt_delta)
+    } else {
+      adapt_delta
+    }
+    # Create argument name mapping for nutpie-specific conversions
+    # Maps cmdstanr argument names to nutpie argument names
+    # If nutpie uses the same name, no mapping needed (it passes through)
+    nutpie_arg_mapping <- c(
+      "parallel_chains" = "cores"
+    )
+    # Remove cmdstanr-specific arguments that are handled explicitly
+    # or don't apply to nutpie
     nutpie_args <- sample_args
-    nutpie_args$chains <- NULL
-    nutpie_args$iter_sampling <- NULL
-    nutpie_args$iter_warmup <- NULL
-    nutpie_args$seed <- NULL
-    nutpie_args$parallel_chains <- NULL  # nutpie handles this differently
-    nutpie_args$refresh <- NULL  # nutpie has its own progress display
-    nutpie_args$adapt_delta <- NULL  # Will be mapped to target_accept below
-    # map adapt_delta to target_accept for nutpie
-    # in Stan: adapt_delta is the target acceptance probability
-    # in nutpie: target_accept is the same parameter
-    target_accept <- adapt_delta
+    nutpie_args[c("chains", "iter_sampling", "iter_warmup", "seed",
+                  "adapt_delta", "refresh")] <- NULL
+    # Convert argument names according to mapping
+    # This allows cmdstanr argument names to be converted to nutpie names
+    for (cmdstanr_name in names(nutpie_arg_mapping)) {
+      if (cmdstanr_name %in% names(nutpie_args)) {
+        nutpie_name <- nutpie_arg_mapping[[cmdstanr_name]]
+        # Convert to appropriate type for nutpie
+        # cores needs to be an integer
+        if (nutpie_name == "cores") {
+          nutpie_args[[nutpie_name]] <- as.integer(nutpie_args[[cmdstanr_name]])
+        } else {
+          nutpie_args[[nutpie_name]] <- nutpie_args[[cmdstanr_name]]
+        }
+        nutpie_args[[cmdstanr_name]] <- NULL
+      }
+    }
     # sample with nutpie
     #' @srrstats {BS2.15} Errors in model fitting will be reported by nutpie
     trace <- do.call(

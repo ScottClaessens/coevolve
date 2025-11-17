@@ -403,6 +403,10 @@ nutpie_sample <- function(stan_code, data_list,
     additional_args$return_raw_trace <- NULL
     sample_args <- c(sample_args, additional_args)
   }
+  # Ensure cores is an integer (nutpie requires integer, not float)
+  if ("cores" %in% names(sample_args)) {
+    sample_args$cores <- as.integer(sample_args$cores)
+  }
   # prepare data using with_data method
   tryCatch({
     # nutpie uses with_data() method to attach data
