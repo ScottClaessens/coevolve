@@ -98,7 +98,7 @@ test_that("nutpie draws can be converted to draws_array", {
   expect_true("sigma" %in% posterior::variables(draws))
 })
 
-test_that("coev_fit() works with sampler = 'nutpie'", {
+test_that("coev_fit() works with backend = 'nutpie'", {
   skip_if_not(check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   # simple coevolutionary model
@@ -118,7 +118,7 @@ test_that("coev_fit() works with sampler = 'nutpie'", {
       variables = list(x = "normal", y = "normal"),
       id = "id",
       tree = tree,
-      sampler = "nutpie",
+      backend = "nutpie",
       chains = 2,
       iter_sampling = 100,
       iter_warmup = 50,
@@ -150,7 +150,7 @@ test_that("summary() works with nutpie-fitted models", {
     variables = list(x = "normal", y = "normal"),
     id = "id",
     tree = tree,
-    sampler = "nutpie",
+    backend = "nutpie",
     chains = 2,
     iter_sampling = 100,
     iter_warmup = 50,
@@ -184,7 +184,7 @@ test_that("extract_samples() works with nutpie-fitted models", {
     variables = list(x = "normal", y = "normal"),
     id = "id",
     tree = tree,
-    sampler = "nutpie",
+    backend = "nutpie",
     chains = 2,
     iter_sampling = 100,
     iter_warmup = 50,
@@ -217,7 +217,7 @@ test_that("plot() works with nutpie-fitted models", {
     variables = list(x = "normal", y = "normal"),
     id = "id",
     tree = tree,
-    sampler = "nutpie",
+    backend = "nutpie",
     chains = 2,
     iter_sampling = 100,
     iter_warmup = 50,
@@ -249,7 +249,7 @@ test_that("nutpie and cmdstanr produce similar results", {
     variables = list(x = "normal", y = "normal"),
     id = "id",
     tree = tree,
-    sampler = "cmdstanr",
+    backend = "cmdstanr",
     chains = 2,
     iter_sampling = 100,
     iter_warmup = 50,
@@ -261,7 +261,7 @@ test_that("nutpie and cmdstanr produce similar results", {
     variables = list(x = "normal", y = "normal"),
     id = "id",
     tree = tree,
-    sampler = "nutpie",
+    backend = "nutpie",
     chains = 2,
     iter_sampling = 100,
     iter_warmup = 50,
@@ -316,7 +316,7 @@ test_that("nutpie handles errors gracefully", {
   )
 })
 
-test_that("coev_fit() defaults to cmdstanr when sampler not specified", {
+test_that("coev_fit() defaults to cmdstanr when backend not specified", {
   # should work without specifying sampler (backward compatibility)
   withr::with_seed(1, {
     n <- 3
@@ -343,7 +343,7 @@ test_that("coev_fit() defaults to cmdstanr when sampler not specified", {
   expect_s3_class(fit, "coevfit")
 })
 
-test_that("coev_fit() errors when sampler = 'nutpie' but nutpie unavailable", {
+test_that("coev_fit() errors when backend = 'nutpie' but nutpie unavailable", {
   # mock check_nutpie_available to return FALSE
   # this test ensures proper error message when nutpie not available
   # note: this test may need to be adjusted based on implementation
@@ -366,7 +366,7 @@ test_that("coev_fit() errors when sampler = 'nutpie' but nutpie unavailable", {
       variables = list(x = "normal", y = "normal"),
       id = "id",
       tree = tree,
-      sampler = "nutpie",
+      backend = "nutpie",
       chains = 1,
       iter_sampling = 10,
       iter_warmup = 5,

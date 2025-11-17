@@ -139,23 +139,23 @@
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
 #' @param adapt_delta Target acceptance probability for the NUTS sampler.
-#'   Default is 0.95. For \code{sampler = "cmdstanr"}, this is passed directly
-#'   to \pkg{cmdstanr::sample()}. For \code{sampler = "nutpie"}, this is mapped
+#'   Default is 0.95. For \code{backend = "cmdstanr"}, this is passed directly
+#'   to \pkg{cmdstanr::sample()}. For \code{backend = "nutpie"}, this is mapped
 #'   to the \code{target_accept} parameter.
-#' @param sampler Character string specifying which sampler to use. Options are
+#' @param backend Character string specifying which backend to use. Options are
 #'   \code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
 #'   specified, the model will be sampled using nutpie via reticulate. Note
 #'   that nutpie must be installed in your Python environment.
 #' @param low_rank_modified_mass_matrix Logical. If \code{TRUE}, enables
 #'   low-rank modified mass matrix adaptation for models with strong parameter
-#'   correlations (default: \code{FALSE}). Only used when \code{sampler =
+#'   correlations (default: \code{FALSE}). Only used when \code{backend =
 #'   "nutpie"}. This is an experimental feature in nutpie that can improve
 #'   sampling efficiency for models with strong posterior correlations.
 #'   You can tune \code{mass_matrix_gamma} and \code{mass_matrix_eigval_cutoff}
 #'   via \code{...} arguments.
 #' @param ... Additional arguments. For sampling: arguments passed to
-#'   \pkg{cmdstanr::sample()} (when \code{sampler = "cmdstanr"}) or
-#'   \pkg{nutpie.sample()} (when \code{sampler = "nutpie"}). For compilation:
+#'   \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
+#'   \pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
 #'   \code{extra_stanc_args} and \code{extra_compile_args} work for both
 #'   samplers. Common sampling arguments include \code{chains},
 #'   \code{iter_sampling}, \code{iter_warmup}, and \code{seed}. Common
@@ -284,7 +284,7 @@ coev_fit <- function(data, variables, id, tree,
                      estimate_correlated_drift = TRUE,
                      estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
-                     adapt_delta = 0.95, sampler = "cmdstanr",
+                     adapt_delta = 0.95, backend = "cmdstanr",
                      low_rank_modified_mass_matrix = FALSE, ...) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
@@ -292,12 +292,12 @@ coev_fit <- function(data, variables, id, tree,
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only)
-  # check sampler argument
-  if (!is.character(sampler) || length(sampler) != 1) {
-    stop2("Argument 'sampler' must be a character string of length one.")
+  # check backend argument
+  if (!is.character(backend) || length(backend) != 1) {
+    stop2("Argument 'backend' must be a character string of length one.")
   }
-  if (!sampler %in% c("cmdstanr", "nutpie")) {
-    stop2("Argument 'sampler' must be either 'cmdstanr' or 'nutpie'.")
+  if (!backend %in% c("cmdstanr", "nutpie")) {
+    stop2("Argument 'backend' must be either 'cmdstanr' or 'nutpie'.")
   }
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
@@ -312,7 +312,7 @@ coev_fit <- function(data, variables, id, tree,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
   # fit model using specified sampler
-  if (sampler == "nutpie") {
+  if (backend == "nutpie") {
     # check if nutpie is available
     if (!check_nutpie_available()) {
       stop2(
@@ -396,7 +396,7 @@ coev_fit <- function(data, variables, id, tree,
     nsamples <- posterior::ndraws(draws_array)
     # Check if lp__ exists (nutpie typically doesn't include it)
     has_lp__ <- "lp__" %in% stan_variables
-  } else if (sampler == "cmdstanr") {
+  } else if (backend == "cmdstanr") {
     # use cmdstanr (default)
     # extract compilation and sampling arguments
     all_args <- list(...)
