@@ -119,6 +119,12 @@ check_nutpie_available <- function() {
 #'   stan_code,
 #'   extra_compile_args = list("STAN_THREADS=true")
 #' )
+#' 
+#' # compile with CPU architecture optimization
+#' compiled_optimized <- nutpie_compile_stan_model(
+#'   stan_code,
+#'   extra_compile_args = list("CXXFLAGS=-march=native -mtune=native")
+#' )
 #' }
 #'
 #' @noRd
