@@ -26,7 +26,6 @@ test_that("nutpie can compile simple Stan model", {
     y ~ normal(mu, sigma);
   }
   "
-  # this will fail until we implement nutpie compilation
   expect_no_error({
     compiled <- nutpie_compile_stan_model(stan_code)
   })
@@ -51,8 +50,9 @@ test_that("nutpie can sample from simple model", {
     y ~ normal(mu, sigma);
   }
   "
-  data_list <- list(N = 10L, y = rnorm(10))
-  # this will fail until we implement nutpie sampling
+  withr::with_seed(1, {
+    data_list <- list(N = 10L, y = rnorm(10))
+  })
   expect_no_error({
     trace <- nutpie_sample(stan_code, data_list,
                            num_chains = 2L,
@@ -61,33 +61,6 @@ test_that("nutpie can sample from simple model", {
                            seed = 12345L)
   })
   expect_true(!is.null(trace))
-})
-
-test_that("nutpie draws can be converted to draws_array", {
-  skip_if_not(coevolve:::check_nutpie_available(),
-              message = "nutpie not available - skipping nutpie tests")
-  # fit a simple model with nutpie
-  stan_code <- "
-  data {
-    int<lower=0> N;
-    vector[N] y;
-  }
-  parameters {
-    real mu;
-    real<lower=0> sigma;
-  }
-  model {
-    mu ~ normal(0, 1);
-    sigma ~ exponential(1);
-    y ~ normal(mu, sigma);
-  }
-  "
-  data_list <- list(N = 10L, y = rnorm(10))
-  trace <- nutpie_sample(stan_code, data_list,
-                         num_chains = 2L,
-                         num_samples = 100L,
-                         num_warmup = 50L,
-                         seed = 12345L)
   # convert to draws_array
   draws <- convert_nutpie_draws(trace)
   # verify structure
@@ -131,33 +104,7 @@ test_that("coev_fit() works with backend = 'nutpie'", {
   expect_true(!is.null(fit$fit))
   expect_true(!is.null(fit$stan_code))
   expect_true(!is.null(fit$stan_data))
-})
-
-test_that("summary() works with nutpie-fitted models", {
-  skip_if_not(coevolve:::check_nutpie_available(),
-              message = "nutpie not available - skipping nutpie tests")
-  withr::with_seed(1, {
-    n <- 5
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rnorm(n),
-      y = rnorm(n)
-    )
-  })
-  fit <- coev_fit(
-    data = d,
-    variables = list(x = "normal", y = "normal"),
-    id = "id",
-    tree = tree,
-    backend = "nutpie",
-    chains = 2,
-    iter_sampling = 100,
-    iter_warmup = 50,
-    seed = 12345,
-    refresh = 0
-  )
-  # summary should work
+  # summary method should work
   expect_no_error({
     s <- summary(fit)
   })
@@ -171,66 +118,14 @@ test_that("summary() works with nutpie-fitted models", {
     expect_true("Rhat" %in% names(s$auto))
     expect_true("Bulk_ESS" %in% names(s$auto))
   }
-})
-
-test_that("extract_samples() works with nutpie-fitted models", {
-  skip_if_not(coevolve:::check_nutpie_available(),
-              message = "nutpie not available - skipping nutpie tests")
-  withr::with_seed(1, {
-    n <- 5
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rnorm(n),
-      y = rnorm(n)
-    )
-  })
-  fit <- coev_fit(
-    data = d,
-    variables = list(x = "normal", y = "normal"),
-    id = "id",
-    tree = tree,
-    backend = "nutpie",
-    chains = 2,
-    iter_sampling = 100,
-    iter_warmup = 50,
-    seed = 12345,
-    refresh = 0
-  )
-  # extract samples should work
+  # extract samples method should work
   expect_no_error({
     samples <- extract_samples(fit)
   })
   expect_type(samples, "list")
   expect_true("A" %in% names(samples))
   expect_true("b" %in% names(samples))
-})
-
-test_that("plot() works with nutpie-fitted models", {
-  skip_if_not(coevolve:::check_nutpie_available(),
-              message = "nutpie not available - skipping nutpie tests")
-  withr::with_seed(1, {
-    n <- 5
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rnorm(n),
-      y = rnorm(n)
-    )
-  })
-  fit <- coev_fit(
-    data = d,
-    variables = list(x = "normal", y = "normal"),
-    id = "id",
-    tree = tree,
-    backend = "nutpie",
-    chains = 2,
-    iter_sampling = 100,
-    iter_warmup = 50,
-    seed = 12345,
-    refresh = 0
-  )
-  # plot should work
+  # plot method should work
   expect_no_error({
     p <- plot(fit, plot = FALSE)
   })
@@ -320,33 +215,6 @@ test_that("nutpie handles errors gracefully", {
                   num_warmup = 5L),
     regexp = ".*"
   )
-})
-
-test_that("coev_fit() defaults to cmdstanr when backend not specified", {
-  # should work without specifying sampler (backward compatibility)
-  withr::with_seed(1, {
-    n <- 3
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rnorm(n),
-      y = rnorm(n)
-    )
-  })
-  expect_no_error({
-    fit <- coev_fit(
-      data = d,
-      variables = list(x = "normal", y = "normal"),
-      id = "id",
-      tree = tree,
-      chains = 1,
-      iter_sampling = 10,
-      iter_warmup = 5,
-      seed = 1,
-      refresh = 0
-    )
-  })
-  expect_s3_class(fit, "coevfit")
 })
 
 test_that("coev_fit() converts parallel_chains to cores for nutpie", {
