@@ -130,6 +130,17 @@ test_that("coev_fit() works with backend = 'nutpie'", {
     p <- plot(fit, plot = FALSE)
   })
   expect_true(!is.null(p))
+  # coev_ functions should run without error
+  sw <- suppressWarnings
+  expect_no_error(sw(coev_calculate_theta(fit, list(x = NA, y = 0))))
+  expect_no_error(sw(coev_calculate_delta_theta(fit, "x", "y")))
+  expect_no_error(sw(coev_plot_delta_theta(fit)))
+  expect_no_error(sw(coev_plot_flowfield(fit, "x", "y")))
+  expect_no_error(sw(coev_plot_pred_series(fit)))
+  expect_no_error(sw(coev_plot_predictive_check(fit)))
+  expect_no_error(sw(coev_plot_selection_gradient(fit, "x", "y")))
+  expect_no_error(sw(coev_plot_trait_values(fit)))
+  expect_no_error(sw(coev_pred_series(fit)))
 })
 
 test_that("nutpie and cmdstanr produce similar results", {
