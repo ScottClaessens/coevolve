@@ -607,33 +607,12 @@ convert_nutpie_draws <- function(trace) {
         }
       }
     } else {
-      # not an array - convert to array format
-      # This shouldn't happen with nutpie (should always return arrays)
-      # but handle gracefully for debugging
-      tryCatch({
-        # try to convert to numeric array
-        var_numeric <- as.numeric(var_r)
-        if (any(is.na(var_numeric)) && !is.null(var_r)) {
-          stop2(
-            "Variable '", var_name,
-            "' could not be converted to numeric. ",
-            "Type: ", typeof(var_r), ", Class: ",
-            paste(class(var_r), collapse = ", ")
-          )
-        }
-        # create 1x1 array [draws=1, chains=1]
-        # dimension validation will catch if this is inconsistent
-        var_r <- array(var_numeric, dim = c(1, 1))
-        draws_arrays[[var_name]] <- var_r
-      }, error = function(e) {
-        stop2(
-          "Failed to convert variable '", var_name,
-          "' to array format. ",
-          "Original error: ", conditionMessage(e), ". ",
-          "Variable type: ", typeof(var_r), ", Class: ",
-          paste(class(var_r), collapse = ", ")
-        )
-      })
+      stop2(
+        "Variable '", var_name,
+        "' is not an array after conversion from nutpie. ",
+        "Type: ", typeof(var_r), ", Class: ",
+        paste(class(var_r), collapse = ", ")
+      )
     }
   }
   # validate that all variables have consistent dimensions
@@ -682,15 +661,6 @@ convert_nutpie_draws <- function(trace) {
         "Expected [", n_draws, ", ", n_chains, ", ...], ",
         "but got [", paste(var_dims, collapse = ", "), "]."
       )
-    }
-  }
-  # debug: Print dimensions before creating draws_array
-  # this helps identify which variable is causing issues
-  if (getOption("coevolve.debug", FALSE)) {
-    cat("Variable dimensions before creating draws_array:\n")
-    for (var_name in names(draws_arrays)) {
-      cat("  ", var_name, ": [", paste(dim(draws_arrays[[var_name]]),
-                                       collapse = ", "), "]\n")
     }
   }
   # create draws_array using posterior package

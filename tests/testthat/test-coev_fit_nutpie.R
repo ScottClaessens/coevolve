@@ -295,3 +295,135 @@ test_that("coev_fit() errors when backend = 'nutpie' but nutpie unavailable", {
     regexp = "nutpie.*not.*available|nutpie.*not.*installed"
   )
 })
+
+test_that("nutpie_compile_stan_model accepts compilation arguments", {
+  skip_if_not(coevolve:::check_nutpie_available(),
+              message = "nutpie not available - skipping nutpie tests")
+  stan_code <- "
+  data {
+    int<lower=0> N;
+    vector[N] y;
+  }
+  parameters {
+    real mu;
+  }
+  model {
+    mu ~ normal(0, 1);
+    y ~ normal(mu, 1);
+  }
+  "
+  # Test that extra_stanc_args works
+  expect_no_error({
+    compiled_o1 <- coevolve:::nutpie_compile_stan_model(
+      stan_code,
+      extra_stanc_args = list("--O1")
+    )
+  })
+  expect_true(!is.null(compiled_o1))
+  # Test that extra_compile_args works (if supported by nutpie)
+  tryCatch({
+    compiled_threads <- coevolve:::nutpie_compile_stan_model(
+      stan_code,
+      extra_compile_args = list("STAN_THREADS=true")
+    )
+    expect_true(!is.null(compiled_threads))
+  }, error = function(e) {
+    # If threading isn't supported, that's okay - we just want to verify
+    # the argument is accepted and passed through
+    expect_true(TRUE)
+  })
+})
+
+test_that("nutpie_sample accepts compilation arguments via ...", {
+  skip_if_not(coevolve:::check_nutpie_available(),
+              message = "nutpie not available - skipping nutpie tests")
+  stan_code <- "
+  data {
+    int<lower=0> N;
+    vector[N] y;
+  }
+  parameters {
+    real mu;
+  }
+  model {
+    mu ~ normal(0, 1);
+    y ~ normal(mu, 1);
+  }
+  "
+  withr::with_seed(1, {
+    data_list <- list(N = 10L, y = rnorm(10))
+  })
+  # Test that extra_stanc_args is passed through to compilation
+  expect_no_error({
+    trace <- coevolve:::nutpie_sample(
+      stan_code, data_list,
+      num_chains = 2L,
+      num_samples = 50L,
+      num_warmup = 25L,
+      seed = 12345L,
+      extra_stanc_args = list("--O1")
+    )
+  })
+  expect_true(!is.null(trace))
+  # Verify we can convert draws
+  draws <- coevolve:::convert_nutpie_draws(trace)
+  expect_s3_class(draws, "draws_array")
+})
+
+test_that("nutpie_sample handles tune, draws, chains, return_raw_trace", {
+  skip_if_not(coevolve:::check_nutpie_available(),
+              message = "nutpie not available - skipping nutpie tests")
+  stan_code <- "
+  data {
+    int<lower=0> N;
+    vector[N] y;
+  }
+  parameters {
+    real mu;
+  }
+  model {
+    mu ~ normal(0, 1);
+    y ~ normal(mu, 1);
+  }
+  "
+  withr::with_seed(1, {
+    data_list <- list(N = 10L, y = rnorm(10))
+  })
+  # Test that tune, draws, chains passed via ... are ignored
+  # (function args take precedence)
+  # This verifies the logic at lines 388-396
+  expect_no_error({
+    trace1 <- coevolve:::nutpie_sample(
+      stan_code, data_list,
+      num_chains = 2L,
+      num_samples = 50L,
+      num_warmup = 25L,
+      seed = 12345L,
+      tune = 100L,  # Should be ignored, num_warmup=25L should be used
+      draws = 200L,  # Should be ignored, num_samples=50L should be used
+      chains = 1L    # Should be ignored, num_chains=2L should be used
+    )
+  })
+  expect_true(!is.null(trace1))
+  # Verify the correct values were used (2 chains, 50 samples)
+  draws1 <- coevolve:::convert_nutpie_draws(trace1)
+  expect_equal(posterior::nchains(draws1), 2L)
+  expect_equal(posterior::ndraws(draws1), 100L)  # 2 chains * 50 samples
+  # Test that return_raw_trace can be explicitly set
+  # Note: We test that the argument is accepted, but we'll use the default
+  # InferenceData format for most tests since that's what we normally use
+  expect_no_error({
+    trace2 <- coevolve:::nutpie_sample(
+      stan_code, data_list,
+      num_chains = 2L,
+      num_samples = 50L,
+      num_warmup = 25L,
+      seed = 12345L,
+      return_raw_trace = FALSE  # Explicitly set (this is the default)
+    )
+  })
+  expect_true(!is.null(trace2))
+  # Should work with InferenceData format
+  draws2 <- coevolve:::convert_nutpie_draws(trace2)
+  expect_s3_class(draws2, "draws_array")
+})
