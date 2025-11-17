@@ -42,7 +42,7 @@
 #' }
 #' }
 #'
-#' @keywords internal
+#' @noRd
 check_nutpie_available <- function() {
   # check if reticulate is available
   if (!requireNamespace("reticulate", quietly = TRUE)) {
@@ -121,7 +121,7 @@ check_nutpie_available <- function() {
 #' )
 #' }
 #'
-#' @keywords internal
+#' @noRd
 nutpie_compile_stan_model <- function(stan_code, ...) {
   # check if nutpie is available
   if (!check_nutpie_available()) {
@@ -307,7 +307,7 @@ convert_r_to_python_data <- function(data_list) {
 #'                       seed = 12345L)
 #' }
 #'
-#' @keywords internal
+#' @noRd
 nutpie_sample <- function(stan_code, data_list,
                           num_chains = 4L,
                           num_samples = 1000L,
@@ -451,7 +451,7 @@ def nutpie_call_with_data(compiled_model, data_dict):
 #' draws <- convert_nutpie_draws(trace)
 #' }
 #'
-#' @keywords internal
+#' @noRd
 convert_nutpie_draws <- function(trace) {
   # check if posterior package is available
   if (!requireNamespace("posterior", quietly = TRUE)) {

@@ -254,7 +254,7 @@ metadata.nutpie_fit <- function(x) {
 #'
 #' @returns A draws_array object.
 #'
-#' @keywords internal
+#' @noRd
 draws <- function(x, ...) {
   UseMethod("draws")
 }
@@ -270,7 +270,7 @@ draws <- function(x, ...) {
 #'
 #' @returns A list containing metadata.
 #'
-#' @keywords internal
+#' @noRd
 metadata <- function(x) {
   UseMethod("metadata")
 }
