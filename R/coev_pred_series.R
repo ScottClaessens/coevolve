@@ -94,7 +94,12 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
   post <- extract_samples(object)
   j <- length(object$variables)
   # get number of samples
-  nsamps <- ifelse(is.null(ndraws), length(post$lp__), ndraws)
+  # Use stored nsamples from coevfit object if ndraws not specified
+  if (is.null(ndraws)) {
+    nsamps <- object$nsamples
+  } else {
+    nsamps <- ndraws
+  }
   # initialize empty array for predictions
   preds <-
     array(
@@ -327,10 +332,14 @@ run_checks_pred_series <- function(object, eta_anc, intervention_values,
       #' @srrstats {G2.0, G2.1, G2.2, G2.4, G2.4a} Assertion on length and type
       #'   of input, convert to integer
       stop2("Argument 'ndraws' must be a single integer.")
-    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
-      stop2(
-        "Argument 'ndraws' must be between 1 and the total number of draws."
-      )
+    } else {
+      # Get number of draws from stored nsamples in coevfit object
+      n_draws_total <- object$nsamples
+      if (ndraws < 1 || ndraws > n_draws_total) {
+        stop2(
+          "Argument 'ndraws' must be between 1 and the total number of draws."
+        )
+      }
     }
   }
   # stop if stochastic not logical

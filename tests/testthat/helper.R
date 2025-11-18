@@ -7,6 +7,78 @@ reload_fit <- function(coevfit, filename) {
   coevfit
 }
 
+# Setup nutpie for testing
+# This function configures reticulate to use a Python environment with nutpie.
+# It requires explicit configuration via environment variables.
+#
+# Configuration options:
+# 1. Set NUTPIE_PYTHON environment variable to point to Python executable:
+#    export NUTPIE_PYTHON=/path/to/python
+#    or in R: Sys.setenv(NUTPIE_PYTHON = "/path/to/python")
+#
+# 2. Set NUTPIE_VENV environment variable to point to virtual environment:
+#    export NUTPIE_VENV=~/.venvs/nutpie-env
+#    or in R: Sys.setenv(NUTPIE_VENV = "~/.venvs/nutpie-env")
+#
+# 3. Set RETICULATE_PYTHON environment variable (reticulate's standard
+#    variable): export RETICULATE_PYTHON=/path/to/python
+#
+# Note: This function does NOT search for nutpie automatically. Explicit
+# configuration is required to ensure reproducibility and avoid version
+# conflicts.
+setup_nutpie_for_tests <- function() {
+  # only try if reticulate is available
+  if (!requireNamespace("reticulate", quietly = TRUE)) {
+    return(FALSE)
+  }
+  # check NUTPIE_PYTHON environment variable (highest priority)
+  nutpie_python <- Sys.getenv("NUTPIE_PYTHON", unset = "")
+  if (nutpie_python != "" && file.exists(nutpie_python)) {
+    tryCatch({
+      # set RETICULATE_PYTHON before reticulate initializes
+      Sys.setenv(RETICULATE_PYTHON = nutpie_python)
+      # configure reticulate if Python hasn't been initialized yet
+      if (!reticulate::py_available()) {
+        reticulate::use_python(nutpie_python, required = FALSE)
+      } else {
+        # try to reconfigure (may not work if already initialized)
+        reticulate::use_python(nutpie_python, required = FALSE)
+      }
+      if (coevolve::check_nutpie_available()) {
+        return(TRUE)
+      }
+    }, error = function(e) NULL)
+  }
+  # check NUTPIE_VENV environment variable
+  nutpie_venv <- Sys.getenv("NUTPIE_VENV", unset = "")
+  if (nutpie_venv != "") {
+    expanded_venv <- path.expand(nutpie_venv)
+    if (dir.exists(expanded_venv)) {
+      tryCatch({
+        reticulate::use_virtualenv(expanded_venv, required = FALSE)
+        if (coevolve::check_nutpie_available()) {
+          return(TRUE)
+        }
+      }, error = function(e) NULL)
+    }
+  }
+  # check RETICULATE_PYTHON (reticulate's standard variable)
+  reticulate_python <- Sys.getenv("RETICULATE_PYTHON", unset = "")
+  if (reticulate_python != "" && file.exists(reticulate_python)) {
+    # if RETICULATE_PYTHON is set, reticulate should use it automatically
+    # just check if nutpie is available
+    if (coevolve::check_nutpie_available()) {
+      return(TRUE)
+    }
+  }
+  # if nutpie is already available (from previous configuration), return TRUE
+  if (coevolve::check_nutpie_available()) {
+    return(TRUE)
+  }
+  # if we get here, nutpie is not available
+  FALSE
+}
+
 # manually fix parameters in stan code
 manually_fix_parameters <- function(scode) {
   scode |>

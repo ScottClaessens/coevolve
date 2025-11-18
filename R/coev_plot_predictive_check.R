@@ -85,10 +85,14 @@ coev_plot_predictive_check <- function(object, variables = NULL,
       #' @srrstats {G2.0, G2.1, G2.2, G2.4, G2.4a} Assertion on length and type
       #' of input, convert to integer
       stop2("Argument 'ndraws' must be a single integer.")
-    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
-      stop2(
-        "Argument 'ndraws' must be between 1 and the total number of draws."
-      )
+    } else {
+      # Get number of draws from stored nsamples in coevfit object
+      n_draws_total <- object$nsamples
+      if (ndraws < 1 || ndraws > n_draws_total) {
+        stop2(
+          "Argument 'ndraws' must be between 1 and the total number of draws."
+        )
+      }
     }
   }
   # stop if tree_id is not a single integer between 1 and the total num trees
@@ -110,9 +114,9 @@ coev_plot_predictive_check <- function(object, variables = NULL,
   post <- posterior::as_draws_rvars(object$fit$draws(variables = "yrep"))
   # get draws ids
   if (is.null(ndraws)) {
-    draws_ids <- seq_len(nrow(object$fit$draws()))
+    draws_ids <- seq_len(object$nsamples)
   } else {
-    draws_ids <- sample(seq_len(nrow(object$fit$draws())), size = ndraws)
+    draws_ids <- sample(seq_len(object$nsamples), size = ndraws)
   }
   # get tree ids
   if (is.null(tree_id)) {
