@@ -146,19 +146,16 @@
 #'   \code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
 #'   specified, the model will be sampled using nutpie via reticulate. Note
 #'   that nutpie must be installed in your Python environment.
-#' @param low_rank_modified_mass_matrix Logical. If \code{TRUE}, enables
-#'   low-rank modified mass matrix adaptation for models with strong parameter
-#'   correlations (default: \code{FALSE}). Only used when \code{backend =
-#'   "nutpie"}. This is an experimental feature in nutpie that can improve
-#'   sampling efficiency for models with strong posterior correlations.
-#'   You can tune \code{mass_matrix_gamma} and \code{mass_matrix_eigval_cutoff}
-#'   via \code{...} arguments.
 #' @param ... Additional arguments. For sampling: arguments passed to
 #'   \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
 #'   \pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
 #'   \code{extra_stanc_args} and \code{extra_compile_args} work for both
 #'   samplers. Common sampling arguments include \code{chains},
-#'   \code{iter_sampling}, \code{iter_warmup}, and \code{seed}. Common
+#'   \code{iter_sampling}, \code{iter_warmup}, and \code{seed}. For
+#'   \code{backend = "nutpie"}, sampler-specific arguments such as
+#'   \code{low_rank_modified_mass_matrix} (logical, enables low-rank modified
+#'   mass matrix adaptation), \code{mass_matrix_gamma}, and
+#'   \code{mass_matrix_eigval_cutoff} can be passed via \code{...}. Common
 #'   compilation arguments include \code{extra_stanc_args = list("--O1")} for
 #'   optimization and \code{extra_compile_args = list("STAN_THREADS=true")} for
 #'   threading.
@@ -284,8 +281,7 @@ coev_fit <- function(data, variables, id, tree,
                      estimate_correlated_drift = TRUE,
                      estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
-                     adapt_delta = 0.95, backend = "cmdstanr",
-                     low_rank_modified_mass_matrix = FALSE, ...) {
+                     adapt_delta = 0.95, backend = "cmdstanr", ...) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments
@@ -377,8 +373,7 @@ coev_fit <- function(data, variables, id, tree,
           num_samples = num_samples,
           num_warmup = num_warmup,
           seed = seed,
-          target_accept = target_accept,
-          low_rank_modified_mass_matrix = low_rank_modified_mass_matrix
+          target_accept = target_accept
         ),
         nutpie_args
       )

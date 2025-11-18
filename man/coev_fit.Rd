@@ -22,7 +22,6 @@ coev_fit(
   prior_only = FALSE,
   adapt_delta = 0.95,
   backend = "cmdstanr",
-  low_rank_modified_mass_matrix = FALSE,
   ...
 )
 }
@@ -147,20 +146,16 @@ to the \code{target_accept} parameter.}
 specified, the model will be sampled using nutpie via reticulate. Note
 that nutpie must be installed in your Python environment.}
 
-\item{low_rank_modified_mass_matrix}{Logical. If \code{TRUE}, enables
-low-rank modified mass matrix adaptation for models with strong parameter
-correlations (default: \code{FALSE}). Only used when \code{backend =
-  "nutpie"}. This is an experimental feature in nutpie that can improve
-sampling efficiency for models with strong posterior correlations.
-You can tune \code{mass_matrix_gamma} and \code{mass_matrix_eigval_cutoff}
-via \code{...} arguments.}
-
 \item{...}{Additional arguments. For sampling: arguments passed to
 \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
 \pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
 \code{extra_stanc_args} and \code{extra_compile_args} work for both
 samplers. Common sampling arguments include \code{chains},
-\code{iter_sampling}, \code{iter_warmup}, and \code{seed}. Common
+\code{iter_sampling}, \code{iter_warmup}, and \code{seed}. For
+\code{backend = "nutpie"}, sampler-specific arguments such as
+\code{low_rank_modified_mass_matrix} (logical, enables low-rank modified
+mass matrix adaptation), \code{mass_matrix_gamma}, and
+\code{mass_matrix_eigval_cutoff} can be passed via \code{...}. Common
 compilation arguments include \code{extra_stanc_args = list("--O1")} for
 optimization and \code{extra_compile_args = list("STAN_THREADS=true")} for
 threading.}
