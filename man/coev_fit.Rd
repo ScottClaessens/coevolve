@@ -21,6 +21,7 @@ coev_fit(
   log_lik = FALSE,
   prior_only = FALSE,
   adapt_delta = 0.95,
+  backend = "cmdstanr",
   ...
 )
 }
@@ -135,9 +136,29 @@ WAIC and LOO.}
 the data and returns a posterior distribution. If \code{TRUE}, the model
 samples from the prior only, ignoring the likelihood.}
 
-\item{adapt_delta}{Argument for \pkg{cmdstanr::sample()}. Default is 0.95.}
+\item{adapt_delta}{Target acceptance probability for the NUTS sampler.
+Default is 0.95. For \code{backend = "cmdstanr"}, this is passed directly
+to \pkg{cmdstanr::sample()}. For \code{backend = "nutpie"}, this is mapped
+to the \code{target_accept} parameter.}
 
-\item{...}{Additional arguments for \pkg{cmdstanr::sample()}.}
+\item{backend}{Character string specifying which backend to use. Options are
+\code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
+specified, the model will be sampled using nutpie via reticulate. Note
+that nutpie must be installed in your Python environment.}
+
+\item{...}{Additional arguments. For sampling: arguments passed to
+\pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
+\pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
+\code{extra_stanc_args} and \code{extra_compile_args} work for both
+samplers. Common sampling arguments include \code{chains},
+\code{iter_sampling}, \code{iter_warmup}, and \code{seed}. For
+\code{backend = "nutpie"}, sampler-specific arguments such as
+\code{low_rank_modified_mass_matrix} (logical, enables low-rank modified
+mass matrix adaptation), \code{mass_matrix_gamma}, and
+\code{mass_matrix_eigval_cutoff} can be passed via \code{...}. Common
+compilation arguments include \code{extra_stanc_args = list("--O1")} for
+optimization and \code{extra_compile_args = list("STAN_THREADS=true")} for
+threading.}
 }
 \value{
 Fitted model of class \code{coevfit}

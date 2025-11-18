@@ -27,6 +27,29 @@ jobs:
           extra-packages: any::covr, any::xml2
           needs: coverage
 
+      - name: Set up Python for nutpie
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install nutpie
+        run: |
+          python -m pip install --upgrade pip
+          pip install "nutpie[stan]"
+        shell: bash
+
+      - name: Configure reticulate for nutpie
+        run: |
+          # Use python from PATH (setup-python ensures it's available)
+          python_path=$(which python || which python3)
+          if [ -z "$python_path" ]; then
+            echo "Error: Python not found in PATH"
+            exit 1
+          fi
+          echo "RETICULATE_PYTHON=$python_path" >> $GITHUB_ENV
+          echo "Configured RETICULATE_PYTHON=$python_path"
+        shell: bash
+
       - name: Build Cmdstan
         run: |
           cmdstanr::check_cmdstan_toolchain(fix = TRUE)

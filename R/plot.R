@@ -74,11 +74,17 @@ plot.coevfit <- function(x, parameters = NULL, combo = c("dens", "trace"),
   for (i in seq_len(n_plots)) {
     sub <- ((i - 1) * npars + 1):min(i * npars, length(parameters))
     sub_pars <- parameters[sub]
+    # Extract draws - handle both cmdstanr and nutpie
+    if (inherits(x$fit, "nutpie_fit")) {
+      # For nutpie, extract draws directly and subset
+      draws_obj <- x$fit$draws(variables = sub_pars)
+      draws_for_plot <- posterior::as_draws(draws_obj)
+    } else {
+      # For cmdstanr, use as_draws method
+      draws_for_plot <- posterior::as_draws(x$fit, variable = sub_pars)
+    }
     plots[[i]] <- bayesplot::mcmc_combo(
-      posterior::as_draws(
-        x$fit,
-        variable = sub_pars
-      ),
+      draws_for_plot,
       combo = combo
     )
     if (plot) {

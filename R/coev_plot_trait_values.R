@@ -66,7 +66,17 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
   # run checks
   run_checks_plot_trait_values(object, variables, ndraws, tree_id, xlim, ylim)
   # get posterior trait values
-  eta <- posterior::as_draws_rvars(object$fit)$eta
+  # Handle both cmdstanr and nutpie
+  if (inherits(object$fit, "nutpie_fit")) {
+    # For nutpie, extract draws first
+    draws_obj <- object$fit$draws()
+    draws_rvars <- posterior::as_draws_rvars(draws_obj)
+    eta <- draws_rvars$eta
+  } else {
+    # For cmdstanr, use as_draws_rvars method
+    draws_rvars <- posterior::as_draws_rvars(object$fit)
+    eta <- draws_rvars$eta
+  }
   # initial rvars dimensions: [trees, nodes, variables]
   # if particular tree defined, subset to that tree
   if (!is.null(tree_id)) eta <- eta[tree_id, , ]
@@ -326,10 +336,14 @@ run_checks_plot_trait_values <- function(object, variables, ndraws, tree_id,
       #' @srrstats {G2.0, G2.1, G2.2, G2.4, G2.4a} Assertion on length and type
       #' of input, convert to integer
       stop2("Argument 'ndraws' must be a single integer.")
-    } else if (ndraws < 1 || ndraws > nrow(object$fit$draws())) {
-      stop2(
-        "Argument 'ndraws' must be between 1 and the total number of draws."
-      )
+    } else {
+      # Get number of draws from stored nsamples in coevfit object
+      n_draws_total <- object$nsamples
+      if (ndraws < 1 || ndraws > n_draws_total) {
+        stop2(
+          "Argument 'ndraws' must be between 1 and the total number of draws."
+        )
+      }
     }
   }
   # stop if tree_id is not a single integer between 1 and the total num trees

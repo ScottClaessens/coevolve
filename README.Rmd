@@ -142,6 +142,48 @@ increase in the optimal trait value for religious authority, and vice versa.
 In other words, these two variables reciprocally coevolve over evolutionary
 time.
 
+### Optional: Using nutpie as an alternative sampler
+
+The **coevolve** package supports using `nutpie` as an alternative 
+high-performance sampler. To use nutpie:
+
+1. **Install nutpie** in a Python environment:
+
+   ```bash
+   pip install "nutpie[stan]"
+   ```
+
+2. **Configure reticulate** to use the Python environment with nutpie installed.
+   Choose one of the following options:
+
+   **Option A: Set environment variable** (recommended for reproducibility):
+   ```bash
+   export RETICULATE_PYTHON=/path/to/python
+   ```
+   Or in R:
+   ```r
+   Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
+   ```
+
+   **Option B: Use virtual environment**:
+   ```r
+   reticulate::use_virtualenv("~/.venvs/nutpie-env")
+   ```
+
+   **Option C: Use Python directly**:
+   ```r
+   reticulate::use_python("/path/to/python")
+   ```
+
+3. **Use nutpie** by setting `backend = "nutpie"` in `coev_fit()`:
+   ```r
+   fit <- coev_fit(..., backend = "nutpie")
+   ```
+
+**Note**: Explicit configuration is required to ensure reproducibility and avoid
+version conflicts. The package does not automatically search for nutpie 
+installations.
+
 ## Citing coevolve
 
 When using the **coevolve** package, please cite the following papers:

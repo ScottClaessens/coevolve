@@ -69,11 +69,40 @@ jobs:
             rcmdcheck
             readr
             rlang
+            reticulate
             rmarkdown
             stringr
             testthat
             tidyr
             withr
+
+      - name: Set up Python for nutpie
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install nutpie
+        run: |
+          python -m pip install --upgrade pip
+          pip install "nutpie[stan]"
+        shell: bash
+
+      - name: Configure reticulate for nutpie
+        run: |
+          # Use Python to get its own executable path (works cross-platform)
+          # This is more reliable than 'which' on Windows
+          python_path=$(python -c "import sys; print(sys.executable)")
+          if [ -z "$python_path" ]; then
+            echo "Error: Could not determine Python path"
+            python --version || echo "Python command not available"
+            exit 1
+          fi
+          # On Windows, convert backslashes to forward slashes for consistency
+          # (reticulate can handle both, but forward slashes are more portable)
+          python_path=$(echo "$python_path" | sed 's|\\|/|g')
+          echo "RETICULATE_PYTHON=$python_path" >> $GITHUB_ENV
+          echo "Configured RETICULATE_PYTHON=$python_path"
+        shell: bash
 
       - name: Build Cmdstan
         run: |
