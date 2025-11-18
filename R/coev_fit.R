@@ -314,45 +314,31 @@ coev_fit <- function(data, variables, id, tree,
   # fit model using specified sampler
   if (backend == "nutpie") {
     # check if nutpie is available
-    if (!check_nutpie_available()) {
-      stop2(
-        "nutpie is not available. Please install nutpie with: ",
-        "pip install 'nutpie[stan]'. ",
-        "You may also need to configure reticulate to find your Python ",
-        "installation."
-      )
-    }
+    stop_if_nutpie_not_available()
     # extract sampling arguments from ...
     # Only map essential cmdstanr arguments; pass everything else generically
     sample_args <- list(...)
     # Extract and map essential arguments
+    # uses default values if none have been specified
+    num_chains <- 4L
+    num_samples <- 1000L
+    num_warmup <- 1000L
+    seed <- NULL
     num_chains <- if ("chains" %in% names(sample_args)) {
       as.integer(sample_args$chains)
-    } else {
-      4L
     }
     num_samples <- if ("iter_sampling" %in% names(sample_args)) {
       as.integer(sample_args$iter_sampling)
-    } else {
-      1000L
     }
     num_warmup <- if ("iter_warmup" %in% names(sample_args)) {
       as.integer(sample_args$iter_warmup)
-    } else {
-      1000L
     }
     seed <- if ("seed" %in% names(sample_args)) {
       as.integer(sample_args$seed)
-    } else {
-      NULL
     }
     # Map cmdstanr argument names to nutpie argument names
     # adapt_delta -> target_accept (nutpie uses target_accept)
-    target_accept <- if ("adapt_delta" %in% names(sample_args)) {
-      as.double(sample_args$adapt_delta)
-    } else {
-      adapt_delta
-    }
+    target_accept <- adapt_delta
     # Create argument name mapping for nutpie-specific conversions
     # Maps cmdstanr argument names to nutpie argument names
     # If nutpie uses the same name, no mapping needed (it passes through)

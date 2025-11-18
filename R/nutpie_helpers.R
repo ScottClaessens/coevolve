@@ -60,6 +60,26 @@ check_nutpie_available <- function() {
   })
 }
 
+#' Stop if nutpie is not available via reticulate
+#'
+#' @srrstats {G1.4} Function is documented
+#'
+#' @description Stops if nutpie cannot be imported via reticulate.
+#'
+#' @returns Error message if nutpie is not available.
+#'
+#' @noRd
+stop_if_nutpie_not_available <- function() {
+  if (!check_nutpie_available()) {
+    stop2(
+      "nutpie is not available. Please install nutpie with: ",
+      "pip install 'nutpie[stan]'. ",
+      "You may also need to configure reticulate to find your Python ",
+      "installation."
+    )
+  }
+}
+
 #' Compile a Stan model using nutpie
 #'
 #' @srrstats {G1.4} Function is documented
@@ -129,13 +149,8 @@ check_nutpie_available <- function() {
 #'
 #' @noRd
 nutpie_compile_stan_model <- function(stan_code, ...) {
-  # check if nutpie is available
-  if (!check_nutpie_available()) {
-    stop2(
-      "nutpie is not available. Please install nutpie with: ",
-      "pip install 'nutpie[stan]'"
-    )
-  }
+  # stop if nutpie is not available
+  stop_if_nutpie_not_available()
   # import nutpie
   nutpie <- reticulate::import("nutpie", convert = FALSE)
   # prepare compilation arguments
@@ -322,13 +337,8 @@ nutpie_sample <- function(stan_code, data_list,
                           target_accept = NULL,
                           low_rank_modified_mass_matrix = FALSE,
                           ...) {
-  # check if nutpie is available
-  if (!check_nutpie_available()) {
-    stop2(
-      "nutpie is not available. Please install nutpie with: ",
-      "pip install 'nutpie[stan]'"
-    )
-  }
+  # stop if nutpie is not available
+  stop_if_nutpie_not_available()
   # import nutpie
   nutpie <- reticulate::import("nutpie", convert = FALSE)
   # separate compilation arguments from sampling arguments
@@ -463,10 +473,6 @@ def nutpie_call_with_data(compiled_model, data_dict):
 #'
 #' @noRd
 convert_nutpie_draws <- function(trace) {
-  # check if posterior package is available
-  if (!requireNamespace("posterior", quietly = TRUE)) {
-    stop2("The 'posterior' package is required for draw conversion.")
-  }
   # extract draws from nutpie InferenceData object
   # nutpie returns InferenceData (ArviZ) with posterior as xarray Dataset
   # format: trace$posterior$data_vars contains variables with dims (chain,

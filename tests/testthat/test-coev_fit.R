@@ -1046,3 +1046,36 @@ test_that("coev_fit() works with measurement error", {
   expect_output(sw(stancode(m)))
   expect_true(sw(methods::is(standata(m), "list")))
 })
+
+test_that("coev_fit() works with cmdstanr backend and nutpie arguments", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 3
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+  })
+  # expect no error
+  expect_no_error({
+    suppressWarnings(
+      coev_fit(
+        data = d,
+        variables = list(
+          x = "normal",
+          y = "normal"
+        ),
+        id = "id",
+        tree = tree,
+        chains = 1,
+        seed = 1,
+        refresh = 0,
+        backend = "cmdstanr",
+        extra_stanc_args = list("--O1"),
+        extra_compile_args = list(stan_threads = TRUE)
+      )
+    )
+  })
+})
