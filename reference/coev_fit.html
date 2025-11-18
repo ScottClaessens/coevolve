@@ -23,7 +23,7 @@ assessed and compared with posterior predictive checks and cross-validation."><m
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0.9007</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0.9008</span>
       </span>
     </div>
 
@@ -85,6 +85,7 @@ assessed and compared with posterior predictive checks and cross-validation.</p>
 <span>  log_lik <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  prior_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  adapt_delta <span class="op">=</span> <span class="fl">0.95</span>,</span>
+<span>  backend <span class="op">=</span> <span class="st">"cmdstanr"</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -234,11 +235,33 @@ samples from the prior only, ignoring the likelihood.</p></dd>
 
 
 <dt id="arg-adapt-delta">adapt_delta<a class="anchor" aria-label="anchor" href="#arg-adapt-delta"></a></dt>
-<dd><p>Argument for <span class="pkg">cmdstanr::sample()</span>. Default is 0.95.</p></dd>
+<dd><p>Target acceptance probability for the NUTS sampler.
+Default is 0.95. For <code>backend = "cmdstanr"</code>, this is passed directly
+to <span class="pkg">cmdstanr::sample()</span>. For <code>backend = "nutpie"</code>, this is mapped
+to the <code>target_accept</code> parameter.</p></dd>
+
+
+<dt id="arg-backend">backend<a class="anchor" aria-label="anchor" href="#arg-backend"></a></dt>
+<dd><p>Character string specifying which backend to use. Options are
+<code>"cmdstanr"</code> (default) or <code>"nutpie"</code>. When <code>"nutpie"</code> is
+specified, the model will be sampled using nutpie via reticulate. Note
+that nutpie must be installed in your Python environment.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments for <span class="pkg">cmdstanr::sample()</span>.</p></dd>
+<dd><p>Additional arguments. For sampling: arguments passed to
+<span class="pkg">cmdstanr::sample()</span> (when <code>backend = "cmdstanr"</code>) or
+<span class="pkg">nutpie.sample()</span> (when <code>backend = "nutpie"</code>). For compilation:
+<code>extra_stanc_args</code> and <code>extra_compile_args</code> work for both
+samplers. Common sampling arguments include <code>chains</code>,
+<code>iter_sampling</code>, <code>iter_warmup</code>, and <code>seed</code>. For
+<code>backend = "nutpie"</code>, sampler-specific arguments such as
+<code>low_rank_modified_mass_matrix</code> (logical, enables low-rank modified
+mass matrix adaptation), <code>mass_matrix_gamma</code>, and
+<code>mass_matrix_eigval_cutoff</code> can be passed via <code>...</code>. Common
+compilation arguments include <code>extra_stanc_args = list("--O1")</code> for
+optimization and <code>extra_compile_args = list("STAN_THREADS=true")</code> for
+threading.</p></dd>
 
 </dl></div>
     <div id="value">

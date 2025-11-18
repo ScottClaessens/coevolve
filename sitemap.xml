@@ -23,8 +23,10 @@
 <url><loc>https://scottclaessens.github.io/coevolve/reference/coev_pred_series.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/coev_simulate_coevolution.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/coevolve-package.html</loc></url>
+<url><loc>https://scottclaessens.github.io/coevolve/reference/draws.nutpie_fit.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/extract_samples.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/index.html</loc></url>
+<url><loc>https://scottclaessens.github.io/coevolve/reference/metadata.nutpie_fit.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/plot.coevfit.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/primates.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/print.coevfit.html</loc></url>
@@ -33,5 +35,6 @@
 <url><loc>https://scottclaessens.github.io/coevolve/reference/stancode.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/standata.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/summary.coevfit.html</loc></url>
+<url><loc>https://scottclaessens.github.io/coevolve/reference/summary.nutpie_fit.html</loc></url>
 </urlset>
 

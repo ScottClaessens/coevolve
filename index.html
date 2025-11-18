@@ -39,7 +39,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0.9007</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0.9008</span>
       </span>
     </div>
 
@@ -182,6 +182,37 @@
 <span><span class="co">#&gt; Warning: Removed 235 rows containing non-finite outside the scale range (`stat_density()`).</span></span></code></pre></div>
 <p><img src="reference/figures/README-authority-delta-theta-1.png" alt="Plot showing the posterior distributions of delta theta for both directions of coevolution between political and religious authority. The bulk of the posterior densities are greater than zero." width="60%" style="display: block; margin: auto;"></p>
 <p>This plot suggests that both variables influence one another in their coevolution. A standardised increase in political authority results in an increase in the optimal trait value for religious authority, and vice versa. In other words, these two variables reciprocally coevolve over evolutionary time.</p>
+<div class="section level3">
+<h3 id="optional-using-nutpie-as-an-alternative-sampler">Optional: Using nutpie as an alternative sampler<a class="anchor" aria-label="anchor" href="#optional-using-nutpie-as-an-alternative-sampler"></a>
+</h3>
+<p>The <strong>coevolve</strong> package supports using <code>nutpie</code> as an alternative high-performance sampler. To use nutpie:</p>
+<ol style="list-style-type: decimal">
+<li>
+<p><strong>Install nutpie</strong> in a Python environment:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="ex">pip</span> install <span class="st">"nutpie[stan]"</span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Configure reticulate</strong> to use the Python environment with nutpie installed. Choose one of the following options:</p>
+<p><strong>Option A: Set environment variable</strong> (recommended for reproducibility):</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="bu">export</span> <span class="va">RETICULATE_PYTHON</span><span class="op">=</span>/path/to/python</span></code></pre></div>
+<p>Or in R:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>RETICULATE_PYTHON <span class="op">=</span> <span class="st">"/path/to/python"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Option B: Use virtual environment</strong>:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu">use_virtualenv</span><span class="op">(</span><span class="st">"~/.venvs/nutpie-env"</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Option C: Use Python directly</strong>:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu">use_python</span><span class="op">(</span><span class="st">"/path/to/python"</span><span class="op">)</span></span></code></pre></div>
+</li>
+<li>
+<p><strong>Use nutpie</strong> by setting <code>backend = "nutpie"</code> in <code><a href="reference/coev_fit.html">coev_fit()</a></code>:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/coev_fit.html">coev_fit</a></span><span class="op">(</span><span class="va">...</span>, backend <span class="op">=</span> <span class="st">"nutpie"</span><span class="op">)</span></span></code></pre></div>
+</li>
+</ol>
+<p><strong>Note</strong>: Explicit configuration is required to ensure reproducibility and avoid version conflicts. The package does not automatically search for nutpie installations.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="citing-coevolve">Citing coevolve<a class="anchor" aria-label="anchor" href="#citing-coevolve"></a>
