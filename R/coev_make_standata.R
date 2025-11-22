@@ -338,7 +338,6 @@ coev_make_standata <- function(data, variables, id, tree,
   all_branch_lengths <- as.vector(stan_ts[stan_ts != -99 & stan_ts > 0])
   unique_lengths <- sort(unique(all_branch_lengths))
   n_unique_lengths <- length(unique_lengths)
-
   # create mapping from segments to unique length indices
   # (0 for root, 1+ for branches)
   stan_length_index <- matrix(0L, n_tree, n_seg)
@@ -352,7 +351,6 @@ coev_make_standata <- function(data, variables, id, tree,
       }
     }
   }
-
   # create mapping from tips to segments (for VCV_tips caching)
   stan_tip_to_seg <- matrix(0L, n_tree, length(tree[[1]]$tip.label))
   for (t in seq_along(tree)) {
@@ -365,7 +363,6 @@ coev_make_standata <- function(data, variables, id, tree,
       }
     }
   }
-
   # get data matrix
   y <- list()
   for (j in seq_along(variables)) {
@@ -441,9 +438,8 @@ coev_make_standata <- function(data, variables, id, tree,
     tip_id = tip_id,                      # tip ids
     N_unique_lengths = n_unique_lengths,  # number of unique branch lengths
     unique_lengths = unique_lengths,      # unique branch lengths for caching
-    length_index = stan_length_index,      # mapping from segments to unique
-    # lengths
-    tip_to_seg = stan_tip_to_seg         # mapping from tips to segments
+    length_index = stan_length_index,     # mapping segments to unique lengths
+    tip_to_seg = stan_tip_to_seg          # mapping from tips to segments
   )
   # add distance matrix if specified
   if (!is.null(dist_mat)) sd[["dist_mat"]] <- dist_mat

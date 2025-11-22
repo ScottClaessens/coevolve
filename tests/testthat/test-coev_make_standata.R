@@ -1181,3 +1181,43 @@ test_that("coev_make_standata() works with measurement error", {
   expect_true(all(sd1$se[, 3] == 0))
   expect_true(all(sd2$se[, 3] == 0))
 })
+
+test_that("coev_make_standata() does correct caching for Stan", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+  })
+  # make stan data list
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree
+    )
+  # test caching computations
+  lengths <- as.vector(sd$ts)[-1]
+  unique_lengths <- sort(unique(lengths))
+  expect_equal(sd$N_unique_lengths, length(unique_lengths))
+  expect_equal(sd$unique_lengths, unique_lengths)
+  expect_equal(as.vector(sd$length_index), c(0, match(lengths, unique_lengths)))
+  stan_tip_to_seg <- matrix(0L, 1L, length(tree$tip.label))
+  for (seg in 1:sd$N_seg) {
+    if (sd$tip[1, seg] == 1) {
+      tip_node <- sd$node_seq[1, seg]
+      if (tip_node >= 1 && tip_node <= length(tree$tip.label)) {
+        stan_tip_to_seg[1, tip_node] <- seg
+      }
+    }
+  }
+  expect_equal(sd$tip_to_seg, stan_tip_to_seg)
+})
