@@ -1,6 +1,6 @@
 Package: coevolve
 Title: Fit Bayesian Generalized Dynamic Phylogenetic Models using 'Stan'
-Version: 0.1.0.9008
+Version: 0.1.0.9009
 Authors@R: 
     c(person("Scott", "Claessens", , "scott.claessens@gmail.com", 
              role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3562-6981")),
