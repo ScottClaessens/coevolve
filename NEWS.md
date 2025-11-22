@@ -3,7 +3,7 @@
 ### New Features
 
 * Added `nutpie` as an alternative sampler for the Stan models (#92)
-* Re-use matrix computations when branch lengths are identical (#93)
+* Re-use matrix computations when branch lengths are identical (#93) 
 
 ### Other Changes
 
