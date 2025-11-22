@@ -803,7 +803,9 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   expect_equal(
     names(sd1),
     c("N_tips", "N_tree", "N_obs", "J", "N_seg", "node_seq", "parent", "ts",
-      "tip", "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
+      "tip", "effects_mat", "num_effects", "y", "miss", "tip_id",
+      "N_unique_lengths", "unique_lengths", "length_index", "tip_to_seg",
+      "prior_only")
   )
   expect_equal(sd1$prior_only, 0)
   # include distance matrix
@@ -828,8 +830,9 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   expect_equal(
     names(sd2),
     c("N_tips", "N_tree", "N_obs", "J", "N_seg", "node_seq", "parent", "ts",
-      "tip", "effects_mat", "num_effects", "y", "miss", "tip_id", "dist_mat",
-      "prior_only")
+      "tip", "effects_mat", "num_effects", "y", "miss", "tip_id",
+      "N_unique_lengths", "unique_lengths", "length_index", "tip_to_seg",
+      "dist_mat", "prior_only")
   )
   expect_equal(sd2$prior_only, 0)
   # set prior only
@@ -849,7 +852,9 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
   expect_equal(
     names(sd3),
     c("N_tips", "N_tree", "N_obs", "J", "N_seg", "node_seq", "parent", "ts",
-      "tip", "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
+      "tip", "effects_mat", "num_effects", "y", "miss", "tip_id",
+      "N_unique_lengths", "unique_lengths", "length_index", "tip_to_seg",
+      "prior_only")
   )
   expect_equal(sd3$prior_only, 1)
 })
@@ -1079,7 +1084,9 @@ test_that("coev_make_standata() works with tibbles", {
   expect_equal(
     names(sd),
     c("N_tips", "N_tree", "N_obs", "J", "N_seg", "node_seq", "parent", "ts",
-      "tip", "effects_mat", "num_effects", "y", "miss", "tip_id", "prior_only")
+      "tip", "effects_mat", "num_effects", "y", "miss", "tip_id",
+      "N_unique_lengths", "unique_lengths", "length_index", "tip_to_seg",
+      "prior_only")
   )
   expect_equal(sd$prior_only, 0)
 })
@@ -1173,4 +1180,44 @@ test_that("coev_make_standata() works with measurement error", {
   # se set to zero for non-normal variables
   expect_true(all(sd1$se[, 3] == 0))
   expect_true(all(sd2$se[, 3] == 0))
+})
+
+test_that("coev_make_standata() does correct caching for Stan", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+  })
+  # make stan data list
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree
+    )
+  # test caching computations
+  lengths <- as.vector(sd$ts)[-1]
+  unique_lengths <- sort(unique(lengths))
+  expect_equal(sd$N_unique_lengths, length(unique_lengths))
+  expect_equal(sd$unique_lengths, unique_lengths)
+  expect_equal(as.vector(sd$length_index), c(0, match(lengths, unique_lengths)))
+  stan_tip_to_seg <- matrix(0L, 1L, length(tree$tip.label))
+  for (seg in 1:sd$N_seg) {
+    if (sd$tip[1, seg] == 1) {
+      tip_node <- sd$node_seq[1, seg]
+      if (tip_node >= 1 && tip_node <= length(tree$tip.label)) {
+        stan_tip_to_seg[1, tip_node] <- seg
+      }
+    }
+  }
+  expect_equal(sd$tip_to_seg, stan_tip_to_seg)
 })

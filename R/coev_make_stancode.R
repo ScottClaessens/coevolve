@@ -467,7 +467,20 @@ write_data_block <- function(measurement_error, dist_mat) {
       !is.null(measurement_error),
       "  matrix[N_obs,J] se; // squared standard errors\n", ""
     ),
-    "  array[N_obs] int<lower=1> tip_id; // group index between 1 and N_tips\n"
+    "  array[N_obs] int<lower=1> tip_id; // group index between 1 and N_tips\n",
+    "  int<lower=1> N_unique_lengths; // number of unique branch lengths\n",
+    paste0(
+      "  array[N_unique_lengths] real unique_lengths; ",
+      "// unique branch lengths for caching\n"
+    ),
+    paste0(
+      "  array[N_tree, N_seg] int<lower=0> length_index; ",
+      "// mapping from segments to unique lengths\n"
+    ),
+    paste0(
+      "  array[N_tree, N_tips] int<lower=0> tip_to_seg; ",
+      "// mapping from tips to segments\n"
+    )
   )
   # add distance matrix if user has defined one
   if (!is.null(dist_mat)) {
@@ -695,48 +708,92 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "  }\n",
     "  // calculate asymptotic covariance\n",
     "  Q_inf = ksolve(A, Q);\n",
-    "  // loop over phylogenetic trees\n",
-    "  for (t in 1:N_tree) {\n",
-    "    // setting ancestral states and placeholders\n",
-    "    eta[t, node_seq[t, 1]] = eta_anc[t];\n",
-    "    VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(-99, J));\n",
-    "    for (i in 2:N_seg) {\n",
-    "      matrix[J,J] A_delta; // amount of deterministic change\n",
-    "      matrix[J,J] VCV; // vcov matrix of stochastic change\n",
-    "      vector[J] drift_seg; // accumulated drift over the segment\n",
-    "      A_delta = matrix_exp(A * ts[t, i]);\n",
-    "      VCV = Q_inf - quad_form_sym(Q_inf, A_delta');\n",
-    "      drift_seg = cholesky_decompose(VCV) * z_drift[t, i-1];\n",
-    "      // if not a tip, add the drift parameter\n",
-    "      if (tip[t, i] == 0) {\n",
-    "        eta[t, node_seq[t, i]] = to_vector(\n",
-    "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1))",
-    " * b) + drift_seg\n",
-    "        );\n",
-    "        VCV_tips[t, node_seq[t, i]] = diag_matrix(rep_vector(-99, J));\n",
+    "  array[N_unique_lengths] matrix[J,J] L_VCV_tips_cache;\n",
+    "  {\n",
+    "    array[N_unique_lengths] matrix[J,J] A_delta_cache;\n",
+    "    array[N_unique_lengths] matrix[J,J] VCV_cache;\n",
+    "    array[N_unique_lengths] matrix[J,J] L_VCV_cache;\n",
+    "    array[N_unique_lengths] matrix[J,J] A_solve_cache;\n",
+    "    for (u in 1:N_unique_lengths) {\n",
+    "      A_delta_cache[u] = matrix_exp(A * unique_lengths[u]);\n",
+    "      VCV_cache[u] = Q_inf - quad_form_sym(Q_inf, A_delta_cache[u]');\n",
+    "      L_VCV_cache[u] = cholesky_decompose(VCV_cache[u]);\n",
+    "      A_solve_cache[u] = A \\ add_diag(A_delta_cache[u], -1);\n",
+    "      for (i in 1:J) {\n",
+    "        for (j in 1:i) {\n",
+    "          real val = 0.5 * (A_solve_cache[u][i, j] + ",
+    "A_solve_cache[u][j, i]);\n",
+    "          A_solve_cache[u][i, j] = val;\n",
+    "          A_solve_cache[u][j, i] = val;\n",
+    "        }\n",
     "      }\n",
-    "      // if is a tip, omit, we'll deal with it in the model block;\n",
-    "      else {\n",
-    "        eta[t, node_seq[t, i]] = to_vector(\n",
-    "          A_delta * eta[t, parent[t, i]] + ((A \\ add_diag(A_delta, -1))",
-    " * b)\n",
-    "        );\n",
-    "        VCV_tips[t, node_seq[t, i]] = VCV;\n",
+    "    }\n",
+    "    L_VCV_tips_cache = L_VCV_cache;\n",
+    "    for (t in 1:N_tree) {\n",
+    "      // setting ancestral states and placeholders\n",
+    "      eta[t, node_seq[t, 1]] = eta_anc[t];\n",
+    "      VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(-99, J));\n",
+    "      for (i in 2:N_seg) {\n",
+    "        matrix[J,J] A_delta;\n",
+    "        matrix[J,J] VCV;\n",
+    "        vector[J] drift_seg;\n",
+    "        matrix[J,J] L_VCV;\n",
+    "        matrix[J,J] A_solve;\n",
+    "        if (length_index[t, i] > 0) {\n",
+    "          A_delta = A_delta_cache[length_index[t, i]];\n",
+    "          VCV = VCV_cache[length_index[t, i]];\n",
+    "          L_VCV = L_VCV_cache[length_index[t, i]];\n",
+    "          A_solve = A_solve_cache[length_index[t, i]];\n",
+    "        } else {\n",
+    "          A_delta = matrix_exp(A * ts[t, i]);\n",
+    "          VCV = Q_inf - quad_form_sym(Q_inf, A_delta');\n",
+    "          L_VCV = cholesky_decompose(VCV);\n",
+    "          A_solve = A \\ add_diag(A_delta, -1);\n",
+    "        }\n",
+    "        drift_seg = L_VCV * z_drift[t, i-1];\n",
+    "        // if not a tip, add the drift parameter\n",
+    "        if (tip[t, i] == 0) {\n",
+    "          eta[t, node_seq[t, i]] = to_vector(\n",
+    "            A_delta * eta[t, parent[t, i]] + (A_solve * b) + drift_seg\n",
+    "          );\n",
+    "          VCV_tips[t, node_seq[t, i]] = diag_matrix(rep_vector(-99, J));",
+    "\n",
+    "        }\n",
+    "        // if is a tip, omit, we'll deal with it in the model block;\n",
+    "        else {\n",
+    "          eta[t, node_seq[t, i]] = to_vector(\n",
+    "            A_delta * eta[t, parent[t, i]] + (A_solve * b)\n",
+    "          );\n",
+    "          VCV_tips[t, node_seq[t, i]] = VCV;\n",
+    "        }\n",
     "      }\n",
-    "    }\n"
+    "    }\n",
+    "  }\n"
   )
   # if repeated observations or no gaussian traits, calculate tdrift
   if ((any(duplicated(data[, id])) && estimate_residual) ||
         !("normal" %in% distributions)) {
     sc_transformed_parameters <- paste0(
       sc_transformed_parameters,
+      "  for (t in 1:N_tree) {\n",
       "    for (i in 1:N_tips) {\n",
-      "      tdrift[t,i] = cholesky_decompose(VCV_tips[t,i]) * ",
+      paste0(
+        "      if (tip_to_seg[t, i] > 0 && ",
+        "length_index[t, tip_to_seg[t, i]] > 0) {\n"
+      ),
+      paste0(
+        "        tdrift[t,i] = L_VCV_tips_cache[",
+        "length_index[t, tip_to_seg[t, i]]] * ",
+        "to_vector(terminal_drift[t][i,]);\n"
+      ),
+      "      } else {\n",
+      "        tdrift[t,i] = cholesky_decompose(VCV_tips[t,i]) * ",
       "to_vector(terminal_drift[t][i,]);\n",
-      "    }\n"
+      "      }\n",
+      "    }\n",
+      "  }\n"
     )
   }
-  sc_transformed_parameters <- paste0(sc_transformed_parameters, "  }\n")
   # get code for gaussian process kernel
   if (dist_cov == "exp_quad") {
     # exponentiated quadratic kernel

@@ -175,56 +175,49 @@ for (seed in 1:3) {
 #' @srrstats {BS7.3} Algorithm scaling test
 test_that("coev_fit() scales with increasing observations", {
   skip_if_not(run_extended_tests)
-  # get smaller dataset
+  # get dataset with repeated measures
   withr::with_seed(1, {
-    n_small <- 50
-    tree_small <- ape::rcoal(n_small)
-    d_small <- data.frame(
-      id = tree_small$tip.label,
-      x = rnorm(n_small),
-      y = rnorm(n_small)
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
     )
+    d <- rbind(d, d, d)
   })
-  # fit model to smaller dataset
+  # fit model
   fit_small <-
     coev_fit(
-      data = d_small,
+      data = d,
       variables = list(
         x = "normal",
         y = "normal"
       ),
       id = "id",
-      tree = tree_small,
+      tree = tree,
+      estimate_residual = FALSE,
       chains = 1,
       refresh = 0,
       seed = 1
     )
-  s_small <- suppressWarnings(summary(fit_small))
-  # get larger dataset
-  withr::with_seed(1, {
-    n_large <- 100
-    tree_large <- ape::rcoal(n_large)
-    d_large <- data.frame(
-      id = tree_large$tip.label,
-      x = rnorm(n_large),
-      y = rnorm(n_large)
-    )
-  })
-  # fit model to larger dataset
+  s_small <- fit_small$fit$summary()
+  # fit model with 5x the number of observations
   fit_large <-
     coev_fit(
-      data = d_large,
+      data = rbind(d, d, d, d, d),
       variables = list(
         x = "normal",
         y = "normal"
       ),
       id = "id",
-      tree = tree_large,
+      tree = tree,
+      estimate_residual = FALSE,
       chains = 1,
       refresh = 0,
       seed = 1
     )
-  s_large <- suppressWarnings(summary(fit_large))
+  s_large <- fit_large$fit$summary()
   # check models converged
   expect_lt(
     max(suppressWarnings(fit_small$fit$summary())$rhat, na.rm = TRUE),
@@ -235,12 +228,15 @@ test_that("coev_fit() scales with increasing observations", {
     1.1
   )
   # standard errors should be smaller with more observations
-  expect_lt(s_large$auto[1, "Est.Error"], s_small$auto[1, "Est.Error"])
-  expect_lt(s_large$auto[2, "Est.Error"], s_small$auto[2, "Est.Error"])
-  expect_lt(s_large$cross[1, "Est.Error"], s_small$cross[1, "Est.Error"])
-  expect_lt(s_large$cross[2, "Est.Error"], s_small$cross[2, "Est.Error"])
-  expect_lt(s_large$sd_drift[1, "Est.Error"], s_small$sd_drift[1, "Est.Error"])
-  expect_lt(s_large$sd_drift[2, "Est.Error"], s_small$sd_drift[2, "Est.Error"])
+  # autoregressive effects
+  expect_lt(as.numeric(s_large[1, "sd"]), as.numeric(s_small[1, "sd"]))
+  expect_lt(as.numeric(s_large[2, "sd"]), as.numeric(s_small[2, "sd"]))
+  # cross effects
+  expect_lt(as.numeric(s_large[3, "sd"]), as.numeric(s_small[3, "sd"]))
+  expect_lt(as.numeric(s_large[4, "sd"]), as.numeric(s_small[4, "sd"]))
+  # sd drift
+  expect_lt(as.numeric(s_large[10, "sd"]), as.numeric(s_small[10, "sd"]))
+  expect_lt(as.numeric(s_large[11, "sd"]), as.numeric(s_small[11, "sd"]))
   # larger data set takes longer to converge
   expect_lt(
     fit_small$fit$time()$total,
