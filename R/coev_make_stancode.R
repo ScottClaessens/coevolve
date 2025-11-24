@@ -659,7 +659,8 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
       "  matrix[J,J] Q = diag_matrix(Q_sigma^2); // drift matrix\n"
     ),
     "  matrix[J,J] Q_inf; // asymptotic covariance matrix\n",
-    "  array[N_tree, N_seg] matrix[J,J] VCV_tips; // vcov matrix for drift\n"
+    "  array[N_tree, N_seg] matrix[J,J] VCV_tips; // vcov matrix for drift\n",
+    "  array[N_tree, N_seg] matrix[J,J] L_VCV_tips; // Cholesky factor of VCV_tips\n"
   )
   # add distance random effects if distance matrix specified by user
   if (!is.null(dist_mat)) {
@@ -708,7 +709,6 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "  }\n",
     "  // calculate asymptotic covariance\n",
     "  Q_inf = ksolve(A, Q);\n",
-    "  array[N_unique_lengths] matrix[J,J] L_VCV_tips_cache;\n",
     "  {\n",
     "    array[N_unique_lengths] matrix[J,J] A_delta_cache;\n",
     "    array[N_unique_lengths] matrix[J,J] VCV_cache;\n",
@@ -728,11 +728,11 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "        }\n",
     "      }\n",
     "    }\n",
-    "    L_VCV_tips_cache = L_VCV_cache;\n",
     "    for (t in 1:N_tree) {\n",
-    "      // setting ancestral states and placeholders\n",
-    "      eta[t, node_seq[t, 1]] = eta_anc[t];\n",
-    "      VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(-99, J));\n",
+      "      // setting ancestral states and placeholders\n",
+      "      eta[t, node_seq[t, 1]] = eta_anc[t];\n",
+      "      VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(-99, J));\n",
+      "      L_VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(1.0, J));\n",
     "      for (i in 2:N_seg) {\n",
     "        matrix[J,J] A_delta;\n",
     "        matrix[J,J] VCV;\n",
@@ -751,21 +751,22 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     "          A_solve = A \\ add_diag(A_delta, -1);\n",
     "        }\n",
     "        drift_seg = L_VCV * z_drift[t, i-1];\n",
-    "        // if not a tip, add the drift parameter\n",
-    "        if (tip[t, i] == 0) {\n",
-    "          eta[t, node_seq[t, i]] = to_vector(\n",
-    "            A_delta * eta[t, parent[t, i]] + (A_solve * b) + drift_seg\n",
-    "          );\n",
-    "          VCV_tips[t, node_seq[t, i]] = diag_matrix(rep_vector(-99, J));",
-    "\n",
-    "        }\n",
-    "        // if is a tip, omit, we'll deal with it in the model block;\n",
-    "        else {\n",
-    "          eta[t, node_seq[t, i]] = to_vector(\n",
-    "            A_delta * eta[t, parent[t, i]] + (A_solve * b)\n",
-    "          );\n",
-    "          VCV_tips[t, node_seq[t, i]] = VCV;\n",
-    "        }\n",
+        "        // if not a tip, add the drift parameter\n",
+        "        if (tip[t, i] == 0) {\n",
+        "          eta[t, node_seq[t, i]] = to_vector(\n",
+        "            A_delta * eta[t, parent[t, i]] + (A_solve * b) + drift_seg\n",
+        "          );\n",
+        "          VCV_tips[t, node_seq[t, i]] = diag_matrix(rep_vector(-99, J));\n",
+        "          L_VCV_tips[t, node_seq[t, i]] = diag_matrix(rep_vector(1.0, J));\n",
+        "        }\n",
+        "        // if is a tip, omit, we'll deal with it in the model block;\n",
+        "        else {\n",
+        "          eta[t, node_seq[t, i]] = to_vector(\n",
+        "            A_delta * eta[t, parent[t, i]] + (A_solve * b)\n",
+        "          );\n",
+        "          VCV_tips[t, node_seq[t, i]] = VCV;\n",
+        "          L_VCV_tips[t, node_seq[t, i]] = L_VCV;\n",
+        "        }\n",
     "      }\n",
     "    }\n",
     "  }\n"
@@ -782,13 +783,14 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
         "length_index[t, tip_to_seg[t, i]] > 0) {\n"
       ),
       paste0(
-        "        tdrift[t,i] = L_VCV_tips_cache[",
-        "length_index[t, tip_to_seg[t, i]]] * ",
+        "        tdrift[t,i] = L_VCV_tips[t, tip_to_seg[t, i]] * ",
         "to_vector(terminal_drift[t][i,]);\n"
       ),
       "      } else {\n",
-      "        tdrift[t,i] = cholesky_decompose(VCV_tips[t,i]) * ",
-      "to_vector(terminal_drift[t][i,]);\n",
+      paste0(
+        "        tdrift[t,i] = L_VCV_tips[t, tip_to_seg[t, i]] * ",
+        "to_vector(terminal_drift[t][i,]);\n"
+      ),
       "      }\n",
       "    }\n",
       "  }\n"
@@ -1044,14 +1046,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
       sc_model <- paste0(
         sc_model,
         "        lp[t] = multi_normal_cholesky_lpdf(tdrift | rep_vector(0.0, ",
-        "J), cholesky_decompose(",
-        ifelse(
-          !is.null(measurement_error),
-          # add squared standard errors to diagonal of VCV_tips
-          "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
-          "VCV_tips[t, tip_id[i]]"
-        ),
-        "));\n"
+        "J), L_VCV_tips[t, tip_to_seg[t, tip_id[i]]]);\n"
       )
     }
   }
