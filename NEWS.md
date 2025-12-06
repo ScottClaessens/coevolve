@@ -1,5 +1,9 @@
 # coevolve (development version)
 
+### Bug Fixes
+
+* Fixed issue with `summary()` when `estimate_residual = FALSE` (#95)
+
 ### New Features
 
 * Added `nutpie` as an alternative sampler for the Stan models (#92)
