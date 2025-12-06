@@ -185,5 +185,5 @@ coev_plot_predictive_check <- function(object, variables = NULL,
     # add to plot list
     out[[variable]] <- pp
   }
-  return(out)
+  out
 }

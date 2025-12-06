@@ -251,7 +251,7 @@ coev_pred_series <- function(object, eta_anc = NULL, intervention_values = NULL,
       }
     }
   }
-  return(preds)
+  preds
 }
 
 #' Internal helper function for checking coev_pred_series() arguments

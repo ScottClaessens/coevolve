@@ -9,13 +9,13 @@ data <-
       "online_practical_material/data_files/ch11/data_repeat.txt"
     ),
     header = TRUE
-  ) %>%
+  ) |>
   # rename variables
   transmute(
     species = species,
     x = cofactor,
     y = phen
-  ) %>%
+  ) |>
   # only include species 1-20
   filter(species %in% paste0("sp_", 1:20))
 

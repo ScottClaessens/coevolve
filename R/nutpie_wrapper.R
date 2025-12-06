@@ -91,7 +91,7 @@ create_nutpie_wrapper <- function(trace, draws_array, stan_variables,
       })
     } else {
       # for other diagnostics, return empty structure
-      return(list())
+      list()
     }
   }
   wrapper
@@ -115,10 +115,10 @@ create_nutpie_wrapper <- function(trace, draws_array, stan_variables,
 #' @export
 draws.nutpie_fit <- function(x, variables = NULL, ...) {
   if (is.null(variables)) {
-    return(x$draws_array)
+    x$draws_array
   } else {
     # Subset to requested variables
-    return(posterior::subset_draws(x$draws_array, variable = variables))
+    posterior::subset_draws(x$draws_array, variable = variables)
   }
 }
 

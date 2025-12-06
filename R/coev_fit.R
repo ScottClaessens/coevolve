@@ -478,5 +478,5 @@ coev_fit <- function(data, variables, id, tree,
       has_lp__ = has_lp__  # whether lp__ variable exists
     )
   class(out) <- "coevfit"
-  return(out)
+  out
 }

@@ -460,5 +460,5 @@ coev_make_standata <- function(data, variables, id, tree,
     )
   }
   # return stan data
-  return(sd)
+  sd
 }

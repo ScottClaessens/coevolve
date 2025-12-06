@@ -22,7 +22,7 @@ brain_data <-
   read_xls(
     path = temp,
     sheet = 3
-  ) %>%
+  ) |>
   # rename columns
   transmute(
     species = Taxon,
@@ -34,7 +34,7 @@ body_data <-
   read_xls(
     path = temp,
     sheet = 4
-  ) %>%
+  ) |>
   # rename columns
   transmute(
     species = Taxon,
@@ -46,7 +46,7 @@ diet_data <-
   read_xls(
     path = temp,
     sheet = 5
-  ) %>%
+  ) |>
   # rename columns
   transmute(
     species = Taxon,
@@ -67,7 +67,7 @@ system_data <-
   read_xls(
     path = temp,
     sheet = 6
-  ) %>%
+  ) |>
   # rename columns
   transmute(
     species = Taxon,
@@ -81,7 +81,7 @@ group_size_data <-
     path = temp,
     sheet = 8,
     skip = 5
-  ) %>%
+  ) |>
   # rename columns
   transmute(
     species = `Row Labels`,
@@ -90,11 +90,11 @@ group_size_data <-
 
 # put datasets together
 data <-
-  brain_data %>%
-  left_join(body_data, by = "species") %>%
-  left_join(diet_data, by = "species") %>%
-  left_join(system_data, by = "species") %>%
-  left_join(group_size_data, by = "species") %>%
+  brain_data |>
+  left_join(body_data, by = "species") |>
+  left_join(diet_data, by = "species") |>
+  left_join(system_data, by = "species") |>
+  left_join(group_size_data, by = "species") |>
   # remove one species not present in phylogeny
   filter(species != "Hoolock_hoolock")
 
@@ -250,9 +250,9 @@ clade <-
 
 # link clade data
 data <-
-  data %>%
-  left_join(clade, by = "species") %>%
-  dplyr::select(species, clade, everything()) %>%
+  data |>
+  left_join(clade, by = "species") |>
+  dplyr::select(species, clade, everything()) |>
   as.data.frame()
 
 # load consensus phylogeny of primates from 10k trees website

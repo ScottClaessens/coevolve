@@ -213,5 +213,5 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
   }
   # add column names to theta matrix
   colnames(theta) <- names(object$variables)
-  return(theta)
+  theta
 }

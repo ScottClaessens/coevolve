@@ -326,7 +326,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     )
   }
   # return stan code
-  return(sc)
+  sc
 }
 
 #' Internal function for writing the Stan functions block

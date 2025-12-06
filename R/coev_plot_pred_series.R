@@ -230,5 +230,5 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
   } else {
     stop2("Invalid value for 'stochastic'. Must be TRUE or FALSE.")
   }
-  return(p)
+  p
 }

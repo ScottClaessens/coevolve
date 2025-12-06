@@ -38,13 +38,13 @@ data <-
     political_authority,
     religious_authority,
     by = "Language"
-  ) %>%
+  ) |>
   # rename and mutate variables in dataset
   transmute(
     language = Language,
     political_authority = authority_levels[`Political Authority` + 1],
     religious_authority = authority_levels[`Religious Authority` + 1]
-  ) %>%
+  ) |>
   # get dataset as data frame
   as.data.frame()
 
@@ -68,9 +68,9 @@ lon_lat <-
       "data/authority_coordinates.txt"
     ),
     col_types = "cd"
-  ) %>%
-  dplyr::select(Language, Longitude, Latitude) %>%
-  column_to_rownames(var = "Language") %>%
+  ) |>
+  dplyr::select(Language, Longitude, Latitude) |>
+  column_to_rownames(var = "Language") |>
   as.matrix()
 
 # convert to geographic distance matrix

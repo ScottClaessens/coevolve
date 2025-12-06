@@ -222,12 +222,11 @@ coev_simulate_coevolution <- function(n,
   # prune phylogenetic tree as well
   tree <- ape::keep.tip(ape::read.tree(text = tree), d$species)
   # return a list with data of the run and phylogenetic tree
-  out <- list(
+  list(
     data = d,
     simulation = sim,
     tree = tree
   )
-  return(out)
 }
 
 #' Internal helper function for checking coev_simulate_coevolution() arguments
