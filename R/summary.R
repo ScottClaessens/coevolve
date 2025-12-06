@@ -196,7 +196,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   # summarise residual sds and correlations
   sd_residual <- NULL
   cor_residual <- NULL
-  if (any(duplicated(object$data[, object$id]))) {
+  if (any(duplicated(object$data[, object$id])) & object$estimate_residual) {
     # sd parameters
     sd_residual <- s[stringr::str_starts(s$variable, "sigma_residual"), ]
     rownames(sd_residual) <- paste0(
