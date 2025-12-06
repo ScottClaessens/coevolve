@@ -3,7 +3,7 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   coevolve: coevolve.html
-last_built: 2025-11-22T21:21Z
+last_built: 2025-12-06T12:50Z
 urls:
   reference: https://scottclaessens.github.io/coevolve/reference
   article: https://scottclaessens.github.io/coevolve/articles
