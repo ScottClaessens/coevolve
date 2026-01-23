@@ -781,20 +781,8 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
       sc_transformed_parameters,
       "  for (t in 1:N_tree) {\n",
       "    for (i in 1:N_tips) {\n",
-      paste0(
-        "      if (tip_to_seg[t, i] > 0 && ",
-        "length_index[t, tip_to_seg[t, i]] > 0) {\n"
-      ),
-      paste0(
-        "        tdrift[t,i] = L_VCV_tips[t, tip_to_seg[t, i]] * ",
-        "to_vector(terminal_drift[t][i,]);\n"
-      ),
-      "      } else {\n",
-      paste0(
-        "        tdrift[t,i] = L_VCV_tips[t, tip_to_seg[t, i]] * ",
-        "to_vector(terminal_drift[t][i,]);\n"
-      ),
-      "      }\n",
+      "      tdrift[t,i] = L_VCV_tips[t, i] * ",
+      "to_vector(terminal_drift[t][i,]);\n",
       "    }\n",
       "  }\n"
     )
@@ -1055,10 +1043,10 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
           # add squared standard errors to diagonal of VCV_tips
           paste0(
             "cholesky_decompose(",
-            "add_diag(VCV_tips[t, tip_to_seg[t, tip_id[i]]], se[i,])",
+            "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
             ")"
           ),
-          "L_VCV_tips[t, tip_to_seg[t, tip_id[i]]]"
+          "L_VCV_tips[t, tip_id[i]]"
         ),
         ");\n"
       )
