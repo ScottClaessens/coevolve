@@ -396,42 +396,24 @@ write_data_block <- function(measurement_error, dist_mat) {
 #'
 #' @noRd
 write_transformed_data_block <- function(distributions, priors) {
-  sc_transformed_data <- "transformed data{\n"
-  for (j in seq_along(distributions)) {
-    sc_transformed_data <- paste0(
-      sc_transformed_data,
-      "  vector[to_int(N_obs - sum(col(miss, ", j,
-      ")))] obs", j, "; // observed data for variable ", j, "\n"
+  # parameters for template
+  variable_seq <- lapply(seq_along(distributions), function(j) list(j = j))
+  if ("negative_binomial_softplus" %in% distributions && is.null(priors$phi)) {
+    neg_binomial_seq <- lapply(
+      which(distributions == "negative_binomial_softplus"),
+      function(j) list(j = j)
     )
+  } else {
+    neg_binomial_seq <- FALSE
   }
-  for (j in seq_along(distributions)) {
-    if (distributions[j] == "negative_binomial_softplus" &&
-          is.null(priors$phi)) {
-      sc_transformed_data <-
-        paste0(
-          sc_transformed_data,
-          "  real inv_overdisp", j, "; // best guess for phi", j, "\n"
-        )
-    }
-  }
-  for (j in seq_along(distributions)) {
-    sc_transformed_data <- paste0(
-      sc_transformed_data,
-      "  obs", j, " = col(y, ", j, ")[which_equal(col(miss, ", j, "), 0)];\n"
+  # render template
+  render_stan_template(
+    filepath = "stan/templates/transformed-data.stan",
+    data = list(
+      variable_seq = variable_seq,
+      neg_binomial_seq = neg_binomial_seq
     )
-  }
-  for (j in seq_along(distributions)) {
-    if (distributions[j] == "negative_binomial_softplus" &&
-          is.null(priors$phi)) {
-      sc_transformed_data <-
-        paste0(
-          sc_transformed_data,
-          "  inv_overdisp", j, " = (mean(obs", j, ")^2) / ",
-          "(sd(obs", j, ")^2 - mean(obs", j, "));\n"
-        )
-    }
-  }
-  paste0(sc_transformed_data, "}")
+  )
 }
 
 #' Internal function for writing the Stan parameters block
