@@ -492,148 +492,16 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
 write_transformed_pars_block <- function(data, distributions, id, dist_mat,
                                          dist_cov, estimate_correlated_drift,
                                          estimate_residual) {
-  sc_transformed_parameters <- paste0(
-    "transformed parameters{\n",
-    "  array[N_tree, N_seg] vector[J] eta;\n",
-    "  matrix[J,J] A = diag_matrix(A_diag); // selection matrix\n",
-    ifelse(
-      estimate_correlated_drift,
-      paste0(
-        "  matrix[J,J] Q = diag_matrix(Q_sigma) * (L_R * L_R')",
-        " * diag_matrix(Q_sigma); // drift matrix\n"
-      ),
-      "  matrix[J,J] Q = diag_matrix(Q_sigma^2); // drift matrix\n"
-    ),
-    "  matrix[J,J] Q_inf; // asymptotic covariance matrix\n",
-    "  array[N_tree, N_seg] matrix[J,J] VCV_tips; // vcov matrix for drift\n",
-    "  array[N_tree, N_seg] matrix[J,J] L_VCV_tips; ",
-    "// Cholesky factor of VCV_tips\n"
-  )
-  # add distance random effects if distance matrix specified by user
-  if (!is.null(dist_mat)) {
-    sc_transformed_parameters <- paste0(
-      sc_transformed_parameters,
-      "  matrix[N_tips,J] dist_v; // distance covariance random effects\n"
-    )
-  }
-  # add tdrift if repeated observations or no gaussian traits
-  if ((any(duplicated(data[, id])) && estimate_residual) ||
-        !("normal" %in% distributions)) {
-    sc_transformed_parameters <- paste0(
-      sc_transformed_parameters,
-      "  array[N_tree,N_tips] vector[J] tdrift; // terminal drift\n"
-    )
-  }
-  # add residual sds and cors if there are repeated measures and using the
-  # non-centered parameterisation (there are no gaussian variables)
-  if (any(duplicated(data[, id])) && estimate_residual &&
-        !("normal" %in% distributions)) {
-    sc_transformed_parameters <- paste0(
-      sc_transformed_parameters,
-      "  matrix[N_obs,J] residual_v; // residual pars\n",
-      "  // scale and correlate residual pars\n",
-      "  residual_v = (diag_pre_multiply(sigma_residual, L_residual)",
-      " * residual_z)';\n"
-    )
-  }
-  sc_transformed_parameters <- paste0(
-    sc_transformed_parameters,
-    "  // fill off diagonal of A matrix\n",
-    "  {\n",
-    "    int ticker = 1;\n",
-    "    for (i in 1:J) {\n",
-    "      for (j in 1:J) {\n",
-    "        if (i != j) {\n",
-    "          if (effects_mat[i,j] == 1) {\n",
-    "            A[i,j] = A_offdiag[ticker];\n",
-    "            ticker += 1;\n",
-    "          } else if (effects_mat[i,j] == 0) {\n",
-    "            A[i,j] = 0;\n",
-    "          }\n",
-    "        }\n",
-    "      }\n",
-    "    }\n",
-    "  }\n",
-    "  // calculate asymptotic covariance\n",
-    "  Q_inf = ksolve(A, Q);\n",
-    "  {\n",
-    "    array[N_unique_lengths] matrix[J,J] A_delta_cache;\n",
-    "    array[N_unique_lengths] matrix[J,J] VCV_cache;\n",
-    "    array[N_unique_lengths] matrix[J,J] L_VCV_cache;\n",
-    "    array[N_unique_lengths] matrix[J,J] A_solve_cache;\n",
-    "    for (u in 1:N_unique_lengths) {\n",
-    "      A_delta_cache[u] = matrix_exp(A * unique_lengths[u]);\n",
-    "      VCV_cache[u] = Q_inf - quad_form_sym(Q_inf, A_delta_cache[u]');\n",
-    "      L_VCV_cache[u] = cholesky_decompose(VCV_cache[u]);\n",
-    "      A_solve_cache[u] = A \\ add_diag(A_delta_cache[u], -1);\n",
-    "      for (i in 1:J) {\n",
-    "        for (j in 1:i) {\n",
-    "          real val = 0.5 * (A_solve_cache[u][i, j] + ",
-    "A_solve_cache[u][j, i]);\n",
-    "          A_solve_cache[u][i, j] = val;\n",
-    "          A_solve_cache[u][j, i] = val;\n",
-    "        }\n",
-    "      }\n",
-    "    }\n",
-    "    for (t in 1:N_tree) {\n",
-    "      // setting ancestral states and placeholders\n",
-    "      eta[t, node_seq[t, 1]] = eta_anc[t];\n",
-    "      VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(-99, J));\n",
-    "      L_VCV_tips[t, node_seq[t, 1]] = diag_matrix(rep_vector(1.0, J));\n",
-    "      for (i in 2:N_seg) {\n",
-    "        matrix[J,J] A_delta;\n",
-    "        matrix[J,J] VCV;\n",
-    "        vector[J] drift_seg;\n",
-    "        matrix[J,J] L_VCV;\n",
-    "        matrix[J,J] A_solve;\n",
-    "        if (length_index[t, i] > 0) {\n",
-    "          A_delta = A_delta_cache[length_index[t, i]];\n",
-    "          VCV = VCV_cache[length_index[t, i]];\n",
-    "          L_VCV = L_VCV_cache[length_index[t, i]];\n",
-    "          A_solve = A_solve_cache[length_index[t, i]];\n",
-    "        } else {\n",
-    "          A_delta = matrix_exp(A * ts[t, i]);\n",
-    "          VCV = Q_inf - quad_form_sym(Q_inf, A_delta');\n",
-    "          L_VCV = cholesky_decompose(VCV);\n",
-    "          A_solve = A \\ add_diag(A_delta, -1);\n",
-    "        }\n",
-    "        drift_seg = L_VCV * z_drift[t, i-1];\n",
-    "        // if not a tip, add the drift parameter\n",
-    "        if (tip[t, i] == 0) {\n",
-    "          eta[t, node_seq[t, i]] = to_vector(\n",
-    "            A_delta * eta[t, parent[t, i]] + (A_solve * b) + drift_seg\n",
-    "          );\n",
-    "          VCV_tips[t, node_seq[t, i]] = ",
-    "diag_matrix(rep_vector(-99, J));\n",
-    "          L_VCV_tips[t, node_seq[t, i]] = ",
-    "diag_matrix(rep_vector(1.0, J));\n",
-    "        }\n",
-    "        // if is a tip, omit, we'll deal with it in the model block;\n",
-    "        else {\n",
-    "          eta[t, node_seq[t, i]] = to_vector(\n",
-    "            A_delta * eta[t, parent[t, i]] + (A_solve * b)\n",
-    "          );\n",
-    "          VCV_tips[t, node_seq[t, i]] = VCV;\n",
-    "          L_VCV_tips[t, node_seq[t, i]] = L_VCV;\n",
-    "        }\n",
-    "      }\n",
-    "    }\n",
-    "  }\n"
-  )
-  # if repeated observations or no gaussian traits, calculate tdrift
-  if ((any(duplicated(data[, id])) && estimate_residual) ||
-        !("normal" %in% distributions)) {
-    sc_transformed_parameters <- paste0(
-      sc_transformed_parameters,
-      "  for (t in 1:N_tree) {\n",
-      "    for (i in 1:N_tips) {\n",
-      "      tdrift[t,i] = L_VCV_tips[t, i] * ",
-      "to_vector(terminal_drift[t][i,]);\n",
-      "    }\n",
-      "  }\n"
-    )
-  }
-  # get code for gaussian process kernel
+  # calculate tdrift?
+  tdrift <-
+    (any(duplicated(data[, id])) && estimate_residual) ||
+    !("normal" %in% distributions)
+  # calculate residual?
+  residual <-
+    any(duplicated(data[, id])) && estimate_residual &&
+    !("normal" %in% distributions)
+  # get gaussian process kernel code for template
+  dist_cov_code <- NULL
   if (dist_cov == "exp_quad") {
     # exponentiated quadratic kernel
     dist_cov_code <- paste0(
@@ -650,27 +518,18 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
       "exp(-(sqrt(3.0) * dist_mat[i,m]) / rho_dist[j])"
     )
   }
-  # add gaussian process functions if dist_mat specified by user
-  if (!is.null(dist_mat)) {
-    sc_transformed_parameters <- paste0(
-      sc_transformed_parameters,
-      "  // distance covariance functions\n",
-      "  for (j in 1:J) {\n",
-      "    matrix[N_tips,N_tips] dist_cov;\n",
-      "    matrix[N_tips,N_tips] L_dist_cov;\n",
-      "    for ( i in 1:(N_tips-1) )\n",
-      "      for ( m in (i+1):N_tips ) {\n",
-      "        dist_cov[i,m] = ", dist_cov_code, ";\n",
-      "        dist_cov[m,i] = dist_cov[i,m];\n",
-      "      }\n",
-      "    for ( q in 1:N_tips )\n",
-      "      dist_cov[q,q] = sigma_dist[j] + 0.01;\n",
-      "    L_dist_cov = cholesky_decompose(dist_cov);\n",
-      "    dist_v[,j] = L_dist_cov * dist_z[,j];\n",
-      "  }\n"
+  # render template
+  render_stan_template(
+    filepath = "stan/templates/05-transformed-parameters.stan",
+    data = list(
+      estimate_correlated_drift = estimate_correlated_drift,
+      no_correlated_drift = !estimate_correlated_drift,
+      dist_mat = !is.null(dist_mat),
+      tdrift = tdrift,
+      residual = residual,
+      dist_cov_code = dist_cov_code
     )
-  }
-  paste0(sc_transformed_parameters, "}")
+  )
 }
 
 #' Internal function for writing the Stan model block
