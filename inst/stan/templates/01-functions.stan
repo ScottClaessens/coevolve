@@ -1,4 +1,5 @@
 functions {
+
   // Charles Driver's solver for the asymptotic Q matrix
   matrix ksolve (matrix A, matrix Q) {
     int d = rows(A);
@@ -90,4 +91,5 @@ functions {
     }
     return match_positions;
   }
+
 }

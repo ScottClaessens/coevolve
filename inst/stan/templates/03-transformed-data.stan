@@ -1,4 +1,5 @@
 transformed data {
+
 {{#variable_seq}}
   vector[to_int(N_obs - sum(col(miss, {{j}})))] obs{{j}}; // observed data {{j}}
 {{/variable_seq}}

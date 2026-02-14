@@ -1,4 +1,5 @@
 data{
+
   int<lower=1> N_tips; // number of tips
   int<lower=1> N_tree; // number of trees
   int<lower=1> N_obs; // number of observations
@@ -24,4 +25,5 @@ data{
   matrix[N_tips,N_tips] dist_mat; // distance matrix
 {{/dist_mat}}
   int<lower=0,upper=1> prior_only; // should likelihood be ignored?
+
 }

@@ -362,7 +362,7 @@ render_stan_template <- function(filepath, data = parent.frame()) {
 #' @noRd
 write_functions_block <- function() {
   render_stan_template(
-    filepath = "stan/templates/functions.stan"
+    filepath = "stan/templates/01-functions.stan"
   )
 }
 
@@ -377,7 +377,7 @@ write_functions_block <- function() {
 #' @noRd
 write_data_block <- function(measurement_error, dist_mat) {
   render_stan_template(
-    filepath = "stan/templates/data.stan",
+    filepath = "stan/templates/02-data.stan",
     data = list(
       measurement_error = !is.null(measurement_error),
       dist_mat = !is.null(dist_mat)
@@ -396,8 +396,9 @@ write_data_block <- function(measurement_error, dist_mat) {
 #'
 #' @noRd
 write_transformed_data_block <- function(distributions, priors) {
-  # parameters for template
+  # sequence of variables for template
   variable_seq <- lapply(seq_along(distributions), function(j) list(j = j))
+  # negative binomial variables for template
   if ("negative_binomial_softplus" %in% distributions && is.null(priors$phi)) {
     neg_binomial_seq <- lapply(
       which(distributions == "negative_binomial_softplus"),
@@ -408,7 +409,7 @@ write_transformed_data_block <- function(distributions, priors) {
   }
   # render template
   render_stan_template(
-    filepath = "stan/templates/transformed-data.stan",
+    filepath = "stan/templates/03-transformed-data.stan",
     data = list(
       variable_seq = variable_seq,
       neg_binomial_seq = neg_binomial_seq
@@ -429,78 +430,53 @@ write_transformed_data_block <- function(distributions, priors) {
 write_parameters_block <- function(data, variables, distributions, id, dist_mat,
                                    estimate_correlated_drift,
                                    estimate_residual) {
-  sc_parameters <- paste0(
-    "parameters{\n",
-    "  vector<upper=0>[J] A_diag; // autoregressive terms of A\n",
-    "  vector[num_effects - J] A_offdiag; // cross-lagged terms of A\n"
+  # ordered variables for template
+  if ("ordered_logistic" %in% distributions) {
+    ordered_seq <- lapply(
+      which(distributions == "ordered_logistic"),
+      function(j) {
+        list(
+          j = j,
+          # calculate number of cut points (number of levels - 1)
+          #' @srrstats {G2.4, G2.4b} Convert to continuous calculate cutpoints
+          #' @srrstats {G2.15} Software does not assume non-missingness (na.rm)
+          num_cuts = max(as.numeric(data[, variables[j]]), na.rm = TRUE) - 1
+        )
+      }
+    )
+  } else {
+    ordered_seq <- FALSE
+  }
+  # negative binomial variables for template
+  if ("negative_binomial_softplus" %in% distributions) {
+    neg_binomial_seq <- lapply(
+      which(distributions == "negative_binomial_softplus"),
+      function(j) list(j = j)
+    )
+  } else {
+    neg_binomial_seq <- FALSE
+  }
+  # gamma variables for template
+  if ("gamma_log" %in% distributions) {
+    gamma_seq <- lapply(
+      which(distributions == "gamma_log"),
+      function(j) list(j = j)
+    )
+  } else {
+    gamma_seq <- FALSE
+  }
+  # render template
+  render_stan_template(
+    filepath = "stan/templates/04-parameters.stan",
+    data = list(
+      estimate_correlated_drift = estimate_correlated_drift,
+      ordered_seq = ordered_seq,
+      neg_binomial_seq = neg_binomial_seq,
+      gamma_seq = gamma_seq,
+      dist_mat = !is.null(dist_mat),
+      repeated_measures = any(duplicated(data[, id])) && estimate_residual
+    )
   )
-  # add cholesky factor for Q matrix if estimating Q off diagonals
-  if (estimate_correlated_drift) {
-    sc_parameters <- paste0(
-      sc_parameters,
-      "  cholesky_factor_corr[J] L_R; // lower-tri choleksy decomp corr mat\n"
-    )
-  }
-  sc_parameters <- paste0(
-    sc_parameters,
-    "  vector<lower=0>[J] Q_sigma; // std deviation parameters of the Q mat\n",
-    "  vector[J] b; // SDE intercepts\n",
-    "  array[N_tree] vector[J] eta_anc; // ancestral states\n",
-    "  array[N_tree, N_seg - 1] vector[J] z_drift; // stochastic drift\n",
-    "  array[N_tree] matrix[N_tips, J] terminal_drift; // drift for the tips\n"
-  )
-  for (i in seq_along(distributions)) {
-    # add cut points for ordinal_logistic distributions
-    if (distributions[i] == "ordered_logistic") {
-      # calculate number of cut points (number of levels - 1)
-      #' @srrstats {G2.4, G2.4b} Convert to continuous to calculate cutpoints
-      #' @srrstats {G2.15} Software does not assume non-missingness (na.rm)
-      num_cuts <- max(as.numeric(data[, variables[i]]), na.rm = TRUE) - 1
-      sc_parameters <-
-        paste0(
-          sc_parameters,
-          "  ordered[", num_cuts, "] c", i, "; ",
-          "// cut points for variable ", i, "\n"
-        )
-    }
-    # add overdispersion parameters for negative_binomial_softplus distributions
-    if (distributions[i] == "negative_binomial_softplus") {
-      sc_parameters <-
-        paste0(
-          sc_parameters,
-          "  real<lower=0> phi", i, "; ",
-          "// neg binom inverse overdispersion parameter for variable ", i, "\n"
-        )
-    }
-    # add shape parameters for gamma_log distributions
-    if (distributions[i] == "gamma_log") {
-      sc_parameters <-
-        paste0(
-          sc_parameters,
-          "  real<lower=0> shape", i, "; ",
-          "// gamma shape parameter for variable ", i, "\n"
-        )
-    }
-  }
-  # add gaussian process parameters if distance matrix specified by user
-  if (!is.null(dist_mat)) {
-    sc_parameters <- paste0(
-      sc_parameters,
-      "  matrix[N_tips,J] dist_z; // spatial covariance random effects\n",
-      "  vector<lower=0>[J] rho_dist; // covariance declining with distance\n",
-      "  vector<lower=0>[J] sigma_dist; // maximum covariance\n"
-    )
-  }
-  # add residual sds and cors if there are repeated measures
-  if (any(duplicated(data[, id])) && estimate_residual) {
-    sc_parameters <- paste0(
-      sc_parameters,
-      "  matrix[J,N_obs] residual_z;\n",
-      "  vector<lower=0>[J] sigma_residual;\n",
-      "  cholesky_factor_corr[J] L_residual;\n"
-    )
-  }
-  paste0(sc_parameters, "}")
 }
 
 #' Internal function for writing the Stan transformed parameters block
