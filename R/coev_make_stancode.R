@@ -341,9 +341,9 @@ coev_make_stancode <- function(data, variables, id, tree,
 render_stan_template <- function(filepath, data = parent.frame()) {
   whisker::whisker.render(
     template = readLines(
-      fs::path_package(
-        package = "coevolve",
-        filepath
+      system.file(
+        filepath,
+        package = "coevolve"
       )
     ),
     data = data
@@ -362,7 +362,7 @@ render_stan_template <- function(filepath, data = parent.frame()) {
 #' @noRd
 write_functions_block <- function() {
   render_stan_template(
-    filepath = "inst/stan/templates/functions.stan"
+    filepath = "stan/templates/functions.stan"
   )
 }
 
@@ -376,52 +376,12 @@ write_functions_block <- function() {
 #'
 #' @noRd
 write_data_block <- function(measurement_error, dist_mat) {
-  sc_data <- paste0(
-    "data{\n",
-    "  int<lower=1> N_tips; // number of tips\n",
-    "  int<lower=1> N_tree; // number of trees\n",
-    "  int<lower=1> N_obs; // number of observations\n",
-    "  int<lower=2> J; // number of response traits\n",
-    "  int<lower=1> N_seg; // total number of segments in the trees\n",
-    "  array[N_tree, N_seg] int<lower=1> node_seq; // index of tree nodes\n",
-    "  array[N_tree, N_seg] int<lower=0> parent; // index of parent nodes\n",
-    "  array[N_tree, N_seg] real ts; // time since parent\n",
-    "  array[N_tree, N_seg] int<lower=0,upper=1> tip; // segment ends in tip\n",
-    "  array[J,J] int<lower=0,upper=1> effects_mat; // effects matrix\n",
-    "  int<lower=2> num_effects; // number of effects being estimated\n",
-    "  matrix[N_obs,J] y; // observed data\n",
-    "  matrix[N_obs,J] miss; // are data points missing?\n",
-    ifelse(
-      !is.null(measurement_error),
-      "  matrix[N_obs,J] se; // squared standard errors\n", ""
-    ),
-    "  array[N_obs] int<lower=1> tip_id; // group index between 1 and N_tips\n",
-    "  int<lower=1> N_unique_lengths; // number of unique branch lengths\n",
-    paste0(
-      "  array[N_unique_lengths] real unique_lengths; ",
-      "// unique branch lengths for caching\n"
-    ),
-    paste0(
-      "  array[N_tree, N_seg] int<lower=0> length_index; ",
-      "// mapping from segments to unique lengths\n"
-    ),
-    paste0(
-      "  array[N_tree, N_tips] int<lower=0> tip_to_seg; ",
-      "// mapping from tips to segments\n"
+  render_stan_template(
+    filepath = "stan/templates/data.stan",
+    data = list(
+      measurement_error = !is.null(measurement_error),
+      dist_mat = !is.null(dist_mat)
     )
-  )
-  # add distance matrix if user has defined one
-  if (!is.null(dist_mat)) {
-    sc_data <-
-      paste0(
-        sc_data,
-        "  matrix[N_tips,N_tips] dist_mat; // distance matrix\n"
-      )
-  }
-  # add prior_only data variable
-  paste0(
-    sc_data,
-    "  int<lower=0,upper=1> prior_only; // should likelihood be ignored?\n}"
   )
 }
 
