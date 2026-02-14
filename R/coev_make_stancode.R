@@ -329,6 +329,27 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc
 }
 
+#' Internal function for rendering Stan code from whisker template
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Renders Stan code from whisker template.
+#'
+#' @returns Character string
+#'
+#' @noRd
+render_stan_template <- function(filepath, data = parent.frame()) {
+  whisker::whisker.render(
+    template = readLines(
+      fs::path_package(
+        package = "coevolve",
+        filepath
+      )
+    ),
+    data = data
+  )
+}
+
 #' Internal function for writing the Stan functions block
 #'
 #' @srrstats {G1.4a} Non-exported function documented here
@@ -340,101 +361,8 @@ coev_make_stancode <- function(data, variables, id, tree,
 #'
 #' @noRd
 write_functions_block <- function() {
-  paste0(
-    "functions {\n",
-    "  // Charles Driver's solver for the asymptotic Q matrix\n",
-    "  matrix ksolve (matrix A, matrix Q) {\n",
-    "    int d = rows(A);\n",
-    "    int d2 = (d * d - d) %/% 2;\n",
-    "    matrix [d + d2, d + d2] O;\n",
-    "    vector [d + d2] triQ;\n",
-    "    matrix[d,d] AQ;\n",
-    "    int z = 0;         // z is row of output\n",
-    "    for (j in 1:d) {   // for column reference of solution vector\n",
-    "      for (i in 1:j) { // and row reference...\n",
-    "        if (j >= i) {  // if i and j denote a covariance parameter\n",
-    "          int y = 0;   // start new output row\n",
-    "          z += 1;      // shift current output row down\n",
-    "          for (ci in 1:d) {   // for columns and\n",
-    "            for (ri in 1:d) { // rows of solution\n",
-    "              if (ci >= ri) { // when in upper tri (inc diag)\n",
-    "                y += 1;       // move to next column of output\n",
-    "                if (i == j) { // if output row is a diag element\n",
-    "                  if (ri == i) O[z, y] = 2 * A[ri, ci];\n",
-    "                  if (ci == i) O[z, y] = 2 * A[ci, ri];\n",
-    "                }\n",
-    "                if (i != j) { // if output row is not a diag element\n",
-    "                  //if column matches row, sum both A diags\n",
-    "                  if (y == z) O[z, y] = A[ri, ri] + A[ci, ci];\n",
-    "                  if (y != z) { // otherwise...\n",
-    "                    // if solution element is related to output row...\n",
-    "                    if (ci == ri) { // if solution element is variance\n",
-    "                      // if variance of solution corresponds to row\n",
-    "                      if (ci == i) O[z, y] = A[j, ci];\n",
-    "                      // if variance of solution corresponds to col\n",
-    "                      if (ci == j) O[z, y] = A[i, ci];\n",
-    "                    }\n",
-    "                    //if solution element is a related covariance\n",
-    "                    if (ci != ri && (ri == i || ri == j ",
-    "|| ci == i || ci == j )) {\n",
-    "                      // for row 1,2 / 2,1 of output,\n",
-    "                      // if solution row ri 1 (match)\n",
-    "                      // and column ci 3, we need A[2,3]\n",
-    "                      if (ri == i) O[z, y] = A[j, ci];\n",
-    "                      if (ri == j) O[z, y] = A[i, ci];\n",
-    "                      if (ci == i) O[z, y] = A[j, ri];\n",
-    "                      if (ci == j) O[z, y] = A[i, ri];\n",
-    "                    }\n",
-    "                  }\n",
-    "                }\n",
-    "                if (is_nan(O[z, y])) O[z, y] = 0;\n",
-    "              }\n",
-    "            }\n",
-    "          }\n",
-    "        }\n",
-    "      }\n",
-    "    }\n",
-    "    z = 0; // get upper tri of Q\n",
-    "    for (j in 1:d) {\n",
-    "      for (i in 1:j) {\n",
-    "        z += 1;\n",
-    "        triQ[z] = Q[i, j];\n",
-    "      }\n",
-    "    }\n",
-    "    triQ = -O \\ triQ; // get upper tri of asymQ\n",
-    "    z = 0; // put upper tri of asymQ into matrix\n",
-    "    for (j in 1:d) {\n",
-    "      for (i in 1:j) {\n",
-    "        z += 1;\n",
-    "        AQ[i, j] = triQ[z];\n",
-    "        if (i != j) AQ[j, i] = triQ[z];\n",
-    "      }\n",
-    "    }\n",
-    "    return AQ;\n",
-    "  }\n",
-    "  \n",
-    "  // return number of matches of y in vector x\n",
-    "  int num_matches(vector x, real y) {\n",
-    "    int n = 0;\n",
-    "    for (i in 1:rows(x))\n",
-    "      if (x[i] == y)\n",
-    "        n += 1;\n",
-    "    return n;\n",
-    "  }\n",
-    "  \n",
-    "  // return indices in vector x where x == y\n",
-    "  array[] int which_equal(vector x, real y) {\n",
-    "    array [num_matches(x, y)] int match_positions;\n",
-    "    int pos = 1;\n",
-    "    for (i in 1:rows(x)) {\n",
-    "      if (x[i] == y) {\n",
-    "        match_positions[pos] = i;\n",
-    "        pos += 1;\n",
-    "      }\n",
-    "    }\n",
-    "    return match_positions;\n",
-    "  }\n",
-    "}"
+  render_stan_template(
+    filepath = "inst/stan/templates/functions.stan"
   )
 }
 

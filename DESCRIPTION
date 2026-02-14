@@ -45,7 +45,8 @@ Imports:
     rlang,
     stats,
     stringr,
-    tidyr
+    tidyr,
+    whisker
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.1.0)
