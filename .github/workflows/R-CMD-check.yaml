@@ -110,6 +110,16 @@ jobs:
           cmdstanr::install_cmdstan(cores = parallel::detectCores())
         shell: Rscript {0}
 
+      - name: Install package
+        if: "!contains(github.event.head_commit.message, 'skip-fixtures')"
+        run: R CMD INSTALL .
+        shell: bash
+
+      - name: Regenerate test fixtures
+        if: "!contains(github.event.head_commit.message, 'skip-fixtures')"
+        run: Rscript tests/testthat/fixtures/coevfit_examples.R
+        shell: bash
+
       - uses: r-lib/actions/check-r-package@v2
         with:
           build_args: 'c("--no-manual", "--no-build-vignettes")'
