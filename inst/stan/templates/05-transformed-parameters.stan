@@ -1,26 +1,26 @@
 transformed parameters{
   array[N_tree, N_seg] vector[J] eta;
   matrix[J,J] A = diag_matrix(A_diag); // selection matrix
-{{#estimate_correlated_drift}}
+  {{#estimate_correlated_drift}}
   matrix[J,J] Q = diag_matrix(Q_sigma) * (L_R * L_R') * diag_matrix(Q_sigma); // drift matrix
-{{/estimate_correlated_drift}}
-{{#no_correlated_drift}}
+  {{/estimate_correlated_drift}}
+  {{#no_correlated_drift}}
   matrix[J,J] Q = diag_matrix(Q_sigma^2); // drift matrix
-{{/no_correlated_drift}}
+  {{/no_correlated_drift}}
   matrix[J,J] Q_inf; // asymptotic covariance matrix
   array[N_tree, N_seg] matrix[J,J] VCV_tips; // vcov matrix for drift
   array[N_tree, N_seg] matrix[J,J] L_VCV_tips; // Cholesky factor of VCV_tips
-{{#dist_mat}}
+  {{#dist_mat}}
   matrix[N_tips,J] dist_v; // distance covariance random effects
-{{/dist_mat}}
-{{#tdrift}}
+  {{/dist_mat}}
+  {{#tdrift}}
   array[N_tree,N_tips] vector[J] tdrift; // terminal drift
-{{/tdrift}}
-{{#residual}}
+  {{/tdrift}}
+  {{#residual}}
   matrix[N_obs,J] residual_v; // residual pars
   // scale and correlate residual pars
   residual_v = (diag_pre_multiply(sigma_residual, L_residual) * residual_z)';
-{{/residual}}
+  {{/residual}}
   // fill off diagonal of A matrix
   {
     int ticker = 1;
@@ -99,14 +99,14 @@ transformed parameters{
       }
     }
   }
-{{#tdrift}}
+  {{#tdrift}}
   for (t in 1:N_tree) {
     for (i in 1:N_tips) {
       tdrift[t,i] = L_VCV_tips[t, i] * to_vector(terminal_drift[t][i,]);
     }
   }
-{{/tdrift}}
-{{#dist_mat}}
+  {{/tdrift}}
+  {{#dist_mat}}
   // distance covariance functions
   for (j in 1:J) {
     matrix[N_tips,N_tips] dist_cov;
@@ -121,6 +121,6 @@ transformed parameters{
     L_dist_cov = cholesky_decompose(dist_cov);
     dist_v[,j] = L_dist_cov * dist_z[,j];
   }
-{{/dist_mat}}
+  {{/dist_mat}}
 
 }

@@ -33,7 +33,7 @@ functions {
                       if (ci == j) O[z, y] = A[i, ci];
                     }
                     //if solution element is a related covariance
-                    if (ci != ri && (ri==i || ri==j || ci==i || ci==j )) {
+                    if (ci != ri && (ri == i || ri == j || ci == i || ci == j )) {
                       // for row 1,2 / 2,1 of output,
                       // if solution row ri 1 (match)
                       // and column ci 3, we need A[2,3]
