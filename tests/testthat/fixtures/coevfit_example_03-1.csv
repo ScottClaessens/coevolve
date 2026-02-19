@@ -1,8 +1,8 @@
 # stan_version_major = 2
 # stan_version_minor = 38
 # stan_version_patch = 0
-# model = model_90893ae3ca3d560fd833e8200dd0bfc5_model
-# start_datetime = 2026-01-23 17:01:22 UTC
+# model = model_1ca55958dc126d28c9a4074001d26225_model
+# start_datetime = 2026-02-19 16:41:35 UTC
 # method = sample (Default)
 #   sample
 #     num_samples = 50
@@ -31,20 +31,20 @@
 #     num_chains = 1 (Default)
 # id = 1 (Default)
 # data
-#   file = /var/folders/1c/18978_5s35n79f0fw4_d2lyc0000gp/T/RtmpfQ3Jek/standata-22fa5e421405.json
+#   file = /var/folders/1c/18978_5s35n79f0fw4_d2lyc0000gp/T/RtmpRIIisG/standata-ff2d8b0888e.json
 # init = 2 (Default)
 # random
 #   seed = 12345
 # output
-#   file = /var/folders/1c/18978_5s35n79f0fw4_d2lyc0000gp/T/RtmpfQ3Jek/model_90893ae3ca3d560fd833e8200dd0bfc5-202601231701-1-31a24e.csv
+#   file = /var/folders/1c/18978_5s35n79f0fw4_d2lyc0000gp/T/RtmpRIIisG/model_1ca55958dc126d28c9a4074001d26225-202602191641-1-327e81.csv
 #   diagnostic_file =  (Default)
 #   refresh = 100 (Default)
 #   sig_figs = 8 (Default)
-#   profile_file = /var/folders/1c/18978_5s35n79f0fw4_d2lyc0000gp/T/RtmpfQ3Jek/model_90893ae3ca3d560fd833e8200dd0bfc5-profile-202601231701-1-4996af.csv
+#   profile_file = /var/folders/1c/18978_5s35n79f0fw4_d2lyc0000gp/T/RtmpRIIisG/model_1ca55958dc126d28c9a4074001d26225-profile-202602191641-1-4a72e2.csv
 #   save_cmdstan_config = false (Default)
 # num_threads = 1 (Default)
 # stanc_version = stanc3 v2.38.0
-# stancflags = --name=model_90893ae3ca3d560fd833e8200dd0bfc5_model
+# stancflags = --name=model_1ca55958dc126d28c9a4074001d26225_model
 lp__,accept_stat__,stepsize__,treedepth__,n_leapfrog__,divergent__,energy__,A_diag.1,A_diag.2,A_offdiag.1,A_offdiag.2,L_R.1.1,L_R.2.1,L_R.1.2,L_R.2.2,Q_sigma.1,Q_sigma.2,b.1,b.2,eta_anc.1.1,eta_anc.1.2,z_drift.1.1.1,z_drift.1.2.1,z_drift.1.3.1,z_drift.1.4.1,z_drift.1.5.1,z_drift.1.6.1,z_drift.1.7.1,z_drift.1.8.1,z_drift.1.1.2,z_drift.1.2.2,z_drift.1.3.2,z_drift.1.4.2,z_drift.1.5.2,z_drift.1.6.2,z_drift.1.7.2,z_drift.1.8.2,terminal_drift.1.1.1,terminal_drift.1.2.1,terminal_drift.1.3.1,terminal_drift.1.4.1,terminal_drift.1.5.1,terminal_drift.1.1.2,terminal_drift.1.2.2,terminal_drift.1.3.2,terminal_drift.1.4.2,terminal_drift.1.5.2,c2.1,c2.2,eta.1.1.1,eta.1.2.1,eta.1.3.1,eta.1.4.1,eta.1.5.1,eta.1.6.1,eta.1.7.1,eta.1.8.1,eta.1.9.1,eta.1.1.2,eta.1.2.2,eta.1.3.2,eta.1.4.2,eta.1.5.2,eta.1.6.2,eta.1.7.2,eta.1.8.2,eta.1.9.2,A.1.1,A.2.1,A.1.2,A.2.2,Q.1.1,Q.2.1,Q.1.2,Q.2.2,Q_inf.1.1,Q_inf.2.1,Q_inf.1.2,Q_inf.2.2,VCV_tips.1.1.1.1,VCV_tips.1.2.1.1,VCV_tips.1.3.1.1,VCV_tips.1.4.1.1,VCV_tips.1.5.1.1,VCV_tips.1.6.1.1,VCV_tips.1.7.1.1,VCV_tips.1.8.1.1,VCV_tips.1.9.1.1,VCV_tips.1.1.2.1,VCV_tips.1.2.2.1,VCV_tips.1.3.2.1,VCV_tips.1.4.2.1,VCV_tips.1.5.2.1,VCV_tips.1.6.2.1,VCV_tips.1.7.2.1,VCV_tips.1.8.2.1,VCV_tips.1.9.2.1,VCV_tips.1.1.1.2,VCV_tips.1.2.1.2,VCV_tips.1.3.1.2,VCV_tips.1.4.1.2,VCV_tips.1.5.1.2,VCV_tips.1.6.1.2,VCV_tips.1.7.1.2,VCV_tips.1.8.1.2,VCV_tips.1.9.1.2,VCV_tips.1.1.2.2,VCV_tips.1.2.2.2,VCV_tips.1.3.2.2,VCV_tips.1.4.2.2,VCV_tips.1.5.2.2,VCV_tips.1.6.2.2,VCV_tips.1.7.2.2,VCV_tips.1.8.2.2,VCV_tips.1.9.2.2,L_VCV_tips.1.1.1.1,L_VCV_tips.1.2.1.1,L_VCV_tips.1.3.1.1,L_VCV_tips.1.4.1.1,L_VCV_tips.1.5.1.1,L_VCV_tips.1.6.1.1,L_VCV_tips.1.7.1.1,L_VCV_tips.1.8.1.1,L_VCV_tips.1.9.1.1,L_VCV_tips.1.1.2.1,L_VCV_tips.1.2.2.1,L_VCV_tips.1.3.2.1,L_VCV_tips.1.4.2.1,L_VCV_tips.1.5.2.1,L_VCV_tips.1.6.2.1,L_VCV_tips.1.7.2.1,L_VCV_tips.1.8.2.1,L_VCV_tips.1.9.2.1,L_VCV_tips.1.1.1.2,L_VCV_tips.1.2.1.2,L_VCV_tips.1.3.1.2,L_VCV_tips.1.4.1.2,L_VCV_tips.1.5.1.2,L_VCV_tips.1.6.1.2,L_VCV_tips.1.7.1.2,L_VCV_tips.1.8.1.2,L_VCV_tips.1.9.1.2,L_VCV_tips.1.1.2.2,L_VCV_tips.1.2.2.2,L_VCV_tips.1.3.2.2,L_VCV_tips.1.4.2.2,L_VCV_tips.1.5.2.2,L_VCV_tips.1.6.2.2,L_VCV_tips.1.7.2.2,L_VCV_tips.1.8.2.2,L_VCV_tips.1.9.2.2,tdrift.1.1.1,tdrift.1.2.1,tdrift.1.3.1,tdrift.1.4.1,tdrift.1.5.1,tdrift.1.1.2,tdrift.1.2.2,tdrift.1.3.2,tdrift.1.4.2,tdrift.1.5.2,yrep.1.1.1,yrep.1.2.1,yrep.1.3.1,yrep.1.4.1,yrep.1.5.1,yrep.1.1.2,yrep.1.2.2,yrep.1.3.2,yrep.1.4.2,yrep.1.5.2,cor_R.1.1,cor_R.2.1,cor_R.1.2,cor_R.2.2
 # Adaptation terminated
 # Step size = 0.10104
