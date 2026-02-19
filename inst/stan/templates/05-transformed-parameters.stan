@@ -1,4 +1,5 @@
 transformed parameters{
+
   array[N_tree, N_seg] vector[J] eta;
   matrix[J,J] A = diag_matrix(A_diag); // selection matrix
   {{#estimate_correlated_drift}}

@@ -264,24 +264,24 @@ coev_make_stancode <- function(data, variables, id, tree,
   sc <- paste0(
     "// Generated with coevolve ",
     utils::packageVersion("coevolve"),
-    "\n",
+    "\n\n",
     write_functions_block(),
-    "\n",
+    "\n\n",
     write_data_block(measurement_error, dist_mat),
-    "\n",
+    "\n\n",
     write_transformed_data_block(distributions, priors),
-    "\n",
+    "\n\n",
     write_parameters_block(data, variables, distributions, id, dist_mat,
                            estimate_correlated_drift, estimate_residual),
-    "\n",
+    "\n\n",
     write_transformed_pars_block(data, distributions, id, dist_mat,
                                  dist_cov, estimate_correlated_drift,
                                  estimate_residual),
-    "\n",
+    "\n\n",
     write_model_block(data, distributions, id, dist_mat, priors,
                       measurement_error, estimate_correlated_drift,
                       estimate_residual),
-    "\n",
+    "\n\n",
     write_gen_quantities_block(data, distributions, id, dist_mat,
                                measurement_error, estimate_correlated_drift,
                                estimate_residual, log_lik)
@@ -683,28 +683,19 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
     )
     # put together
     if (distribution == "bernoulli_logit") {
-      paste0(
-        "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod, ")"
-      )
+      paste0("bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod, ")")
     } else if (distribution == "ordered_logistic") {
-      paste0(
-        "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod, ", c", j, ")"
-      )
+      paste0("ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod,
+             ", c", j, ")")
     } else if (distribution == "poisson_softplus") {
-      paste0(
-        "poisson_lpmf(to_int(y[i,", j, "]) | ",
-        "mean(obs", j, ") * log1p_exp(", lmod, "))"
-      )
+      paste0("poisson_lpmf(to_int(y[i,", j, "]) | ",
+             "mean(obs", j, ") * log1p_exp(", lmod, "))")
     } else if (distribution == "negative_binomial_softplus") {
-      paste0(
-        "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | ",
-        "mean(obs", j, ") * log1p_exp(", lmod, "), phi", j, ")"
-      )
+      paste0("neg_binomial_2_lpmf(to_int(y[i,", j, "]) | ",
+             "mean(obs", j, ") * log1p_exp(", lmod, "), phi", j, ")")
     } else if (distribution == "gamma_log") {
-      paste0(
-        "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(",
-        lmod, "))"
-      )
+      paste0("gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(",
+             lmod, "))")
     }
   }
   # loop over likelihoods for non-continuous variables
@@ -764,6 +755,14 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
                                        estimate_residual, log_lik) {
   # check if repeated
   repeated <- any(duplicated(data[, id])) && estimate_residual
+  # terminal drift cov matrix
+  terminal_drift_cov_matrix <- ifelse(
+    !is.null(measurement_error) && !(repeated),
+    "add_diag(VCV_tips[t, i], se[i,])",
+    "VCV_tips[t, i]"
+  )
+  # normal present and log_lik
+  normal_present_and_log_lik <- "normal" %in% distributions && log_lik
   # function to get linear model
   lmod <- function(j) {
     paste0(
@@ -775,355 +774,158 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
       )
     )
   }
-  sc_generated_quantities <-
-    paste0(
-      "generated quantities{\n",
-      ifelse(log_lik, "  vector[N_obs*J] log_lik; // log-likelihood\n", ""),
-      "  array[N_tree,N_obs,J] real yrep; // predictive checks\n"
-    )
-  if (estimate_correlated_drift) {
-    sc_generated_quantities <-
-      paste0(
-        sc_generated_quantities,
-        "  matrix[J,J] cor_R; // correlated drift\n",
-        "  cor_R = multiply_lower_tri_self_transpose(L_R);\n"
-      )
-  }
-  if (repeated) {
-    sc_generated_quantities <-
-      paste0(
-        sc_generated_quantities,
-        "  matrix[J,J] cor_residual; // residual correlations\n",
-        "  cor_residual = multiply_lower_tri_self_transpose(L_residual);\n"
-      )
-  }
-  sc_generated_quantities <-
-    paste0(
-      sc_generated_quantities,
-      "  {\n",
-      ifelse(
-        log_lik,
-        "    matrix[N_obs,J] log_lik_temp = rep_matrix(0.0, N_obs, J);\n",
-        ""
-      )
-    )
-  # calculate terminal drift for yrep
-  sc_generated_quantities <- paste0(
-    sc_generated_quantities,
-    "    array[N_tree,N_tips] vector[J] terminal_drift_rep;\n",
-    "    for (i in 1:N_tips) {\n",
-    "      for (t in 1:N_tree) {\n",
-    "        for (j in 1:J) terminal_drift_rep[t,i][j] = normal_rng(0, 1);\n",
-    "        terminal_drift_rep[t,i] = cholesky_decompose(",
-    ifelse(
-      !is.null(measurement_error) && !(any(duplicated(data[, id])) &&
-                                         estimate_residual),
-      # add squared standard errors to diagonal of VCV_tips
-      "add_diag(VCV_tips[t, i], se[i,])",
-      "VCV_tips[t, i]"
-    ),
-    ") * terminal_drift_rep[t,i];\n",
-    "      }\n",
-    "    }\n",
-    "    for (i in 1:N_obs) {\n",
-    ifelse(
-      log_lik,
-      paste0(
-        "      array[N_tree,N_obs,J] real lp = ",
-        "rep_array(0.0, N_tree, N_obs, J);\n"
-      ),
-      ""
-    ),
-    "      for (t in 1:N_tree) {\n"
+  # loop over variables to detect normal variables
+  set <- list(
+    is_normal = FALSE,
+    is_not_normal_and_normal_present = FALSE,
+    is_not_normal_and_normal_present = FALSE
   )
-  # only declare the following if there are gaussian distributions and log_lik
-  if ("normal" %in% distributions && log_lik) {
-    sc_generated_quantities <- paste0(
-      sc_generated_quantities,
-      "        vector[J] mu_cond;\n",
-      "        vector[J] sigma_cond;\n"
+  if ("normal" %in% distributions) {
+    set$is_normal <- lapply(
+      which(distributions == "normal"),
+      function(j) list(j = j, lmod = lmod(j))
+    )
+    set$is_not_normal_and_normal_present <- lapply(
+      which(distributions != "normal"),
+      function(j) list(j = j)
+    )
+  } else {
+    set$is_not_normal_and_normal_absent <- lapply(
+      which(distributions != "normal"),
+      function(j) list(j = j)
     )
   }
-  # only declare the following if log_lik = TRUE
+  # set residuals and tdrifts
+  init_residuals <- FALSE
+  init_tdrifts <- FALSE
+  set_residuals <- FALSE
+  set_tdrifts <- FALSE
   if (log_lik) {
-    sc_generated_quantities <- paste0(
-      sc_generated_quantities,
-      ifelse(
-        repeated,
-        "        vector[J] residuals;\n",
-        "        vector[J] tdrifts;\n"
+    if (repeated) {
+      init_residuals <- TRUE
+      set_residuals <- set
+    } else {
+      init_tdrifts <- TRUE
+      set_tdrifts <- set
+    }
+  }
+  # set mu_cond and sigma_cond
+  set_mu_cond_and_sigma_cond <- FALSE
+  measurement_error_list <- list(
+    measurement_error = !is.null(measurement_error),
+    no_measurement_error = is.null(measurement_error)
+  )
+  if ("normal" %in% distributions & log_lik) {
+    if (repeated) {
+      set_mu_cond_and_sigma_cond <- list(
+        repeated = measurement_error_list,
+        no_repeated = FALSE
       )
-    )
+    } else {
+      set_mu_cond_and_sigma_cond <- list(
+        repeated = FALSE,
+        no_repeated = measurement_error_list
+      )
+    }
   }
-  # calculate residuals_rep for yrep if repeated observations
-  if (repeated) {
-    sc_generated_quantities <- paste0(
-      sc_generated_quantities,
-      "        vector[J] residuals_rep;\n",
-      "        for (j in 1:J) residuals_rep[j] = normal_rng(0, 1);\n",
-      "        residuals_rep = diag_pre_multiply(sigma_residual, L_residual)",
-      " * residuals_rep;\n"
-    )
+  # function to write log likelihood statement
+  write_log_lik_statement <- function(distribution, j) {
+    # linear model
+    lmod <- lmod(j)
+    # append residuals or tdrifts
+    if (repeated) {
+      lmod <- paste0(lmod, " + residuals[", j, "]")
+    } else {
+      lmod <- paste0(lmod, " + tdrifts[", j, "]")
+    }
+    # put together
+    if (distribution == "bernoulli_logit") {
+      paste0("bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod, ")")
+    } else if (distribution == "ordered_logistic") {
+      paste0("ordered_logistic_lpmf(to_int(y[i,", j, "]) | ",
+             lmod, ", c", j, ")")
+    } else if (distribution == "poisson_softplus") {
+      paste0("poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
+             ") * log1p_exp(", lmod, "))")
+    } else if (distribution == "negative_binomial_softplus") {
+      paste0("neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
+             ") * log1p_exp(", lmod, "), phi", j, ")")
+    } else if (distribution == "gamma_log") {
+      paste0("gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(",
+             lmod, "))")
+    } else if (distribution == "normal") {
+      paste0(
+        "normal_lpdf(",
+        ifelse(
+          repeated,
+          paste0("residuals[", j, "]"),
+          paste0("tdrifts[", j, "]")
+        ),
+        " | mu_cond[", j, "], sigma_cond[", j, "])"
+      )
+    }
   }
-  # get tdrifts/residuals if log_lik = TRUE
-  if (log_lik) {
-    for (j in seq_along(distributions)) {
-      if (distributions[j] == "normal") {
-        sc_generated_quantities <- paste0(
-          sc_generated_quantities,
-          ifelse(
-            repeated,
-            paste0(
-              "        residuals[", j, "] = y[i][", j, "] - (", lmod(j),
-              " + tdrift[t,tip_id[i]][", j, "]);\n"
-            ),
-            paste0(
-              "        tdrifts[", j, "] = y[i][", j, "] - (", lmod(j), ");\n"
+  # function to write posterior prediction statement
+  write_yrep_statement <- function(distribution, j) {
+    # linear model
+    lmod <- paste0(lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j, "]")
+    # append residuals_rep
+    if (repeated) {
+      lmod <- paste0(lmod, " + residuals_rep[", j, "]")
+    }
+    # put together
+    if (distribution == "bernoulli_logit") {
+      paste0("bernoulli_logit_rng(", lmod, ")")
+    } else if (distribution == "ordered_logistic") {
+      paste0("ordered_logistic_rng(", lmod, ", c", j, ")")
+    } else if (distribution == "poisson_softplus") {
+      paste0("poisson_rng(mean(obs", j, ") * log1p_exp(", lmod, "))")
+    } else if (distribution == "negative_binomial_softplus") {
+      paste0("neg_binomial_2_rng(mean(obs", j, ") * log1p_exp(",
+             lmod, "), phi", j, ")")
+    } else if (distribution == "gamma_log") {
+      paste0("gamma_rng(shape", j, ", shape", j, " / exp(", lmod, "))")
+    } else if (distribution == "normal") {
+      lmod
+    }
+  }
+  # loop over variables to get posterior predictions (and log likelihoods)
+  posterior_predictions_and_log_likelihoods <-
+    lapply(
+      seq_along(distributions),
+      function(j) {
+        list(
+          log_lik = if (log_lik) {
+            list(
+              j = j,
+              log_lik_statement = write_log_lik_statement(distributions[j], j)
             )
-          )
-        )
-      } else {
-        sc_generated_quantities <- paste0(
-          sc_generated_quantities,
-          ifelse(
-            repeated,
-            ifelse(
-              "normal" %in% distributions,
-              paste0("        residuals[", j, "] = residual_z[", j, ",i];\n"),
-              paste0("        residuals[", j, "] = residual_v[i,", j, "];\n")
-            ),
-            paste0(
-              "        tdrifts[", j, "] = ",
-              ifelse("normal" %in% distributions, "terminal_drift", "tdrift"),
-              "[t,tip_id[i]][", j, "];\n"
-            )
+          } else {
+            FALSE
+          },
+          yrep = list(
+            j = j,
+            yrep_statement = write_yrep_statement(distributions[j], j)
           )
         )
       }
-    }
-  }
-  # only calculate if there are gaussian distributions and log_lik = TRUE
-  if ("normal" %in% distributions && log_lik) {
-    if (repeated) {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        ifelse(
-          !is.null(measurement_error),
-          paste0(
-            "        matrix[J,J] residual_cov = ",
-            "diag_matrix(to_vector(se[i,])) + ",
-            "quad_form_diag(L_residual * L_residual', sigma_residual);\n"
-          ),
-          ""
-        ),
-        ifelse(
-          !is.null(measurement_error),
-          "        matrix[J,J] cov_inv = inverse_spd(residual_cov);\n",
-          paste0(
-            "        matrix[J,J] cov_inv = ",
-            "chol2inv(diag_pre_multiply(sigma_residual, L_residual));\n"
-          )
-        ),
-        "        mu_cond = residuals - (cov_inv * residuals) ./ ",
-        "diagonal(cov_inv);\n",
-        "        sigma_cond = sqrt(1 / diagonal(cov_inv));\n"
-      )
-    } else {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        "        matrix[J,J] cov_inv = inverse_spd(",
-        ifelse(
-          !is.null(measurement_error),
-          # add squared standard errors to diagonal of VCV_tips
-          "add_diag(VCV_tips[t, tip_id[i]], se[i,])",
-          "VCV_tips[t, tip_id[i]]"
-        ),
-        ");\n",
-        "        mu_cond = tdrifts - (cov_inv * tdrifts) ./ ",
-        "diagonal(cov_inv);\n",
-        "        sigma_cond = sqrt(1 / diagonal(cov_inv));\n"
-      )
-    }
-  }
-  for (j in seq_along(distributions)) {
-    if (distributions[j] == "bernoulli_logit") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        ifelse(
-          log_lik,
-          paste0(
-            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-            "bernoulli_logit_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-            ifelse(
-              repeated,
-              paste0(" + residuals[", j, "]"),
-              paste0(" + tdrifts[", j, "]")
-            ),
-            ");\n"
-          ),
-          ""
-        ),
-        "        yrep[t,i,", j, "] = bernoulli_logit_rng(", lmod(j),
-        " + terminal_drift_rep[t,tip_id[i]][", j, "]",
-        ifelse(
-          repeated,
-          paste0(" + residuals_rep[", j, "]"),
-          ""
-        ),
-        ");\n"
-      )
-    } else if (distributions[j] == "ordered_logistic") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        ifelse(
-          log_lik,
-          paste0(
-            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-            "ordered_logistic_lpmf(to_int(y[i,", j, "]) | ", lmod(j),
-            ifelse(
-              repeated,
-              paste0(" + residuals[", j, "]"),
-              paste0(" + tdrifts[", j, "]")
-            ),
-            ", c", j, ");\n"
-          ),
-          ""
-        ),
-        "        yrep[t,i,", j, "] = ", "ordered_logistic_rng(", lmod(j),
-        " + terminal_drift_rep[t,tip_id[i]][", j, "]",
-        ifelse(
-          repeated,
-          paste0(" + residuals_rep[", j, "]"),
-          ""
-        ),
-        ", c", j, ");\n"
-      )
-    } else if (distributions[j] == "poisson_softplus") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        ifelse(
-          log_lik,
-          paste0(
-            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-            "poisson_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
-            ") * log1p_exp(", lmod(j),
-            ifelse(
-              repeated,
-              paste0(" + residuals[", j, "]"),
-              paste0(" + tdrifts[", j, "]")
-            ),
-            "));\n"
-          ),
-          ""
-        ),
-        "        yrep[t,i,", j, "] = poisson_rng(mean(obs", j, ") * log1p_exp(",
-        lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j, "]",
-        ifelse(
-          repeated,
-          paste0(" + residuals_rep[", j, "]"),
-          ""
-        ),
-        "));\n"
-      )
-    } else if (distributions[j] == "normal") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        ifelse(
-          log_lik,
-          paste0(
-            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-            "normal_lpdf(",
-            ifelse(
-              repeated,
-              paste0("residuals[", j, "]"),
-              paste0("tdrifts[", j, "]")
-            ),
-            " | mu_cond[", j,
-            "], sigma_cond[", j, "]);\n"
-          ),
-          ""
-        ),
-        "        yrep[t,i,", j, "] = ", lmod(j),
-        " + terminal_drift_rep[t,tip_id[i]][", j, "]",
-        ifelse(
-          repeated,
-          paste0(" + residuals_rep[", j, "]"),
-          ""
-        ),
-        ";\n"
-      )
-    } else if (distributions[j] == "negative_binomial_softplus") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        ifelse(
-          log_lik,
-          paste0(
-            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-            "neg_binomial_2_lpmf(to_int(y[i,", j, "]) | mean(obs", j,
-            ") * log1p_exp(", lmod(j),
-            ifelse(
-              repeated,
-              paste0(" + residuals[", j, "]"),
-              paste0(" + tdrifts[", j, "]")
-            ),
-            "), phi", j, ");\n"
-          ),
-          ""
-        ),
-        "        yrep[t,i,", j, "] = neg_binomial_2_rng(mean(obs", j,
-        ") * log1p_exp(", lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j,
-        "]",
-        ifelse(
-          repeated,
-          paste0(" + residuals_rep[", j, "]"),
-          ""
-        ),
-        "), phi", j, ");\n"
-      )
-    } else if (distributions[j] == "gamma_log") {
-      sc_generated_quantities <- paste0(
-        sc_generated_quantities,
-        ifelse(
-          log_lik,
-          paste0(
-            "        if (miss[i,", j, "] == 0) lp[t,i,", j, "] = ",
-            "gamma_lpdf(y[i,", j, "] | shape", j, ", shape", j, " / exp(",
-            lmod(j),
-            ifelse(
-              repeated,
-              paste0(" + residuals[", j, "]"),
-              paste0(" + tdrifts[", j, "]")
-            ),
-            "));\n"
-          ),
-          ""
-        ),
-        "        yrep[t,i,", j, "] = gamma_rng(shape", j, ", shape", j,
-        " / exp(", lmod(j), " + terminal_drift_rep[t,tip_id[i]][", j, "]",
-        ifelse(
-          repeated,
-          paste0(" + residuals_rep[", j, "]"),
-          ""
-        ),
-        "));\n"
-      )
-    }
-  }
-  paste0(
-    sc_generated_quantities,
-    "      }\n",
-    ifelse(
-      log_lik,
-      "    for (j in 1:J) log_lik_temp[i,j] += log_sum_exp(lp[,i,j]);\n",
-      ""
-    ),
-    "    }\n",
-    ifelse(
-      log_lik,
-      "  log_lik = to_vector(log_lik_temp);\n",
-      ""
-    ),
-    "  }\n",
-    "}"
+    )
+  # render template
+  render_stan_template(
+    filepath = "stan/templates/07-generated-quantities.stan",
+    data = list(
+      log_lik = log_lik,
+      estimate_correlated_drift = estimate_correlated_drift,
+      repeated = repeated,
+      terminal_drift_cov_matrix = terminal_drift_cov_matrix,
+      normal_present_and_log_lik = normal_present_and_log_lik,
+      init_residuals = init_residuals,
+      init_tdrifts = init_tdrifts,
+      set_residuals = set_residuals,
+      set_tdrifts = set_tdrifts,
+      set_mu_cond_and_sigma_cond = set_mu_cond_and_sigma_cond,
+      posterior_predictions_and_log_likelihoods =
+        posterior_predictions_and_log_likelihoods
+    )
   )
 }
