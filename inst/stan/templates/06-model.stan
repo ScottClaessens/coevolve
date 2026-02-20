@@ -32,7 +32,7 @@ model{
   sigma_dist ~ {{prior_sigma_dist}};
   rho_dist ~ {{prior_rho_dist}};
   {{/dist_mat}}
-  {{#add_priors_residual_sds_and_cors}}
+  {{#add_priors_residual_sds_cors}}
   {{#normal_present}}
   for (i in 1:N_obs) {
     {{#is_normal}}
@@ -48,7 +48,7 @@ model{
   {{/normal_absent}}
   sigma_residual ~ {{prior_sigma_residual}};
   L_residual ~ {{prior_L_residual}};
-  {{/add_priors_residual_sds_and_cors}}
+  {{/add_priors_residual_sds_cors}}
 
   // likelihood
   if (!prior_only) {

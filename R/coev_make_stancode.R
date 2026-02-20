@@ -588,16 +588,16 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
     )
   }
   # add priors for residual sds and cors
-  add_priors_residual_sds_and_cors <- FALSE
+  add_priors_residual_sds_cors <- FALSE
   if (repeated) {
-    add_priors_residual_sds_and_cors <- list(
+    add_priors_residual_sds_cors <- list(
       normal_present = FALSE,
       normal_absent = FALSE,
       prior_sigma_residual = priors$sigma_residual,
       prior_L_residual = priors$L_residual
     )
     if ("normal" %in% distributions) {
-      add_priors_residual_sds_and_cors$normal_present <-
+      add_priors_residual_sds_cors$normal_present <-
         list(
           is_normal = lapply(
             which(distributions == "normal"),
@@ -609,7 +609,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
           )
         )
     } else {
-      add_priors_residual_sds_and_cors$normal_absent <- TRUE
+      add_priors_residual_sds_cors$normal_absent <- TRUE
     }
   }
   # function to get linear model
@@ -729,7 +729,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
       ordered_seq = ordered_seq,
       gamma_seq = gamma_seq,
       dist_mat = !is.null(dist_mat),
-      add_priors_residual_sds_and_cors = add_priors_residual_sds_and_cors,
+      add_priors_residual_sds_cors = add_priors_residual_sds_cors,
       init_residuals = init_residuals,
       init_tdrift = init_tdrift,
       set_residuals = set_residuals,
@@ -815,7 +815,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
     measurement_error = !is.null(measurement_error),
     no_measurement_error = is.null(measurement_error)
   )
-  if ("normal" %in% distributions & log_lik) {
+  if ("normal" %in% distributions && log_lik) {
     if (repeated) {
       set_mu_cond_and_sigma_cond <- list(
         repeated = measurement_error_list,
@@ -890,7 +890,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
     }
   }
   # loop over variables to get posterior predictions (and log likelihoods)
-  posterior_predictions_and_log_likelihoods <-
+  posterior_preds_and_log_liks <-
     lapply(
       seq_along(distributions),
       function(j) {
@@ -924,8 +924,8 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
       set_residuals = set_residuals,
       set_tdrifts = set_tdrifts,
       set_mu_cond_and_sigma_cond = set_mu_cond_and_sigma_cond,
-      posterior_predictions_and_log_likelihoods =
-        posterior_predictions_and_log_likelihoods
+      posterior_preds_and_log_liks =
+        posterior_preds_and_log_liks
     )
   )
 }

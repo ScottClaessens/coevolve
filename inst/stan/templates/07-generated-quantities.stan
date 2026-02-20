@@ -88,14 +88,14 @@ generated quantities{
         sigma_cond = sqrt(1 / diagonal(cov_inv));
         {{/no_repeated}}
         {{/set_mu_cond_and_sigma_cond}}
-        {{#posterior_predictions_and_log_likelihoods}}
+        {{#posterior_preds_and_log_liks}}
         {{#log_lik}}
         if (miss[i,{{j}}] == 0) lp[t,i,{{j}}] = {{log_lik_statement}};
         {{/log_lik}}
         {{#yrep}}
         yrep[t,i,{{j}}] = {{yrep_statement}};
         {{/yrep}}
-        {{/posterior_predictions_and_log_likelihoods}}
+        {{/posterior_preds_and_log_liks}}
       }
       {{#log_lik}}
       for (j in 1:J) log_lik_temp[i,j] += log_sum_exp(lp[,i,j]);
