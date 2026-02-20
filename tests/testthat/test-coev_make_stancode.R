@@ -887,6 +887,7 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     tree <- ape::rcoal(n)
     d <- data.frame(
       id = tree$tip.label,
+      u = rexp(n, 1),
       v = as.integer(rnbinom(n, mu = 4, size = 1)),
       w = rnorm(n),
       x = rbinom(n, size = 1, prob = 0.5),
@@ -899,6 +900,7 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     coev_make_stancode(
       data = d,
       variables = list(
+        u = "gamma_log",
         v = "negative_binomial_softplus",
         w = "normal",
         x = "bernoulli_logit",
@@ -906,7 +908,8 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
         z = "poisson_softplus"
       ),
       id = "id",
-      tree = tree
+      tree = tree,
+      log_lik = TRUE
     )
   # make stan code with distance matrix
   dist_mat <- as.matrix(dist(rnorm(n)))
@@ -921,7 +924,8 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = dist_mat
+      dist_mat = dist_mat,
+      log_lik = TRUE
     )
   # check stan code is syntactically correct
   expect_no_error(sc1)
@@ -1008,7 +1012,8 @@ test_that("Setting manual priors in coev_make_stancode() works as expected", {
         rho_dist       = "exponential(6)",
         sigma_residual = "exponential(2)",
         L_residual     = "lkj_corr_cholesky(3)"
-      )
+      ),
+      log_lik = TRUE
     )
   )
 })
@@ -1033,7 +1038,8 @@ test_that("coev_make_stancode() produces neg binomial priors as expected", {
         y = "negative_binomial_softplus"
       ),
       id = "id",
-      tree = tree
+      tree = tree,
+      log_lik = TRUE
     )
   )
   # setting a prior for phi should also work
@@ -1046,7 +1052,8 @@ test_that("coev_make_stancode() produces neg binomial priors as expected", {
       ),
       id = "id",
       tree = tree,
-      prior = list(phi = "std_normal()")
+      prior = list(phi = "std_normal()"),
+      log_lik = TRUE
     )
   )
 })
@@ -1106,7 +1113,8 @@ test_that("coev_make_stancode() works with repeated observations", {
       y = "bernoulli_logit"
     ),
     id = "id",
-    tree = tree
+    tree = tree,
+    log_lik = TRUE
   )
   # runs without error
   expect_no_error(sc1)
@@ -1126,7 +1134,8 @@ test_that("coev_make_stancode() works with repeated observations", {
         y = "bernoulli_logit"
       ),
       id = "id",
-      tree = tree
+      tree = tree,
+      log_lik = TRUE
     ),
     paste0(
       "Note: Repeated observations detected. Residual standard deviations ",
@@ -1141,7 +1150,8 @@ test_that("coev_make_stancode() works with repeated observations", {
       z = "normal"
     ),
     id = "id",
-    tree = tree
+    tree = tree,
+    log_lik = TRUE
   )
   expect_no_error(sc2)
   expect_true(
