@@ -338,7 +338,7 @@ coev_make_stancode <- function(data, variables, id, tree,
 #' @returns Character string
 #'
 #' @noRd
-render_stan_template <- function(filepath, data = parent.frame()) {
+render_stan_template <- function(filepath, data = list()) {
   whisker::whisker.render(
     template = readLines(
       system.file(
