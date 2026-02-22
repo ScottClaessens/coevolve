@@ -778,7 +778,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
   set <- list(
     is_normal = FALSE,
     is_not_normal_and_normal_present = FALSE,
-    is_not_normal_and_normal_present = FALSE
+    is_not_normal_and_normal_absent = FALSE
   )
   if ("normal" %in% distributions) {
     set$is_normal <- lapply(
