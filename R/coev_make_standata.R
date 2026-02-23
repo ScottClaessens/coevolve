@@ -62,6 +62,11 @@
 #'   are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
 #'   \code{"exponential"} (exponential kernel), and \code{"matern32"}
 #'   (Matern 3/2 kernel).
+#' @param dist_knots (optional) A character vector of tip labels declaring taxa
+#'   to use as knots for an approximate reduced-rank "predictive process"
+#'   Gaussian Process over locations, which could potentially reduce
+#'   computational burden with large datasets. If this argument is left
+#'   unspecified, the model will compute exact Gaussian Processes by default.
 #' @param measurement_error (optional) A named list of coevolving variables and
 #'   their associated columns in the dataset containing standard errors. Only
 #'   valid for normally-distributed variables. For example, if we declare
@@ -217,7 +222,7 @@
 coev_make_standata <- function(data, variables, id, tree,
                                effects_mat = NULL, complete_cases = FALSE,
                                dist_mat = NULL, dist_cov = "exp_quad",
-                               measurement_error = NULL,
+                               dist_knots = NULL, measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_correlated_drift = TRUE,
                                estimate_residual = TRUE,
@@ -227,7 +232,7 @@ coev_make_standata <- function(data, variables, id, tree,
   #'   input data is dimensionally commensurate
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, measurement_error, prior, scale,
+             dist_cov, dist_knots, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only)
   # coerce data argument to data frame
   #' @srrstats {G2.7, G2.10} Accepts multiple tabular forms, ensures data frame
@@ -442,7 +447,13 @@ coev_make_standata <- function(data, variables, id, tree,
     tip_to_seg = stan_tip_to_seg          # mapping from tips to segments
   )
   # add distance matrix if specified
-  if (!is.null(dist_mat)) sd[["dist_mat"]] <- dist_mat
+  if (!is.null(dist_mat)) {
+    sd[["dist_mat"]] <- dist_mat
+    if (!is.null(dist_knots)) {
+      sd[["N_dist_knots"]] <- length(dist_knots)
+      sd[["dist_knot_id"]] <- which(rownames(dist_mat) %in% dist_knots)
+    }
+  }
   # add squared standard errors if measurement_error specified
   if (!is.null(measurement_error)) sd[["se"]] <- se
   # add prior_only
