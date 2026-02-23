@@ -218,7 +218,7 @@
 coev_make_stancode <- function(data, variables, id, tree,
                                effects_mat = NULL, complete_cases = FALSE,
                                dist_mat = NULL, dist_cov = "exp_quad",
-                               measurement_error = NULL,
+                               dist_knots = NULL, measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_correlated_drift = TRUE,
                                estimate_residual = TRUE,
@@ -228,7 +228,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   #'   input data is dimensionally commensurate
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, measurement_error, prior, scale,
+             dist_cov, dist_knots, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only)
   # coerce data argument to data frame
   #' @srrstats {G2.7, G2.10} Accepts multiple tabular forms, ensures data frame
@@ -267,15 +267,16 @@ coev_make_stancode <- function(data, variables, id, tree,
     "\n\n",
     write_functions_block(),
     "\n\n",
-    write_data_block(measurement_error, dist_mat),
+    write_data_block(measurement_error, dist_mat, dist_knots),
     "\n\n",
     write_transformed_data_block(distributions, priors),
     "\n\n",
     write_parameters_block(data, variables, distributions, id, dist_mat,
-                           estimate_correlated_drift, estimate_residual),
+                           dist_knots, estimate_correlated_drift,
+                           estimate_residual),
     "\n\n",
-    write_transformed_pars_block(data, distributions, id, dist_mat,
-                                 dist_cov, estimate_correlated_drift,
+    write_transformed_pars_block(data, distributions, id, dist_mat, dist_cov,
+                                 dist_knots, estimate_correlated_drift,
                                  estimate_residual),
     "\n\n",
     write_model_block(data, distributions, id, dist_mat, priors,
@@ -375,12 +376,13 @@ write_functions_block <- function() {
 #' @returns Character string
 #'
 #' @noRd
-write_data_block <- function(measurement_error, dist_mat) {
+write_data_block <- function(measurement_error, dist_mat, dist_knots) {
   render_stan_template(
     filepath = "stan/templates/02-data.stan",
     data = list(
       measurement_error = !is.null(measurement_error),
-      dist_mat = !is.null(dist_mat)
+      dist_mat = !is.null(dist_mat),
+      dist_knots = !is.null(dist_knots)
     )
   )
 }
@@ -428,7 +430,7 @@ write_transformed_data_block <- function(distributions, priors) {
 #'
 #' @noRd
 write_parameters_block <- function(data, variables, distributions, id, dist_mat,
-                                   estimate_correlated_drift,
+                                   dist_knots, estimate_correlated_drift,
                                    estimate_residual) {
   # ordered variables for template
   if ("ordered_logistic" %in% distributions) {
@@ -465,6 +467,14 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
   } else {
     gamma_seq <- FALSE
   }
+  # distance variables for template
+  if (!is.null(dist_mat) && is.null(dist_knots)) {
+    dist <- list(dim = "N_tips")
+  } else if (!is.null(dist_mat) && !is.null(dist_knots)) {
+    dist <- list(dim = "N_dist_knots")
+  } else {
+    dist <- FALSE
+  }
   # render template
   render_stan_template(
     filepath = "stan/templates/04-parameters.stan",
@@ -473,7 +483,7 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
       ordered_seq = ordered_seq,
       neg_binomial_seq = neg_binomial_seq,
       gamma_seq = gamma_seq,
-      dist_mat = !is.null(dist_mat),
+      dist = dist,
       repeated_measures = any(duplicated(data[, id])) && estimate_residual
     )
   )
@@ -490,7 +500,8 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
 #'
 #' @noRd
 write_transformed_pars_block <- function(data, distributions, id, dist_mat,
-                                         dist_cov, estimate_correlated_drift,
+                                         dist_cov, dist_knots,
+                                         estimate_correlated_drift,
                                          estimate_residual) {
   # calculate tdrift?
   tdrift <-
@@ -500,22 +511,36 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
   residual <-
     any(duplicated(data[, id])) && estimate_residual &&
     !("normal" %in% distributions)
+  # distance variables for template
+  if (!is.null(dist_mat) && is.null(dist_knots)) {
+    dist <- list(
+      dist_knots_absent = TRUE,
+      dist_knots_present = FALSE
+    )
+  } else if (!is.null(dist_mat) && !is.null(dist_knots)) {
+    dist <- list(
+      dist_knots_absent = FALSE,
+      dist_knots_present = TRUE
+    )
+  } else {
+    dist <- FALSE
+  }
   # get gaussian process kernel code for template
   dist_cov_code <- NULL
   if (dist_cov == "exp_quad") {
     # exponentiated quadratic kernel
     dist_cov_code <- paste0(
-      "sigma_dist[j] * exp(-(square(dist_mat[i,m]) / rho_dist[j]))"
+      "sigma_dist[j] * exp(-(square(d) / rho_dist[j]))"
     )
   } else if (dist_cov == "exponential") {
     # exponential kernel
     dist_cov_code <-
-      "sigma_dist[j] * exp(-(dist_mat[i,m] / rho_dist[j]))"
+      "sigma_dist[j] * exp(-(d / rho_dist[j]))"
   } else if (dist_cov == "matern32") {
     # matern 3/2 kernel
     dist_cov_code <- paste0(
-      "sigma_dist[j] * (1 + ((sqrt(3.0) * dist_mat[i,m]) / rho_dist[j])) * ",
-      "exp(-(sqrt(3.0) * dist_mat[i,m]) / rho_dist[j])"
+      "sigma_dist[j] * (1 + ((sqrt(3.0) * d) / rho_dist[j])) * ",
+      "exp(-(sqrt(3.0) * d) / rho_dist[j])"
     )
   }
   # render template
@@ -524,7 +549,7 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
     data = list(
       estimate_correlated_drift = estimate_correlated_drift,
       no_correlated_drift = !estimate_correlated_drift,
-      dist_mat = !is.null(dist_mat),
+      dist = dist,
       tdrift = tdrift,
       residual = residual,
       dist_cov_code = dist_cov_code

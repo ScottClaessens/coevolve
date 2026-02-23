@@ -24,6 +24,10 @@ data{
   {{#dist_mat}}
   matrix[N_tips,N_tips] dist_mat; // distance matrix
   {{/dist_mat}}
+  {{#dist_knots}}
+  int<lower=2,upper=N_tips> N_dist_knots; // number of distance knots
+  array[N_dist_knots] int<lower=1,upper=N_tips> dist_knot_id; // ids for distance knots
+  {{/dist_knots}}
   int<lower=0,upper=1> prior_only; // should likelihood be ignored?
 
 }

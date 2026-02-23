@@ -11,9 +11,9 @@ transformed parameters{
   matrix[J,J] Q_inf; // asymptotic covariance matrix
   array[N_tree, N_seg] matrix[J,J] VCV_tips; // vcov matrix for drift
   array[N_tree, N_seg] matrix[J,J] L_VCV_tips; // Cholesky factor of VCV_tips
-  {{#dist_mat}}
+  {{#dist}}
   matrix[N_tips,J] dist_v; // distance covariance random effects
-  {{/dist_mat}}
+  {{/dist}}
   {{#tdrift}}
   array[N_tree,N_tips] vector[J] tdrift; // terminal drift
   {{/tdrift}}
@@ -107,21 +107,54 @@ transformed parameters{
     }
   }
   {{/tdrift}}
-  {{#dist_mat}}
+  {{#dist}}
+  {{#dist_knots_absent}}
   // distance covariance functions
   for (j in 1:J) {
-    matrix[N_tips,N_tips] dist_cov;
-    matrix[N_tips,N_tips] L_dist_cov;
-    for ( i in 1:(N_tips-1) )
-      for ( m in (i+1):N_tips ) {
-        dist_cov[i,m] = {{dist_cov_code}};
-        dist_cov[m,i] = dist_cov[i,m];
+    matrix[N_tips,N_tips] K_nn;
+    matrix[N_tips,N_tips] L_Knn;
+    for (p in 1:N_tips) {
+      for (q in p:N_tips) {
+        real d = dist_mat[p,q];
+        K_nn[p,q] = {{dist_cov_code}};
+        K_nn[q,p] = K_nn[p,q];
       }
-    for ( q in 1:N_tips )
-      dist_cov[q,q] = sigma_dist[j] + 0.01;
-    L_dist_cov = cholesky_decompose(dist_cov);
-    dist_v[,j] = L_dist_cov * dist_z[,j];
+    }
+    for (p in 1:N_tips) {
+      K_nn[p,p] += 1e-04;
+    }
+    L_Knn = cholesky_decompose(K_nn);
+    dist_v[,j] = L_Knn * dist_z[,j];
   }
-  {{/dist_mat}}
+  {{/dist_knots_absent}}
+  {{#dist_knots_present}}
+  // distance covariance functions
+  for (j in 1:J) {
+    matrix[N_dist_knots,N_dist_knots] K_mm;
+    matrix[N_tips,N_dist_knots] K_nm;
+    matrix[N_dist_knots,N_dist_knots] L_Kmm;
+    vector[N_dist_knots] u;
+    for (p in 1:N_dist_knots) {
+      for (q in p:N_dist_knots) {
+        real d = dist_mat[dist_knot_id[p], dist_knot_id[q]];
+        K_mm[p,q] = {{dist_cov_code}};
+        K_mm[q,p] = K_mm[p,q];
+      }
+    }
+    for (p in 1:N_dist_knots) {
+      K_mm[p,p] += 1e-04;
+    }
+    L_Kmm = cholesky_decompose(K_mm);
+    u = L_Kmm * dist_z[,j];
+    for (n in 1:N_tips) {
+      for (m in 1:N_dist_knots) {
+        real d = dist_mat[n, dist_knot_id[m]];
+        K_nm[n,m] = {{dist_cov_code}};
+      }
+    }
+    dist_v[,j] = K_nm * mdivide_left_tri_low(L_Kmm, mdivide_right_tri_low(u', L_Kmm)');
+  }
+  {{/dist_knots_present}}
+  {{/dist}}
 
 }

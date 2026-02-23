@@ -411,6 +411,42 @@ run_checks_dist_cov <- function(dist_cov) {
   }
 }
 
+#' Internal helper function for checking dist_knots argument
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
+#' @description Checks the dist_knots argument for the functions
+#'   coev_make_stancode(), coev_make_standata(), and coev_fit().
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_dist_knots <- function(data, dist_knots, id) {
+  # if user specified distance knots
+  if (!is.null(dist_knots)) {
+    # as data frame
+    data <- as.data.frame(data)
+    # stop if dist_knots is not a character vector
+    if (!(methods::is(dist_knots, "character") &&
+          methods::is(dist_knots, "vector"))) {
+      stop2("Argument 'dist_knots' must be a character vector.")
+    }
+    # stop if not all dist_knots match tree tip labels
+    if (!all(dist_knots %in% unique(data[, id]))) {
+      stop2("Argument 'dist_knots' does not match tree tip labels.")
+    }
+    # stop if dist_knots contains duplicates
+    if (any(duplicated(dist_knots))) {
+      stop2("Argument 'dist_knots' must not contain duplicates.")
+    }
+    # stop if dist_knots length not at least length two
+    if (!(length(dist_knots) >= 2)) {
+      stop2("Argument 'dist_knots' must be at least length two.")
+    }
+  }
+}
+
 #' Internal helper function for checking measurement_error argument
 #'
 #' @srrstats {G1.4a} Non-exported function documented here
@@ -544,9 +580,9 @@ run_checks_prior <- function(prior) {
 #'
 #' @noRd
 run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
-                       dist_mat, dist_cov, measurement_error, prior, scale,
-                       estimate_correlated_drift, estimate_residual, log_lik,
-                       prior_only) {
+                       dist_mat, dist_cov, dist_knots, measurement_error, prior,
+                       scale, estimate_correlated_drift, estimate_residual,
+                       log_lik, prior_only) {
   # run checks from previous functions
   run_checks_data(data)
   run_checks_variables(data, variables)
@@ -555,6 +591,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   run_checks_effects_mat(variables, effects_mat)
   run_checks_dist_mat(data, dist_mat, id)
   run_checks_dist_cov(dist_cov)
+  run_checks_dist_knots(data, dist_knots, id)
   run_checks_measurement_error(data, variables, measurement_error)
   run_checks_prior(prior)
   # check that other arguments are logical of length one
