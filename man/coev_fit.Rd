@@ -13,6 +13,7 @@ coev_fit(
   complete_cases = FALSE,
   dist_mat = NULL,
   dist_cov = "exp_quad",
+  dist_knots = NULL,
   measurement_error = NULL,
   prior = NULL,
   scale = TRUE,
@@ -74,6 +75,12 @@ for Gaussian Processes over locations (strictly case-sensitive). Currently
 supported are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
 \code{"exponential"} (exponential kernel), and \code{"matern32"}
 (Matern 3/2 kernel).}
+
+\item{dist_knots}{(optional) A character vector of tip labels declaring taxa
+to use as knots for an approximate reduced-rank "predictive process"
+Gaussian Process over locations, which could potentially reduce
+computational burden with large datasets. If this argument is left
+unspecified, the model will compute exact Gaussian Processes by default.}
 
 \item{measurement_error}{(optional) A named list of coevolving variables and
 their associated columns in the dataset containing standard errors. Only
