@@ -1590,4 +1590,3 @@ test_that("coev_make_stancode() works with dist_knots", {
     )
   )
 })
-

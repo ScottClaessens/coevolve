@@ -993,7 +993,7 @@ test_that("coev_make_standata() works with missing data", {
       id = "id",
       tree = tree,
       complete_cases = TRUE
-      )},
+    )},
     paste0(
       "Note: Missing values (NAs) detected. Rows with missing data have ",
       "been excluded from the Stan data list. Set complete_cases = FALSE ",

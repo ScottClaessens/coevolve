@@ -429,7 +429,7 @@ run_checks_dist_knots <- function(data, dist_knots, id) {
     data <- as.data.frame(data)
     # stop if dist_knots is not a character vector
     if (!(methods::is(dist_knots, "character") &&
-          methods::is(dist_knots, "vector"))) {
+            methods::is(dist_knots, "vector"))) {
       stop2("Argument 'dist_knots' must be a character vector.")
     }
     # stop if not all dist_knots match tree tip labels
