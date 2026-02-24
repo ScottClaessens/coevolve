@@ -642,6 +642,62 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      dist_knots = FALSE
+    ),
+    "Argument 'dist_knots' must be a character vector.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = "testing"
+    ),
+    "Argument 'dist_knots' does not match tree tip labels.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = c(d$id[1], d$id[1])
+    ),
+    "Argument 'dist_knots' must not contain duplicates.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = d$id[1]
+    ),
+    "Argument 'dist_knots' must be at least length two.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       prior = "testing" # not a list
     ),
     "Argument 'prior' is not a list.",
@@ -1078,4 +1134,22 @@ test_that("coev_fit() works with cmdstanr backend and nutpie arguments", {
       )
     )
   })
+})
+
+test_that("coev_fit() works with dist_knots", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example_11.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_11-1.csv")
+  # suppress warnings
+  sw <- suppressWarnings
+  # fitted without error
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
+  # expect no errors for stancode or standata methods
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
 })

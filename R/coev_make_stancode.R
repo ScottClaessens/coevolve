@@ -306,7 +306,15 @@ coev_make_stancode <- function(data, variables, id, tree,
       paste0(
         "Note: Distance matrix detected. Gaussian processes over spatial ",
         "distances have been included for each variable in the model ",
-        "using the '", dist_cov, "' covariance kernel."
+        "using the '", dist_cov, "' covariance kernel. ",
+        ifelse(
+          is.null(dist_knots),
+          "Since dist_knots was not declared, exact GPs will be computed.",
+          paste0(
+            "Since dist_knots was declared, reduced-rank approximate GPs ",
+            "will be computed."
+          )
+        )
       )
     )
   }

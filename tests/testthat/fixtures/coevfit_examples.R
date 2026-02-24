@@ -236,6 +236,26 @@ coevfit_example_10 <-
     seed = 12345
   )
 
+# fit model with reduced-rank gaussian process for distances
+coevfit_example_11 <-
+  coev_fit(
+    data = d,
+    variables = list(
+      x = "normal",
+      y = "normal"
+    ),
+    id = "id",
+    tree = tree,
+    dist_mat = dist_mat,
+    dist_cov = "exp_quad",
+    dist_knots = d$id[1:3], # three knots
+    chains = chains,
+    iter_warmup = warmup,
+    iter_sampling = iter,
+    adapt_delta = 0.99,
+    seed = 12345
+  )
+
 # update cmdstanr file locations
 update_file_location <- function(coevfit) {
   coevfit$fit$save_output_files(
@@ -256,6 +276,7 @@ suppressMessages({
   update_file_location(coevfit_example_08)
   update_file_location(coevfit_example_09)
   update_file_location(coevfit_example_10)
+  update_file_location(coevfit_example_11)
 })
 
 # save coevfit objects as rds files
@@ -279,3 +300,4 @@ save_coevfit_rds(coevfit_example_07)
 save_coevfit_rds(coevfit_example_08)
 save_coevfit_rds(coevfit_example_09)
 save_coevfit_rds(coevfit_example_10)
+save_coevfit_rds(coevfit_example_11)

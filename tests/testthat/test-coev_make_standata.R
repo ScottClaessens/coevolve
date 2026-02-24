@@ -642,6 +642,62 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      dist_knots = FALSE
+    ),
+    "Argument 'dist_knots' must be a character vector.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = "testing"
+    ),
+    "Argument 'dist_knots' does not match tree tip labels.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = c(d$id[1], d$id[1])
+    ),
+    "Argument 'dist_knots' must not contain duplicates.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = d$id[1]
+    ),
+    "Argument 'dist_knots' must be at least length two.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       prior = "testing" # not a list
     ),
     "Argument 'prior' is not a list.",
@@ -927,8 +983,8 @@ test_that("coev_make_standata() works with missing data", {
     fixed = TRUE
   )
   # make stan data with listwise deletion
-  sd2 <-
-    coev_make_standata(
+  expect_message(
+    {sd2 <- coev_make_standata(
       data = d,
       variables = list(
         x = "bernoulli_logit",
@@ -937,7 +993,14 @@ test_that("coev_make_standata() works with missing data", {
       id = "id",
       tree = tree,
       complete_cases = TRUE
-    )
+      )},
+    paste0(
+      "Note: Missing values (NAs) detected. Rows with missing data have ",
+      "been excluded from the Stan data list. Set complete_cases = FALSE ",
+      "to impute missing values instead."
+    ),
+    fixed = TRUE
+  )
   # runs without error
   expect_no_error(sd1)
   expect_no_error(sd2)
@@ -1220,4 +1283,36 @@ test_that("coev_make_standata() does correct caching for Stan", {
     }
   }
   expect_equal(sd$tip_to_seg, stan_tip_to_seg)
+})
+
+test_that("coev_make_standata() works with dist_knots", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+    dist_mat <- as.matrix(dist(runif(n)))
+    rownames(dist_mat) <- colnames(dist_mat) <- d$id
+  })
+  # make stan data with dist_knots
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = dist_mat,
+      dist_knots = rownames(dist_mat)[c(1:5, 11:15)] # ten knots
+    )
+  # check dist_knots information is correct in stan data
+  expect_true(all(c("N_dist_knots", "dist_knot_id") %in% names(sd)))
+  expect_identical(sd$N_dist_knots, 10L)
+  expect_identical(sd$dist_knot_id, as.integer(c(1:5, 11:15)))
 })

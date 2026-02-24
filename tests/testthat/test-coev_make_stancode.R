@@ -638,6 +638,62 @@ test_that("coev_make_stancode() produces expected errors", {
       data = d,
       variables = list(
         x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = FALSE
+    ),
+    "Argument 'dist_knots' must be a character vector.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = "testing"
+    ),
+    "Argument 'dist_knots' does not match tree tip labels.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = c(d$id[1], d$id[1])
+    ),
+    "Argument 'dist_knots' must not contain duplicates.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_knots = d$id[1]
+    ),
+    "Argument 'dist_knots' must be at least length two.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
         w = "normal"
       ),
       id = "id",
@@ -957,8 +1013,11 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     ),
     paste0(
       "Note: Distance matrix detected. Gaussian processes over spatial ",
-      "distances have been included for each variable in the model."
-    )
+      "distances have been included for each variable in the model using the ",
+      "'exp_quad' covariance kernel. Since dist_knots was not declared, ",
+      "exact GPs will be computed."
+    ),
+    fixed = TRUE
   )
 })
 
@@ -1473,3 +1532,62 @@ test_that("coev_make_stancode() works with log_lik", {
     )$check_syntax(quiet = TRUE)
   )
 })
+
+test_that("coev_make_stancode() works with dist_knots", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rbinom(n, size = 1, prob = 0.5)
+    )
+    dist_mat <- as.matrix(dist(runif(n)))
+    rownames(dist_mat) <- colnames(dist_mat) <- d$id
+  })
+  # make stan code with dist_knots
+  sc <-
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "bernoulli_logit"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = dist_mat,
+      dist_cov = "exp_quad",
+      dist_knots = d$id[1:5]
+    )
+  # check stan code is syntactically correct
+  expect_no_error(sc)
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+  # check correct message
+  expect_message(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "bernoulli_logit"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = dist_mat,
+      dist_cov = "exp_quad",
+      dist_knots = d$id[1:5]
+    ),
+    paste0(
+      "Note: Distance matrix detected. Gaussian processes over spatial ",
+      "distances have been included for each variable in the model ",
+      "using the 'exp_quad' covariance kernel. Since dist_knots was ",
+      "declared, reduced-rank approximate GPs will be computed."
+    )
+  )
+})
+

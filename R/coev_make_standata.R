@@ -257,7 +257,7 @@ coev_make_standata <- function(data, variables, id, tree,
         paste0(
           "Note: Missing values (NAs) detected. Rows with missing data have ",
           "been excluded from the Stan data list. Set complete_cases = FALSE ",
-          "to exclude taxa with missing values."
+          "to impute missing values instead."
         )
       )
     }
