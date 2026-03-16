@@ -507,9 +507,9 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = "testing" # not of class matrix
+      lon_lat = log # not coercible to data frame
     ),
-    "Argument 'dist_mat' must be a matrix.",
+    "Argument 'lon_lat' must be coercible to a data.frame.",
     fixed = TRUE
   )
   expect_error(
@@ -521,71 +521,174 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = matrix(letters) # matrix not numeric
-    ),
-    "Argument 'dist_mat' must be a numeric matrix.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_stancode(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      dist_mat = matrix(1:100, nrow = 10) # matrix not symmetric
-    ),
-    "Argument 'dist_mat' must be a symmetric matrix.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_stancode(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      # matrix symmetric but diagonal not zero
-      dist_mat = matrix(rep(1, 100), nrow = 10)
-    ),
-    "Argument 'dist_mat' must have zeroes on the diagonal of the matrix.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_stancode(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      dist_mat = matrix(0) # no row/col names
-    ),
-    "Argument 'dist_mat' does not have valid row or column names.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_stancode(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      dist_mat = matrix(rep(0, 100), nrow = 10,
-                        # matrix row/col names do not match tips
-                        dimnames = list(letters[1:10], letters[1:10]))
+      lon_lat = data.frame(testing = 0) # wrong column names
     ),
     paste0(
-      "Row and column names for argument 'dist_mat' do not ",
-      "match tree tip labels exactly."
+      "Argument 'lon_lat' does not contain the ",
+      "required columns: 'id', 'longitude', and 'latitude'"
     ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = "test",
+        longitude = 0,
+        latitude = 0
+      ) # ids do not match tree
+    ),
+    "The id column in 'lon_lat' does not match tree tip labels exactly.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = "test",
+        latitude = 0
+      ) # longitude not numeric
+    ),
+    "The longitude column in 'lon_lat' is not numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = as.numeric(NA),
+        latitude = 0
+      ) # longitude contains missing values
+    ),
+    "The longitude column in 'lon_lat' contains missing values.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 1000,
+        latitude = 0
+      ) # longitude > 360
+    ),
+    "The longitude column in 'lon_lat' contains values greater than 360.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = -1000,
+        latitude = 0
+      ) # longitude < -360
+    ),
+    "The longitude column in 'lon_lat' contains values less than -360.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = "test"
+      ) # latitude not numeric
+    ),
+    "The latitude column in 'lon_lat' is not numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = as.numeric(NA)
+      ) # latitude contains missing values
+    ),
+    "The latitude column in 'lon_lat' contains missing values.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = 1000
+      ) # latitude > 90
+    ),
+    "The latitude column in 'lon_lat' contains values greater than 90.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = -1000
+      ) # latitude < -90
+    ),
+    "The latitude column in 'lon_lat' contains values less than -90.",
     fixed = TRUE
   )
   expect_error(
@@ -850,6 +953,20 @@ test_that("coev_make_stancode() produces expected errors", {
     "Argument 'prior_only' must be a logical of length one.",
     fixed = TRUE
   )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = "deprecated"
+    ),
+    "Argument 'dist_mat' is deprecated. Use 'lon_lat' instead.",
+    fixed = TRUE
+  )
 })
 
 test_that("coev_make_stancode() returns a character of length one", {
@@ -894,8 +1011,13 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
       y = ordered(sample(1:4, size = n, replace = TRUE)),
       z = rpois(n, 3)
     )
+    coords <- data.frame(
+      id = d$id,
+      longitude = runif(nrow(d), -180, 180),
+      latitude = runif(nrow(d), -90, 90)
+    )
   })
-  # make stan code without distance matrix
+  # make stan code without distances
   sc1 <-
     coev_make_stancode(
       data = d,
@@ -911,9 +1033,7 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
       tree = tree,
       log_lik = TRUE
     )
-  # make stan code with distance matrix
-  dist_mat <- as.matrix(dist(rnorm(n)))
-  rownames(dist_mat) <- colnames(dist_mat) <- d$id
+  # make stan code with lon/lat coordinates
   sc2 <-
     coev_make_stancode(
       data = d,
@@ -924,7 +1044,7 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = dist_mat,
+      lon_lat = coords,
       log_lik = TRUE
     )
   # check stan code is syntactically correct
@@ -953,11 +1073,11 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = dist_mat
+      lon_lat = coords
     ),
     paste0(
-      "Note: Distance matrix detected. Gaussian processes over spatial ",
-      "distances have been included for each variable in the model."
+      "Note: Longitude and latitude values detected. Gaussian processes over ",
+      "spatial distances have been included for each variable in the model."
     )
   )
 })
@@ -1265,8 +1385,11 @@ test_that("GP covariance kernels produce syntactically correct Stan code", {
       x = rbinom(n, size = 1, prob = 0.5),
       y = rbinom(n, size = 1, prob = 0.5)
     )
-    dist_mat <- as.matrix(dist(rnorm(n)))
-    rownames(dist_mat) <- colnames(dist_mat) <- tree$tip.label
+    coords <- data.frame(
+      id = d$id,
+      longitude = runif(nrow(d), -180, 180),
+      latitude = runif(nrow(d), -90, 90)
+    )
   })
   # get stan code
   sc1 <- coev_make_stancode(
@@ -1277,7 +1400,7 @@ test_that("GP covariance kernels produce syntactically correct Stan code", {
     ),
     id = "id",
     tree = tree,
-    dist_mat = dist_mat,
+    lon_lat = coords,
     dist_cov = "exp_quad"
   )
   sc2 <- coev_make_stancode(
@@ -1288,7 +1411,7 @@ test_that("GP covariance kernels produce syntactically correct Stan code", {
     ),
     id = "id",
     tree = tree,
-    dist_mat = dist_mat,
+    lon_lat = coords,
     dist_cov = "exponential"
   )
   sc3 <- coev_make_stancode(
@@ -1299,7 +1422,7 @@ test_that("GP covariance kernels produce syntactically correct Stan code", {
     ),
     id = "id",
     tree = tree,
-    dist_mat = dist_mat,
+    lon_lat = coords,
     dist_cov = "matern32"
   )
   # runs without error

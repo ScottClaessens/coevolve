@@ -19,11 +19,11 @@ parameters{
   {{#gamma_seq}}
   real<lower=0> shape{{j}}; // gamma shape par for variable {{j}}
   {{/gamma_seq}}
-  {{#dist_mat}}
+  {{#lon_lat}}
   matrix[N_tips,J] dist_z; // spatial covariance random effects
-  vector<lower=0>[J] rho_dist; // covariance declining with distance
-  vector<lower=0>[J] sigma_dist; // maximum covariance
-  {{/dist_mat}}
+  vector<lower=0>[J] lscale; // covariance declining with distance
+  vector<lower=0>[J] sdgp; // maximum covariance
+  {{/lon_lat}}
   {{#repeated_measures}}
   matrix[J,N_obs] residual_z;
   vector<lower=0>[J] sigma_residual;

@@ -21,9 +21,9 @@ data{
   array[N_unique_lengths] real unique_lengths; // unique branch lengths for caching
   array[N_tree, N_seg] int<lower=0> length_index; // mapping from segments to unique lengths
   array[N_tree, N_tips] int<lower=0> tip_to_seg; // mapping from tips to segments
-  {{#dist_mat}}
-  matrix[N_tips,N_tips] dist_mat; // distance matrix
-  {{/dist_mat}}
+  {{#lon_lat}}
+  array[N_tips] vector[3] coords; // spatial x,y,z coordinates
+  {{/lon_lat}}
   int<lower=0,upper=1> prior_only; // should likelihood be ignored?
 
 }

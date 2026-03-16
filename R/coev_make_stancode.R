@@ -52,10 +52,14 @@
 #' @param complete_cases (optional) Logical. If \code{FALSE} (default), all
 #'   missing values are imputed by the model. If \code{TRUE}, taxa with missing
 #'   data are excluded.
-#' @param dist_mat (optional) A distance matrix with row and column names
-#'   exactly matching the tip labels in the phylogeny. If specified, the model
-#'   will additionally control for spatial location by including a separate
-#'   Gaussian Process over locations for every coevolving variable in the model.
+#' @param lon_lat (optional) A \code{data.frame} containing longitude and
+#'   latitude values for all tips on the phylogeny. The data frame must contain
+#'   the following columns: a column labelled "id" that exactly matches the tip
+#'   labels on the phylogeny; a column labelled "longitude" that declares
+#'   longitude values in decimal degrees; and a column labelled "latitude" that
+#'   declares latitude values in decimal degrees. If specified, the model will
+#'   additionally control for spatial location by including a separate Gaussian
+#'   Process over locations for every coevolving variable in the model.
 #' @param dist_cov A string of length one specifying the covariance kernel used
 #'   for Gaussian Processes over locations (strictly case-sensitive). Currently
 #'   supported are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
@@ -115,6 +119,7 @@
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
+#' @param dist_mat Deprecated.
 #'
 #' @returns A character string containing the \pkg{Stan} code to fit the dynamic
 #'   coevolutionary model
@@ -179,7 +184,7 @@
 #'   ),
 #'   id = "language",
 #'   tree = authority$phylogeny,
-#'   dist_mat = authority$distance_matrix
+#'   lon_lat = authority$coordinates
 #' )
 #'
 #' # include measurement error
@@ -217,19 +222,20 @@
 #' @export
 coev_make_stancode <- function(data, variables, id, tree,
                                effects_mat = NULL, complete_cases = FALSE,
-                               dist_mat = NULL, dist_cov = "exp_quad",
+                               lon_lat = NULL, dist_cov = "exp_quad",
                                measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_correlated_drift = TRUE,
                                estimate_residual = TRUE,
-                               log_lik = FALSE,
-                               prior_only = FALSE) {
+                               log_lik = FALSE, prior_only = FALSE,
+                               dist_mat = NULL) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, measurement_error, prior, scale,
-             estimate_correlated_drift, estimate_residual, log_lik, prior_only)
+  run_checks(data, variables, id, tree, effects_mat, complete_cases,
+             lon_lat, dist_cov, measurement_error, prior, scale,
+             estimate_correlated_drift, estimate_residual, log_lik, prior_only,
+             dist_mat)
   # coerce data argument to data frame
   #' @srrstats {G2.7, G2.10} Accepts multiple tabular forms, ensures data frame
   data <- as.data.frame(data)
@@ -267,22 +273,22 @@ coev_make_stancode <- function(data, variables, id, tree,
     "\n\n",
     write_functions_block(),
     "\n\n",
-    write_data_block(measurement_error, dist_mat),
+    write_data_block(measurement_error, lon_lat),
     "\n\n",
     write_transformed_data_block(distributions, priors),
     "\n\n",
-    write_parameters_block(data, variables, distributions, id, dist_mat,
+    write_parameters_block(data, variables, distributions, id, lon_lat,
                            estimate_correlated_drift, estimate_residual),
     "\n\n",
-    write_transformed_pars_block(data, distributions, id, dist_mat,
+    write_transformed_pars_block(data, distributions, id, lon_lat,
                                  dist_cov, estimate_correlated_drift,
                                  estimate_residual),
     "\n\n",
-    write_model_block(data, distributions, id, dist_mat, priors,
+    write_model_block(data, distributions, id, lon_lat, priors,
                       measurement_error, estimate_correlated_drift,
                       estimate_residual),
     "\n\n",
-    write_gen_quantities_block(data, distributions, id, dist_mat,
+    write_gen_quantities_block(data, distributions, id, lon_lat,
                                measurement_error, estimate_correlated_drift,
                                estimate_residual, log_lik)
   )
@@ -295,12 +301,12 @@ coev_make_stancode <- function(data, variables, id, tree,
     compile = FALSE
   )$check_syntax(quiet = TRUE)
   # produce warnings for gaussian processes and/or random effects
-  if (!is.null(dist_mat)) {
+  if (!is.null(lon_lat)) {
     message(
       paste0(
-        "Note: Distance matrix detected. Gaussian processes over spatial ",
-        "distances have been included for each variable in the model ",
-        "using the '", dist_cov, "' covariance kernel."
+        "Note: Longitude and latitude values detected. Gaussian processes ",
+        "over spatial distances have been included for each variable in the ",
+        "model using the '", dist_cov, "' covariance kernel."
       )
     )
   }
@@ -375,12 +381,12 @@ write_functions_block <- function() {
 #' @returns Character string
 #'
 #' @noRd
-write_data_block <- function(measurement_error, dist_mat) {
+write_data_block <- function(measurement_error, lon_lat) {
   render_stan_template(
     filepath = "stan/templates/02-data.stan",
     data = list(
       measurement_error = !is.null(measurement_error),
-      dist_mat = !is.null(dist_mat)
+      lon_lat = !is.null(lon_lat)
     )
   )
 }
@@ -427,8 +433,8 @@ write_transformed_data_block <- function(distributions, priors) {
 #' @returns Character string
 #'
 #' @noRd
-write_parameters_block <- function(data, variables, distributions, id, dist_mat,
-                                   estimate_correlated_drift,
+write_parameters_block <- function(data, variables, distributions, id,
+                                   lon_lat, estimate_correlated_drift,
                                    estimate_residual) {
   # ordered variables for template
   if ("ordered_logistic" %in% distributions) {
@@ -473,7 +479,7 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
       ordered_seq = ordered_seq,
       neg_binomial_seq = neg_binomial_seq,
       gamma_seq = gamma_seq,
-      dist_mat = !is.null(dist_mat),
+      lon_lat = !is.null(lon_lat),
       repeated_measures = any(duplicated(data[, id])) && estimate_residual
     )
   )
@@ -489,7 +495,7 @@ write_parameters_block <- function(data, variables, distributions, id, dist_mat,
 #' @returns Character string
 #'
 #' @noRd
-write_transformed_pars_block <- function(data, distributions, id, dist_mat,
+write_transformed_pars_block <- function(data, distributions, id, lon_lat,
                                          dist_cov, estimate_correlated_drift,
                                          estimate_residual) {
   # calculate tdrift?
@@ -500,34 +506,16 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
   residual <-
     any(duplicated(data[, id])) && estimate_residual &&
     !("normal" %in% distributions)
-  # get gaussian process kernel code for template
-  dist_cov_code <- NULL
-  if (dist_cov == "exp_quad") {
-    # exponentiated quadratic kernel
-    dist_cov_code <- paste0(
-      "sigma_dist[j] * exp(-(square(dist_mat[i,m]) / rho_dist[j]))"
-    )
-  } else if (dist_cov == "exponential") {
-    # exponential kernel
-    dist_cov_code <-
-      "sigma_dist[j] * exp(-(dist_mat[i,m] / rho_dist[j]))"
-  } else if (dist_cov == "matern32") {
-    # matern 3/2 kernel
-    dist_cov_code <- paste0(
-      "sigma_dist[j] * (1 + ((sqrt(3.0) * dist_mat[i,m]) / rho_dist[j])) * ",
-      "exp(-(sqrt(3.0) * dist_mat[i,m]) / rho_dist[j])"
-    )
-  }
   # render template
   render_stan_template(
     filepath = "stan/templates/05-transformed-parameters.stan",
     data = list(
       estimate_correlated_drift = estimate_correlated_drift,
       no_correlated_drift = !estimate_correlated_drift,
-      dist_mat = !is.null(dist_mat),
+      lon_lat = !is.null(lon_lat),
       tdrift = tdrift,
       residual = residual,
-      dist_cov_code = dist_cov_code
+      dist_cov = paste0("gp_", dist_cov, "_cov")
     )
   )
 }
@@ -542,7 +530,7 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
 #' @returns Character string
 #'
 #' @noRd
-write_model_block <- function(data, distributions, id, dist_mat, priors,
+write_model_block <- function(data, distributions, id, lon_lat, priors,
                               measurement_error, estimate_correlated_drift,
                               estimate_residual) {
   # check for repeated
@@ -617,7 +605,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
     paste0(
       "eta[t,tip_id[i]][", j, "]",
       ifelse(
-        !is.null(dist_mat),
+        !is.null(lon_lat),
         paste0(" + dist_v[tip_id[i],", j, "]"),
         ""
       )
@@ -728,7 +716,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
       estimate_correlated_drift = estimate_correlated_drift,
       ordered_seq = ordered_seq,
       gamma_seq = gamma_seq,
-      dist_mat = !is.null(dist_mat),
+      lon_lat = !is.null(lon_lat),
       add_priors_residual_sds_cors = add_priors_residual_sds_cors,
       init_residuals = init_residuals,
       init_tdrift = init_tdrift,
@@ -749,7 +737,7 @@ write_model_block <- function(data, distributions, id, dist_mat, priors,
 #' @returns Character string
 #'
 #' @noRd
-write_gen_quantities_block <- function(data, distributions, id, dist_mat,
+write_gen_quantities_block <- function(data, distributions, id, lon_lat,
                                        measurement_error,
                                        estimate_correlated_drift,
                                        estimate_residual, log_lik) {
@@ -768,7 +756,7 @@ write_gen_quantities_block <- function(data, distributions, id, dist_mat,
     paste0(
       "eta[t,tip_id[i]][", j, "]",
       ifelse(
-        !is.null(dist_mat),
+        !is.null(lon_lat),
         paste0(" + dist_v[tip_id[i],", j, "]"),
         ""
       )
