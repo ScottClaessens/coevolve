@@ -53,10 +53,14 @@
 #' @param complete_cases (optional) Logical. If \code{FALSE} (default), all
 #'   missing values are imputed by the model. If \code{TRUE}, taxa with missing
 #'   data are excluded.
-#' @param dist_mat (optional) A distance matrix with row and column names
-#'   exactly matching the tip labels in the phylogeny. If specified, the model
-#'   will additionally control for spatial location by including a separate
-#'   Gaussian Process over locations for every coevolving variable in the model.
+#' @param lon_lat (optional) A \code{data.frame} containing longitude and
+#'   latitude values for all tips on the phylogeny. The data frame must contain
+#'   the following columns: a column labelled "id" that exactly matches the tip
+#'   labels on the phylogeny; a column labelled "longitude" that declares
+#'   longitude values in decimal degrees; and a column labelled "latitude" that
+#'   declares latitude values in decimal degrees. If specified, the model will
+#'   additionally control for spatial location by including a separate Gaussian
+#'   Process over locations for every coevolving variable in the model.
 #' @param dist_cov A string of length one specifying the covariance kernel used
 #'   for Gaussian Processes over locations (case-sensitive). Currently supported
 #'   are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
@@ -114,6 +118,7 @@
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
+#' @param dist_mat Deprecated.
 #'
 #' @returns A list containing the data for fitting the dynamic coevolutionary
 #'   model in \pkg{Stan}
@@ -169,7 +174,7 @@
 #'   effects_mat = effects_mat
 #' )
 #'
-#' # include distance matrix
+#' # include longitude/latitude values
 #' stan_data <- coev_make_standata(
 #'   data = authority$data,
 #'   variables = list(
@@ -178,7 +183,7 @@
 #'   ),
 #'   id = "language",
 #'   tree = authority$phylogeny,
-#'   dist_mat = authority$distance_matrix
+#'   lon_lat = authority$coordinates
 #' )
 #'
 #' # include measurement error
@@ -216,19 +221,20 @@
 #' @export
 coev_make_standata <- function(data, variables, id, tree,
                                effects_mat = NULL, complete_cases = FALSE,
-                               dist_mat = NULL, dist_cov = "exp_quad",
+                               lon_lat = NULL, dist_cov = "exp_quad",
                                measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_correlated_drift = TRUE,
                                estimate_residual = TRUE,
-                               log_lik = FALSE,
-                               prior_only = FALSE) {
+                               log_lik = FALSE, prior_only = FALSE,
+                               dist_mat = NULL) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, measurement_error, prior, scale,
-             estimate_correlated_drift, estimate_residual, log_lik, prior_only)
+  run_checks(data, variables, id, tree, effects_mat, complete_cases,
+             lon_lat, dist_cov, measurement_error, prior, scale,
+             estimate_correlated_drift, estimate_residual, log_lik, prior_only,
+             dist_mat)
   # coerce data argument to data frame
   #' @srrstats {G2.7, G2.10} Accepts multiple tabular forms, ensures data frame
   data <- as.data.frame(data)
@@ -269,9 +275,9 @@ coev_make_standata <- function(data, variables, id, tree,
     matched_data <- rbind(matched_data, data[data[, id] == tip, ])
   }
   data <- matched_data
-  # match distance matrix to tree tip label ordering
-  if (!is.null(dist_mat)) {
-    dist_mat <- dist_mat[tree[[1]]$tip.label, tree[[1]]$tip.label]
+  # match lon/lat coordinates to tree tip label ordering
+  if (!is.null(lon_lat)) {
+    lon_lat <- lon_lat[match(tree[[1]]$tip.label, lon_lat$id), ]
   }
   # create effects matrix if not specified
   if (is.null(effects_mat)) {
@@ -286,11 +292,8 @@ coev_make_standata <- function(data, variables, id, tree,
   # stop for internal mismatches
   if (!identical(tree[[1]]$tip.label, unique(data[, id]))) {
     stop2("Data and phylogeny tips do not match.")
-  } else if (!is.null(dist_mat) && (
-    !identical(tree[[1]]$tip.label, rownames(dist_mat)) ||
-      !identical(tree[[1]]$tip.label, colnames(dist_mat))
-  )) {
-    stop2("Distance matrix and phylogeny tips do not match.")
+  } else if (!is.null(lon_lat) && !identical(tree[[1]]$tip.label, lon_lat$id)) {
+    stop2("Lon/lat values and phylogeny tips do not match.")
   } else if (!identical(names(variables), rownames(effects_mat)) ||
                !identical(names(variables), colnames(effects_mat))) {
     stop2("Effects matrix and variable names do not match.")
@@ -416,8 +419,18 @@ coev_make_standata <- function(data, variables, id, tree,
     }
     se <- as.matrix(as.data.frame(se))
   }
-  # normalise distance matrix so that maximum distance = 1
-  if (!is.null(dist_mat)) dist_mat <- dist_mat / max(dist_mat)
+  if (!is.null(lon_lat)) {
+    # get longitude / latitude coordinates in radians
+    xlon <- lon_lat$longitude * pi / 180
+    xlat <- lon_lat$latitude * pi / 180
+    # get x,y,z coordinates on a unit sphere
+    coords <- matrix(NA, nrow = length(xlon), ncol = 3)
+    coords[, 1] <- cos(xlat) * cos(xlon)
+    coords[, 2] <- cos(xlat) * sin(xlon)
+    coords[, 3] <- sin(xlat)
+    # normalise x,y,z coordinates so that maximum distance = 1
+    coords <- coords / max(dist(coords))
+  }
   # match tip ids
   tip_id <- match(data[, id], tree[[1]]$tip.label)
   # data list for stan
@@ -441,8 +454,8 @@ coev_make_standata <- function(data, variables, id, tree,
     length_index = stan_length_index,     # mapping segments to unique lengths
     tip_to_seg = stan_tip_to_seg          # mapping from tips to segments
   )
-  # add distance matrix if specified
-  if (!is.null(dist_mat)) sd[["dist_mat"]] <- dist_mat
+  # add spatial coordinates if specified
+  if (!is.null(lon_lat)) sd[["coords"]] <- coords
   # add squared standard errors if measurement_error specified
   if (!is.null(measurement_error)) sd[["se"]] <- se
   # add prior_only

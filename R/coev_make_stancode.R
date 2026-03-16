@@ -175,7 +175,7 @@
 #'   effects_mat = effects_mat
 #' )
 #'
-#' # include distance matrix
+#' # include longitude/latitude values
 #' stan_code <- coev_make_stancode(
 #'   data = authority$data,
 #'   variables = list(

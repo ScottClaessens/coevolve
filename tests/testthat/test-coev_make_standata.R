@@ -507,9 +507,9 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = "testing" # not of class matrix
+      lon_lat = log # not coercible to data frame
     ),
-    "Argument 'dist_mat' must be a matrix.",
+    "Argument 'lon_lat' must be coercible to a data.frame.",
     fixed = TRUE
   )
   expect_error(
@@ -521,71 +521,174 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = matrix(letters) # matrix not numeric
-    ),
-    "Argument 'dist_mat' must be a numeric matrix.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_standata(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      dist_mat = matrix(1:100, nrow = 10) # matrix not symmetric
-    ),
-    "Argument 'dist_mat' must be a symmetric matrix.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_standata(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      # matrix symmetric but diagonal not zero
-      dist_mat = matrix(rep(1, 100), nrow = 10)
-    ),
-    "Argument 'dist_mat' must have zeroes on the diagonal of the matrix.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_standata(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      dist_mat = matrix(0) # no row/col names
-    ),
-    "Argument 'dist_mat' does not have valid row or column names.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_standata(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      dist_mat = matrix(rep(0, 100), nrow = 10,
-                        # matrix row/col names do not match tips
-                        dimnames = list(letters[1:10], letters[1:10]))
+      lon_lat = data.frame(testing = 0) # wrong column names
     ),
     paste0(
-      "Row and column names for argument 'dist_mat' do not ",
-      "match tree tip labels exactly."
+      "Argument 'lon_lat' does not contain the ",
+      "required columns: 'id', 'longitude', and 'latitude'"
     ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = "test",
+        longitude = 0,
+        latitude = 0
+      ) # ids do not match tree
+    ),
+    "The id column in 'lon_lat' does not match tree tip labels exactly.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = "test",
+        latitude = 0
+      ) # longitude not numeric
+    ),
+    "The longitude column in 'lon_lat' is not numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = as.numeric(NA),
+        latitude = 0
+      ) # longitude contains missing values
+    ),
+    "The longitude column in 'lon_lat' contains missing values.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 1000,
+        latitude = 0
+      ) # longitude > 360
+    ),
+    "The longitude column in 'lon_lat' contains values greater than 360.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = -1000,
+        latitude = 0
+      ) # longitude < -360
+    ),
+    "The longitude column in 'lon_lat' contains values less than -360.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = "test"
+      ) # latitude not numeric
+    ),
+    "The latitude column in 'lon_lat' is not numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = as.numeric(NA)
+      ) # latitude contains missing values
+    ),
+    "The latitude column in 'lon_lat' contains missing values.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = 1000
+      ) # latitude > 90
+    ),
+    "The latitude column in 'lon_lat' contains values greater than 90.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = -1000
+      ) # latitude < -90
+    ),
+    "The latitude column in 'lon_lat' contains values less than -90.",
     fixed = TRUE
   )
   expect_error(
@@ -765,6 +868,20 @@ test_that("coev_make_standata() produces expected errors", {
     "Argument 'prior_only' must be a logical of length one.",
     fixed = TRUE
   )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = "deprecated"
+    ),
+    "Argument 'dist_mat' is deprecated. Use 'lon_lat' instead.",
+    fixed = TRUE
+  )
 })
 
 test_that("coev_make_standata() returns a list with correct names for Stan", {
@@ -808,10 +925,13 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
       "prior_only")
   )
   expect_equal(sd1$prior_only, 0)
-  # include distance matrix
+  # include longitude/latitude coordinates
   withr::with_seed(1, {
-    dist_mat <- as.matrix(dist(rnorm(n)))
-    rownames(dist_mat) <- colnames(dist_mat) <- tree$tip.label
+    lon_lat <- data.frame(
+      id = tree$tip.label,
+      longitude = runif(length(tree$tip.label), -180, 180),
+      latitude = runif(length(tree$tip.label), -90, 90)
+    )
   })
   sd2 <-
     coev_make_standata(
@@ -822,7 +942,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = dist_mat
+      lon_lat = lon_lat
     )
   # expect list with correct names and prior_only = 0
   expect_no_error(sd2)
@@ -832,7 +952,7 @@ test_that("coev_make_standata() returns a list with correct names for Stan", {
     c("N_tips", "N_tree", "N_obs", "J", "N_seg", "node_seq", "parent", "ts",
       "tip", "effects_mat", "num_effects", "y", "miss", "tip_id",
       "N_unique_lengths", "unique_lengths", "length_index", "tip_to_seg",
-      "dist_mat", "prior_only")
+      "coords", "prior_only")
   )
   expect_equal(sd2$prior_only, 0)
   # set prior only
