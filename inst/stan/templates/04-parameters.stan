@@ -21,8 +21,8 @@ parameters{
   {{/gamma_seq}}
   {{#lon_lat}}
   matrix[N_tips,J] dist_z; // spatial covariance random effects
-  vector<lower=0>[J] lscale; // covariance declining with distance
-  vector<lower=0>[J] sdgp; // maximum covariance
+  vector<lower=0>[J] rho_dist; // covariance declining with distance
+  vector<lower=0>[J] sigma_dist; // maximum covariance
   {{/lon_lat}}
   {{#repeated_measures}}
   matrix[J,N_obs] residual_z;

@@ -111,9 +111,9 @@ transformed parameters{
   // distance covariance functions
   for (j in 1:J) {
     matrix[N_tips, N_tips] dist_cov;
-    dist_cov = {{dist_cov}}(coords, sdgp[j], lscale[j]);
+    dist_cov = {{dist_cov}}(coords, sigma_dist[j], rho_dist[j]);
     for (n in 1:N_tips) {
-      dist_cov[n, n] = sdgp[j] + 1e-12;
+      dist_cov[n, n] = sigma_dist[j] + 1e-12;
     }
     dist_v[, j] = cholesky_decompose(dist_cov) * dist_z[, j];
   }

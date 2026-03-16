@@ -11,7 +11,7 @@ coev_fit(
   tree,
   effects_mat = NULL,
   complete_cases = FALSE,
-  dist_mat = NULL,
+  lon_lat = NULL,
   dist_cov = "exp_quad",
   measurement_error = NULL,
   prior = NULL,
@@ -22,6 +22,7 @@ coev_fit(
   prior_only = FALSE,
   adapt_delta = 0.95,
   backend = "cmdstanr",
+  dist_mat = NULL,
   ...
 )
 }
@@ -64,10 +65,14 @@ be TRUE in the matrix.}
 missing values are imputed by the model. If \code{TRUE}, taxa with missing
 data are excluded.}
 
-\item{dist_mat}{(optional) A distance matrix with row and column names
-exactly matching the tip labels in the phylogeny. If specified, the model
-will additionally control for spatial location by including a separate
-Gaussian Process over locations for every coevolving variable in the model.}
+\item{lon_lat}{(optional) A \code{data.frame} containing longitude and
+latitude values for all tips on the phylogeny. The data frame must contain
+the following columns: a column labelled "id" that exactly matches the tip
+labels on the phylogeny; a column labelled "longitude" that declares
+longitude values in decimal degrees; and a column labelled "latitude" that
+declares latitude values in decimal degrees. If specified, the model will
+additionally control for spatial location by including a separate Gaussian
+Process over locations for every coevolving variable in the model.}
 
 \item{dist_cov}{A string of length one specifying the covariance kernel used
 for Gaussian Processes over locations (strictly case-sensitive). Currently
@@ -145,6 +150,8 @@ to the \code{target_accept} parameter.}
 \code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
 specified, the model will be sampled using nutpie via reticulate. Note
 that nutpie must be installed in your Python environment.}
+
+\item{dist_mat}{Deprecated.}
 
 \item{...}{Additional arguments. For sampling: arguments passed to
 \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
@@ -248,9 +255,9 @@ the model with the \code{measurement_error} argument.
 
 \bold{Controlling for spatial location}
 
-If users declare a distance matrix with the \code{dist_mat} argument,
-the model will include several Gaussian processes (one per coevolving
-variable) over spatial locations.
+If users declare longitude and latitude values with the \code{lon_lat}
+argument, the model will include several Gaussian processes (one per
+coevolving variable) over spatial locations.
 }
 \examples{
 \dontrun{

@@ -39,9 +39,12 @@ coevfit_example_01 <-
     seed = 12345
   )
 
-# fit model with distance matrix
-dist_mat <- as.matrix(dist(rnorm(n)))
-rownames(dist_mat) <- colnames(dist_mat) <- d$id
+# fit model with longitude and latitude values
+lon_lat <- data.frame(
+  id = d$id,
+  longitude = runif(n, -180, 180),
+  latitude = runif(n, -90, 90)
+)
 coevfit_example_02 <-
   coev_fit(
     data = d,
@@ -51,7 +54,7 @@ coevfit_example_02 <-
     ),
     id = "id",
     tree = tree,
-    dist_mat = dist_mat,
+    lon_lat = lon_lat,
     chains = chains,
     iter_warmup = warmup,
     iter_sampling = iter,
