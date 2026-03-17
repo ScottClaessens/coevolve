@@ -596,7 +596,7 @@ test_that("coev_make_standata() produces expected errors", {
         id = tree$tip.label,
         longitude = 1000,
         latitude = 0
-      ) # longitude > 360
+      ) # longitude greater than 360
     ),
     "The longitude column in 'lon_lat' contains values greater than 360.",
     fixed = TRUE
@@ -614,7 +614,7 @@ test_that("coev_make_standata() produces expected errors", {
         id = tree$tip.label,
         longitude = -1000,
         latitude = 0
-      ) # longitude < -360
+      ) # longitude less than -360
     ),
     "The longitude column in 'lon_lat' contains values less than -360.",
     fixed = TRUE
@@ -668,7 +668,7 @@ test_that("coev_make_standata() produces expected errors", {
         id = tree$tip.label,
         longitude = 0,
         latitude = 1000
-      ) # latitude > 90
+      ) # latitude greater than 90
     ),
     "The latitude column in 'lon_lat' contains values greater than 90.",
     fixed = TRUE
@@ -686,7 +686,7 @@ test_that("coev_make_standata() produces expected errors", {
         id = tree$tip.label,
         longitude = 0,
         latitude = -1000
-      ) # latitude < -90
+      ) # latitude less than -90
     ),
     "The latitude column in 'lon_lat' contains values less than -90.",
     fixed = TRUE

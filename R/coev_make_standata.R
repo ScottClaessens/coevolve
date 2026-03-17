@@ -429,7 +429,7 @@ coev_make_standata <- function(data, variables, id, tree,
     coords[, 2] <- cos(xlat) * sin(xlon)
     coords[, 3] <- sin(xlat)
     # normalise x,y,z coordinates so that maximum distance = 1
-    coords <- coords / max(dist(coords))
+    coords <- coords / max(stats::dist(coords))
   }
   # match tip ids
   tip_id <- match(data[, id], tree[[1]]$tip.label)
