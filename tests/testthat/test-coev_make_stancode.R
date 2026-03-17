@@ -1062,7 +1062,7 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
       compile = FALSE
     )$check_syntax(quiet = TRUE)
   )
-  # expect message when distance matrix included
+  # expect message when longitude and latitude values included
   expect_message(
     coev_make_stancode(
       data = d,

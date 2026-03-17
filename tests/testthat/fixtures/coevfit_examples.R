@@ -19,7 +19,7 @@ warmup <- 50
 iter <- 50
 chains <- 1
 
-# fit model without distance matrix
+# fit model without longitude and latitude values
 coevfit_example_01 <-
   coev_fit(
     data = d,
