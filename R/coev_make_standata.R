@@ -61,6 +61,10 @@
 #'   declares latitude values in decimal degrees. If specified, the model will
 #'   additionally control for spatial location by including a separate Gaussian
 #'   Process over locations for every coevolving variable in the model.
+#' @param dist_k An integer of length one specifying the number of basis
+#'   functions for computing Hilbert-space approximate Gaussian Processes over
+#'   locations. If \code{NA} (the default), exact Gaussian Processes are
+#'   computed.
 #' @param dist_cov A string of length one specifying the covariance kernel used
 #'   for Gaussian Processes over locations (case-sensitive). Currently supported
 #'   are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
@@ -221,8 +225,8 @@
 #' @export
 coev_make_standata <- function(data, variables, id, tree,
                                effects_mat = NULL, complete_cases = FALSE,
-                               lon_lat = NULL, dist_cov = "exp_quad",
-                               measurement_error = NULL,
+                               lon_lat = NULL, dist_k = NA,
+                               dist_cov = "exp_quad", measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_correlated_drift = TRUE,
                                estimate_residual = TRUE,
@@ -232,7 +236,7 @@ coev_make_standata <- function(data, variables, id, tree,
   #'   input data is dimensionally commensurate
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases,
-             lon_lat, dist_cov, measurement_error, prior, scale,
+             lon_lat, dist_k, dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only,
              dist_mat)
   # coerce data argument to data frame
@@ -258,7 +262,7 @@ coev_make_standata <- function(data, variables, id, tree,
         paste0(
           "Note: Missing values (NAs) detected. Rows with missing data have ",
           "been excluded from the Stan data list. Set complete_cases = FALSE ",
-          "to exclude taxa with missing values."
+          "to include taxa with missing values."
         )
       )
     }
@@ -424,12 +428,35 @@ coev_make_standata <- function(data, variables, id, tree,
     xlon <- lon_lat$longitude * pi / 180
     xlat <- lon_lat$latitude * pi / 180
     # get x,y,z coordinates on a unit sphere
-    coords <- matrix(NA, nrow = length(xlon), ncol = 3)
+    coords <- matrix(nrow = length(xlon), ncol = 3)
     coords[, 1] <- cos(xlat) * cos(xlon)
     coords[, 2] <- cos(xlat) * sin(xlon)
     coords[, 3] <- sin(xlat)
     # normalise x,y,z coordinates so that maximum distance = 1
     coords <- coords / max(stats::dist(coords))
+    # further calculations for approximate gps
+    if (!is.na(dist_k)) {
+      # basis function approach requires centered variables
+      Xgp <- sweep(coords, 2, colMeans(coords))
+      # choose L
+      L <- choose_L(Xgp, c = 5/4)
+      # set up Ks, Xgp, and slambda
+      Ks <- as.matrix(
+        do.call(
+          expand.grid,
+          replicate(3, seq_len(dist_k), simplify = FALSE)
+        )
+      )
+      Xgp_L <- matrix(nrow = nrow(Xgp), ncol = nrow(Ks))
+      slambda <- matrix(nrow = nrow(Ks), ncol = 3)
+      # compute Xgp and slambda
+      for (m in seq_len(NROW(Ks))) {
+        # approximate gp basis functions
+        Xgp_L[, m] <- eigen_fun_laplacian(Xgp, m = Ks[m, ], L = rep(L, 3))
+        # approximate gp eigenvalues
+        slambda[m, ] <- sqrt(eigen_val_laplacian(m = Ks[m, ], L = L))
+      }
+    }
   }
   # match tip ids
   tip_id <- match(data[, id], tree[[1]]$tip.label)
@@ -455,7 +482,15 @@ coev_make_standata <- function(data, variables, id, tree,
     tip_to_seg = stan_tip_to_seg          # mapping from tips to segments
   )
   # add spatial coordinates if specified
-  if (!is.null(lon_lat)) sd[["coords"]] <- coords
+  if (!is.null(lon_lat)) {
+    if (is.na(dist_k)) {
+      sd[["coords"]] <- coords
+    } else {
+      sd[["NBgp"]] <- as.integer(dist_k^3)
+      sd[["Xgp"]] <- Xgp_L
+      sd[["slambda"]] <- slambda
+    }
+  }
   # add squared standard errors if measurement_error specified
   if (!is.null(measurement_error)) sd[["se"]] <- se
   # add prior_only

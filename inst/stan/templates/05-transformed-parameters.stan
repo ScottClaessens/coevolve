@@ -121,7 +121,7 @@ transformed parameters{
   {{/exact_gps}}
   {{#approximate_gps}}
   for (j in 1:J) {
-    vector[NBgp] rgp = sqrt({{dist_cov_function}}(slambda, sigma_dist, rho_dist)) .* dist_z[, j];
+    vector[NBgp] rgp = sqrt({{dist_cov_function}}(slambda, sigma_dist[j], rho_dist[j])) .* dist_z[, j];
     dist_v[, j] = Xgp * rgp;
   }
   {{/approximate_gps}}

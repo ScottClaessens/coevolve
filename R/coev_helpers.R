@@ -683,3 +683,60 @@ stop2 <- function(...) {
 warning2 <- function(...) {
   warning(..., call. = FALSE)
 }
+
+#' Internal helper function for computing eigen functions for Gaussian Processes
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Computes the mth eigen function of an approximate GP. Used in
+#'   \code{coev_make_standata()}. Adapted from the brms package.
+#'
+#' @returns A numeric vector
+#'
+#' @noRd
+eigen_fun_laplacian <- function(x, m, L) {
+  x <- as.matrix(x)
+  D <- ncol(x)
+  stopifnot(length(m) == D, length(L) == D)
+  out <- vector("list", D)
+  for (i in seq_len(NCOL(x))) {
+    out[[i]] <- 1 / sqrt(L[i]) *
+      sin((m[i] * pi) / (2 * L[i]) * (x[, i] + L[i]))
+  }
+  Reduce("*", out)
+}
+
+#' Internal helper function for computing eigenvalues for Gaussian Processes
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Computes the mth eigenvalue of an approximate GP. Used in
+#'   \code{coev_make_standata()}. Adapted from the brms package.
+#'
+#' @returns A numeric vector
+#'
+#' @noRd
+eigen_val_laplacian <- function(m, L) {
+  ((m * pi) / (2 * L))^2
+}
+
+#' Internal helper function for returning the range of input data for which
+#' predictions should be made for Gaussian Processes
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Computes the range of input for which predictions should be made
+#'   in approximate GPs. Used in \code{coev_make_standata()}. Adapted from the
+#'   brms package.
+#'
+#' @returns Numeric
+#'
+#' @noRd
+choose_L <- function(x, c) {
+  if (!length(x)) {
+    range <- 1
+  } else {
+    range <- max(1, max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+  }
+  c * range
+}
