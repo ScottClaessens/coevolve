@@ -60,6 +60,10 @@
 #'   declares latitude values in decimal degrees. If specified, the model will
 #'   additionally control for spatial location by including a separate Gaussian
 #'   Process over locations for every coevolving variable in the model.
+#' @param dist_k An integer of length one specifying the number of basis
+#'   functions for computing Hilbert-space approximate Gaussian Processes over
+#'   locations. If \code{NA} (the default), exact Gaussian Processes are
+#'   computed.
 #' @param dist_cov A string of length one specifying the covariance kernel used
 #'   for Gaussian Processes over locations (strictly case-sensitive). Currently
 #'   supported are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
@@ -222,8 +226,8 @@
 #' @export
 coev_make_stancode <- function(data, variables, id, tree,
                                effects_mat = NULL, complete_cases = FALSE,
-                               lon_lat = NULL, dist_cov = "exp_quad",
-                               measurement_error = NULL,
+                               lon_lat = NULL, dist_k = NA,
+                               dist_cov = "exp_quad", measurement_error = NULL,
                                prior = NULL, scale = TRUE,
                                estimate_correlated_drift = TRUE,
                                estimate_residual = TRUE,
@@ -233,7 +237,7 @@ coev_make_stancode <- function(data, variables, id, tree,
   #'   input data is dimensionally commensurate
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases,
-             lon_lat, dist_cov, measurement_error, prior, scale,
+             lon_lat, dist_k, dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only,
              dist_mat)
   # coerce data argument to data frame
@@ -271,16 +275,16 @@ coev_make_stancode <- function(data, variables, id, tree,
     "// Generated with coevolve ",
     utils::packageVersion("coevolve"),
     "\n\n",
-    write_functions_block(),
+    write_functions_block(lon_lat, dist_k, dist_cov),
     "\n\n",
-    write_data_block(measurement_error, lon_lat),
+    write_data_block(measurement_error, lon_lat, dist_k),
     "\n\n",
     write_transformed_data_block(distributions, priors),
     "\n\n",
     write_parameters_block(data, variables, distributions, id, lon_lat,
                            estimate_correlated_drift, estimate_residual),
     "\n\n",
-    write_transformed_pars_block(data, distributions, id, lon_lat,
+    write_transformed_pars_block(data, distributions, id, lon_lat, dist_k,
                                  dist_cov, estimate_correlated_drift,
                                  estimate_residual),
     "\n\n",
@@ -306,7 +310,13 @@ coev_make_stancode <- function(data, variables, id, tree,
       paste0(
         "Note: Longitude and latitude values detected. Gaussian processes ",
         "over spatial distances have been included for each variable in the ",
-        "model using the '", dist_cov, "' covariance kernel."
+        "model using the '", dist_cov, "' covariance kernel.",
+        ifelse(
+          is.na(dist_k),
+          " Exact GPs will be computed.",
+          paste0(" Approximate GPs will be computed with ",
+                 as.integer(dist_k), " basis functions.")
+        )
       )
     )
   }
@@ -366,9 +376,24 @@ render_stan_template <- function(filepath, data = list()) {
 #' @returns Character string
 #'
 #' @noRd
-write_functions_block <- function() {
+write_functions_block <- function(lon_lat, dist_k, dist_cov) {
+  # functions for approximate gaussian processes
+  approximate_gps <- FALSE
+  if (!is.null(lon_lat) && !is.na(dist_k)) {
+    if (dist_cov == "exp_quad") {
+      approximate_gps <- list(exp_quad = TRUE)
+    } else if (dist_cov == "exponential") {
+      approximate_gps <- list(exponential = TRUE)
+    } else if (dist_cov == "matern32") {
+      approximate_gps <- list(matern32 = TRUE)
+    }
+  }
+  # render template
   render_stan_template(
-    filepath = "stan/templates/01-functions.stan"
+    filepath = "stan/templates/01-functions.stan",
+    data = list(
+      approximate_gps = approximate_gps
+    )
   )
 }
 
@@ -381,12 +406,22 @@ write_functions_block <- function() {
 #' @returns Character string
 #'
 #' @noRd
-write_data_block <- function(measurement_error, lon_lat) {
+write_data_block <- function(measurement_error, lon_lat, dist_k) {
+  # data for gaussian processes
+  gps <- FALSE
+  if (!is.null(lon_lat)) {
+    if (is.na(dist_k)) {
+      gps <- list(exact_gps = TRUE)
+    } else {
+      gps <- list(approximate_gps = TRUE)
+    }
+  }
+  # render template
   render_stan_template(
     filepath = "stan/templates/02-data.stan",
     data = list(
       measurement_error = !is.null(measurement_error),
-      lon_lat = !is.null(lon_lat)
+      gps = gps
     )
   )
 }
@@ -496,7 +531,8 @@ write_parameters_block <- function(data, variables, distributions, id,
 #'
 #' @noRd
 write_transformed_pars_block <- function(data, distributions, id, lon_lat,
-                                         dist_cov, estimate_correlated_drift,
+                                         dist_k, dist_cov,
+                                         estimate_correlated_drift,
                                          estimate_residual) {
   # calculate tdrift?
   tdrift <-
@@ -506,16 +542,32 @@ write_transformed_pars_block <- function(data, distributions, id, lon_lat,
   residual <-
     any(duplicated(data[, id])) && estimate_residual &&
     !("normal" %in% distributions)
+  # data for gaussian processes
+  gps <- FALSE
+  if (!is.null(lon_lat)) {
+    if (is.na(dist_k)) {
+      gps <- list(
+        exact_gps = list(
+          dist_cov_function = paste0("gp_", dist_cov, "_cov")
+        )
+      )
+    } else {
+      gps <- list(
+        approximate_gps = list(
+          dist_cov_function = paste0("spd_gp_", dist_cov)
+        )
+      )
+    }
+  }
   # render template
   render_stan_template(
     filepath = "stan/templates/05-transformed-parameters.stan",
     data = list(
       estimate_correlated_drift = estimate_correlated_drift,
       no_correlated_drift = !estimate_correlated_drift,
-      lon_lat = !is.null(lon_lat),
       tdrift = tdrift,
       residual = residual,
-      dist_cov = paste0("gp_", dist_cov, "_cov")
+      gps = gps
     )
   )
 }

@@ -11,9 +11,9 @@ transformed parameters{
   matrix[J,J] Q_inf; // asymptotic covariance matrix
   array[N_tree, N_seg] matrix[J,J] VCV_tips; // vcov matrix for drift
   array[N_tree, N_seg] matrix[J,J] L_VCV_tips; // Cholesky factor of VCV_tips
-  {{#lon_lat}}
+  {{#gps}}
   matrix[N_tips,J] dist_v; // distance covariance random effects
-  {{/lon_lat}}
+  {{/gps}}
   {{#tdrift}}
   array[N_tree,N_tips] vector[J] tdrift; // terminal drift
   {{/tdrift}}
@@ -107,16 +107,24 @@ transformed parameters{
     }
   }
   {{/tdrift}}
-  {{#lon_lat}}
+  {{#gps}}
   // distance covariance functions
+  {{#exact_gps}}
   for (j in 1:J) {
     matrix[N_tips, N_tips] dist_cov;
-    dist_cov = {{dist_cov}}(coords, sigma_dist[j], rho_dist[j]);
+    dist_cov = {{dist_cov_function}}(coords, sigma_dist[j], rho_dist[j]);
     for (n in 1:N_tips) {
       dist_cov[n, n] += 1e-12;
     }
     dist_v[, j] = cholesky_decompose(dist_cov) * dist_z[, j];
   }
-  {{/lon_lat}}
+  {{/exact_gps}}
+  {{#approximate_gps}}
+  for (j in 1:J) {
+    vector[NBgp] rgp = sqrt({{dist_cov_function}}(slambda, sigma_dist, rho_dist)) .* dist_z[, j];
+    dist_v[, j] = Xgp * rgp;
+  }
+  {{/approximate_gps}}
+  {{/gps}}
 
 }

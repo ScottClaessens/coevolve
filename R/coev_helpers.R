@@ -421,6 +421,31 @@ run_checks_lon_lat <- function(data, tree, lon_lat) {
   }
 }
 
+#' Internal helper function for checking dist_k argument
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
+#' @description Checks the dist_k argument for the functions
+#'   coev_make_stancode(), coev_make_standata(), and coev_fit().
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_dist_k <- function(dist_k) {
+  if (!is.na(dist_k)) {
+    # stop if not positive integer
+    if (!is.numeric(dist_k) || dist_k != as.integer(dist_k) || dist_k < 1L) {
+      stop2("Argument 'dist_k' must be a positive integer.")
+    }
+    # stop if dist_k is not of length 1
+    #' @srrstats {G2.0, G2.2} Assertion on length of input
+    if (length(dist_k) != 1) {
+      stop2("Argument 'dist_k' is not of length 1.")
+    }
+  }
+}
+
 #' Internal helper function for checking dist_cov argument
 #'
 #' @srrstats {G1.4a} Non-exported function documented here
@@ -588,9 +613,9 @@ run_checks_prior <- function(prior) {
 #'
 #' @noRd
 run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
-                       lon_lat, dist_cov, measurement_error, prior, scale,
-                       estimate_correlated_drift, estimate_residual, log_lik,
-                       prior_only, dist_mat) {
+                       lon_lat, dist_k, dist_cov, measurement_error, prior,
+                       scale, estimate_correlated_drift, estimate_residual,
+                       log_lik, prior_only, dist_mat) {
   # run checks from previous functions
   run_checks_data(data)
   run_checks_variables(data, variables)
@@ -598,6 +623,7 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   run_checks_tree(data, id, tree)
   run_checks_effects_mat(variables, effects_mat)
   run_checks_lon_lat(data, tree, lon_lat)
+  run_checks_dist_k(dist_k)
   run_checks_dist_cov(dist_cov)
   run_checks_measurement_error(data, variables, measurement_error)
   run_checks_prior(prior)

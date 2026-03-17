@@ -1077,8 +1077,10 @@ test_that("coev_make_stancode() creates Stan code with correct syntax", {
     ),
     paste0(
       "Note: Longitude and latitude values detected. Gaussian processes over ",
-      "spatial distances have been included for each variable in the model."
-    )
+      "spatial distances have been included for each variable in the model ",
+      "using the 'exp_quad' covariance kernel. Exact GPs will be computed."
+    ),
+    fixed = TRUE
   )
 })
 
