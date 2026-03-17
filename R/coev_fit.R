@@ -83,6 +83,10 @@
 #'   declares latitude values in decimal degrees. If specified, the model will
 #'   additionally control for spatial location by including a separate Gaussian
 #'   Process over locations for every coevolving variable in the model.
+#' @param dist_k An integer of length one specifying the number of basis
+#'   functions for computing Hilbert-space approximate Gaussian Processes over
+#'   locations. If \code{NA} (the default), exact Gaussian Processes are
+#'   computed.
 #' @param dist_cov A string of length one specifying the covariance kernel used
 #'   for Gaussian Processes over locations (strictly case-sensitive). Currently
 #'   supported are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
@@ -280,7 +284,7 @@
 #' @export
 coev_fit <- function(data, variables, id, tree,
                      effects_mat = NULL, complete_cases = FALSE,
-                     lon_lat = NULL, dist_cov = "exp_quad",
+                     lon_lat = NULL, dist_k = NA, dist_cov = "exp_quad",
                      measurement_error = NULL,
                      prior = NULL, scale = TRUE,
                      estimate_correlated_drift = TRUE,
@@ -292,7 +296,7 @@ coev_fit <- function(data, variables, id, tree,
   #'   input data is dimensionally commensurate
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, lon_lat,
-             dist_cov, measurement_error, prior, scale,
+             dist_k, dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only,
              dist_mat)
   # check backend argument
@@ -304,13 +308,13 @@ coev_fit <- function(data, variables, id, tree,
   }
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
-                           complete_cases, lon_lat, dist_cov,
+                           complete_cases, lon_lat, dist_k, dist_cov,
                            measurement_error, prior, scale,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
-                           complete_cases, lon_lat, dist_cov,
+                           complete_cases, lon_lat, dist_k, dist_cov,
                            measurement_error, prior, scale,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
@@ -475,6 +479,7 @@ coev_fit <- function(data, variables, id, tree,
       effects_mat = sd$effects_mat,
       complete_cases = complete_cases,
       lon_lat = lon_lat,
+      dist_k = dist_k,
       dist_cov = dist_cov,
       measurement_error = measurement_error,
       scale = scale,
