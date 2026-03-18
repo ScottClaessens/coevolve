@@ -1408,28 +1408,28 @@ test_that("coev_make_standata() works with approximate GPs", {
   # normalise coordinates (max distance = 1)
   coords <- coords / max(stats::dist(coords))
   # centre normalised coordinates
-  Xgp <- sweep(coords, 2, colMeans(coords))
-  # choose L
-  L <- choose_L(Xgp, c = 5/4)
+  xgp <- sweep(coords, 2, colMeans(coords))
+  # choose l
+  l <- choose_l(xgp, c = 5 / 4)
   # set up Ks, Xgp, and slambda
-  Ks <- as.matrix(
+  ks <- as.matrix(
     do.call(
       expand.grid,
       replicate(3, seq_len(5), simplify = FALSE)
     )
   )
-  Xgp_L <- matrix(nrow = nrow(Xgp), ncol = nrow(Ks))
-  slambda <- matrix(nrow = nrow(Ks), ncol = 3)
+  xgp_l <- matrix(nrow = nrow(xgp), ncol = nrow(ks))
+  slambda <- matrix(nrow = nrow(ks), ncol = 3)
   # compute Xgp and slambda
-  for (m in seq_len(NROW(Ks))) {
+  for (m in seq_len(NROW(ks))) {
     # approximate gp basis functions
-    Xgp_L[, m] <- eigen_fun_laplacian(Xgp, m = Ks[m, ], L = rep(L, 3))
+    xgp_l[, m] <- eigen_fun_laplacian(xgp, m = ks[m, ], l = rep(l, 3))
     # approximate gp eigenvalues
-    slambda[m, ] <- sqrt(eigen_val_laplacian(m = Ks[m, ], L = L))
+    slambda[m, ] <- sqrt(eigen_val_laplacian(m = ks[m, ], l = l))
   }
   # check that input data are correct
   expect_equal(sd$NBgp, 5^3)
-  expect_equal(sd$Xgp, Xgp_L)
+  expect_equal(sd$Xgp, xgp_l)
   expect_equal(sd$slambda, slambda)
   # check that data are still correct when lon-lat data is inputted
   # in a different order from the phylogeny and dataset
@@ -1449,7 +1449,7 @@ test_that("coev_make_standata() works with approximate GPs", {
       dist_k = 5
     )
   expect_equal(sd$NBgp, 5^3)
-  expect_equal(sd$Xgp, Xgp_L)
+  expect_equal(sd$Xgp, xgp_l)
   expect_equal(sd$slambda, slambda)
   # coevolve computes the same stan data as brms
   d$x <- coords[, 1]

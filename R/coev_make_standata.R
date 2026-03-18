@@ -437,24 +437,24 @@ coev_make_standata <- function(data, variables, id, tree,
     # further calculations for approximate gps
     if (!is.na(dist_k)) {
       # basis function approach requires centered variables
-      Xgp <- sweep(coords, 2, colMeans(coords))
-      # choose L
-      L <- choose_L(Xgp, c = 5/4)
-      # set up Ks, Xgp, and slambda
-      Ks <- as.matrix(
+      xgp <- sweep(coords, 2, colMeans(coords))
+      # choose l
+      l <- choose_l(xgp, c = 5 / 4)
+      # set up ks, xgp, and slambda
+      ks <- as.matrix(
         do.call(
           expand.grid,
           replicate(3, seq_len(dist_k), simplify = FALSE)
         )
       )
-      Xgp_L <- matrix(nrow = nrow(Xgp), ncol = nrow(Ks))
-      slambda <- matrix(nrow = nrow(Ks), ncol = 3)
-      # compute Xgp and slambda
-      for (m in seq_len(NROW(Ks))) {
+      xgp_l <- matrix(nrow = nrow(xgp), ncol = nrow(ks))
+      slambda <- matrix(nrow = nrow(ks), ncol = 3)
+      # compute xgp and slambda
+      for (m in seq_len(NROW(ks))) {
         # approximate gp basis functions
-        Xgp_L[, m] <- eigen_fun_laplacian(Xgp, m = Ks[m, ], L = rep(L, 3))
+        xgp_l[, m] <- eigen_fun_laplacian(xgp, m = ks[m, ], l = rep(l, 3))
         # approximate gp eigenvalues
-        slambda[m, ] <- sqrt(eigen_val_laplacian(m = Ks[m, ], L = L))
+        slambda[m, ] <- sqrt(eigen_val_laplacian(m = ks[m, ], l = l))
       }
     }
   }
@@ -487,7 +487,7 @@ coev_make_standata <- function(data, variables, id, tree,
       sd[["coords"]] <- coords
     } else {
       sd[["NBgp"]] <- as.integer(dist_k^3)
-      sd[["Xgp"]] <- Xgp_L
+      sd[["Xgp"]] <- xgp_l
       sd[["slambda"]] <- slambda
     }
   }

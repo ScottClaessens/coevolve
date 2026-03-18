@@ -694,14 +694,14 @@ warning2 <- function(...) {
 #' @returns A numeric vector
 #'
 #' @noRd
-eigen_fun_laplacian <- function(x, m, L) {
+eigen_fun_laplacian <- function(x, m, l) {
   x <- as.matrix(x)
-  D <- ncol(x)
-  stopifnot(length(m) == D, length(L) == D)
-  out <- vector("list", D)
+  d <- ncol(x)
+  stopifnot(length(m) == d, length(l) == d)
+  out <- vector("list", d)
   for (i in seq_len(NCOL(x))) {
-    out[[i]] <- 1 / sqrt(L[i]) *
-      sin((m[i] * pi) / (2 * L[i]) * (x[, i] + L[i]))
+    out[[i]] <- 1 / sqrt(l[i]) *
+      sin((m[i] * pi) / (2 * l[i]) * (x[, i] + l[i]))
   }
   Reduce("*", out)
 }
@@ -716,8 +716,8 @@ eigen_fun_laplacian <- function(x, m, L) {
 #' @returns A numeric vector
 #'
 #' @noRd
-eigen_val_laplacian <- function(m, L) {
-  ((m * pi) / (2 * L))^2
+eigen_val_laplacian <- function(m, l) {
+  ((m * pi) / (2 * l))^2
 }
 
 #' Internal helper function for returning the range of input data for which
@@ -732,7 +732,7 @@ eigen_val_laplacian <- function(m, L) {
 #' @returns Numeric
 #'
 #' @noRd
-choose_L <- function(x, c) {
+choose_l <- function(x, c) {
   if (!length(x)) {
     range <- 1
   } else {
