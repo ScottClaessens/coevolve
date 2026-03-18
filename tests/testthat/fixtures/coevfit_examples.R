@@ -239,6 +239,32 @@ coevfit_example_10 <-
     seed = 12345
   )
 
+# fit model with approximate gaussian processes
+d <- data.frame(
+  id = tree$tip.label,
+  x = rnorm(n),
+  y = rnorm(n),
+  longitude = runif(n, -180, 180),
+  latitude = runif(n, -90, 90)
+)
+coevfit_example_11 <-
+  coev_fit(
+    data = d,
+    variables = list(
+      x = "normal",
+      y = "normal"
+    ),
+    id = "id",
+    tree = tree,
+    lon_lat = lon_lat,
+    dist_k = 3,
+    chains = chains,
+    iter_warmup = warmup,
+    iter_sampling = iter,
+    adapt_delta = 0.99,
+    seed = 12345
+  )
+
 # update cmdstanr file locations
 update_file_location <- function(coevfit) {
   coevfit$fit$save_output_files(
@@ -259,6 +285,7 @@ suppressMessages({
   update_file_location(coevfit_example_08)
   update_file_location(coevfit_example_09)
   update_file_location(coevfit_example_10)
+  update_file_location(coevfit_example_11)
 })
 
 # save coevfit objects as rds files
@@ -282,3 +309,4 @@ save_coevfit_rds(coevfit_example_07)
 save_coevfit_rds(coevfit_example_08)
 save_coevfit_rds(coevfit_example_09)
 save_coevfit_rds(coevfit_example_10)
+save_coevfit_rds(coevfit_example_11)

@@ -12,6 +12,7 @@ coev_fit(
   effects_mat = NULL,
   complete_cases = FALSE,
   lon_lat = NULL,
+  dist_k = NA,
   dist_cov = "exp_quad",
   measurement_error = NULL,
   prior = NULL,
@@ -73,6 +74,11 @@ longitude values in decimal degrees; and a column labelled "latitude" that
 declares latitude values in decimal degrees. If specified, the model will
 additionally control for spatial location by including a separate Gaussian
 Process over locations for every coevolving variable in the model.}
+
+\item{dist_k}{An integer of length one specifying the number of basis
+functions for computing Hilbert-space approximate Gaussian Processes over
+locations. If \code{NA} (the default), exact Gaussian Processes are
+computed.}
 
 \item{dist_cov}{A string of length one specifying the covariance kernel used
 for Gaussian Processes over locations (strictly case-sensitive). Currently

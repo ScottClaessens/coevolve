@@ -281,7 +281,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "\n\n",
     write_transformed_data_block(distributions, priors),
     "\n\n",
-    write_parameters_block(data, variables, distributions, id, lon_lat,
+    write_parameters_block(data, variables, distributions, id, lon_lat, dist_k,
                            estimate_correlated_drift, estimate_residual),
     "\n\n",
     write_transformed_pars_block(data, distributions, id, lon_lat, dist_k,
@@ -469,7 +469,7 @@ write_transformed_data_block <- function(distributions, priors) {
 #'
 #' @noRd
 write_parameters_block <- function(data, variables, distributions, id,
-                                   lon_lat, estimate_correlated_drift,
+                                   lon_lat, dist_k, estimate_correlated_drift,
                                    estimate_residual) {
   # ordered variables for template
   if ("ordered_logistic" %in% distributions) {
@@ -506,6 +506,15 @@ write_parameters_block <- function(data, variables, distributions, id,
   } else {
     gamma_seq <- FALSE
   }
+  # data gaussian processes
+  gps <- FALSE
+  if (!is.null(lon_lat)) {
+    if (is.na(dist_k)) {
+      gps <- list(dist_z_dim1 = "N_tips")
+    } else {
+      gps <- list(dist_z_dim1 = "NBgp")
+    }
+  }
   # render template
   render_stan_template(
     filepath = "stan/templates/04-parameters.stan",
@@ -514,7 +523,7 @@ write_parameters_block <- function(data, variables, distributions, id,
       ordered_seq = ordered_seq,
       neg_binomial_seq = neg_binomial_seq,
       gamma_seq = gamma_seq,
-      lon_lat = !is.null(lon_lat),
+      gps = gps,
       repeated_measures = any(duplicated(data[, id])) && estimate_residual
     )
   )

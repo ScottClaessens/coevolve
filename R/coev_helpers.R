@@ -433,15 +433,15 @@ run_checks_lon_lat <- function(data, tree, lon_lat) {
 #'
 #' @noRd
 run_checks_dist_k <- function(dist_k) {
+  # stop if dist_k is not of length 1
+  #' @srrstats {G2.0, G2.2} Assertion on length of input
+  if (length(dist_k) != 1) {
+    stop2("Argument 'dist_k' is not of length 1.")
+  }
   if (!is.na(dist_k)) {
     # stop if not positive integer
     if (!is.numeric(dist_k) || dist_k != as.integer(dist_k) || dist_k < 1L) {
       stop2("Argument 'dist_k' must be a positive integer.")
-    }
-    # stop if dist_k is not of length 1
-    #' @srrstats {G2.0, G2.2} Assertion on length of input
-    if (length(dist_k) != 1) {
-      stop2("Argument 'dist_k' is not of length 1.")
     }
   }
 }

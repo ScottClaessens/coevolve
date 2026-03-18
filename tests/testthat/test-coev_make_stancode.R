@@ -700,6 +700,34 @@ test_that("coev_make_stancode() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      dist_k = c(1, 2)
+    ),
+    "Argument 'dist_k' is not of length 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_k = "test"
+    ),
+    "Argument 'dist_k' must be a positive integer.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       dist_cov = FALSE
     ),
     "Argument 'dist_cov' is not a character string.",
@@ -1597,4 +1625,78 @@ test_that("coev_make_stancode() works with log_lik", {
       compile = FALSE
     )$check_syntax(quiet = TRUE)
   )
+})
+
+test_that("coev_make_stancode() works with approximate GPs", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rbinom(n, size = 1, prob = 0.5),
+      longitude = runif(n, -180, 180),
+      latitude = runif(n, -90, 90)
+    )
+  })
+  # make stan code with approximate GP over distances
+  expect_message(
+    sc <-
+      coev_make_stancode(
+        data = d,
+        variables = list(
+          x = "normal",
+          y = "bernoulli_logit"
+        ),
+        id = "id",
+        tree = tree,
+        lon_lat = d,
+        dist_k = 10
+      ),
+    paste0(
+      "Note: Longitude and latitude values detected. Gaussian processes over ",
+      "spatial distances have been included for each variable in the model ",
+      "using the 'exp_quad' covariance kernel. Approximate GPs will be ",
+      "computed with 10 basis functions."
+    ),
+    fixed = TRUE
+  )
+  # check stan code is syntactically correct
+  expect_no_error(sc)
+  expect_true(
+    cmdstanr::cmdstan_model(
+      stan_file = cmdstanr::write_stan_file(sc),
+      compile = FALSE
+    )$check_syntax(quiet = TRUE)
+  )
+  # function for testing matches
+  test_stan_code_match <- function(dist_cov = "exp_quad", match) {
+    expect_match(
+      suppressMessages(
+        coev_make_stancode(
+          data = d,
+          variables = list(
+            x = "normal",
+            y = "bernoulli_logit"
+          ),
+          id = "id",
+          tree = tree,
+          lon_lat = d,
+          dist_k = 10,
+          dist_cov = dist_cov
+        )
+      ),
+      match,
+      fixed = TRUE
+    )
+  }
+  # check that stan code uses correct spd functions
+  test_stan_code_match(dist_cov = "exp_quad", match = "spd_gp_exp_quad")
+  test_stan_code_match(dist_cov = "exponential", match = "spd_gp_exponential")
+  test_stan_code_match(dist_cov = "matern32", match = "spd_gp_matern32")
+  # check that stan code includes relevant data in data block
+  test_stan_code_match(match = "int<lower=1> NBgp;")
+  test_stan_code_match(match = "matrix[N_tips, NBgp] Xgp;")
+  test_stan_code_match(match = "array[NBgp] vector[3] slambda;")
 })

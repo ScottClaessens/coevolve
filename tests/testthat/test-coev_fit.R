@@ -700,6 +700,34 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      dist_k = c(1, 2)
+    ),
+    "Argument 'dist_k' is not of length 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_k = "test"
+    ),
+    "Argument 'dist_k' must be a positive integer.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       dist_cov = FALSE
     ),
     "Argument 'dist_cov' is not a character string.",
@@ -1195,4 +1223,25 @@ test_that("coev_fit() works with cmdstanr backend and nutpie arguments", {
       )
     )
   })
+})
+
+test_that("coev_fit() works with approximate GPs", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example_11.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_11-1.csv")
+  # suppress warnings
+  sw <- suppressWarnings
+  # fitted without error
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
+  # expect no errors for extract_samples method
+  expect_no_error(sw(extract_samples(m)))
+  expect_true(sw(methods::is(extract_samples(m), "list")))
+  # expect no errors for stancode or standata methods
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
 })

@@ -700,6 +700,34 @@ test_that("coev_make_standata() produces expected errors", {
       ),
       id = "id",
       tree = tree,
+      dist_k = c(1, 2)
+    ),
+    "Argument 'dist_k' is not of length 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_k = "test"
+    ),
+    "Argument 'dist_k' must be a positive integer.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_make_standata(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
       dist_cov = FALSE
     ),
     "Argument 'dist_cov' is not a character string.",
@@ -1340,4 +1368,112 @@ test_that("coev_make_standata() does correct caching for Stan", {
     }
   }
   expect_equal(sd$tip_to_seg, stan_tip_to_seg)
+})
+
+test_that("coev_make_standata() works with approximate GPs", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      a = rnorm(n),
+      b = rnorm(n),
+      longitude = runif(n, -180, 180),
+      latitude = runif(n, -90, 90)
+    )
+  })
+  # produce stan data list with approximate GPs
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        a = "normal",
+        b = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = d,
+      dist_k = 5
+    )
+  # check that data list contains required entries
+  expect_contains(names(sd), c("NBgp", "Xgp", "slambda"))
+  # convert from lon/lat to x,y,z coords on a unit sphere
+  xlon <- d$longitude * pi / 180 # radians
+  xlat <- d$latitude * pi / 180
+  coords <- matrix(nrow = length(xlon), ncol = 3)
+  coords[, 1] <- cos(xlat) * cos(xlon)
+  coords[, 2] <- cos(xlat) * sin(xlon)
+  coords[, 3] <- sin(xlat)
+  # normalise coordinates (max distance = 1)
+  coords <- coords / max(stats::dist(coords))
+  # centre normalised coordinates
+  Xgp <- sweep(coords, 2, colMeans(coords))
+  # choose L
+  L <- choose_L(Xgp, c = 5/4)
+  # set up Ks, Xgp, and slambda
+  Ks <- as.matrix(
+    do.call(
+      expand.grid,
+      replicate(3, seq_len(5), simplify = FALSE)
+    )
+  )
+  Xgp_L <- matrix(nrow = nrow(Xgp), ncol = nrow(Ks))
+  slambda <- matrix(nrow = nrow(Ks), ncol = 3)
+  # compute Xgp and slambda
+  for (m in seq_len(NROW(Ks))) {
+    # approximate gp basis functions
+    Xgp_L[, m] <- eigen_fun_laplacian(Xgp, m = Ks[m, ], L = rep(L, 3))
+    # approximate gp eigenvalues
+    slambda[m, ] <- sqrt(eigen_val_laplacian(m = Ks[m, ], L = L))
+  }
+  # check that input data are correct
+  expect_equal(sd$NBgp, 5^3)
+  expect_equal(sd$Xgp, Xgp_L)
+  expect_equal(sd$slambda, slambda)
+  # check that data are still correct when lon-lat data is inputted
+  # in a different order from the phylogeny and dataset
+  withr::with_seed(1, {
+    lon_lat <- d[sample(1:n), c("id", "longitude", "latitude")]
+  })
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        a = "normal",
+        b = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = lon_lat,
+      dist_k = 5
+    )
+  expect_equal(sd$NBgp, 5^3)
+  expect_equal(sd$Xgp, Xgp_L)
+  expect_equal(sd$slambda, slambda)
+  # coevolve computes the same stan data as brms
+  d$x <- coords[, 1]
+  d$y <- coords[, 2]
+  d$z <- coords[, 3]
+  sd_brms <- brms::make_standata(formula = y ~ gp(x, y, z, k = 5), data = d)
+  expect_equal(sd$NBgp, sd_brms$NBgp_1)
+  expect_equal(sd$Xgp, sd_brms$Xgp_1)
+  expect_equal(sd$slambda, sd_brms$slambda_1)
+  # repeat for a different value of k
+  sd <-
+    coev_make_standata(
+      data = d,
+      variables = list(
+        a = "normal",
+        b = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = lon_lat,
+      dist_k = 10
+    )
+  sd_brms <- brms::make_standata(formula = y ~ gp(x, y, z, k = 10), data = d)
+  expect_equal(sd$NBgp, sd_brms$NBgp_1)
+  expect_equal(sd$Xgp, sd_brms$Xgp_1)
+  expect_equal(sd$slambda, sd_brms$slambda_1)
 })
