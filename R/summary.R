@@ -157,14 +157,40 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   # summarise ordinal cutpoints
   cutpoints <- NULL
   if ("ordered_logistic" %in% object$variables) {
-    cutpoints <- s[stringr::str_starts(s$variable, "c") &
-                     !stringr::str_starts(s$variable, "cor_residual") &
-                     !stringr::str_starts(s$variable, "cor_R"), ]
-    rownames(cutpoints) <- paste0(
-      names(object$variables)[readr::parse_number(cutpoints$variable)],
-      stringr::str_extract(cutpoints$variable, pattern = "\\[\\d+\\]")
-    )
-    cutpoints <- cutpoints[, 2:ncol(cutpoints)]
+    cutpoint_mask <-
+      stringr::str_detect(
+        s$variable,
+        "^c\\[(\\d+),(\\d+)\\]$|^c\\d+\\[\\d+\\]$"
+      )
+    cutpoints <- s[cutpoint_mask, ]
+    if (nrow(cutpoints) > 0) {
+      is_stan_cutpoint <- stringr::str_detect(cutpoints$variable, "^c\\[")
+      var_idx <- ifelse(
+        is_stan_cutpoint,
+        readr::parse_number(
+          stringr::str_extract(cutpoints$variable, pattern = "^c\\[(\\d+),")
+        ),
+        readr::parse_number(
+          stringr::str_extract(cutpoints$variable, pattern = "^c(\\d+)\\[")
+        )
+      )
+      cut_idx <- ifelse(
+        is_stan_cutpoint,
+        readr::parse_number(
+          stringr::str_extract(cutpoints$variable, pattern = ",(\\d+)\\]$")
+        ),
+        readr::parse_number(
+          stringr::str_extract(cutpoints$variable, pattern = "\\[(\\d+)\\]$")
+        )
+      )
+      rownames(cutpoints) <- paste0(
+        names(object$variables)[var_idx],
+        "[",
+        cut_idx,
+        "]"
+      )
+      cutpoints <- cutpoints[, 2:ncol(cutpoints)]
+    }
   }
   # summarise overdispersion parameters
   phi <- NULL

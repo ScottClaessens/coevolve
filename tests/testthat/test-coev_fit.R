@@ -790,7 +790,7 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       backend = "testing"
     ),
-    "Argument 'backend' must be either 'cmdstanr' or 'nutpie'.",
+    "Argument 'backend' must be 'cmdstanr', 'nutpie', or 'pymc'.",
     fixed = TRUE
   )
 })

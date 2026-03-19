@@ -143,9 +143,14 @@
 #'   to \pkg{cmdstanr::sample()}. For \code{backend = "nutpie"}, this is mapped
 #'   to the \code{target_accept} parameter.
 #' @param backend Character string specifying which backend to use. Options are
-#'   \code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
-#'   specified, the model will be sampled using nutpie via reticulate. Note
-#'   that nutpie must be installed in your Python environment.
+#'   \code{"cmdstanr"} (default), \code{"nutpie"}, or \code{"pymc"}. When
+#'   \code{"nutpie"} is specified, the Stan model is compiled via BridgeStan
+#'   and sampled with nutpie's Rust NUTS sampler. When \code{"pymc"} is
+#'   specified, the model is translated to PyMC/PyTensor and sampled via NUTS
+#'   in PyMC. Pass \code{sampler = "nutpie"} with \code{backend = "pymc"} to
+#'   use nutpie's Rust NUTS sampler on a native JAX-compiled PyMC model for
+#'   faster sampling with multi-chain parallelism (recommended accelerated
+#'   path).
 #' @param ... Additional arguments. For sampling: arguments passed to
 #'   \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
 #'   \pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
@@ -292,23 +297,112 @@ coev_fit <- function(data, variables, id, tree,
   if (!is.character(backend) || length(backend) != 1) {
     stop2("Argument 'backend' must be a character string of length one.")
   }
-  if (!backend %in% c("cmdstanr", "nutpie")) {
-    stop2("Argument 'backend' must be either 'cmdstanr' or 'nutpie'.")
+  if (!backend %in% c("cmdstanr", "nutpie", "pymc")) {
+    stop2("Argument 'backend' must be 'cmdstanr', 'nutpie', or 'pymc'.")
   }
-  # write stan code for model
-  sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
-                           complete_cases, dist_mat, dist_cov,
-                           measurement_error, prior, scale,
-                           estimate_correlated_drift, estimate_residual,
-                           log_lik, prior_only)
-  # get data list for stan
+  # generate code and data for model
+  if (backend == "pymc") {
+    sc <- coev_make_pymc(data, variables, id, tree, effects_mat,
+                         complete_cases, dist_mat, dist_cov,
+                         measurement_error, prior, scale,
+                         estimate_correlated_drift, estimate_residual,
+                         prior_only)
+  } else {
+    sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
+                             complete_cases, dist_mat, dist_cov,
+                             measurement_error, prior, scale,
+                             estimate_correlated_drift, estimate_residual,
+                             log_lik, prior_only)
+  }
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
                            complete_cases, dist_mat, dist_cov,
                            measurement_error, prior, scale,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
   # fit model using specified sampler
-  if (backend == "nutpie") {
+  if (backend == "pymc") {
+    sample_args <- list(...)
+    num_chains  <- if ("chains" %in% names(sample_args))
+      as.integer(sample_args$chains) else 4L
+    num_samples <- if ("iter_sampling" %in% names(sample_args))
+      as.integer(sample_args$iter_sampling) else 1000L
+    num_warmup  <- if ("iter_warmup" %in% names(sample_args))
+      as.integer(sample_args$iter_warmup) else 1000L
+    seed <- if ("seed" %in% names(sample_args))
+      as.integer(sample_args$seed) else 0L
+    compile_mode <- if ("compile_mode" %in% names(sample_args))
+      sample_args$compile_mode else "cpu"
+    sampler <- if ("sampler" %in% names(sample_args))
+      tolower(sample_args$sampler) else "pymc"
+    use_nutpie <- identical(sampler, "nutpie")
+    # Must check availability with mlx flag BEFORE Python initializes
+    use_mlx <- identical(tolower(compile_mode), "mlx")
+    if (!check_pymc_available(mlx = use_mlx)) {
+      stop2("PyMC/PyTensor is not available. Please install with: ",
+            "pip install pymc pytensor arviz",
+            if (use_mlx) " mlx" else "", ". ",
+            "You may also need to configure reticulate to find your Python.")
+    }
+    if (use_nutpie) {
+      tryCatch(reticulate::py_require(c("nutpie", "jax")),
+               error = function(e) NULL)
+      if (!check_nutpie_available()) {
+        stop2("nutpie is not available. Please install with: pip install nutpie")
+      }
+    }
+    nutpie_backend <- if ("nutpie_backend" %in% names(sample_args))
+      sample_args$nutpie_backend else "jax"
+    nutpie_args <- sample_args
+    if ("parallel_chains" %in% names(nutpie_args) &&
+        !("cores" %in% names(nutpie_args))) {
+      nutpie_args$cores <- as.integer(nutpie_args$parallel_chains)
+    }
+    nutpie_args[c(
+      "chains", "iter_sampling", "iter_warmup", "seed",
+      "compile_mode", "sampler", "nutpie_backend", "parallel_chains"
+    )] <- NULL
+    distributions <- as.character(variables)
+    sd_pymc <- standata_to_pymc(sd, distributions)
+    if (use_nutpie) {
+      pymc_result <- pymc_run_nutpie(
+        pymc_code      = sc,
+        data_list      = sd_pymc,
+        num_chains     = num_chains,
+        num_samples    = num_samples,
+        num_warmup     = num_warmup,
+        seed           = seed,
+        target_accept  = adapt_delta,
+        nutpie_backend = nutpie_backend,
+        nutpie_args    = nutpie_args
+      )
+    } else {
+      pymc_result <- pymc_run_mcmc(
+        pymc_code    = sc,
+        data_list    = sd_pymc,
+        num_chains   = num_chains,
+        num_samples  = num_samples,
+        num_warmup   = num_warmup,
+        seed         = seed,
+        target_accept = adapt_delta,
+        compile_mode = compile_mode
+      )
+    }
+    draws_array <- pymc_result$draws_array
+    stan_variables <- posterior::variables(draws_array)
+    model <- create_pymc_wrapper(
+      trace_result   = pymc_result$trace,
+      draws_array    = draws_array,
+      stan_variables = stan_variables,
+      iter_sampling  = num_samples,
+      iter_warmup    = num_warmup,
+      chains         = num_chains,
+      seed           = seed
+    )
+    nsamples <- posterior::ndraws(draws_array)
+    has_lp__ <- "lp__" %in% stan_variables
+  } else if (backend == "nutpie") {
+    tryCatch(reticulate::py_require(c("nutpie", "bridgestan")),
+             error = function(e) NULL)
     # check if nutpie is available
     stop_if_nutpie_not_available()
     # extract sampling arguments from ...
@@ -322,15 +416,23 @@ coev_fit <- function(data, variables, id, tree,
     seed <- NULL
     num_chains <- if ("chains" %in% names(sample_args)) {
       as.integer(sample_args$chains)
+    } else {
+      4L
     }
     num_samples <- if ("iter_sampling" %in% names(sample_args)) {
       as.integer(sample_args$iter_sampling)
+    } else {
+      1000L
     }
     num_warmup <- if ("iter_warmup" %in% names(sample_args)) {
       as.integer(sample_args$iter_warmup)
+    } else {
+      1000L
     }
     seed <- if ("seed" %in% names(sample_args)) {
       as.integer(sample_args$seed)
+    } else {
+      NULL
     }
     # Map cmdstanr argument names to nutpie argument names
     # adapt_delta -> target_accept (nutpie uses target_accept)
@@ -474,8 +576,9 @@ coev_fit <- function(data, variables, id, tree,
       estimate_correlated_drift = estimate_correlated_drift,
       estimate_residual = estimate_residual,
       prior_only = prior_only,
-      nsamples = nsamples, # total number of draws across all chains
-      has_lp__ = has_lp__  # whether lp__ variable exists
+      backend = backend,
+      nsamples = nsamples,
+      has_lp__ = has_lp__
     )
   class(out) <- "coevfit"
   out

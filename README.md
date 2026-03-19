@@ -16,7 +16,7 @@
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian generalized
-dynamic phylogenetic models in Stan. These models can be used to
+dynamic phylogenetic models in Stan or PyMC. These models can be used to
 estimate how variables have coevolved over evolutionary time and to
 assess causal directionality (X → Y vs. Y → X) and contingencies (X,
 then Y) in evolution.
@@ -168,47 +168,54 @@ an increase in the optimal trait value for religious authority, and vice
 versa. In other words, these two variables reciprocally coevolve over
 evolutionary time.
 
-### Optional: Using nutpie as an alternative sampler
+### Optional: Accelerated sampling with PyMC + nutpie
 
-The **coevolve** package supports using `nutpie` as an alternative 
-high-performance sampler. To use nutpie:
+The **coevolve** package includes a PyMC backend that can be paired with
+`nutpie`'s Rust NUTS sampler for significantly faster sampling with
+native multi-chain parallelism and JAX compilation. This is the
+**recommended accelerated path**.
 
-1. **Install nutpie** in a Python environment:
+#### Setup
 
-   ```bash
-   pip install "nutpie[stan]"
-   ```
+Python dependencies are managed automatically via `reticulate`'s `uv`
+environment. The project `.Rprofile` sets `RETICULATE_PYTHON = "managed"`
+by default, so `reticulate` will install the required packages on first
+use. To pin a specific Python instead, set `RETICULATE_PYTHON` before
+`reticulate` initialises:
 
-2. **Configure reticulate** to use the Python environment with nutpie installed.
-   Choose one of the following options:
+``` r
+Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
+```
 
-   **Option A: Set environment variable** (recommended for reproducibility):
-   ```bash
-   export RETICULATE_PYTHON=/path/to/python
-   ```
-   Or in R:
-   ```r
-   Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
-   ```
+#### Primary: PyMC + nutpie (recommended)
 
-   **Option B: Use virtual environment**:
-   ```r
-   reticulate::use_virtualenv("~/.venvs/nutpie-env")
-   ```
+``` r
+fit <- coev_fit(
+  ...,
+  backend = "pymc",
+  sampler = "nutpie"
+)
+```
 
-   **Option C: Use Python directly**:
-   ```r
-   reticulate::use_python("/path/to/python")
-   ```
+This translates the model to PyMC/PyTensor, JIT-compiles the gradient
+via JAX, and samples with nutpie. Additional nutpie or JAX arguments can
+be passed through `...`.
 
-3. **Use nutpie** by setting `backend = "nutpie"` in `coev_fit()`:
-   ```r
-   fit <- coev_fit(..., backend = "nutpie")
-   ```
+#### Legacy: BridgeStan + nutpie
 
-**Note**: Explicit configuration is required to ensure reproducibility and avoid
-version conflicts. The package does not automatically search for nutpie 
-installations.
+The original nutpie path compiles the Stan model through BridgeStan:
+
+``` r
+fit <- coev_fit(..., backend = "nutpie")
+```
+
+This requires `nutpie[stan]` and `bridgestan` to be installed in the
+Python environment.
+
+**Note**: If you have previously pointed `reticulate` at a different
+Python (for example an older conda or mamba base environment), restart R
+after changing `RETICULATE_PYTHON` so the new interpreter is picked up
+cleanly.
 
 ## Citing coevolve
 
