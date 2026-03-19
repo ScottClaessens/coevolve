@@ -100,6 +100,13 @@ pymc_run_nutpie <- function(pymc_code, data_list,
 
   Sys.setenv(PYTHONIOENCODING = "utf-8")
 
+  # Force JAX to use CPU — GPU adds overhead for the small matrix ops typical
+  # of phylogenetic coevolutionary models (J ~ 2-10, N_tips ~ 50-500).
+  # Benchmarks show nutpie JAX on CPU is 2-4x faster than GPU for these sizes.
+  if (identical(tolower(nutpie_backend), "jax")) {
+    Sys.setenv(JAX_PLATFORMS = "cpu")
+  }
+
   nutpie <- reticulate::import("nutpie", convert = FALSE)
   np     <- reticulate::import("numpy",  convert = FALSE)
 

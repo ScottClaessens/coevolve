@@ -3,8 +3,8 @@
 #' Generate a Python string containing a PyMC model function equivalent to
 #' the Stan model produced by \code{\link{coev_make_stancode}}. The generated
 #' code can be executed via \pkg{reticulate} and sampled with PyMC's NUTS.
-#' When run on Apple Silicon, PyTensor's MLX backend can be used for
-#' GPU-accelerated computation.
+#' When sampled with nutpie's JAX backend, the graph compiles to XLA for
+#' efficient CPU execution.
 #'
 #' @inheritParams coev_make_stancode
 #'
@@ -135,40 +135,12 @@ pymc_header <- function(J) {
     "    return v[:, None] * pt.eye(v.shape[0])",
     "",
     "",
-    "def expm_real(A):",
-    "    \"\"\"Real-valued matrix exponential via scaling-and-squaring Taylor(12).\"\"\"",
-    "    B = A * (1.0 / 256.0)",
-    "    S = pt.eye(A.shape[0], dtype=A.dtype)",
-    "    T = S",
-    "    for k in range(1, 13):",
-    "        T = pt.dot(T, B) * (1.0 / k)",
-    "        S = S + T",
-    "    for _ in range(8):",
-    "        S = pt.dot(S, S)",
-    "    return S",
-    "",
-    "",
     "def mvn_chol_logp(value, chol):",
     "    z = pt.linalg.solve_triangular(chol, value[..., None], lower=True)[..., 0]",
     "    logdet = pt.sum(pt.log(pt.diagonal(chol, axis1=-2, axis2=-1)), axis=-1)",
     "    quad = pt.sum(z ** 2, axis=-1)",
     "    jdim = pt.cast(value.shape[-1], value.dtype)",
     "    return -0.5 * (jdim * np.log(2.0 * np.pi) + quad) - logdet",
-    "",
-    "",
-    "def pos_softplus(raw):",
-    "    return pt.softplus(raw)",
-    "",
-    "",
-    "def neg_softplus(raw):",
-    "    return -pt.softplus(raw)",
-    "",
-    "",
-    "def log_softplus_jac(raw):",
-    "    return -pt.softplus(-raw)",
-    "",
-    "",
-    pymc_unrolled_chol_fn(J),
     "",
     "",
     "def ksolve(A, Q):",
@@ -181,152 +153,92 @@ pymc_header <- function(J) {
     "    return 0.5 * (X + X.T)",
     "",
     "",
-    pymc_lkj_cholesky_fn(J)
+    pymc_lkj_corr_chol_fn(J)
   )
 }
 
-#' Generate constrained prior logp expression for PyMC
+
+#' Generate LKJ correlation Cholesky via stick-breaking (JAX-compatible)
+#'
+#' Uses \code{pt.stacklists} for matrix assembly instead of
+#' \code{pt.set_subtensor} loops, producing a much smaller graph.
 #' @noRd
-pymc_prior_logp_expr <- function(prior_str, constraint, shape_str, value_expr) {
-  parsed <- parse_stan_prior(prior_str)
-  shape_arg <- if (!is.null(shape_str)) sprintf(", shape=%s", shape_str) else ""
+pymc_lkj_corr_chol_fn <- function(J) {
+  if (J < 2) return(character(0))
 
-  dist_expr <- switch(parsed$dist,
-    "std_normal" = {
-      if (constraint == "upper_zero") {
-        sprintf("pm.TruncatedNormal.dist(mu=0.0, sigma=1.0, upper=0.0%s)", shape_arg)
-      } else if (constraint == "lower_zero") {
-        sprintf("pm.HalfNormal.dist(sigma=1.0%s)", shape_arg)
-      } else {
-        sprintf("pm.Normal.dist(mu=0.0, sigma=1.0%s)", shape_arg)
-      }
-    },
-    "normal" = {
-      mu <- parsed$args[1]
-      sigma <- parsed$args[2]
-      if (constraint == "upper_zero") {
-        sprintf("pm.TruncatedNormal.dist(mu=%s, sigma=%s, upper=0.0%s)", mu, sigma, shape_arg)
-      } else if (constraint == "lower_zero") {
-        sprintf("pm.TruncatedNormal.dist(mu=%s, sigma=%s, lower=0.0%s)", mu, sigma, shape_arg)
-      } else {
-        sprintf("pm.Normal.dist(mu=%s, sigma=%s%s)", mu, sigma, shape_arg)
-      }
-    },
-    "exponential" = {
-      if (constraint != "lower_zero") {
-        stop2("Exponential prior only supported for lower_zero PyMC raw transform.")
-      }
-      sprintf("pm.Exponential.dist(lam=%s%s)", parsed$args[1], shape_arg)
-    },
-    "gamma" = {
-      if (constraint != "lower_zero") {
-        stop2("Gamma prior only supported for lower_zero PyMC raw transform.")
-      }
-      sprintf("pm.Gamma.dist(alpha=%s, beta=%s%s)",
-              parsed$args[1], parsed$args[2], shape_arg)
-    },
-    stop2("Unknown prior distribution for PyMC constrained raw transform: ", parsed$dist)
-  )
-
-  sprintf("pm.logp(%s, %s)", dist_expr, value_expr)
-}
-
-#' Generate unrolled batched Cholesky factorisation for fixed J
-#' @noRd
-pymc_unrolled_chol_fn <- function(J) {
-  if (J < 1) return(character(0))
+  n_corr <- J * (J - 1L) / 2L
+  entry <- function(i, j) sprintf("_e_%d_%d", i, j)
 
   lines <- c(
-    "def chol_lower_unrolled(V):",
-    "    \"\"\"Batched lower Cholesky with J unrolled at codegen time.\"\"\"",
-    "    _z = pt.zeros_like(V[:, 0, 0])"
+    "def sample_lkj_cholesky(name, n, eta):",
+    "    \"\"\"Sample Cholesky of correlation matrix with LKJ(eta) prior.\"\"\"",
+    "    if n == 1:",
+    "        return pt.eye(1)",
+    sprintf("    raw = pm.Flat(f'_{name}_raw', shape=%d)", n_corr),
+    "    z = pt.tanh(raw)"
   )
 
-  entry_name <- function(i, j) sprintf("_L_%d_%d", i, j)
-
+  # Emit scalar entries for L (stick-breaking parameterization)
+  idx <- 0L
   for (i in seq_len(J) - 1L) {
-    for (j in seq_len(i + 1L) - 1L) {
-      if (j == 0L) {
-        sum_expr <- "0.0"
-      } else {
-        terms <- vapply(
-          seq_len(j) - 1L,
-          function(k) sprintf("%s * %s", entry_name(i, k), entry_name(j, k)),
-          character(1)
-        )
-        sum_expr <- paste(terms, collapse = " + ")
-      }
-
+    for (j in 0L:i) {
+      if (i == 0L && j == 0L) next
       if (i == j) {
-        expr <- sprintf(
-          "pt.sqrt(pt.clip(V[:, %d, %d] - (%s), 1e-12, np.inf))",
-          i, j, sum_expr
-        )
+        if (i == 1L) {
+          sq_terms <- sprintf("%s**2", entry(i, 0L))
+        } else {
+          sq_terms <- paste(
+            vapply(0L:(j - 1L), function(k) sprintf("%s**2", entry(i, k)),
+                   character(1)),
+            collapse = " + ")
+        }
+        lines <- c(lines, sprintf(
+          "    %s = pt.sqrt(pt.maximum(1.0 - (%s), 1e-10))", entry(i, j), sq_terms))
+      } else if (j == 0L) {
+        lines <- c(lines, sprintf("    %s = z[%d]", entry(i, j), idx))
+        idx <- idx + 1L
       } else {
-        expr <- sprintf(
-          "(V[:, %d, %d] - (%s)) / %s",
-          i, j, sum_expr, entry_name(j, j)
-        )
+        sq_terms <- paste(
+          vapply(0L:(j - 1L), function(k) sprintf("%s**2", entry(i, k)),
+                 character(1)),
+          collapse = " + ")
+        lines <- c(lines, sprintf(
+          "    %s = z[%d] * pt.sqrt(pt.maximum(1.0 - (%s), 1e-10))",
+          entry(i, j), idx, sq_terms))
+        idx <- idx + 1L
       }
-
-      lines <- c(lines, sprintf("    %s = %s", entry_name(i, j), expr))
     }
   }
 
+  # Build matrix via stacklists (single op, no set_subtensor)
+  row_strs <- character(J)
   for (i in seq_len(J) - 1L) {
-    row_entries <- vapply(
-      seq_len(J) - 1L,
-      function(j) if (j <= i) entry_name(i, j) else "_z",
-      character(1)
-    )
-    lines <- c(
-      lines,
-      sprintf("    _row_%d = pt.stack([%s], axis=1)", i, paste(row_entries, collapse = ", "))
-    )
+    elems <- vapply(seq_len(J) - 1L, function(j) {
+      if (j > i) "pt.constant(0.0)"
+      else if (i == 0L && j == 0L) "pt.constant(1.0)"
+      else entry(i, j)
+    }, character(1))
+    row_strs[i + 1L] <- sprintf("[%s]", paste(elems, collapse = ", "))
   }
+  lines <- c(lines, sprintf("    L = pt.stacklists([%s])",
+                             paste(row_strs, collapse = ", ")))
 
-  row_names <- vapply(seq_len(J) - 1L, function(i) sprintf("_row_%d", i), character(1))
-  c(
-    lines,
-    sprintf("    return pt.stack([%s], axis=1)", paste(row_names, collapse = ", "))
-  )
-}
-
-#' Generate LKJ Cholesky sampling function (MLX-compatible)
-#' @noRd
-pymc_lkj_cholesky_fn <- function(J) {
-  if (J < 2) return(character(0))
-  c(
-    "def sample_lkj_cholesky(name, n, eta):",
-    "    \"\"\"Sample Cholesky of correlation matrix with LKJ(eta) prior.",
-    "    Uses stick-breaking parameterization with tanh transform.",
-    "    All ops are MLX-compatible (no LU, FillDiagonal, or ARange).\"\"\"",
-    "    if n == 1:",
-    "        return pt.eye(1)",
-    "    n_corr = n * (n - 1) // 2",
-    "    raw = pm.Flat(f'_{name}_raw', shape=n_corr)",
-    "    z = pt.tanh(raw)",
-    "    L = pt.zeros((n, n))",
-    "    L = pt.set_subtensor(L[0, 0], 1.0)",
-    "    idx = 0",
-    "    for i in range(1, n):",
-    "        for j in range(i):",
-    "            if j == 0:",
-    "                L = pt.set_subtensor(L[i, j], z[idx])",
-    "            else:",
-    "                rem = pt.sqrt(pt.maximum(1.0 - pt.sum(L[i, :j]**2), 1e-10))",
-    "                L = pt.set_subtensor(L[i, j], z[idx] * rem)",
-    "            idx += 1",
-    "        L = pt.set_subtensor(L[i, i],",
-    "            pt.sqrt(pt.maximum(1.0 - pt.sum(L[i, :i]**2), 1e-10)))",
-    "    lkj_logp = pt.zeros(())",
-    "    for i in range(1, n):",
-    "        lkj_logp = lkj_logp + (n - i - 1 + 2*(eta - 1)) * pt.log(L[i, i])",
+  # LKJ log prior + Jacobian
+  lkj_terms <- character(0)
+  for (i in 1L:(J - 1L)) {
+    coeff <- J - i - 1L + 2L  # (n - i - 1 + 2*(eta - 1)) simplified at eta=eta
+    lkj_terms <- c(lkj_terms, sprintf(
+      "(%d + 2*(eta - 1)) * pt.log(%s)", J - i - 1L, entry(i, i)))
+  }
+  lines <- c(lines, sprintf("    lkj_logp = %s",
+                             paste(lkj_terms, collapse = " + ")))
+  lines <- c(lines,
     "    jac = pt.sum(pt.log(1.0 - z**2 + 1e-10))",
     "    pm.Potential(f'_{name}_lkj_prior', lkj_logp + jac)",
     "    return L",
     ""
   )
+  lines
 }
 
 #' Build the complete build_model() function body
@@ -390,13 +302,8 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   a(paste0(I2, "# === Parameters ==="))
 
   # A_diag (upper=0)
-  a_diag_logp <- pymc_prior_logp_expr(priors$A_diag, "upper_zero", "J", "A_diag")
-  a(paste0(I2,
-    "_A_diag_raw = pm.Flat('_A_diag_raw', shape=J, initval=np.full(int(J), np.log(np.expm1(1.0)), dtype=np.float64))"))
-  a(paste0(I2, "A_diag = pm.Deterministic('A_diag', neg_softplus(_A_diag_raw))"))
-  a(paste0(I2, sprintf(
-    "pm.Potential('_A_diag_prior', pt.sum(%s + log_softplus_jac(_A_diag_raw)))",
-    a_diag_logp)))
+  a_diag_tmpl <- stan_prior_to_pymc(priors$A_diag, "upper_zero", "J")
+  a(paste0(I2, sprintf("A_diag = %s", sprintf(a_diag_tmpl, "'A_diag'"))))
 
   # A_offdiag
   if (n_offdiag > 0) {
@@ -414,13 +321,8 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   }
 
   # Q_sigma (lower=0)
-  q_sigma_logp <- pymc_prior_logp_expr(priors$Q_sigma, "lower_zero", "J", "Q_sigma")
-  a(paste0(I2,
-    "_Q_sigma_raw = pm.Flat('_Q_sigma_raw', shape=J, initval=np.full(int(J), np.log(np.expm1(1.0)), dtype=np.float64))"))
-  a(paste0(I2, "Q_sigma = pm.Deterministic('Q_sigma', pos_softplus(_Q_sigma_raw))"))
-  a(paste0(I2, sprintf(
-    "pm.Potential('_Q_sigma_prior', pt.sum(%s + log_softplus_jac(_Q_sigma_raw)))",
-    q_sigma_logp)))
+  q_sigma_tmpl <- stan_prior_to_pymc(priors$Q_sigma, "lower_zero", "J")
+  a(paste0(I2, sprintf("Q_sigma = %s", sprintf(q_sigma_tmpl, "'Q_sigma'"))))
 
   # b
   b_tmpl <- stan_prior_to_pymc(priors$b, "none", "J")
@@ -549,7 +451,7 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   a(paste0(I2, "_Qi = Q_inf[None, :, :]"))
   a(paste0(I2, "_V = _Qi - pt.matmul(A_delta_cache, pt.matmul(_Qi, A_delta_cache.transpose(0, 2, 1)))"))
   a(paste0(I2, "VCV_cache = 0.5 * (_V + _V.transpose(0, 2, 1))"))
-  a(paste0(I2, "L_VCV_cache = chol_lower_unrolled(VCV_cache)"))
+  a(paste0(I2, "L_VCV_cache = pt.linalg.cholesky(VCV_cache)"))
   a(paste0(I2, "_A_inv = pt.linalg.solve(A_mat, eye_J)"))
   a(paste0(I2, "_As = pt.matmul(_A_inv[None, :, :], A_delta_cache - _eye_b)"))
   a(paste0(I2, "A_solve_cache = 0.5 * (_As + _As.transpose(0, 2, 1))"))
