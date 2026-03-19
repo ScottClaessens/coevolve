@@ -367,6 +367,7 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   a(paste0(I2, "unique_lengths = data['unique_lengths']"))
   a(paste0(I2, "length_index = data['length_index']"))
   a(paste0(I2, "prior_only = data['prior_only']"))
+  a(paste0(I2, "tip_to_seg = data['tip_to_seg']"))
   a(paste0(I2, "internal_mask = (np.asarray(tip[:, 1:], dtype=np.int32) == 0).astype(np.int32)"))
   a(paste0(I2, "internal_slot = np.cumsum(internal_mask, axis=1) - 1"))
   a(paste0(I2, "internal_slot[internal_mask == 0] = -1"))
@@ -555,41 +556,51 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   a(paste0(I2, "b_delta_cache = pt.matmul(A_solve_cache, b[None, :, None])[:, :, 0]"))
   a("")
 
-  # Tree traversal — unrolled at graph-build time (no scan overhead)
-  a(paste0(I2, "# === Tree traversal (unrolled) ==="))
+  # Tree traversal — level-batched (O(depth) graph ops instead of O(N_seg))
+  a(paste0(I2, "# === Tree traversal (level-batched) ==="))
+  a(paste0(I2, "n_levels = data['n_levels']"))
+  a(paste0(I2, "max_level_size = data['max_level_size']"))
+  a(paste0(I2, "root_ids = np.atleast_1d(np.asarray(data['root_ids'], dtype=np.int32))"))
+  a(paste0(I2, "level_node_ids = np.asarray(data['level_node_ids'], dtype=np.int32).reshape((N_tree, n_levels, max_level_size))"))
+  a(paste0(I2, "level_parent_ids = np.asarray(data['level_parent_ids'], dtype=np.int32).reshape((N_tree, n_levels, max_level_size))"))
+  a(paste0(I2, "level_length_idx_data = np.asarray(data['level_length_idx'], dtype=np.int32).reshape((N_tree, n_levels, max_level_size))"))
+  a(paste0(I2, "level_is_internal = np.asarray(data['level_is_internal'], dtype=np.int32).reshape((N_tree, n_levels, max_level_size))"))
+  a(paste0(I2, "level_drift_idx = np.asarray(data['level_drift_idx'], dtype=np.int32).reshape((N_tree, n_levels, max_level_size))"))
   a(paste0(I2, "eta_trees = []"))
-  a(paste0(I2, "L_VCV_trees = []"))
+  a(paste0(I2, "tip_L_VCV_trees = []"))
   a(paste0(I2, "for t in range(int(N_tree)):"))
-  a(paste0(I3, "_eta = [None] * N_seg"))
-  a(paste0(I3, "_lcv = [eye_J] * N_seg"))
-  a(paste0(I3, "_eta[int(node_seq[t, 0])] = eta_anc[t]"))
-  a(paste0(I3, "for _si in range(1, int(N_seg)):"))
-  a(paste0(I4, "_nd = int(node_seq[t, _si])"))
-  a(paste0(I4, "_pa = int(parent[t, _si])"))
-  a(paste0(I4, "_li = int(length_index[t, _si])"))
-  a(paste0(I4, "_it = int(tip[t, _si])"))
-  a(paste0(I4, "_pe = _eta[_pa]"))
+  a(paste0(I3, "eta = pt.zeros((N_seg, J))"))
+  a(paste0(I3, "eta = pt.set_subtensor(eta[int(root_ids[t])], eta_anc[t])"))
+  a(paste0(I3, "for _l in range(int(n_levels)):"))
+  a(paste0(I4, "_nids = np.asarray(level_node_ids[t, _l], dtype=np.int32)"))
+  a(paste0(I4, "_pids = np.asarray(level_parent_ids[t, _l], dtype=np.int32)"))
+  a(paste0(I4, "_li = np.asarray(level_length_idx_data[t, _l], dtype=np.int32)"))
+  a(paste0(I4, "_is_int = pt.as_tensor_variable(np.asarray(level_is_internal[t, _l], dtype=np.float64))"))
+  a(paste0(I4, "_didx = np.asarray(level_drift_idx[t, _l], dtype=np.int32)"))
+  a(paste0(I4, "_pv = eta[_pids]"))
   a(paste0(I4, "_Ad = A_delta_cache[_li]"))
-  a(paste0(I4, "_base = pt.dot(_Ad, _pe) + b_delta_cache[_li]"))
-  a(paste0(I4, "if _it == 0:"))
-  a(paste0(I5, "_Lv = L_VCV_cache[_li]"))
-  a(paste0(I5, "_zi = int(internal_slot[t, _si - 1])"))
-  a(paste0(I5, "_eta[_nd] = _base + pt.dot(_Lv, z_drift[t, _zi])"))
-  a(paste0(I4, "else:"))
-  a(paste0(I5, "_eta[_nd] = _base"))
-  a(paste0(I5, "_lcv[_nd] = L_VCV_cache[_li]"))
-  a(paste0(I3, "eta_trees.append(pt.stack(_eta))"))
-  a(paste0(I3, "L_VCV_trees.append(pt.stack(_lcv))"))
+  a(paste0(I4, "_bd = b_delta_cache[_li]"))
+  a(paste0(I4, "_base = pt.matmul(_Ad, _pv[:, :, None])[:, :, 0] + _bd"))
+  a(paste0(I4, "_Lv = L_VCV_cache[_li]"))
+  a(paste0(I4, "_dv = z_drift[t, _didx]"))
+  a(paste0(I4, "_noise = pt.matmul(_Lv, _dv[:, :, None])[:, :, 0]"))
+  a(paste0(I4, "_vals = _base + _is_int[:, None] * _noise"))
+  a(paste0(I4, "eta = pt.set_subtensor(eta[_nids], _vals)"))
+  a(paste0(I3, "eta = pt.set_subtensor(eta[int(root_ids[t])], eta_anc[t])"))
+  a(paste0(I3, "eta_trees.append(eta)"))
+  a(paste0(I3, "# Vectorized tip L_VCV"))
+  a(paste0(I3, "_tip_li = np.asarray(length_index[t][tip_to_seg[t]], dtype=np.int32)"))
+  a(paste0(I3, "tip_L_VCV_trees.append(L_VCV_cache[_tip_li])"))
   a("")
 
   # tdrift (vectorised batched mat-vec)
   if (tdrift) {
     a(paste0(I2, "tdrift_trees = []"))
     a(paste0(I2, "for t in range(N_tree):"))
-    a(paste0(I3, "L_tips = L_VCV_trees[t][:N_tips]"))
+    a(paste0(I3, "L_tips = tip_L_VCV_trees[t]"))
     a(paste0(I3, "td = terminal_drift[t]"))
     a(paste0(I3,
-      "tdrift_trees.append(pt.sum(L_tips * td[:, None, :], axis=-1))"))
+      "tdrift_trees.append(pt.matmul(L_tips, td[:, :, None])[:, :, 0])"))
     a("")
   }
 
@@ -600,23 +611,20 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
     a("")
   }
 
-  # GP distance covariance
+  # GP distance covariance (vectorized kernel matrix)
   if (!is.null(dist_mat)) {
     a(paste0(I2, "dist_v_list = []"))
+    a(paste0(I2, "_dm = pt.as_tensor_variable(np.array(dist_mat_data, dtype=np.float64))"))
     a(paste0(I2, "for j_gp in range(J):"))
-    gp_kernel <- switch(dist_cov,
-      "exp_quad" = "sigma_dist[j_gp] * pt.exp(-(dist_mat_data[i_gp, m_gp] ** 2) / rho_dist[j_gp])",
-      "exponential" = "sigma_dist[j_gp] * pt.exp(-dist_mat_data[i_gp, m_gp] / rho_dist[j_gp])",
+    gp_kernel_full <- switch(dist_cov,
+      "exp_quad" = "sigma_dist[j_gp] * pt.exp(-(_dm ** 2) / rho_dist[j_gp])",
+      "exponential" = "sigma_dist[j_gp] * pt.exp(-_dm / rho_dist[j_gp])",
       "matern32" = paste0(
-        "sigma_dist[j_gp] * (1.0 + (pt.sqrt(3.0) * dist_mat_data[i_gp, m_gp]) / rho_dist[j_gp]) * ",
-        "pt.exp(-(pt.sqrt(3.0) * dist_mat_data[i_gp, m_gp]) / rho_dist[j_gp])")
+        "sigma_dist[j_gp] * (1.0 + (pt.sqrt(3.0) * _dm) / rho_dist[j_gp]) * ",
+        "pt.exp(-(pt.sqrt(3.0) * _dm) / rho_dist[j_gp])")
     )
-    a(paste0(I3, "dc = pt.eye(N_tips) * (sigma_dist[j_gp] + 0.01)"))
-    a(paste0(I3, "for i_gp in range(N_tips - 1):"))
-    a(paste0(I4, "for m_gp in range(i_gp + 1, N_tips):"))
-    a(paste0(I5, sprintf("val = %s", gp_kernel)))
-    a(paste0(I5, "dc = pt.set_subtensor(dc[i_gp, m_gp], val)"))
-    a(paste0(I5, "dc = pt.set_subtensor(dc[m_gp, i_gp], val)"))
+    a(paste0(I3, sprintf("dc = %s", gp_kernel_full)))
+    a(paste0(I3, "dc = pt.fill_diagonal(dc, sigma_dist[j_gp] + 0.01)"))
     a(paste0(I3, "L_dc = pt.linalg.cholesky(dc)"))
     a(paste0(I3, "dist_v_list.append(pt.dot(L_dc, dist_z[:, j_gp]))"))
     a(paste0(I2, "dist_v = pt.stack(dist_v_list, axis=1)"))
@@ -659,7 +667,7 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
     normal_idx <- which(distributions == "normal")
     not_normal_idx <- which(distributions != "normal")
 
-    a(paste0(I4, "L_cov_raw = L_VCV_trees[t][tid]"))
+    a(paste0(I4, "L_cov_raw = tip_L_VCV_trees[t][tid]"))
     if (!is.null(measurement_error)) {
       a(paste0(I4,
         "VCV_obs = pt.matmul(L_cov_raw, L_cov_raw.transpose(0, 2, 1))"))

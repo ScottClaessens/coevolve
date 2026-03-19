@@ -44,6 +44,36 @@ stop_if_pymc_not_available <- function() {
   }
 }
 
+#' Parse a Stan-style prior string
+#'
+#' @param prior_str Stan prior string such as \code{"normal(0, 2)"}.
+#'
+#' @returns A list with \code{dist} and \code{args}.
+#'
+#' @noRd
+parse_stan_prior <- function(prior_str) {
+  if (!is.character(prior_str) || length(prior_str) != 1 || is.na(prior_str)) {
+    stop2("Prior must be a single non-missing character string.")
+  }
+
+  prior_str <- stringr::str_trim(prior_str)
+  matches <- stringr::str_match(prior_str, "^([A-Za-z0-9_]+)\\((.*)\\)$")
+
+  if (is.na(matches[1, 1])) {
+    stop2("Could not parse Stan prior string: ", prior_str)
+  }
+
+  dist <- matches[1, 2]
+  arg_string <- stringr::str_trim(matches[1, 3])
+  args <- if (!nzchar(arg_string)) {
+    character(0)
+  } else {
+    stringr::str_split(arg_string, "\\s*,\\s*", simplify = FALSE)[[1]]
+  }
+
+  list(dist = dist, args = args)
+}
+
 #' Convert a Stan prior string to PyMC distribution code
 #'
 #' @description Maps a Stan prior specification to the equivalent PyMC
@@ -146,7 +176,134 @@ standata_to_pymc <- function(sd, distributions) {
     inv_overdisp[j] <- ifelse(v > m, m^2 / (v - m), m)
   }
   sd$inv_overdisp <- inv_overdisp
+
+  lvl <- compute_tree_levels(
+    node_seq_0    = sd$node_seq,
+    parent_0      = sd$parent,
+    tip_0         = sd$tip,
+    length_index_0 = sd$length_index,
+    N_tree        = sd$N_tree,
+    N_seg         = sd$N_seg
+  )
+  sd$n_levels        <- lvl$n_levels
+  sd$max_level_size  <- lvl$max_level_size
+  sd$root_ids        <- lvl$root_ids
+  sd$level_node_ids  <- lvl$level_node_ids
+  sd$level_parent_ids <- lvl$level_parent_ids
+  sd$level_length_idx <- lvl$level_length_idx
+  sd$level_is_internal <- lvl$level_is_internal
+  sd$level_drift_idx <- lvl$level_drift_idx
+  sd$level_sizes     <- lvl$level_sizes
+
   sd
+}
+
+#' Pre-compute level-batched tree traversal data
+#'
+#' Groups tree nodes by topological depth so the PyMC graph can process
+#' each level as a single batched operation instead of one op per node.
+#'
+#' @param node_seq_0 Integer matrix (N_tree, N_seg), 0-indexed node IDs in
+#'   traversal order.
+#' @param parent_0 Integer matrix (N_tree, N_seg), 0-indexed parent node IDs.
+#' @param tip_0 Integer matrix (N_tree, N_seg), 1 = tip, 0 = internal.
+#' @param length_index_0 Integer matrix (N_tree, N_seg), 0-indexed index into
+#'   unique_lengths.
+#' @param N_tree Integer, number of trees.
+#' @param N_seg Integer, number of segments per tree.
+#'
+#' @returns Named list with padded level-batched arrays.
+#'
+#' @noRd
+compute_tree_levels <- function(node_seq_0, parent_0, tip_0,
+                                length_index_0, N_tree, N_seg) {
+  all_depths <- matrix(0L, N_tree, N_seg)
+  root_ids <- integer(N_tree)
+
+  for (t in seq_len(N_tree)) {
+    ns <- node_seq_0[t, ]
+    pa <- parent_0[t, ]
+    root_ids[t] <- ns[1]
+
+    node_to_step <- integer(N_seg)
+    node_to_step[ns + 1L] <- seq_len(N_seg) - 1L
+
+    depth <- integer(N_seg)
+    for (i in 2:N_seg) {
+      parent_step_r <- node_to_step[pa[i] + 1L] + 1L
+      depth[i] <- depth[parent_step_r] + 1L
+    }
+    all_depths[t, ] <- depth
+  }
+
+  n_levels_total <- max(all_depths) + 1L
+  n_nonroot <- n_levels_total - 1L
+
+  max_level_size <- 0L
+  for (t in seq_len(N_tree)) {
+    for (l in seq_len(n_nonroot)) {
+      max_level_size <- max(max_level_size, sum(all_depths[t, ] == l))
+    }
+  }
+
+  internal_slot <- matrix(-1L, N_tree, N_seg)
+  for (t in seq_len(N_tree)) {
+    cnt <- 0L
+    for (i in 2:N_seg) {
+      if (tip_0[t, i] == 0L) {
+        internal_slot[t, i] <- cnt
+        cnt <- cnt + 1L
+      }
+    }
+  }
+
+  lvl_node_ids    <- array(0L, dim = c(N_tree, n_nonroot, max_level_size))
+  lvl_parent_ids  <- array(0L, dim = c(N_tree, n_nonroot, max_level_size))
+  lvl_length_idx  <- array(0L, dim = c(N_tree, n_nonroot, max_level_size))
+  lvl_is_internal <- array(0L, dim = c(N_tree, n_nonroot, max_level_size))
+  lvl_drift_idx   <- array(0L, dim = c(N_tree, n_nonroot, max_level_size))
+  lvl_sizes       <- matrix(0L, N_tree, n_nonroot)
+
+  for (t in seq_len(N_tree)) {
+    ns <- node_seq_0[t, ]
+    pa <- parent_0[t, ]
+    tp <- tip_0[t, ]
+    li <- length_index_0[t, ]
+    rid <- root_ids[t]
+
+    for (l in seq_len(n_nonroot)) {
+      steps <- which(all_depths[t, ] == l)
+      sz <- length(steps)
+      lvl_sizes[t, l] <- sz
+
+      for (k in seq_len(sz)) {
+        s <- steps[k]
+        lvl_node_ids[t, l, k]    <- ns[s]
+        lvl_parent_ids[t, l, k]  <- pa[s]
+        lvl_length_idx[t, l, k]  <- li[s]
+        lvl_is_internal[t, l, k] <- if (tp[s] == 0L) 1L else 0L
+        lvl_drift_idx[t, l, k]   <- if (tp[s] == 0L) internal_slot[t, s] else 0L
+      }
+      if (sz < max_level_size) {
+        for (k in (sz + 1L):max_level_size) {
+          lvl_node_ids[t, l, k]   <- rid
+          lvl_parent_ids[t, l, k] <- rid
+        }
+      }
+    }
+  }
+
+  list(
+    n_levels        = n_nonroot,
+    max_level_size  = max_level_size,
+    root_ids        = root_ids,
+    level_node_ids  = lvl_node_ids,
+    level_parent_ids = lvl_parent_ids,
+    level_length_idx = lvl_length_idx,
+    level_is_internal = lvl_is_internal,
+    level_drift_idx = lvl_drift_idx,
+    level_sizes     = lvl_sizes
+  )
 }
 
 #' Convert R data list to Python dict for PyMC
@@ -162,7 +319,11 @@ convert_r_to_python_data_pymc <- function(data_list) {
   integer_vars <- c("node_seq", "parent", "tip", "effects_mat",
                      "tip_id", "N_tips", "N_tree", "N_obs", "J", "N_seg",
                      "num_effects", "prior_only", "miss", "length_index",
-                     "tip_to_seg", "N_unique_lengths")
+                     "tip_to_seg", "N_unique_lengths",
+                     "n_levels", "max_level_size", "root_ids",
+                     "level_node_ids", "level_parent_ids",
+                     "level_length_idx", "level_is_internal",
+                     "level_drift_idx", "level_sizes")
 
   python_data <- list()
   for (name in names(data_list)) {

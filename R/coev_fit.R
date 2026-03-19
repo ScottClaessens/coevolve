@@ -359,7 +359,8 @@ coev_fit <- function(data, variables, id, tree,
     }
     nutpie_args[c(
       "chains", "iter_sampling", "iter_warmup", "seed",
-      "compile_mode", "sampler", "nutpie_backend", "parallel_chains"
+      "compile_mode", "sampler", "nutpie_backend", "parallel_chains",
+      "refresh"
     )] <- NULL
     distributions <- as.character(variables)
     sd_pymc <- standata_to_pymc(sd, distributions)
