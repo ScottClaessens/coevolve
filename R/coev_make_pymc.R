@@ -78,9 +78,16 @@ coev_make_pymc <- function(data, variables, id, tree,
   tdrift <- repeated || !("normal" %in% distributions)
   residual_v <- repeated && !("normal" %in% distributions)
   normal_vars <- variables[distributions == "normal"]
+  has_non_normal <- any(distributions != "normal")
+  # terminal_drift is needed when:
+  #   (a) tdrift path is active (all-non-normal or repeated), OR
+  #   (b) mixed case: non-normal vars alongside normal vars need a latent
+  #       terminal drift in the joint MVN (Stan always has terminal_drift here), OR
+  #   (c) normal variables have missing observations
   needs_terminal_drift <-
-    tdrift || (length(normal_vars) > 0 &&
-      any(is.na(data[, normal_vars, drop = FALSE])))
+    tdrift ||
+    (length(normal_vars) > 0 &&
+      (has_non_normal || any(is.na(data[, normal_vars, drop = FALSE]))))
 
   ordered_info <- list()
   if ("ordered_logistic" %in% distributions) {
@@ -330,6 +337,7 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   }
 
   # L_R (Cholesky correlation)
+  # Stan sync: {{#estimate_correlated_drift}} in 04-parameters.stan, 05-tp.stan, 06-model.stan
   if (estimate_correlated_drift) {
     lkj_eta <- parse_stan_prior(priors$L_R)$args[1]
     a(paste0(I2, sprintf(
@@ -358,6 +366,8 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
     "z_drift = pm.Normal('z_drift', mu=0.0, sigma=1.0, shape=(N_tree, N_internal, J))"))
 
   # terminal_drift
+  # Stan sync: array[N_tree] matrix[N_tips, J] terminal_drift in 04-parameters.stan
+  #            {{#add_terminal_drift_prior}} and per-obs std_normal in 06-model.stan
   if (needs_terminal_drift) {
     a(paste0(I2,
       "terminal_drift = pm.Normal('terminal_drift', mu=0.0, sigma=1.0, shape=(N_tree, N_tips, J))"))
@@ -403,6 +413,7 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   }
 
   # GP parameters
+  # Stan sync: {{#dist_mat}} in 04-parameters.stan, 05-tp.stan, 06-model.stan
   if (!is.null(dist_mat)) {
     a(paste0(I2,
       "dist_z = pm.Normal('dist_z', mu=0.0, sigma=1.0, shape=(N_tips, J))"))
@@ -415,6 +426,7 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   }
 
   # Residual parameters
+  # Stan sync: {{#repeated_measures}} in 04-parameters.stan, 06-model.stan
   if (repeated) {
     a(paste0(I2,
       "residual_z = pm.Normal('residual_z', mu=0.0, sigma=1.0, shape=(J, N_obs))"))
@@ -447,6 +459,7 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   a("")
 
   # Build Q matrix
+  # Stan sync: {{#estimate_correlated_drift}} in 05-tp.stan (Q construction)
   if (estimate_correlated_drift) {
     a(paste0(I2,
       "Q = pt.dot(diag_mat(Q_sigma), pt.dot(pt.dot(L_R, L_R.T), diag_mat(Q_sigma)))"))

@@ -190,6 +190,15 @@ in `coev_fit()`; use `nuts_sampler = "nutpie"` on the PyMC translation instead.
 Low-level helpers `nutpie_sample()` / `nutpie_compile_stan_model()` remain for
 advanced use.
 
+**Stan vs PyMC density check:** `compare_stan_pymc_logprob()` takes the same
+arguments as `coev_make_stancode()` / `coev_make_pymc()`, draws one CmdStan
+posterior draw, maps primary parameters into PyMC’s transformed space (including
+remapping `z_drift` and subtracting Stan-only priors on tip-edge `z`’s), and
+returns `logprob_stan`, `logprob_stan_adj`, and `logprob_pymc`. Use it to
+investigate large timing or posterior discrepancies; read `?compare_stan_pymc_logprob`
+for caveats (e.g. `terminal_drift` only appears in PyMC under some Gaussian
+missing-data patterns).
+
 #### Setup
 
 Python dependencies are managed automatically via `reticulate`’s `uv`

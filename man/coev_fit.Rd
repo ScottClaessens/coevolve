@@ -147,11 +147,12 @@ PyMC's \code{nuts_sampler} concept for the PyMC paths: \code{"stan"}
 (Stan’s built-in HMC/NUTS); \code{"pymc"} fits the \strong{PyMC} translation
 with \pkg{pymc}'s default NUTS; \code{"nutpie"} fits the same PyMC model
 using \strong{nutpie}'s Rust NUTS (same role as \code{nuts_sampler = "nutpie"}
-in \code{pymc.sample}). Optional arguments \code{nuts_backend} and
-\code{nuts_gradient_backend} (passed via \code{...}) are forwarded to
-nutpie's PyMC compiler when \code{nuts_sampler = "nutpie"} (e.g.
-\code{"jax"} or \code{"numba"}); they are ignored when
-\code{nuts_sampler = "stan"}.}
+in \code{pymc.sample}). When \code{nuts_sampler = "nutpie"}, optional
+\code{nuts_backend} and \code{nuts_gradient_backend} (via \code{...}) are
+forwarded to nutpie's compiler (\code{compile_pymc_model}); other nutpie
+options (e.g. \code{low_rank_modified_mass_matrix}) are passed to
+\code{nutpie.sample}. These nutpie-only arguments have no effect when
+\code{nuts_sampler} is \code{"stan"} or \code{"pymc"} (without a warning).}
 
 \item{backend}{\strong{Deprecated.} Use \code{nuts_sampler} instead:
 \code{cmdstanr} \eqn{\rightarrow} \code{"stan"}, \code{pymc}
@@ -163,11 +164,15 @@ BridgeStan) is no longer supported from \code{coev_fit()}; use
 \pkg{cmdstanr::sample()} (and compilation via \code{extra_stanc_args},
 \code{extra_compile_args}). For \code{"pymc"} or \code{"nutpie"}: sampling
 arguments such as \code{chains}, \code{iter_sampling}, \code{iter_warmup},
-\code{seed}; for plain PyMC, \code{compile_mode = "mlx"} enables MLX on
-Apple Silicon. For \code{nuts_sampler = "nutpie"}, nutpie tuning arguments
-(e.g. \code{low_rank_modified_mass_matrix}) can be passed via \code{...},
-and \code{nuts_backend} / \code{nuts_gradient_backend} map to nutpie's
-\code{backend} / \code{gradient_backend} for \code{compile_pymc_model}.
+\code{seed}; \code{parallel_chains} or \code{cores} set PyMC
+\code{pm.sample(cores=...)} for the default PyMC sampler (default is all
+chains in parallel, matching \code{chains}). For plain PyMC,
+\code{compile_mode = "mlx"} enables MLX on Apple Silicon. For
+\code{nuts_sampler = "nutpie"}, tuning arguments for \code{nutpie.sample}
+(e.g. \code{low_rank_modified_mass_matrix}, \code{mass_matrix_gamma}) can
+be passed via \code{...}; \code{nuts_backend} /
+\code{nuts_gradient_backend} set nutpie's compile \code{backend} /
+\code{gradient_backend}.
 The legacy names \code{nutpie_backend} and \code{sampler = "nutpie"} (with
 \code{backend = "pymc"}) are still accepted with a warning.}
 }
