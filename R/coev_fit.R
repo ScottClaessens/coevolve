@@ -138,32 +138,41 @@
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
-#' @param adapt_delta Target acceptance probability for the NUTS sampler.
-#'   Default is 0.95. For \code{backend = "cmdstanr"}, this is passed directly
-#'   to \pkg{cmdstanr::sample()}. For \code{backend = "nutpie"}, this is mapped
-#'   to the \code{target_accept} parameter.
-#' @param backend Character string specifying which backend to use. Options are
-#'   \code{"cmdstanr"} (default), \code{"nutpie"}, or \code{"pymc"}. When
-#'   \code{"nutpie"} is specified, the Stan model is compiled via BridgeStan
-#'   and sampled with nutpie's Rust NUTS sampler. When \code{"pymc"} is
-#'   specified, the model is translated to PyMC/PyTensor and sampled via NUTS
-#'   in PyMC. Pass \code{sampler = "nutpie"} with \code{backend = "pymc"} to
-#'   use nutpie's Rust NUTS sampler on a native JAX-compiled PyMC model for
-#'   faster sampling with multi-chain parallelism (recommended accelerated
-#'   path).
-#' @param ... Additional arguments. For sampling: arguments passed to
-#'   \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
-#'   \pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
-#'   \code{extra_stanc_args} and \code{extra_compile_args} work for both
-#'   samplers. Common sampling arguments include \code{chains},
-#'   \code{iter_sampling}, \code{iter_warmup}, and \code{seed}. For
-#'   \code{backend = "nutpie"}, sampler-specific arguments such as
-#'   \code{low_rank_modified_mass_matrix} (logical, enables low-rank modified
-#'   mass matrix adaptation), \code{mass_matrix_gamma}, and
-#'   \code{mass_matrix_eigval_cutoff} can be passed via \code{...}. Common
-#'   compilation arguments include \code{extra_stanc_args = list("--O1")} for
-#'   optimization and \code{extra_compile_args = list("STAN_THREADS=true")} for
-#'   threading.
+#' @param adapt_delta Target acceptance probability for the NUTS sampler
+#'   (default \code{0.95}). Passed to \pkg{cmdstanr::sample()} as
+#'   \code{adapt_delta}, and to PyMC / nutpie as \code{target_accept}.
+#' @param nuts_sampler Which NUTS implementation to use, aligned with
+#'   PyMC's \code{nuts_sampler} concept for the PyMC paths: \code{"stan"}
+#'   (default) fits the **Stan** model with **CmdStan** via \pkg{cmdstanr}
+#'   (Stan’s built-in HMC/NUTS); \code{"pymc"} fits the **PyMC** translation
+#'   with \pkg{pymc}'s default NUTS; \code{"nutpie"} fits the same PyMC model
+#'   using **nutpie**'s Rust NUTS (same role as \code{nuts_sampler = "nutpie"}
+#'   in \code{pymc.sample}). When \code{nuts_sampler = "nutpie"}, optional
+#'   \code{nuts_backend} and \code{nuts_gradient_backend} (via \code{...}) are
+#'   forwarded to nutpie's compiler (\code{compile_pymc_model}); other nutpie
+#'   options (e.g. \code{low_rank_modified_mass_matrix}) are passed to
+#'   \code{nutpie.sample}. These nutpie-only arguments have no effect when
+#'   \code{nuts_sampler} is \code{"stan"} or \code{"pymc"} (without a warning).
+#' @param backend \strong{Deprecated.} Use \code{nuts_sampler} instead:
+#'   \code{cmdstanr} \eqn{\rightarrow} \code{"stan"}, \code{pymc}
+#'   \eqn{\rightarrow} \code{"pymc"}. \code{backend = "nutpie"} (Stan via
+#'   BridgeStan) is no longer supported from \code{coev_fit()}; use
+#'   \code{nuts_sampler = "nutpie"} for nutpie on the PyMC model.
+#' @param ... Additional arguments. For \code{nuts_sampler = "stan"}: passed to
+#'   \pkg{cmdstanr::sample()} (and compilation via \code{extra_stanc_args},
+#'   \code{extra_compile_args}). For \code{"pymc"} or \code{"nutpie"}: sampling
+#'   arguments such as \code{chains}, \code{iter_sampling}, \code{iter_warmup},
+#'   \code{seed}; \code{parallel_chains} or \code{cores} set PyMC
+#'   \code{pm.sample(cores=...)} for the default PyMC sampler (default is all
+#'   chains in parallel, matching \code{chains}). For plain PyMC,
+#'   \code{compile_mode = "mlx"} enables MLX on Apple Silicon. For
+#'   \code{nuts_sampler = "nutpie"}, tuning arguments for \code{nutpie.sample}
+#'   (e.g. \code{low_rank_modified_mass_matrix}, \code{mass_matrix_gamma}) can
+#'   be passed via \code{...}; \code{nuts_backend} /
+#'   \code{nuts_gradient_backend} set nutpie's compile \code{backend} /
+#'   \code{gradient_backend}.
+#'   The legacy names \code{nutpie_backend} and \code{sampler = "nutpie"} (with
+#'   \code{backend = "pymc"}) are still accepted with a warning.
 #'
 #' @returns Fitted model of class \code{coevfit}
 #'
@@ -286,22 +295,51 @@ coev_fit <- function(data, variables, id, tree,
                      estimate_correlated_drift = TRUE,
                      estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
-                     adapt_delta = 0.95, backend = "cmdstanr", ...) {
+                     adapt_delta = 0.95,
+                     nuts_sampler = "stan",
+                     backend = NULL, ...) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only)
-  # check backend argument
-  if (!is.character(backend) || length(backend) != 1) {
-    stop2("Argument 'backend' must be a character string of length one.")
-  }
-  if (!backend %in% c("cmdstanr", "nutpie", "pymc")) {
-    stop2("Argument 'backend' must be 'cmdstanr', 'nutpie', or 'pymc'.")
+  if (!is.null(backend)) {
+    if (!is.character(backend) || length(backend) != 1L) {
+      stop2("Argument 'backend' must be a character string of length one.")
+    }
+    b <- tolower(backend)
+    if (b == "nutpie") {
+      stop2(
+        "backend = \"nutpie\" (Stan via BridgeStan) was removed from coev_fit(). ",
+        "Use nuts_sampler = \"nutpie\" to run nutpie on the PyMC model."
+      )
+    }
+    if (!b %in% c("cmdstanr", "pymc")) {
+      stop2("Unknown 'backend'; use nuts_sampler = \"stan\", \"pymc\", or \"nutpie\".")
+    }
+    b_map <- if (b == "cmdstanr") "stan" else "pymc"
+    if (!missing(nuts_sampler)) {
+      ns_chk <- normalize_nuts_sampler(nuts_sampler)
+      if (ns_chk != b_map) {
+        stop2(
+          "`backend` (deprecated) conflicts with `nuts_sampler`. ",
+          "Remove `backend` and set only `nuts_sampler`."
+        )
+      }
+      nuts_sampler <- ns_chk
+    } else {
+      nuts_sampler <- b_map
+    }
+    warning(
+      "`backend` is deprecated; use `nuts_sampler = \"", nuts_sampler, "\"` instead.",
+      call. = FALSE
+    )
+  } else {
+    nuts_sampler <- normalize_nuts_sampler(nuts_sampler)
   }
   # generate code and data for model
-  if (backend == "pymc") {
+  if (nuts_sampler %in% c("pymc", "nutpie")) {
     sc <- coev_make_pymc(data, variables, id, tree, effects_mat,
                          complete_cases, dist_mat, dist_cov,
                          measurement_error, prior, scale,
@@ -320,7 +358,7 @@ coev_fit <- function(data, variables, id, tree,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
   # fit model using specified sampler
-  if (backend == "pymc") {
+  if (nuts_sampler %in% c("pymc", "nutpie")) {
     sample_args <- list(...)
     num_chains  <- if ("chains" %in% names(sample_args))
       as.integer(sample_args$chains) else 4L
@@ -332,9 +370,15 @@ coev_fit <- function(data, variables, id, tree,
       as.integer(sample_args$seed) else 0L
     compile_mode <- if ("compile_mode" %in% names(sample_args))
       sample_args$compile_mode else "cpu"
-    sampler <- if ("sampler" %in% names(sample_args))
-      tolower(sample_args$sampler) else "pymc"
-    use_nutpie <- identical(sampler, "nutpie")
+    use_nutpie <- identical(nuts_sampler, "nutpie")
+    if (!use_nutpie && "sampler" %in% names(sample_args) &&
+        tolower(sample_args$sampler) == "nutpie") {
+      warning(
+        "`sampler = \"nutpie\"` is deprecated; use `nuts_sampler = \"nutpie\"`.",
+        call. = FALSE
+      )
+      use_nutpie <- TRUE
+    }
     # Must check availability with mlx flag BEFORE Python initializes
     use_mlx <- identical(tolower(compile_mode), "mlx")
     if (!check_pymc_available(mlx = use_mlx)) {
@@ -350,8 +394,16 @@ coev_fit <- function(data, variables, id, tree,
         stop2("nutpie is not available. Please install with: pip install nutpie")
       }
     }
-    nutpie_backend <- if ("nutpie_backend" %in% names(sample_args))
-      sample_args$nutpie_backend else "jax"
+    nutpie_backend <- "jax"
+    if ("nuts_backend" %in% names(sample_args)) {
+      nutpie_backend <- sample_args$nuts_backend
+    } else if ("nutpie_backend" %in% names(sample_args)) {
+      warning("`nutpie_backend` is deprecated; use `nuts_backend`.", call. = FALSE)
+      nutpie_backend <- sample_args$nutpie_backend
+    }
+    if ("nuts_gradient_backend" %in% names(sample_args)) {
+      sample_args$gradient_backend <- sample_args$nuts_gradient_backend
+    }
     nutpie_args <- sample_args
     if ("parallel_chains" %in% names(nutpie_args) &&
         !("cores" %in% names(nutpie_args))) {
@@ -359,8 +411,8 @@ coev_fit <- function(data, variables, id, tree,
     }
     nutpie_args[c(
       "chains", "iter_sampling", "iter_warmup", "seed",
-      "compile_mode", "sampler", "nutpie_backend", "parallel_chains",
-      "refresh"
+      "compile_mode", "sampler", "nutpie_backend", "nuts_backend",
+      "nuts_gradient_backend", "parallel_chains", "refresh"
     )] <- NULL
     distributions <- as.character(variables)
     sd_pymc <- standata_to_pymc(sd, distributions)
@@ -377,15 +429,27 @@ coev_fit <- function(data, variables, id, tree,
         nutpie_args    = nutpie_args
       )
     } else {
+      pymc_cores <- if ("cores" %in% names(sample_args)) {
+        as.integer(sample_args$cores)
+      } else if ("parallel_chains" %in% names(sample_args)) {
+        as.integer(sample_args$parallel_chains)
+      } else {
+        num_chains
+      }
+      if (length(pymc_cores) != 1L || is.na(pymc_cores) || pymc_cores < 1L) {
+        pymc_cores <- num_chains
+      }
+      pymc_cores <- min(pymc_cores, num_chains)
       pymc_result <- pymc_run_mcmc(
-        pymc_code    = sc,
-        data_list    = sd_pymc,
-        num_chains   = num_chains,
-        num_samples  = num_samples,
-        num_warmup   = num_warmup,
-        seed         = seed,
+        pymc_code     = sc,
+        data_list     = sd_pymc,
+        num_chains    = num_chains,
+        num_samples   = num_samples,
+        num_warmup    = num_warmup,
+        seed          = seed,
         target_accept = adapt_delta,
-        compile_mode = compile_mode
+        compile_mode  = compile_mode,
+        cores         = pymc_cores
       )
     }
     draws_array <- pymc_result$draws_array
@@ -401,106 +465,7 @@ coev_fit <- function(data, variables, id, tree,
     )
     nsamples <- posterior::ndraws(draws_array)
     has_lp__ <- "lp__" %in% stan_variables
-  } else if (backend == "nutpie") {
-    tryCatch(reticulate::py_require(c("nutpie", "bridgestan")),
-             error = function(e) NULL)
-    # check if nutpie is available
-    stop_if_nutpie_not_available()
-    # extract sampling arguments from ...
-    # Only map essential cmdstanr arguments; pass everything else generically
-    sample_args <- list(...)
-    # Extract and map essential arguments
-    # uses default values if none have been specified
-    num_chains <- 4L
-    num_samples <- 1000L
-    num_warmup <- 1000L
-    seed <- NULL
-    num_chains <- if ("chains" %in% names(sample_args)) {
-      as.integer(sample_args$chains)
-    } else {
-      4L
-    }
-    num_samples <- if ("iter_sampling" %in% names(sample_args)) {
-      as.integer(sample_args$iter_sampling)
-    } else {
-      1000L
-    }
-    num_warmup <- if ("iter_warmup" %in% names(sample_args)) {
-      as.integer(sample_args$iter_warmup)
-    } else {
-      1000L
-    }
-    seed <- if ("seed" %in% names(sample_args)) {
-      as.integer(sample_args$seed)
-    } else {
-      NULL
-    }
-    # Map cmdstanr argument names to nutpie argument names
-    # adapt_delta -> target_accept (nutpie uses target_accept)
-    target_accept <- adapt_delta
-    # Create argument name mapping for nutpie-specific conversions
-    # Maps cmdstanr argument names to nutpie argument names
-    # If nutpie uses the same name, no mapping needed (it passes through)
-    nutpie_arg_mapping <- c(
-      "parallel_chains" = "cores"
-    )
-    # Remove cmdstanr-specific arguments that are handled explicitly
-    # or don't apply to nutpie
-    nutpie_args <- sample_args
-    nutpie_args[c("chains", "iter_sampling", "iter_warmup", "seed",
-                  "adapt_delta", "refresh")] <- NULL
-    # Convert argument names according to mapping
-    # This allows cmdstanr argument names to be converted to nutpie names
-    for (cmdstanr_name in names(nutpie_arg_mapping)) {
-      if (cmdstanr_name %in% names(nutpie_args)) {
-        nutpie_name <- nutpie_arg_mapping[[cmdstanr_name]]
-        # Convert to appropriate type for nutpie
-        # cores needs to be an integer
-        if (nutpie_name == "cores") {
-          nutpie_args[[nutpie_name]] <- as.integer(nutpie_args[[cmdstanr_name]])
-        } else {
-          nutpie_args[[nutpie_name]] <- nutpie_args[[cmdstanr_name]]
-        }
-        nutpie_args[[cmdstanr_name]] <- NULL
-      }
-    }
-    # sample with nutpie
-    #' @srrstats {BS2.15} Errors in model fitting will be reported by nutpie
-    trace <- do.call(
-      nutpie_sample,
-      c(
-        list(
-          stan_code = sc,
-          data_list = sd,
-          num_chains = num_chains,
-          num_samples = num_samples,
-          num_warmup = num_warmup,
-          seed = seed,
-          target_accept = target_accept
-        ),
-        nutpie_args
-      )
-    )
-    # convert draws to draws_array format
-    draws_array <- convert_nutpie_draws(trace)
-    # extract variable names from draws
-    stan_variables <- posterior::variables(draws_array)
-    # create wrapper object
-    model <- create_nutpie_wrapper(
-      trace = trace,
-      draws_array = draws_array,
-      stan_variables = stan_variables,
-      iter_sampling = num_samples,
-      iter_warmup = num_warmup,
-      chains = num_chains,
-      seed = seed
-    )
-    # extract metadata for coevfit object
-    # number of samples (total draws across all chains)
-    nsamples <- posterior::ndraws(draws_array)
-    # Check if lp__ exists (nutpie typically doesn't include it)
-    has_lp__ <- "lp__" %in% stan_variables
-  } else if (backend == "cmdstanr") {
+  } else {
     # use cmdstanr (default)
     # extract compilation and sampling arguments
     all_args <- list(...)
@@ -524,10 +489,15 @@ coev_fit <- function(data, variables, id, tree,
         cpp_options <- list(stan_threads = TRUE)
       }
     }
-    # remove nutpie-specific arguments from sampling args
+    # remove PyMC / nutpie-only arguments from sampling args
     cmdstanr_args <- all_args
     cmdstanr_args$extra_stanc_args <- NULL
     cmdstanr_args$extra_compile_args <- NULL
+    drop_stan <- c(
+      "nuts_backend", "nuts_gradient_backend", "nutpie_backend",
+      "gradient_backend", "sampler", "compile_mode"
+    )
+    cmdstanr_args[drop_stan] <- NULL
     # remove NULL elements
     cmdstanr_args <- cmdstanr_args[!sapply(cmdstanr_args, is.null)]
     #' @srrstats {BS2.15} Errors in model fitting will be reported by cmdstanr
@@ -577,10 +547,29 @@ coev_fit <- function(data, variables, id, tree,
       estimate_correlated_drift = estimate_correlated_drift,
       estimate_residual = estimate_residual,
       prior_only = prior_only,
-      backend = backend,
+      nuts_sampler = nuts_sampler,
+      # legacy field: cmdstanr for Stan path, pymc for PyMC translation (incl. nutpie)
+      backend = if (identical(nuts_sampler, "stan")) "cmdstanr" else "pymc",
       nsamples = nsamples,
       has_lp__ = has_lp__
     )
   class(out) <- "coevfit"
   out
+}
+
+#' @noRd
+normalize_nuts_sampler <- function(x) {
+  if (!is.character(x) || length(x) != 1L || is.na(x[1])) {
+    stop2("Argument 'nuts_sampler' must be a single non-missing character string.")
+  }
+  v <- tolower(x[1])
+  ok <- c("stan", "pymc", "nutpie")
+  if (!v %in% ok) {
+    stop2(
+      "Argument 'nuts_sampler' must be one of: ",
+      paste(ok, collapse = ", "),
+      "."
+    )
+  }
+  v
 }

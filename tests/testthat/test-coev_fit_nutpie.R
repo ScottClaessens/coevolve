@@ -71,7 +71,9 @@ test_that("nutpie can sample from simple model", {
   expect_true("sigma" %in% posterior::variables(draws))
 })
 
-test_that("coev_fit() works with backend = 'nutpie'", {
+test_that("coev_fit() works with nuts_sampler = 'nutpie' (PyMC model)", {
+  skip_if_not(coevolve:::check_pymc_available(),
+              message = "PyMC not available - skipping pymc nutpie tests")
   skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   # simple coevolutionary model
@@ -91,7 +93,7 @@ test_that("coev_fit() works with backend = 'nutpie'", {
       variables = list(x = "normal", y = "normal"),
       id = "id",
       tree = tree,
-      backend = "nutpie",
+      nuts_sampler = "nutpie",
       chains = 2,
       iter_sampling = 100,
       iter_warmup = 50,
@@ -143,7 +145,9 @@ test_that("coev_fit() works with backend = 'nutpie'", {
   expect_no_error(sw(coev_pred_series(fit)))
 })
 
-test_that("nutpie and cmdstanr produce similar results", {
+test_that("PyMC nutpie and cmdstanr produce similar results (rough check)", {
+  skip_if_not(coevolve:::check_pymc_available(),
+              message = "PyMC not available - skipping pymc nutpie tests")
   skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   withr::with_seed(1, {
@@ -161,7 +165,7 @@ test_that("nutpie and cmdstanr produce similar results", {
     variables = list(x = "normal", y = "normal"),
     id = "id",
     tree = tree,
-    backend = "cmdstanr",
+    nuts_sampler = "stan",
     chains = 2,
     iter_sampling = 100,
     iter_warmup = 50,
@@ -173,7 +177,7 @@ test_that("nutpie and cmdstanr produce similar results", {
     variables = list(x = "normal", y = "normal"),
     id = "id",
     tree = tree,
-    backend = "nutpie",
+    nuts_sampler = "nutpie",
     chains = 2,
     iter_sampling = 100,
     iter_warmup = 50,
@@ -228,7 +232,9 @@ test_that("nutpie handles errors gracefully", {
   )
 })
 
-test_that("coev_fit() converts parallel_chains to cores for nutpie", {
+test_that("coev_fit() converts parallel_chains to cores for pymc nutpie", {
+  skip_if_not(coevolve:::check_pymc_available(),
+              message = "PyMC not available - skipping pymc nutpie tests")
   skip_if_not(coevolve:::check_nutpie_available(),
               message = "nutpie not available - skipping nutpie tests")
   withr::with_seed(1, {
@@ -248,12 +254,12 @@ test_that("coev_fit() converts parallel_chains to cores for nutpie", {
       variables = list(x = "normal", y = "normal"),
       id = "id",
       tree = tree,
-      backend = "nutpie",
+      nuts_sampler = "nutpie",
       chains = 2,
       iter_sampling = 50,
       iter_warmup = 25,
       seed = 12345,
-      parallel_chains = 2,  # Should be converted to cores=2 for nutpie
+      parallel_chains = 2,
       refresh = 0
     )
   })
@@ -262,11 +268,7 @@ test_that("coev_fit() converts parallel_chains to cores for nutpie", {
   expect_true(!is.null(fit$fit))
 })
 
-test_that("coev_fit() errors when backend = 'nutpie' but nutpie unavailable", {
-  # mock check_nutpie_available to return FALSE
-  # this test ensures proper error message when nutpie not available
-  # note: this test may need to be adjusted based on implementation
-  # for now, we expect an informative error
+test_that("BridgeStan backend = 'nutpie' is removed from coev_fit()", {
   withr::with_seed(1, {
     n <- 3
     tree <- ape::rcoal(n)
@@ -276,9 +278,6 @@ test_that("coev_fit() errors when backend = 'nutpie' but nutpie unavailable", {
       y = rnorm(n)
     )
   })
-  # if nutpie is actually available, skip this test
-  skip_if(coevolve:::check_nutpie_available(),
-          message = "nutpie is available - skipping unavailable test")
   expect_error(
     coev_fit(
       data = d,
@@ -292,7 +291,7 @@ test_that("coev_fit() errors when backend = 'nutpie' but nutpie unavailable", {
       seed = 1,
       refresh = 0
     ),
-    regexp = "nutpie.*not.*available|nutpie.*not.*installed"
+    regexp = "removed from coev_fit|nuts_sampler"
   )
 })
 

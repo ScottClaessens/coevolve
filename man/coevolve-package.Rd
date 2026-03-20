@@ -4,11 +4,11 @@
 \name{coevolve-package}
 \alias{coevolve}
 \alias{coevolve-package}
-\title{coevolve: Fit Bayesian Generalized Dynamic Phylogenetic Models using 'Stan'}
+\title{coevolve: Fit Bayesian Generalized Dynamic Phylogenetic Models using 'Stan' or 'PyMC'}
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Fit Bayesian generalized dynamic phylogenetic models using 'Stan'. The package allows an abritrary number of variables with different response distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck evolutionary process, allowing users to assess directionality between coevolving variables.
+Fit Bayesian generalized dynamic phylogenetic models using 'Stan' or 'PyMC'. The package allows an arbitrary number of variables with different response distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck evolutionary process, allowing users to assess directionality between coevolving variables. The optional PyMC backend with nutpie enables high-performance sampling and potential GPU acceleration via 'reticulate'.
 }
 \seealso{
 Useful links:

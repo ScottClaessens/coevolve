@@ -75,7 +75,7 @@ plot.coevfit <- function(x, parameters = NULL, combo = c("dens", "trace"),
     sub <- ((i - 1) * npars + 1):min(i * npars, length(parameters))
     sub_pars <- parameters[sub]
     # Extract draws - handle both cmdstanr and nutpie
-    if (inherits(x$fit, "nutpie_fit")) {
+    if (inherits(x$fit, c("nutpie_fit", "pymc_fit"))) {
       # For nutpie, extract draws directly and subset
       draws_obj <- x$fit$draws(variables = sub_pars)
       draws_for_plot <- posterior::as_draws(draws_obj)

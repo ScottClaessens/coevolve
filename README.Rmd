@@ -142,12 +142,27 @@ increase in the optimal trait value for religious authority, and vice versa.
 In other words, these two variables reciprocally coevolve over evolutionary
 time.
 
-### Optional: Accelerated sampling with PyMC + nutpie
+### Optional: Accelerated sampling (`nuts_sampler`)
 
-The **coevolve** package includes a PyMC backend that can be paired with
-`nutpie`'s Rust NUTS sampler for significantly faster sampling with
-native multi-chain parallelism and JAX compilation. This is the
-**recommended accelerated path**.
+Sampling is selected with a single argument, consistent with PyMC's
+`nuts_sampler`:
+
+- **`nuts_sampler = "stan"`** (default): Stan model via **CmdStan** / **cmdstanr**
+  (Stan's built-in HMC/NUTS).
+- **`nuts_sampler = "pymc"`**: same model translated to **PyMC**; PyMC's
+  default NUTS (`pm.sample`). By default all **chains** run in parallel
+  (`cores = chains`); use **`parallel_chains`** or **`cores`** in `...` to
+  limit workers (e.g. `cores = 1` for sequential chains).
+- **`nuts_sampler = "nutpie"`**: PyMC model + **nutpie**'s Rust NUTS (like
+  `pymc.sample(..., nuts_sampler = "nutpie")`). Optional **`nuts_backend`**
+  and **`nuts_gradient_backend`** in `...` are passed to nutpie's
+  `compile_pymc_model` (e.g. `"jax"` / `"numba"`). They are ignored when
+  `nuts_sampler = "stan"`.
+
+Stan via **BridgeStan** + nutpie (`backend = "nutpie"`) is no longer supported
+in `coev_fit()`; use `nuts_sampler = "nutpie"` on the PyMC translation instead.
+Low-level helpers `nutpie_sample()` / `nutpie_compile_stan_model()` remain for
+advanced use.
 
 #### Setup
 
@@ -161,34 +176,23 @@ use. To pin a specific Python instead, set `RETICULATE_PYTHON` before
 Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
 ```
 
-#### Primary: PyMC + nutpie (recommended)
+#### Example: PyMC + nutpie (recommended accelerated path)
 
 ```r
 fit <- coev_fit(
   ...,
-  backend = "pymc",
-  sampler = "nutpie"
+  nuts_sampler = "nutpie",
+  nuts_backend = "jax"          # optional; default is "jax"
 )
 ```
-
-This translates the model to PyMC/PyTensor, JIT-compiles the gradient
-via JAX, and samples with nutpie. Additional nutpie or JAX arguments can
-be passed through `...`.
-
-#### Legacy: BridgeStan + nutpie
-
-The original nutpie path compiles the Stan model through BridgeStan:
-
-```r
-fit <- coev_fit(..., backend = "nutpie")
-```
-
-This requires `nutpie[stan]` and `bridgestan` to be installed in the
-Python environment.
 
 **Note**: If you have previously pointed `reticulate` at a different Python
 (for example an older conda or mamba base environment), restart R after
 changing `RETICULATE_PYTHON` so the new interpreter is picked up cleanly.
+
+
+The deprecated argument `backend = "cmdstanr"` / `"pymc"` still works with a
+warning; map to `nuts_sampler = "stan"` / `"pymc"`.
 
 ## Citing coevolve
 

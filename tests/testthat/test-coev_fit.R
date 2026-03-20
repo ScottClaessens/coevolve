@@ -790,7 +790,21 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       backend = "testing"
     ),
-    "Argument 'backend' must be 'cmdstanr', 'nutpie', or 'pymc'.",
+    "Unknown 'backend'",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      nuts_sampler = "testing"
+    ),
+    "Argument 'nuts_sampler' must be one of: stan, pymc, nutpie.",
     fixed = TRUE
   )
 })
@@ -1060,22 +1074,20 @@ test_that("coev_fit() works with cmdstanr backend and nutpie arguments", {
   })
   # expect no error
   expect_no_error({
-    suppressWarnings(
-      coev_fit(
-        data = d,
-        variables = list(
-          x = "normal",
-          y = "normal"
-        ),
-        id = "id",
-        tree = tree,
-        chains = 1,
-        seed = 1,
-        refresh = 0,
-        backend = "cmdstanr",
-        extra_stanc_args = list("--O1"),
-        extra_compile_args = list(stan_threads = TRUE)
-      )
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      chains = 1,
+      seed = 1,
+      refresh = 0,
+      nuts_sampler = "stan",
+      extra_stanc_args = list("--O1"),
+      extra_compile_args = list(stan_threads = TRUE)
     )
   })
 })

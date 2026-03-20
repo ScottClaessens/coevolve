@@ -121,6 +121,18 @@ coev_make_pymc <- function(data, variables, id, tree,
 # Internal helpers for Python code generation (PyMC)
 # ---------------------------------------------------------------------------
 
+#' Append a keyword argument before the closing `)` of a pm.Dist(...) call
+#'
+#' PyMC's default `initval` for vectors of Normals is often all zeros. For
+#' ordered cutpoints we apply `pt.sort(c_raw)`; identical raw values yield tied
+#' cutpoints and break `OrderedLogistic` (-inf logp). Constrained OU parameters
+#' should not start exactly on boundaries (e.g. A_diag = 0, Q_sigma = 0).
+#'
+#' @noRd
+append_pymc_kwarg <- function(call_str, kwarg) {
+  sub("\\)$", paste0(", ", kwarg, ")"), call_str)
+}
+
 #' @noRd
 pymc_header <- function(J) {
   c(
@@ -301,9 +313,13 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
   # ---- Parameters ----
   a(paste0(I2, "# === Parameters ==="))
 
-  # A_diag (upper=0)
+  # A_diag (upper=0): must start strictly negative for stable OU / Lyapunov
   a_diag_tmpl <- stan_prior_to_pymc(priors$A_diag, "upper_zero", "J")
-  a(paste0(I2, sprintf("A_diag = %s", sprintf(a_diag_tmpl, "'A_diag'"))))
+  a_diag_call <- append_pymc_kwarg(
+    sprintf(a_diag_tmpl, "'A_diag'"),
+    "initval=-0.5 * np.ones(J, dtype=np.float64)"
+  )
+  a(paste0(I2, sprintf("A_diag = %s", a_diag_call)))
 
   # A_offdiag
   if (n_offdiag > 0) {
@@ -320,9 +336,13 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
       "L_R = sample_lkj_cholesky('L_R', J, %s)", lkj_eta)))
   }
 
-  # Q_sigma (lower=0)
+  # Q_sigma (lower=0): keep away from zero so Q is positive definite
   q_sigma_tmpl <- stan_prior_to_pymc(priors$Q_sigma, "lower_zero", "J")
-  a(paste0(I2, sprintf("Q_sigma = %s", sprintf(q_sigma_tmpl, "'Q_sigma'"))))
+  q_sigma_call <- append_pymc_kwarg(
+    sprintf(q_sigma_tmpl, "'Q_sigma'"),
+    "initval=0.5 * np.ones(J, dtype=np.float64)"
+  )
+  a(paste0(I2, sprintf("Q_sigma = %s", q_sigma_call)))
 
   # b
   b_tmpl <- stan_prior_to_pymc(priors$b, "none", "J")
@@ -343,12 +363,17 @@ pymc_model_fn <- function(J, distributions, variables, data, id,
       "terminal_drift = pm.Normal('terminal_drift', mu=0.0, sigma=1.0, shape=(N_tree, N_tips, J))"))
   }
 
-  # Ordered cutpoints
+  # Ordered cutpoints: raw must not initialize to identical values (sort → ties
+  # breaks OrderedLogistic); use strictly increasing initval before sort
   for (info in ordered_info) {
     j <- info$j
     nc <- info$num_cuts
     c_tmpl <- stan_prior_to_pymc(priors$c, "none", as.character(nc))
     c_code <- sprintf(c_tmpl, sprintf("'c%d_raw'", j))
+    c_code <- append_pymc_kwarg(
+      c_code,
+      sprintf("initval=np.linspace(-1.0, 1.0, %d, dtype=np.float64)", nc)
+    )
     a(paste0(I2, sprintf(
       "c%d_raw = %s", j, c_code)))
     a(paste0(I2, sprintf(

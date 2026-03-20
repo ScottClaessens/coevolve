@@ -67,7 +67,7 @@ coev_plot_trait_values <- function(object, variables = NULL, ndraws = 50,
   run_checks_plot_trait_values(object, variables, ndraws, tree_id, xlim, ylim)
   # get posterior trait values
   # Handle both cmdstanr and nutpie
-  if (inherits(object$fit, "nutpie_fit")) {
+  if (inherits(object$fit, c("nutpie_fit", "pymc_fit"))) {
     # For nutpie, extract draws first
     draws_obj <- object$fit$draws()
     draws_rvars <- posterior::as_draws_rvars(draws_obj)

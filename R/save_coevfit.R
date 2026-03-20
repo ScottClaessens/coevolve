@@ -57,7 +57,7 @@ save_coevfit <- function(object, file, ...) {
     file <- paste0(file, ".rds")
   }
   # save fit object - handle both cmdstanr and nutpie
-  if (inherits(object$fit, "nutpie_fit")) {
+  if (inherits(object$fit, c("nutpie_fit", "pymc_fit"))) {
     # For nutpie, we can save the fit directly (it's already an R object)
     # No need for intermediate save/load
   } else {

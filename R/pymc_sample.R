@@ -13,6 +13,9 @@
 #' @param target_accept Numeric. Target acceptance probability for NUTS.
 #' @param compile_mode Character. PyTensor compilation mode: \code{"cpu"}
 #'   (default) or \code{"mlx"} for Apple Silicon GPU via MLX.
+#' @param cores Number of parallel workers for \code{pm.sample}. Default
+#'   \code{NULL} uses \code{num_chains} (all chains in parallel). Capped at
+#'   \code{num_chains}. Use \code{1} for sequential execution.
 #'
 #' @returns A list with elements \code{trace} (ArviZ InferenceData) and
 #'   \code{draws_array} (posterior::draws_array).
@@ -22,7 +25,8 @@ pymc_run_mcmc <- function(pymc_code, data_list,
                           num_chains = 4L, num_samples = 1000L,
                           num_warmup = 1000L, seed = 0L,
                           target_accept = 0.95,
-                          compile_mode = "cpu") {
+                          compile_mode = "cpu",
+                          cores = NULL) {
   compile_mode <- tolower(compile_mode)
   use_mlx <- identical(compile_mode, "mlx")
 
@@ -49,15 +53,28 @@ pymc_run_mcmc <- function(pymc_code, data_list,
   py_data <- convert_r_to_python_data_pymc(data_list)
   model <- build_fn(py_data, compile_mode)
 
+  n_ch <- as.integer(num_chains)
+  if (is.null(cores)) {
+    cores_use <- n_ch
+  } else {
+    cores_use <- as.integer(cores)
+    if (length(cores_use) != 1L || is.na(cores_use) || cores_use < 1L) {
+      stop2("Argument 'cores' for PyMC sampling must be a positive integer.")
+    }
+    cores_use <- min(cores_use, n_ch)
+  }
+
   sample_kwargs <- list(
     model         = model,
     draws         = as.integer(num_samples),
     tune          = as.integer(num_warmup),
-    chains        = as.integer(num_chains),
+    chains        = n_ch,
     target_accept = target_accept,
     random_seed   = as.integer(seed),
-    cores         = 1L,
-    init          = "adapt_full",
+    cores         = cores_use,
+    # "adapt_full" is experimental and can fail on constrained / sorted
+    # parameterizations; jitter+adapt_diag is robust for coevolve models.
+    init          = "jitter+adapt_diag",
     return_inferencedata = FALSE,
     progressbar   = FALSE,
     compute_convergence_checks = FALSE
@@ -72,7 +89,7 @@ pymc_run_mcmc <- function(pymc_code, data_list,
 
   trace <- do.call(pm$sample, sample_kwargs)
 
-  draws_array <- convert_pymc_draws(trace, num_chains)
+  draws_array <- convert_pymc_draws(trace, n_ch)
 
   list(trace = trace, draws_array = draws_array)
 }
@@ -84,8 +101,10 @@ pymc_run_mcmc <- function(pymc_code, data_list,
 #'   format as \code{pymc_run_mcmc}.
 #'
 #' @inheritParams pymc_run_mcmc
-#' @param low_rank_modified_mass_matrix Logical. If TRUE, use nutpie's
-#'   low-rank modified mass matrix adaptation (default: FALSE).
+#' @param nutpie_args Named list of extra arguments. Names matching
+#'   \code{compile_pymc_model} (e.g. \code{gradient_backend}) are passed there;
+#'   all others are passed to \code{nutpie.sample} (e.g.
+#'   \code{low_rank_modified_mass_matrix}, \code{mass_matrix_gamma}).
 #'
 #' @returns A list with elements \code{trace} (ArviZ InferenceData) and
 #'   \code{draws_array} (posterior::draws_array).
@@ -280,7 +299,15 @@ convert_pymc_draws <- function(trace, num_chains) {
       dims <- dim(arr)
       ndim <- length(dims)
 
-      # MultiTrace list simplifies to (draw, chain, ...) for arrays
+      # simplify2array stacks list elements on the *last* axis: for rank >= 3
+      # we get (n_draws, param..., n_chains), not (n_draws, n_chains, param...).
+      if (ndim >= 3L && dims[ndim] == num_chains) {
+        perm <- c(1L, ndim, seq_len(ndim - 1L)[-1L])
+        arr <- aperm(arr, perm)
+        dims <- dim(arr)
+      }
+
+      # Now expect (n_draws, n_chains, param...) for ndim > 2
       if (ndim == 2) {
         draws_list[[vname]] <- arr
       } else if (ndim > 2) {
