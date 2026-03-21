@@ -120,7 +120,7 @@ def pymc_logprob_at_stan_primary_params(pymc_code, data_dict, stan_params, compi
             rv_inputs = rv.owner.inputs
             for i in range(cflat.shape[0]):
                 ci = pt.as_tensor_variable(np.float64(cflat[i]))
-                val = np.asarray(tr.backward(ci, *rv_inputs).eval())
+                val = np.asarray(tr.forward(ci, *rv_inputs).eval())
                 uflat[i] = float(val.reshape(-1)[0])
             point[pkey] = uflat.reshape(target_shape)
 
