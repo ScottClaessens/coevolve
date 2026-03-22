@@ -1,9 +1,7 @@
 """PyMC model builder for the coevolve dynamic coevolutionary model.
 
-Replaces R string-generation (coev_make_pymc.R) with a Python class that
-constructs the PyMC model directly from a data_dict containing both the
-numeric arrays (from standata_to_pymc) and model config flags (from
-coev_make_pymc).
+Constructs the PyMC model from a data_dict containing numeric arrays (from
+standata_to_pymc) and model config flags (from coev_make_pymc).
 """
 
 import numpy as np
@@ -12,7 +10,7 @@ import pytensor.tensor as pt
 
 
 # ---------------------------------------------------------------------------
-# Standalone helpers (parallel to pymc_header in coev_make_pymc.R)
+# Standalone helpers
 # ---------------------------------------------------------------------------
 
 
@@ -41,7 +39,7 @@ def ksolve(A, Q, J):
 
 
 def sample_lkj_cholesky(name, n, eta):
-    """LKJ Cholesky via stick-breaking (JAX-compatible; avoids pt.linalg.cholesky)."""
+    """LKJ Cholesky via stick-breaking parameterization."""
     if n == 1:
         return pt.eye(1)
 
@@ -99,14 +97,7 @@ def _flag(data, key):
 
 
 class CoevPymcModel:
-    """Build a PyMC coevolve model from a data_dict.
-
-    Model construction is decomposed into three phases, inspired by
-    high-level wrappers like bambi:
-      _add_priors         → all free random variables
-      _build_tp           → transformed parameters (A, Q, drift traversal, etc.)
-      _add_likelihood     → observed data likelihoods
-    """
+    """Build a PyMC coevolve model from a data_dict."""
 
     def build(self, data, compile_mode="cpu"):
         with pm.Model() as model:
@@ -116,12 +107,8 @@ class CoevPymcModel:
             self._add_likelihood(data, J, params, trans)
         return model
 
-    # ------------------------------------------------------------------
-    # Prior factory
-    # ------------------------------------------------------------------
-
     def _make_rv(self, name, spec, shape=None, initval=None):
-        """Create a PyMC RV from a prior spec: {dist, args, constraint}."""
+        """Create a PyMC RV from a prior spec dict with keys dist, args, constraint."""
         dist = str(spec["dist"])
         args = [float(a) for a in (spec.get("args") or [])]
         constraint = str(spec.get("constraint") or "none")
@@ -154,17 +141,12 @@ class CoevPymcModel:
 
         raise ValueError(f"Unknown prior distribution: {dist!r}")
 
-    # ------------------------------------------------------------------
-    # Phase 1: priors
-    # ------------------------------------------------------------------
-
     def _add_priors(self, data, J):
         specs = data["prior_specs"]
         N_tree = int(data["N_tree"])
         N_tips = int(data["N_tips"])
         N_seg = int(data["N_seg"])
 
-        # Unpack config flags
         tdrift = _flag(data, "tdrift")
         repeated = _flag(data, "repeated")
         needs_terminal_drift = _flag(data, "needs_terminal_drift")
@@ -182,14 +164,12 @@ class CoevPymcModel:
         prior_only = _flag(data, "prior_only")
         inv_overdisp = np.asarray(data["inv_overdisp"], dtype=np.float64)
 
-        # Compute N_internal from tip matrix
         tip_np = np.asarray(data["tip"], dtype=np.int32)
         internal_mask_np = (tip_np[:, 1:] == 0).astype(np.int32)
         N_internal = int(np.max(np.sum(internal_mask_np, axis=1))) if N_seg > 1 else 0
 
         p = {}
 
-        # A_diag (upper-bounded at 0, start strictly negative)
         p["A_diag"] = self._make_rv(
             "A_diag", specs["A_diag"], shape=J,
             initval=-0.5 * np.ones(J, dtype=np.float64),
@@ -213,9 +193,7 @@ class CoevPymcModel:
             p["terminal_drift"] = pm.Normal(
                 "terminal_drift", mu=0.0, sigma=1.0, shape=(N_tree, N_tips, J)
             )
-            # Cancel the implicit N(0,1) prior for slots Stan omits.
-            # Non-repeated, mixed model: non-normal slots have no prior in Stan;
-            # normal slots' prior is inside the likelihood (not prior_only=FALSE path).
+            # Cancel the implicit N(0,1) prior for slots that Stan omits.
             has_normal = len(normal_j0) > 0
             if has_normal and not repeated:
                 for j0 in nonnormal_j0:
@@ -230,7 +208,6 @@ class CoevPymcModel:
                             pt.sum(0.5 * p["terminal_drift"][:, :, j0] ** 2),
                         )
 
-        # Ordered cutpoints (raw → sorted via pm.Deterministic)
         for j1, nc in zip(ordered_j, ordered_ncuts):
             c_raw = self._make_rv(
                 f"c{j1}_raw", specs["c"], shape=nc,
@@ -239,7 +216,6 @@ class CoevPymcModel:
             p[f"c{j1}_raw"] = c_raw
             p[f"c{j1}"] = pm.Deterministic(f"c{j1}", pt.sort(c_raw))
 
-        # Negative binomial overdispersion (per variable)
         for j0 in nb_j0:
             j1 = j0 + 1
             phi_spec = specs.get("phi")
@@ -250,17 +226,14 @@ class CoevPymcModel:
             else:
                 p[f"phi{j1}"] = self._make_rv(f"phi{j1}", phi_spec)
 
-        # Gamma shape (per variable)
         for j0 in gamma_j0:
             p[f"shape{j0 + 1}"] = self._make_rv(f"shape{j0 + 1}", specs["shape"])
 
-        # GP spatial parameters
         if has_dist_mat:
             p["dist_z"] = pm.Normal("dist_z", mu=0.0, sigma=1.0, shape=(N_tips, J))
             p["sigma_dist"] = self._make_rv("sigma_dist", specs["sigma_dist"], shape=J)
             p["rho_dist"] = self._make_rv("rho_dist", specs["rho_dist"], shape=J)
 
-        # Residual parameters (repeated measures)
         if repeated:
             N_obs = int(data["N_obs"])
             p["residual_z"] = pm.Normal("residual_z", mu=0.0, sigma=1.0, shape=(J, N_obs))
@@ -269,12 +242,8 @@ class CoevPymcModel:
 
         return p
 
-    # ------------------------------------------------------------------
-    # Phase 2: transformed parameters
-    # ------------------------------------------------------------------
-
     def _build_tp(self, data, J, p):
-        """A matrix, Q, stationary covariance, branch caches, tree traversal."""
+        """Build A matrix, drift covariance, branch caches, and tree traversal."""
         effects_mat = data["effects_mat"]
         n_offdiag = int(data["n_offdiag"])
         tdrift = _flag(data, "tdrift")
@@ -291,7 +260,6 @@ class CoevPymcModel:
         length_index = np.asarray(data["length_index"], dtype=np.int32)
         tip_to_seg = np.asarray(data["tip_to_seg"], dtype=np.int32)
 
-        # A matrix from diagonal + sparse off-diagonal
         A_mat = diag_mat(p["A_diag"])
         if n_offdiag > 0:
             ticker = 0
@@ -302,7 +270,6 @@ class CoevPymcModel:
                         ticker += 1
         pm.Deterministic("A", A_mat)
 
-        # Q matrix (drift covariance)
         if estimate_correlated_drift:
             Q = pt.dot(
                 diag_mat(p["Q_sigma"]),
@@ -313,10 +280,9 @@ class CoevPymcModel:
             Q = diag_mat(p["Q_sigma"] ** 2)
         pm.Deterministic("Q", Q)
 
-        # Stationary covariance Q_inf
         Q_inf = ksolve(A_mat, Q, J)
 
-        # Vectorized branch-length caches (matrix exponential via Padé squaring)
+        # Branch-length caches: matrix exponential via Padé squaring (8 squarings)
         eye_J = pt.eye(J)
         _A_dt = A_mat[None, :, :] * (unique_lengths[:, None, None] / 256.0)
         _eye_b = pt.broadcast_to(eye_J[None, :, :], _A_dt.shape)
@@ -339,7 +305,6 @@ class CoevPymcModel:
         A_solve_cache = 0.5 * (_As + _As.transpose(0, 2, 1))
         b_delta_cache = pt.matmul(A_solve_cache, p["b"][None, :, None])[:, :, 0]
 
-        # Level-batched tree traversal
         n_levels = int(data["n_levels"])
         max_level_size = int(data["max_level_size"])
         root_ids = np.atleast_1d(np.asarray(data["root_ids"], dtype=np.int32))
@@ -364,7 +329,6 @@ class CoevPymcModel:
                 _base = pt.matmul(A_delta_cache[_li], eta[_pids][:, :, None])[:, :, 0] + b_delta_cache[_li]
                 _noise = pt.matmul(L_VCV_cache[_li], p["z_drift"][t, _didx][:, :, None])[:, :, 0]
                 eta = pt.set_subtensor(eta[_nids], _base + _is_int[:, None] * _noise)
-            # Re-set root to eta_anc (corrects any drift applied to root)
             eta = pt.set_subtensor(eta[int(root_ids[t])], p["eta_anc"][t])
             eta_trees.append(eta)
             _tip_li = length_index[t][tip_to_seg[t]]
@@ -377,24 +341,20 @@ class CoevPymcModel:
             "L_VCV_cache": L_VCV_cache,
         }
 
-        # Terminal drift (vectorized tip mat-vec noise)
         if tdrift:
             trans["tdrift_trees"] = [
                 pt.matmul(tip_L_VCV_trees[t], p["terminal_drift"][t][:, :, None])[:, :, 0]
                 for t in range(N_tree)
             ]
 
-        # Residual contribution for non-normal repeated models
         if residual_v_flag:
             trans["residual_v"] = pt.dot(
                 pt.dot(diag_mat(p["sigma_residual"]), p["L_residual"]), p["residual_z"]
             ).T
 
-        # Residual correlation deterministic
         if repeated:
             pm.Deterministic("cor_residual", pt.dot(p["L_residual"], p["L_residual"].T))
 
-        # GP spatial covariance contribution
         if has_dist_mat:
             dist_mat_arr = np.array(data["dist_mat"], dtype=np.float64)
             _dm = pt.as_tensor_variable(dist_mat_arr)
@@ -417,10 +377,6 @@ class CoevPymcModel:
             trans["dist_v"] = pt.stack(dist_v_list, axis=1)
 
         return trans
-
-    # ------------------------------------------------------------------
-    # Phase 3: likelihood
-    # ------------------------------------------------------------------
 
     def _add_likelihood(self, data, J, p, trans):
         if _flag(data, "prior_only"):
@@ -456,10 +412,9 @@ class CoevPymcModel:
         tree_lps = []
         for t in range(N_tree):
             eta_obs = trans["eta_trees"][t][tid]
-            tdrift_vec = None  # set in has_normal and not repeated branch
-            residuals = None   # set in has_normal and repeated branch
+            tdrift_vec = None
+            residuals = None
 
-            # --- Normal (MVN) block ---
             if has_normal and not repeated:
                 L_cov_raw = trans["tip_L_VCV_trees"][t][tid]
                 if has_measurement_error:
@@ -469,7 +424,6 @@ class CoevPymcModel:
                 else:
                     L_cov_obs = L_cov_raw
 
-                # tdrift_vec: for normal slots = y - eta; for non-normal slots = terminal_drift
                 if needs_terminal_drift:
                     tdrift_vec = p["terminal_drift"][t][tid]  # shape (N_obs, J)
                 else:
@@ -514,7 +468,6 @@ class CoevPymcModel:
             else:
                 obs_lp = pt.zeros(N_obs)
 
-            # --- Non-normal variable likelihoods ---
             for j0, d in enumerate(distributions):
                 if d == "normal":
                     continue
@@ -522,7 +475,6 @@ class CoevPymcModel:
 
                 base = base_lmod(j0, eta_obs)
                 if not repeated and has_normal:
-                    # tdrift_vec[:, j0] = terminal_drift[t][tid][:, j0] for non-normal slots
                     lmod = base + tdrift_vec[:, j0]
                 elif tdrift and not repeated:
                     lmod = base + trans["tdrift_trees"][t][tid][:, j0]
@@ -533,31 +485,42 @@ class CoevPymcModel:
                 else:
                     lmod = base + trans["tdrift_trees"][t][tid][:, j0]
 
+                # JAX traces both branches of pt.switch, so missing entries
+                # (filled with -9999) must be replaced with valid values before
+                # calling pm.logp to avoid NaN gradients.
+                miss_j = pt.eq(miss_pt[:, j0], 1)
+                y_obs = y_pt[:, j0]
+
                 if d == "bernoulli_logit":
-                    ll = pm.logp(pm.Bernoulli.dist(logit_p=lmod), y_pt[:, j0])
+                    y_safe = pt.where(miss_j, pt.zeros_like(y_obs), y_obs)
+                    ll = pm.logp(pm.Bernoulli.dist(logit_p=lmod), y_safe)
                 elif d == "ordered_logistic":
+                    y_safe = pt.where(miss_j, pt.ones_like(y_obs), y_obs)
                     ll = pm.logp(
                         pm.OrderedLogistic.dist(eta=lmod, cutpoints=p[f"c{j1}"]),
-                        pt.cast(y_pt[:, j0], "int32") - 1,
+                        pt.cast(y_safe, "int32") - 1,
                     )
                 elif d == "poisson_softplus":
+                    y_safe = pt.where(miss_j, pt.zeros_like(y_obs), y_obs)
                     ll = pm.logp(
                         pm.Poisson.dist(mu=obs_means[j0] * pt.softplus(lmod)),
-                        pt.cast(y_pt[:, j0], "int32"),
+                        pt.cast(y_safe, "int32"),
                     )
                 elif d == "negative_binomial_softplus":
+                    y_safe = pt.where(miss_j, pt.zeros_like(y_obs), y_obs)
                     ll = pm.logp(
                         pm.NegativeBinomial.dist(
                             mu=obs_means[j0] * pt.softplus(lmod),
                             alpha=p[f"phi{j1}"],
                         ),
-                        pt.cast(y_pt[:, j0], "int32"),
+                        pt.cast(y_safe, "int32"),
                     )
                 elif d == "gamma_log":
                     alpha = p[f"shape{j1}"]
+                    y_safe = pt.where(miss_j, pt.ones_like(y_obs), y_obs)
                     ll = pm.logp(
                         pm.Gamma.dist(alpha=alpha, beta=alpha / pt.exp(lmod)),
-                        y_pt[:, j0],
+                        y_safe,
                     )
                 else:
                     raise ValueError(f"Unsupported distribution for PyMC: {d!r}")
@@ -570,11 +533,6 @@ class CoevPymcModel:
         pm.Potential("log_lik", pt.sum(pt.logsumexp(all_tree_lps, axis=0)))
 
 
-# ---------------------------------------------------------------------------
-# Module-level entry point
-# ---------------------------------------------------------------------------
-
-
 def build_model(data, compile_mode="cpu"):
-    """Build and return a PyMC coevolve model. Module-level entry point."""
+    """Build and return a PyMC coevolve model."""
     return CoevPymcModel().build(data, compile_mode)

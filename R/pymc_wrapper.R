@@ -48,7 +48,9 @@ create_pymc_wrapper <- function(trace_result, draws_array, stan_variables,
             div_arr <- reticulate::py_to_r(sample_stats$diverging$values)
             return(list(num_divergent = as.integer(sum(div_arr, na.rm = TRUE))))
           }
-        } else if (reticulate::py_has_attr(wrapper$trace_result, "get_sampler_stats")) {
+        } else if (reticulate::py_has_attr(
+          wrapper$trace_result, "get_sampler_stats"
+        )) {
           div_arr <- reticulate::py_to_r(
             wrapper$trace_result$get_sampler_stats(
               "diverging",

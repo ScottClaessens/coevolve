@@ -8,3 +8,5 @@ inst/doc
 /Meta/
 docs
 bench/
+__pycache__/
+*.pyc

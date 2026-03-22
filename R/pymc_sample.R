@@ -131,7 +131,6 @@ pymc_run_nutpie <- function(data_list,
   pymc_mod <- load_pymc_model_module(convert = FALSE)
   model    <- pymc_mod$build_model(py_data, "cpu")
 
-  # JAX backend compiles scan graphs much faster than numba for large models
   use_backend <- nutpie_backend
   if (!("gradient_backend" %in% names(nutpie_args))) {
     nutpie_args$gradient_backend <- use_backend
@@ -141,10 +140,20 @@ pymc_run_nutpie <- function(data_list,
     "default_initialization_strategy", "var_names", "freeze_model"
   )
   compile_args <- nutpie_args[intersect(names(nutpie_args), compile_arg_names)]
-  sample_args_extra <- nutpie_args[setdiff(names(nutpie_args), compile_arg_names)]
+  sample_args_extra <- nutpie_args[
+    setdiff(names(nutpie_args), compile_arg_names)
+  ]
   if (use_backend == "jax") {
     # nutpie's JAX compiler rejects PyMC models with custom initvals.
-    # Clear them here so base PyMC can keep its calibrated defaults.
+    # Capture PyMC's calibrated initial point BEFORE clearing so it can be
+    # passed as initial_points to compile_pymc_model. This avoids nutpie
+    # sampling from the prior, which can produce ill-conditioned starting
+    # points (e.g. near-singular Lyapunov / non-PD VCV for missing-data
+    # models with large trees).
+    if (!"initial_points" %in% names(compile_args)) {
+      ip <- model$initial_point(random_seed = NULL)
+      compile_args$initial_points <- ip
+    }
     reticulate::py_run_string("
 def _clear_nutpie_initvals(model):
     for _rv in model.free_RVs:
@@ -153,7 +162,9 @@ def _clear_nutpie_initvals(model):
 ")
     model <- reticulate::py$`_clear_nutpie_initvals`(model)
   }
-  message(sprintf("Compiling PyMC model with nutpie (%s backend) ...", use_backend))
+  message(sprintf(
+    "Compiling PyMC model with nutpie (%s backend) ...", use_backend
+  ))
   compiled <- tryCatch({
     do.call(
       nutpie$compile_pymc_model,
@@ -161,10 +172,15 @@ def _clear_nutpie_initvals(model):
     )
   }, error = function(e) {
     if (use_backend == "jax") {
-      message("JAX backend failed, falling back to numba ...")
+      message(
+        "JAX backend failed (", conditionMessage(e),
+        "), falling back to numba ..."
+      )
+      compile_args_nb <- compile_args
+      compile_args_nb$gradient_backend <- NULL
       do.call(
         nutpie$compile_pymc_model,
-        c(list(model = model, backend = "numba"), compile_args)
+        c(list(model = model, backend = "numba"), compile_args_nb)
       )
     } else {
       stop(e)

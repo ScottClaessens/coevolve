@@ -110,14 +110,11 @@ compare_stan_pymc_logprob <- function(
     init = 0
   )
 
-  # Unconstrained parameter dimension.
   n_upars <- ncol(
     posterior::as_draws_matrix(fit$unconstrain_draws(draws = fit$draws()))
   )
 
-  # Reference point: unconstrained = 0.
   u_0 <- numeric(n_upars)
-  # Target point: seeded normal draw (deterministic, independent of HMC).
   set.seed(as.integer(seed))
   u_1 <- rnorm(n_upars, 0, 0.5)
 
@@ -138,7 +135,9 @@ compare_stan_pymc_logprob <- function(
 
   py_file <- system.file("python", "coev_pymc_logprob.py", package = "coevolve")
   if (!nzchar(py_file)) {
-    stop2("inst/python/coev_pymc_logprob.py not found (broken package install?).")
+    stop2(
+      "inst/python/coev_pymc_logprob.py not found (broken package install?)."
+    )
   }
   logp_mod <- reticulate::import_from_path(
     tools::file_path_sans_ext(basename(py_file)),
@@ -158,10 +157,6 @@ compare_stan_pymc_logprob <- function(
   stan_tip_z  <- as.numeric(res_py[["stan_tip_z_log_prior"]])
   stan_tdrift <- as.numeric(res_py[["stan_terminal_drift_log_prior"]])
 
-  # norm_const cancels per-distribution normalization constants (PyMC
-  # normalized vs Stan unnormalized).  Both reference evaluations use
-  # Stan's constrained values at unconstrained = 0 so likelihood terms
-  # cancel exactly.
   norm_const  <- logp_pymc_0 - logp_stan_0
   lp_stan_adj <- logp_stan - stan_tip_z - stan_tdrift
   lp_pymc_adj <- logp_pymc - norm_const
@@ -169,10 +164,11 @@ compare_stan_pymc_logprob <- function(
   diff <- abs(lp_stan_adj - lp_pymc_adj)
   if (diff > tol_warn) {
     warning(
-      "Large |log p Stan (adj) - log p PyMC (adj)| = ", format(diff, digits = 5),
-      " (adj subtracts Stan-only priors on tip-edge z_drift and observed-normal",
-      " terminal_drift, plus normalization constant offset; see",
-      " ?compare_stan_pymc_logprob).",
+      "Large |log p Stan (adj) - log p PyMC (adj)| = ",
+      format(diff, digits = 5),
+      " (adj subtracts Stan-only priors on tip-edge z_drift and",
+      " observed-normal terminal_drift, plus normalization constant offset;",
+      " see ?compare_stan_pymc_logprob).",
       call. = FALSE
     )
   }

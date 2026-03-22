@@ -81,7 +81,7 @@ coev_make_pymc <- function(data, variables, id, tree,
   needs_terminal_drift <-
     tdrift ||
     (length(normal_vars) > 0 &&
-       (has_non_normal || any(is.na(data[, normal_vars, drop = FALSE]))))
+     (has_non_normal || any(is.na(data[, normal_vars, drop = FALSE]))))
 
   ordered_j    <- integer(0)
   ordered_ncuts <- integer(0)
@@ -125,7 +125,9 @@ coev_make_pymc <- function(data, variables, id, tree,
     has_measurement_error   = as.integer(!is.null(measurement_error)),
     ordered_j               = ordered_j,
     ordered_ncuts           = ordered_ncuts,
-    nb_j0                   = which(distributions == "negative_binomial_softplus") - 1L,
+    nb_j0                   = which(
+      distributions == "negative_binomial_softplus"
+    ) - 1L,
     gamma_j0                = which(distributions == "gamma_log") - 1L,
     nonnormal_j0            = which(distributions != "normal") - 1L,
     normal_j0               = which(distributions == "normal") - 1L,
