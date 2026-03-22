@@ -137,6 +137,66 @@ stan_prior_to_pymc <- function(prior_str, constraint = "none",
   pymc_str
 }
 
+#' Convert a Stan prior string to a Python-compatible prior spec dict
+#'
+#' @param prior_str Stan prior string (e.g., "std_normal()", "normal(0, 2)").
+#' @param constraint One of "none", "lower_zero", "upper_zero".
+#'
+#' @returns Named list with \code{dist}, \code{args}, and \code{constraint}.
+#'   Passed to data_dict and consumed by \code{CoevPymcModel._make_rv()}.
+#'
+#' @noRd
+prior_spec_from_stan <- function(prior_str, constraint = "none") {
+  p <- parse_stan_prior(prior_str)
+  # Use as.list() so reticulate always converts args to a Python list, not a
+  # scalar float (which would make `for a in args` fail in _make_rv).
+  list(
+    dist       = p$dist,
+    args       = as.list(as.numeric(p$args)),
+    constraint = constraint
+  )
+}
+
+#' Embed PyMC config flags into a Stan data dict
+#'
+#' Merges the config list returned by \code{coev_make_pymc()} into the
+#' PyMC-ready data dict returned by \code{standata_to_pymc()}, producing
+#' a single dict that \code{CoevPymcModel().build()} can consume.
+#'
+#' @param sd_pymc Named list from \code{standata_to_pymc()}.
+#' @param config Named list from \code{coev_make_pymc()}.
+#'
+#' @returns Extended named list suitable for \code{CoevPymcModel().build()}.
+#'
+#' @noRd
+embed_pymc_config <- function(sd_pymc, config) {
+  for (nm in names(config)) sd_pymc[[nm]] <- config[[nm]]
+  sd_pymc
+}
+
+#' Load the coev_pymc_model Python module via reticulate
+#'
+#' Imports \code{inst/python/coev_pymc_model.py} from the installed package
+#' and returns the module object. Caches the module for the session.
+#'
+#' @param convert Logical. Passed to \code{reticulate::import_from_path}.
+#'
+#' @returns Python module object with \code{build_model} and
+#'   \code{CoevPymcModel} attributes.
+#'
+#' @noRd
+load_pymc_model_module <- function(convert = FALSE) {
+  py_file <- system.file("python", "coev_pymc_model.py", package = "coevolve")
+  if (!nzchar(py_file)) {
+    stop2("inst/python/coev_pymc_model.py not found (broken package install?).")
+  }
+  reticulate::import_from_path(
+    tools::file_path_sans_ext(basename(py_file)),
+    path    = normalizePath(dirname(py_file), winslash = "/", mustWork = TRUE),
+    convert = convert
+  )
+}
+
 #' Convert Stan data list to PyMC-friendly format
 #'
 #' @description Takes the output of \code{coev_make_standata()} and converts
@@ -330,17 +390,22 @@ convert_r_to_python_data_pymc <- function(data_list) {
     value <- data_list[[name]]
     is_int <- name %in% integer_vars || is.integer(value)
 
-    if (is.matrix(value) || is.array(value)) {
+    # Character vectors, named lists (e.g. prior_specs, distributions): pass
+    # through reticulate's default conversion without numeric coercion.
+    if (is.character(value) || (is.list(value) && !is.null(names(value)))) {
+      python_data[[name]] <- reticulate::r_to_py(value)
+    } else if (is.matrix(value) || is.array(value)) {
       dtype <- if (is_int) "int32" else "float64"
-      if (is_int) {
-        value <- array(as.integer(value), dim = dim(value))
+      value <- if (is_int) {
+        array(as.integer(value), dim = dim(value))
       } else {
-        value <- array(as.double(value), dim = dim(value))
+        array(as.double(value), dim = dim(value))
       }
       python_data[[name]] <- np$array(value, dtype = dtype)
     } else if (length(value) == 1) {
       python_data[[name]] <- if (is_int) as.integer(value) else as.double(value)
     } else {
+      # Handles length-0 and length > 1 numeric/integer vectors
       dtype <- if (is_int) "int32" else "float64"
       value <- if (is_int) as.integer(value) else as.double(value)
       python_data[[name]] <- np$array(value, dtype = dtype)

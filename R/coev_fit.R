@@ -338,13 +338,22 @@ coev_fit <- function(data, variables, id, tree,
   } else {
     nuts_sampler <- normalize_nuts_sampler(nuts_sampler)
   }
-  # generate code and data for model
   if (nuts_sampler %in% c("pymc", "nutpie")) {
-    sc <- coev_make_pymc(data, variables, id, tree, effects_mat,
-                         complete_cases, dist_mat, dist_cov,
-                         measurement_error, prior, scale,
-                         estimate_correlated_drift, estimate_residual,
-                         prior_only)
+    if (!is.null(dist_mat)) {
+      stop2(
+        "GP models (dist_mat) are not yet supported in the PyMC/nutpie backend: ",
+        "the spatial covariance translation is currently being refactored. ",
+        "Use nuts_sampler = \"stan\" for GP models."
+      )
+    }
+  }
+  # generate code/config and data for model
+  if (nuts_sampler %in% c("pymc", "nutpie")) {
+    pymc_cfg <- coev_make_pymc(data, variables, id, tree, effects_mat,
+                               complete_cases, dist_mat, dist_cov,
+                               measurement_error, prior, scale,
+                               estimate_correlated_drift, estimate_residual,
+                               prior_only)
   } else {
     sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
                              complete_cases, dist_mat, dist_cov,
@@ -415,10 +424,9 @@ coev_fit <- function(data, variables, id, tree,
       "nuts_gradient_backend", "parallel_chains", "refresh"
     )] <- NULL
     distributions <- as.character(variables)
-    sd_pymc <- standata_to_pymc(sd, distributions)
+    sd_pymc <- embed_pymc_config(standata_to_pymc(sd, distributions), pymc_cfg)
     if (use_nutpie) {
       pymc_result <- pymc_run_nutpie(
-        pymc_code      = sc,
         data_list      = sd_pymc,
         num_chains     = num_chains,
         num_samples    = num_samples,
@@ -441,7 +449,6 @@ coev_fit <- function(data, variables, id, tree,
       }
       pymc_cores <- min(pymc_cores, num_chains)
       pymc_result <- pymc_run_mcmc(
-        pymc_code     = sc,
         data_list     = sd_pymc,
         num_chains    = num_chains,
         num_samples   = num_samples,
@@ -536,7 +543,7 @@ coev_fit <- function(data, variables, id, tree,
       id = id,
       tree = tree,
       tree_name = deparse(substitute(tree)),
-      stan_code = sc,
+      stan_code = if (nuts_sampler == "stan") sc else NULL,
       stan_data = sd,
       effects_mat = sd$effects_mat,
       complete_cases = complete_cases,

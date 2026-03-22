@@ -21,7 +21,7 @@
 #'   \code{draws_array} (posterior::draws_array).
 #'
 #' @noRd
-pymc_run_mcmc <- function(pymc_code, data_list,
+pymc_run_mcmc <- function(data_list,
                           num_chains = 4L, num_samples = 1000L,
                           num_warmup = 1000L, seed = 0L,
                           target_accept = 0.95,
@@ -47,11 +47,9 @@ pymc_run_mcmc <- function(pymc_code, data_list,
   pm <- reticulate::import("pymc", convert = FALSE)
   np <- reticulate::import("numpy", convert = FALSE)
 
-  reticulate::py_run_string(pymc_code)
-  build_fn <- reticulate::py$build_model
-
   py_data <- convert_r_to_python_data_pymc(data_list)
-  model <- build_fn(py_data, compile_mode)
+  pymc_mod <- load_pymc_model_module(convert = FALSE)
+  model <- pymc_mod$build_model(py_data, compile_mode)
 
   n_ch <- as.integer(num_chains)
   if (is.null(cores)) {
@@ -110,7 +108,7 @@ pymc_run_mcmc <- function(pymc_code, data_list,
 #'   \code{draws_array} (posterior::draws_array).
 #'
 #' @noRd
-pymc_run_nutpie <- function(pymc_code, data_list,
+pymc_run_nutpie <- function(data_list,
                             num_chains = 4L, num_samples = 1000L,
                             num_warmup = 1000L, seed = 0L,
                             target_accept = 0.95,
@@ -129,11 +127,9 @@ pymc_run_nutpie <- function(pymc_code, data_list,
   nutpie <- reticulate::import("nutpie", convert = FALSE)
   np     <- reticulate::import("numpy",  convert = FALSE)
 
-  reticulate::py_run_string(pymc_code)
-  build_fn <- reticulate::py$build_model
-
-  py_data <- convert_r_to_python_data_pymc(data_list)
-  model   <- build_fn(py_data, "cpu")
+  py_data  <- convert_r_to_python_data_pymc(data_list)
+  pymc_mod <- load_pymc_model_module(convert = FALSE)
+  model    <- pymc_mod$build_model(py_data, "cpu")
 
   # JAX backend compiles scan graphs much faster than numba for large models
   use_backend <- nutpie_backend
