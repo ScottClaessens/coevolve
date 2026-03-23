@@ -16,6 +16,12 @@
 #' values, likelihood terms cancel exactly and only per-distribution
 #' normalization constants remain.
 #'
+#' **LKJ stick-breaking correction:** PyMC's \code{sample_lkj_cholesky}
+#' implements the LKJ prior via a tanh stick-breaking parameterization whose
+#' Jacobian \code{sum(log(1 - z^2))} is added as a \code{pm.Potential}.  Stan's
+#' \code{lkj_corr_cholesky_lpdf} does not include this term.  The Python
+#' evaluation subtracts this Jacobian from both evaluation points so it cancels.
+#'
 #' **Scope:** Stan stores extra \code{z_drift} components on tip edges; those
 #' UNNORMALIZED kernels are subtracted into \code{stan_tip_z_log_prior}.  When
 #' \code{estimate_correlated_drift = TRUE}, Stan's \code{L_R} (Cholesky

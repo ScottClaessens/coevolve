@@ -3,7 +3,9 @@
 Used by compare_stan_pymc_logprob() for Stan vs PyMC density checks.
 Stan returns an unnormalized log density; PyMC returns a fully normalized one.
 The normalization offset is cancelled via a shared reference point evaluated
-in both backends, so only distribution normalization constants remain.
+in both backends.  The LKJ stick-breaking Jacobian (tanh transform, present
+in PyMC Potentials but absent from Stan's lkj_corr_cholesky_lpdf) is
+subtracted from both evaluation points so it cancels exactly.
 """
 
 import os
@@ -88,13 +90,16 @@ def _std_normal_log_kernel(arr):
 def _build_pymc_point(model, data_dict, stan_params_dict, ip):
     """Map Stan constrained params to PyMC unconstrained point dict.
 
-    Returns (point_dict, stan_tip_z_log_prior) where stan_tip_z_log_prior is
-    the unnormalized kernel for Stan-only tip-edge z_drift elements.
+    Returns (point_dict, stan_tip_z_log_prior, lkj_stick_jac) where:
+    - stan_tip_z_log_prior: unnormalized kernel for Stan-only tip-edge z_drift
+    - lkj_stick_jac: sum of tanh Jacobian terms from LKJ stick-breaking
+      Potentials (present in PyMC but not in Stan's lkj_corr_cholesky_lpdf)
     """
     stan_params = dict(stan_params_dict)
     point = {k: np.asarray(v, dtype=np.float64) for k, v in ip.items()}
     pymc_free_names = {rv.name for rv in model.free_RVs}
     stan_tip_z_log_prior = 0.0
+    lkj_stick_jac = 0.0
 
     if "z_drift" in stan_params and "z_drift" in pymc_free_names:
         zrv = next(rv for rv in model.free_RVs if rv.name == "z_drift")
@@ -114,6 +119,11 @@ def _build_pymc_point(model, data_dict, stan_params_dict, ip):
                 L = np.asarray(stan_params[stan_key], dtype=np.float64)
                 if L.ndim == 2:
                     raw_vec = _invert_lkj_cholesky(L)
+                    # The stick-breaking Potential includes jac = sum(log(1-z^2))
+                    # which is the tanh Jacobian.  Stan's lkj_corr_cholesky_lpdf
+                    # does not include this term, so we track it for subtraction.
+                    z = np.tanh(raw_vec)
+                    lkj_stick_jac += float(np.sum(np.log(1.0 - z**2 + 1e-10)))
                     tr = model.rvs_to_transforms[rv]
                     pkey = get_transformed_name(rname, tr) if tr is not None else rname
                     target_shape = point[pkey].shape
@@ -155,7 +165,7 @@ def _build_pymc_point(model, data_dict, stan_params_dict, ip):
                 uflat[i] = float(val.reshape(-1)[0])
             point[pkey] = uflat.reshape(target_shape)
 
-    return point, stan_tip_z_log_prior
+    return point, stan_tip_z_log_prior, lkj_stick_jac
 
 
 def pymc_logprob_at_stan_primary_params(
@@ -201,16 +211,19 @@ def pymc_logprob_at_stan_primary_params(
     if stan_ref_params is not None:
         if not isinstance(stan_ref_params, dict):
             stan_ref_params = dict(stan_ref_params)
-        ref_point, _ = _build_pymc_point(model, data_dict, stan_ref_params, ip)
-        logp_pymc_0 = float(logp_fn(ref_point))
+        ref_point, _, lkj_jac_0 = _build_pymc_point(
+            model, data_dict, stan_ref_params, ip
+        )
+        logp_pymc_0 = float(logp_fn(ref_point)) - lkj_jac_0
     else:
         fallback_point = {k: np.asarray(v, dtype=np.float64) for k, v in ip.items()}
         logp_pymc_0 = float(logp_fn(fallback_point))
+        lkj_jac_0 = 0.0
 
-    target_point, stan_tip_z_log_prior = _build_pymc_point(
+    target_point, stan_tip_z_log_prior, lkj_jac = _build_pymc_point(
         model, data_dict, stan_params, ip
     )
-    logp_pymc = float(logp_fn(target_point))
+    logp_pymc = float(logp_fn(target_point)) - lkj_jac
 
     return {
         "logp_pymc": logp_pymc,

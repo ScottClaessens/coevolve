@@ -74,69 +74,6 @@ parse_stan_prior <- function(prior_str) {
   list(dist = dist, args = args)
 }
 
-#' Convert a Stan prior string to PyMC distribution code
-#'
-#' @description Maps a Stan prior specification to the equivalent PyMC
-#'   distribution constructor call. Handles parameter constraints by selecting
-#'   appropriate truncated or half distributions.
-#'
-#' @param prior_str Stan prior string (e.g., "std_normal()", "normal(0, 2)").
-#' @param constraint One of "none", "lower_zero", "upper_zero".
-#' @param shape_str Optional Python expression for shape argument
-#'   (e.g., "J", "(N_tree, J)").
-#'
-#' @returns Character string of PyMC distribution code (without name argument).
-#'
-#' @noRd
-stan_prior_to_pymc <- function(prior_str, constraint = "none",
-                               shape_str = NULL) {
-  parsed <- parse_stan_prior(prior_str)
-
-  shape_arg <- if (!is.null(shape_str)) {
-    sprintf(", shape=%s", shape_str)
-  } else {
-    ""
-  }
-
-  pymc_str <- switch(parsed$dist,
-    "std_normal" = {
-      if (constraint == "upper_zero") {
-        sprintf("pm.TruncatedNormal(%%s, mu=0.0, sigma=1.0, upper=0.0%s)",
-                shape_arg)
-      } else if (constraint == "lower_zero") {
-        sprintf("pm.HalfNormal(%%s, sigma=1.0%s)", shape_arg)
-      } else {
-        sprintf("pm.Normal(%%s, mu=0.0, sigma=1.0%s)", shape_arg)
-      }
-    },
-    "normal" = {
-      mu <- parsed$args[1]
-      sigma <- parsed$args[2]
-      if (constraint == "upper_zero") {
-        sprintf("pm.TruncatedNormal(%%s, mu=%s, sigma=%s, upper=0.0%s)",
-                mu, sigma, shape_arg)
-      } else if (constraint == "lower_zero") {
-        sprintf("pm.TruncatedNormal(%%s, mu=%s, sigma=%s, lower=0.0%s)",
-                mu, sigma, shape_arg)
-      } else {
-        sprintf("pm.Normal(%%s, mu=%s, sigma=%s%s)", mu, sigma, shape_arg)
-      }
-    },
-    "exponential" = {
-      sprintf("pm.Exponential(%%s, lam=%s%s)", parsed$args[1], shape_arg)
-    },
-    "gamma" = {
-      sprintf("pm.Gamma(%%s, alpha=%s, beta=%s%s)",
-              parsed$args[1], parsed$args[2], shape_arg)
-    },
-    "lkj_corr_cholesky" = {
-      sprintf("__LKJ__%s", parsed$args[1])
-    },
-    stop2("Unknown prior distribution for PyMC mapping: ", parsed$dist)
-  )
-  pymc_str
-}
-
 #' Convert a Stan prior string to a Python-compatible prior spec dict
 #'
 #' @param prior_str Stan prior string (e.g., "std_normal()", "normal(0, 2)").
@@ -177,7 +114,7 @@ embed_pymc_config <- function(sd_pymc, config) {
 #' Load the coev_pymc_model Python module via reticulate
 #'
 #' Imports \code{inst/python/coev_pymc_model.py} from the installed package
-#' and returns the module object. Caches the module for the session.
+#' and returns the module object.
 #'
 #' @param convert Logical. Passed to \code{reticulate::import_from_path}.
 #'

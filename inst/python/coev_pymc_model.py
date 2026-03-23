@@ -81,7 +81,7 @@ def sample_lkj_cholesky(name, n, eta):
 def _as_int_list(val):
     """Convert a scalar or array-like to a Python list of ints (empty-safe)."""
     arr = np.atleast_1d(np.asarray(val, dtype=np.int32)).ravel()
-    if arr.size == 0 or (arr.size == 1 and arr[0] == 0 and len(np.atleast_1d(val)) == 0):
+    if arr.size == 0:
         return []
     return arr.tolist()
 
@@ -282,7 +282,8 @@ class CoevPymcModel:
 
         Q_inf = ksolve(A_mat, Q, J)
 
-        # Branch-length caches: matrix exponential via Padé squaring (8 squarings)
+        # Matrix exponential via scaling-and-squaring: 12-term Taylor of
+        # exp(A*dt/2^8), then 8 repeated squarings to recover exp(A*dt).
         eye_J = pt.eye(J)
         _A_dt = A_mat[None, :, :] * (unique_lengths[:, None, None] / 256.0)
         _eye_b = pt.broadcast_to(eye_J[None, :, :], _A_dt.shape)
@@ -456,11 +457,14 @@ class CoevPymcModel:
                         ),
                     )
                 if has_measurement_error:
-                    res_cov = diag_mat(se[0]) + pt.dot(
+                    # Per-observation SE: se is (N_obs, J), build (N_obs, J, J)
+                    # diag matrices, matching Stan's diag_matrix(se[i,]) per obs.
+                    se_diag = pt.as_tensor_variable(se)[:, :, None] * pt.eye(J)[None, :, :]
+                    base_cov = pt.dot(
                         diag_mat(p["sigma_residual"]),
                         pt.dot(pt.dot(p["L_residual"], p["L_residual"].T), diag_mat(p["sigma_residual"])),
                     )
-                    L_cov_res = pt.linalg.cholesky(res_cov)
+                    L_cov_res = pt.linalg.cholesky(se_diag + base_cov[None, :, :])
                 else:
                     L_cov_res = pt.dot(diag_mat(p["sigma_residual"]), p["L_residual"])
                 obs_lp = mvn_chol_logp(residuals, L_cov_res)
@@ -483,7 +487,10 @@ class CoevPymcModel:
                 elif repeated and has_normal:
                     lmod = base + residuals[:, j0]
                 else:
-                    lmod = base + trans["tdrift_trees"][t][tid][:, j0]
+                    raise RuntimeError(
+                        f"Unreachable lmod branch: repeated={repeated}, "
+                        f"has_normal={has_normal}, tdrift={tdrift}"
+                    )
 
                 # JAX traces both branches of pt.switch, so missing entries
                 # (filled with -9999) must be replaced with valid values before

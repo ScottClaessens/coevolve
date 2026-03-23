@@ -45,11 +45,14 @@
   )
 }
 
-.expect_parity <- function(out) {
+# tol = 0.03: accommodates matrix exponential numerical precision (Padé
+# 12-term + 8 squarings vs Stan's native matrix_exp) while still catching
+# real parameterization bugs (LKJ Jacobian discrepancy was 0.15-0.51).
+.expect_parity <- function(out, tol = 0.03) {
   expect_true(is.finite(out$logprob_stan))
   expect_true(is.finite(out$logprob_stan_adj))
   expect_true(is.finite(out$logprob_pymc))
-  expect_lt(out$abs_diff, 1.0)
+  expect_lt(out$abs_diff, tol)
 }
 
 # Test 1: prior_only=TRUE, all-normal, diagonal Q
@@ -171,5 +174,34 @@ test_that("compare_stan_pymc_logprob: prior_only effects_mat restriction parity"
                dimnames = list(c("x", "y"), c("x", "y")))
   out <- .cmp(fx$d_normal, list(x = "normal", y = "normal"), fx$tree,
               prior_only = TRUE, effects_mat = em, seed = 47L)
+  .expect_parity(out)
+})
+
+# Test 13: repeated measures + measurement_error (per-obs SE)
+test_that("compare_stan_pymc_logprob: repeated + ME parity", {
+  .skip_compare()
+  fx <- .make_fixture(42L)
+  d <- fx$d_repeated
+  d$x_se <- runif(nrow(d), 0.05, 0.2)
+  d$y_se <- runif(nrow(d), 0.05, 0.2)
+  out <- .cmp(d, list(x = "normal", y = "normal"), fx$tree,
+              prior_only = FALSE,
+              measurement_error = list(x = "x_se", y = "y_se"),
+              seed = 53L)
+  .expect_parity(out)
+})
+
+# Test 14: all-non-normal (exercises obs_lp=zeros path)
+test_that("compare_stan_pymc_logprob: all-non-normal parity", {
+  .skip_compare()
+  fx <- .make_fixture(42L)
+  d <- data.frame(
+    id = fx$tree$tip.label,
+    x  = sample(0:1, 4, replace = TRUE),
+    y  = as.ordered(factor(c(1L, 2L, 3L, 2L), levels = 1:3))
+  )
+  vars <- list(x = "bernoulli_logit", y = "ordered_logistic")
+  out <- .cmp(d, vars, fx$tree,
+              prior_only = FALSE, seed = 59L)
   .expect_parity(out)
 })

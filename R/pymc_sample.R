@@ -1,10 +1,9 @@
 #' Run PyMC MCMC and return draws in posterior format
 #'
-#' @description Executes a PyMC model via reticulate. The generated Python
-#'   model code is sourced into the Python environment, data is converted, and
-#'   NUTS sampling is run. Samples are returned as a posterior draws_array.
+#' @description Builds a PyMC model from the data list via
+#'   \code{CoevPymcModel().build()} and runs NUTS sampling. Samples are
+#'   returned as a posterior draws_array.
 #'
-#' @param pymc_code Character string of generated Python model code.
 #' @param data_list Named R list (PyMC-ready, from standata_to_pymc).
 #' @param num_chains Integer. Number of MCMC chains.
 #' @param num_samples Integer. Post-warmup draws per chain.
@@ -45,7 +44,6 @@ pymc_run_mcmc <- function(data_list,
   Sys.setenv(PYTHONIOENCODING = "utf-8")
 
   pm <- reticulate::import("pymc", convert = FALSE)
-  np <- reticulate::import("numpy", convert = FALSE)
 
   py_data <- convert_r_to_python_data_pymc(data_list)
   pymc_mod <- load_pymc_model_module(convert = FALSE)
@@ -125,7 +123,6 @@ pymc_run_nutpie <- function(data_list,
   }
 
   nutpie <- reticulate::import("nutpie", convert = FALSE)
-  np     <- reticulate::import("numpy",  convert = FALSE)
 
   py_data  <- convert_r_to_python_data_pymc(data_list)
   pymc_mod <- load_pymc_model_module(convert = FALSE)
