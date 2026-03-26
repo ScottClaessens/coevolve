@@ -21,7 +21,7 @@ coev_make_stancode(
   estimate_residual = TRUE,
   log_lik = FALSE,
   prior_only = FALSE,
-  dist_mat = NULL
+  dist_mat = deprecated()
 )
 }
 \arguments{
@@ -144,7 +144,8 @@ WAIC and LOO.}
 the data and returns a posterior distribution. If \code{TRUE}, the model
 samples from the prior only, ignoring the likelihood.}
 
-\item{dist_mat}{Deprecated.}
+\item{dist_mat}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use the \code{lon_lat}
+argument instead.}
 }
 \value{
 A character string containing the \pkg{Stan} code to fit the dynamic

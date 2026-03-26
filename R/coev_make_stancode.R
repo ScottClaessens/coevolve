@@ -123,7 +123,8 @@
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
-#' @param dist_mat Deprecated.
+#' @param dist_mat `r lifecycle::badge('deprecated')` Use the \code{lon_lat}
+#'   argument instead.
 #'
 #' @returns A character string containing the \pkg{Stan} code to fit the dynamic
 #'   coevolutionary model
@@ -232,7 +233,7 @@ coev_make_stancode <- function(data, variables, id, tree,
                                estimate_correlated_drift = TRUE,
                                estimate_residual = TRUE,
                                log_lik = FALSE, prior_only = FALSE,
-                               dist_mat = NULL) {
+                               dist_mat = deprecated()) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments

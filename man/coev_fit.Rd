@@ -23,7 +23,7 @@ coev_fit(
   prior_only = FALSE,
   adapt_delta = 0.95,
   backend = "cmdstanr",
-  dist_mat = NULL,
+  dist_mat = deprecated(),
   ...
 )
 }
@@ -157,7 +157,8 @@ to the \code{target_accept} parameter.}
 specified, the model will be sampled using nutpie via reticulate. Note
 that nutpie must be installed in your Python environment.}
 
-\item{dist_mat}{Deprecated.}
+\item{dist_mat}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use the \code{lon_lat}
+argument instead.}
 
 \item{...}{Additional arguments. For sampling: arguments passed to
 \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or

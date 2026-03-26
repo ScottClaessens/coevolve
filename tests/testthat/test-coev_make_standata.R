@@ -896,7 +896,7 @@ test_that("coev_make_standata() produces expected errors", {
     "Argument 'prior_only' must be a logical of length one.",
     fixed = TRUE
   )
-  expect_error(
+  lifecycle::expect_defunct(
     coev_make_standata(
       data = d,
       variables = list(
@@ -906,9 +906,7 @@ test_that("coev_make_standata() produces expected errors", {
       id = "id",
       tree = tree,
       dist_mat = "deprecated"
-    ),
-    "Argument 'dist_mat' is deprecated. Use 'lon_lat' instead.",
-    fixed = TRUE
+    )
   )
 })
 

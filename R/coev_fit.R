@@ -154,7 +154,8 @@
 #'   \code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
 #'   specified, the model will be sampled using nutpie via reticulate. Note
 #'   that nutpie must be installed in your Python environment.
-#' @param dist_mat Deprecated.
+#' @param dist_mat `r lifecycle::badge('deprecated')` Use the \code{lon_lat}
+#'   argument instead.
 #' @param ... Additional arguments. For sampling: arguments passed to
 #'   \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
 #'   \pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
@@ -291,7 +292,7 @@ coev_fit <- function(data, variables, id, tree,
                      estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
                      adapt_delta = 0.95, backend = "cmdstanr",
-                     dist_mat = NULL, ...) {
+                     dist_mat = deprecated(), ...) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments

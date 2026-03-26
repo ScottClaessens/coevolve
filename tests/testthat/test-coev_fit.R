@@ -924,7 +924,7 @@ test_that("coev_fit() produces expected errors", {
     "Argument 'backend' must be either 'cmdstanr' or 'nutpie'.",
     fixed = TRUE
   )
-  expect_error(
+  lifecycle::expect_defunct(
     coev_fit(
       data = d,
       variables = list(
@@ -934,9 +934,7 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree,
       dist_mat = "deprecated"
-    ),
-    "Argument 'dist_mat' is deprecated. Use 'lon_lat' instead.",
-    fixed = TRUE
+    )
   )
 })
 

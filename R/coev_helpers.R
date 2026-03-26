@@ -651,8 +651,12 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
     stop2("Argument 'prior_only' must be a logical of length one.")
   }
   # check deprecated arguments
-  if (!is.null(dist_mat)) {
-    stop2("Argument 'dist_mat' is deprecated. Use 'lon_lat' instead.")
+  if (lifecycle::is_present(dist_mat)) {
+    lifecycle::deprecate_stop(
+      when = "1.0.0",
+      what = I("The 'dist_mat' argument"),
+      with = I("'lon_lat'")
+    )
   }
 }
 
