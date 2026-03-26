@@ -37,7 +37,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0.9012</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -77,7 +77,7 @@
                         <h4 data-toc-skip class="author">Scott
 Claessens</h4>
             
-            <h4 data-toc-skip class="date">2024-12-23</h4>
+            <h4 data-toc-skip class="date">2026-03-26</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/main/vignettes/coevolve.Rmd" class="external-link"><code>vignettes/coevolve.Rmd</code></a></small>
       <div class="hidden name"><code>coevolve.Rmd</code></div>
@@ -181,14 +181,14 @@ function.</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 2 finished in 878.0 seconds.
-Chain 4 finished in 1213.6 seconds.
-Chain 1 finished in 1228.8 seconds.
-Chain 3 finished in 1251.5 seconds.
+Chain 3 finished in 554.7 seconds.
+Chain 4 finished in 706.9 seconds.
+Chain 1 finished in 725.2 seconds.
+Chain 2 finished in 757.4 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 1143.0 seconds.
-Total execution time: 1252.7 seconds.</code></pre>
+Mean chain execution time: 686.0 seconds.
+Total execution time: 757.6 seconds.</code></pre>
 <p>The function takes several arguments, including a dataset, a named
 list of variables that we would like to coevolve in the model (along
 with their associated response distributions), the column in the dataset
@@ -210,34 +210,34 @@ Phylogeny: authority$phylogeny (Number of trees: 1)
 
 Autoregressive selection effects:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority    -0.67      0.52 -1.97 -0.03 1.00     5036     4459
-religious_authority    -0.78      0.57 -2.13 -0.03 1.00     5461     3926
+political_authority    -0.65      0.52 -1.95 -0.03 1.00     4343     4203
+religious_authority    -0.79      0.59 -2.15 -0.03 1.00     5225     3876
 
 Cross selection effects:
                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority ⟶ religious_authority     2.28      0.99  0.34  4.26 1.00     3310     3706
-religious_authority ⟶ political_authority     1.81      1.11 -0.36  4.08 1.00     2068     3963
+political_authority ⟶ religious_authority     2.33      0.98  0.44  4.29 1.00     3328     3594
+religious_authority ⟶ political_authority     1.74      1.09 -0.32  3.91 1.00     2109     4686
 
 Drift parameters:
                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(political_authority)                          1.93      0.82  0.25  3.45 1.00     1446     1572
-sd(religious_authority)                          1.27      0.79  0.06  2.91 1.00     1478     3513
-cor(political_authority,religious_authority)     0.26      0.31 -0.42  0.77 1.00     5593     6287
+sd(political_authority)                          1.98      0.84  0.21  3.54 1.00     1272     1261
+sd(religious_authority)                          1.25      0.79  0.06  2.92 1.00     1640     3283
+cor(political_authority,religious_authority)     0.25      0.31 -0.42  0.77 1.00     4837     5973
 
 Continuous time intercept parameters:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority     0.21      0.94 -1.65  2.01 1.00     8762     5444
-religious_authority     0.21      0.94 -1.66  2.06 1.00     9553     5646
+political_authority     0.21      0.94 -1.64  2.01 1.00     8830     5761
+religious_authority     0.29      0.93 -1.54  2.11 1.00    10528     5870
 
 Ordinal cutpoint parameters:
                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority[1]    -1.29      0.89 -3.03  0.51 1.00     5964     5452
-political_authority[2]    -0.55      0.87 -2.22  1.20 1.00     6278     5920
-political_authority[3]     1.65      0.91 -0.08  3.49 1.00     6729     6160
-religious_authority[1]    -1.51      0.92 -3.30  0.29 1.00     6792     5557
-religious_authority[2]    -0.82      0.90 -2.58  0.97 1.00     7241     6064
-religious_authority[3]     1.60      0.93 -0.15  3.49 1.00     6983     6370</code></pre>
-<pre><code>Warning: There were 18 divergent transitions after warmup.
+political_authority[1]    -1.32      0.88 -3.04  0.45 1.00     5327     4841
+political_authority[2]    -0.56      0.85 -2.23  1.14 1.00     6127     5424
+political_authority[3]     1.63      0.88 -0.03  3.44 1.00     7270     5857
+religious_authority[1]    -1.50      0.92 -3.26  0.33 1.00     6697     5991
+religious_authority[2]    -0.82      0.90 -2.53  1.00 1.00     6992     6041
+religious_authority[3]     1.63      0.93 -0.11  3.51 1.00     7742     6728</code></pre>
+<pre><code>Warning: There were 14 divergent transitions after warmup.
 http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
 <p>We can see a printed summary of the model parameters, including the
 autoregressive effects (i.e., the effects of variables on themselves in
@@ -448,14 +448,14 @@ variable, some data are missing for the group size variable.</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 1 finished in 459.8 seconds.
-Chain 3 finished in 477.3 seconds.
-Chain 2 finished in 607.5 seconds.
-Chain 4 finished in 634.7 seconds.
+Chain 1 finished in 208.7 seconds.
+Chain 3 finished in 217.3 seconds.
+Chain 4 finished in 226.4 seconds.
+Chain 2 finished in 288.3 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 544.8 seconds.
-Total execution time: 634.8 seconds.</code></pre>
+Mean chain execution time: 235.2 seconds.
+Total execution time: 288.4 seconds.</code></pre>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Variables: brain_weight = gamma_log 
@@ -467,30 +467,30 @@ Phylogeny: primates_phylogeny (Number of trees: 1)
 
 Autoregressive selection effects:
              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight    -0.42      0.35 -1.34 -0.01 1.00     5998     3875
-group_size      -0.77      0.54 -2.01 -0.04 1.00     6044     3424
+brain_weight    -0.44      0.36 -1.33 -0.01 1.00     5487     2827
+group_size      -0.76      0.52 -1.95 -0.04 1.00     4512     3041
 
 Cross selection effects:
                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight ⟶ group_size     0.46      0.72 -1.12  1.76 1.00     2799     2861
-group_size ⟶ brain_weight     0.62      0.94 -1.29  2.41 1.00     3113     3754
+brain_weight ⟶ group_size     0.27      0.79 -1.43  1.69 1.00     2327     3530
+group_size ⟶ brain_weight     0.95      1.00 -0.97  3.09 1.01      738      287
 
 Drift parameters:
                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(brain_weight)                 1.07      0.22  0.67  1.56 1.00     2112     2198
-sd(group_size)                   0.69      0.44  0.04  1.66 1.01      784     1713
-cor(brain_weight,group_size)     0.06      0.30 -0.53  0.62 1.00     7637     5552
+sd(brain_weight)                 1.05      0.24  0.62  1.56 1.00     1850     2491
+sd(group_size)                   0.73      0.45  0.04  1.68 1.01      773     1213
+cor(brain_weight,group_size)     0.08      0.30 -0.52  0.64 1.00     2192      959
 
 Continuous time intercept parameters:
              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight    -0.25      0.85 -1.88  1.41 1.00     5417     5515
-group_size      -0.87      0.76 -2.32  0.66 1.00     5891     5285
+brain_weight    -0.34      0.78 -1.83  1.20 1.00     5466     5389
+group_size      -1.03      0.83 -2.53  0.65 1.00     2964     4869
 
 Shape parameters:
              Estimate Est.Error 2.5%  97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight    57.29     60.33 4.83 223.56 1.01      573     1593
-group_size       5.99     12.12 1.43  28.40 1.01      826      784</code></pre>
-<pre><code>Warning: There were 91 divergent transitions after warmup.
+brain_weight    57.43     55.36 5.13 207.68 1.01      561     1199
+group_size       7.10     15.67 1.42  41.76 1.01      689      520</code></pre>
+<pre><code>Warning: There were 404 divergent transitions after warmup.
 http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
 <p>Notice that the number of observations is still 21 in the summary
 output, informing us that all observations were retained and any missing
@@ -541,14 +541,14 @@ for each species.</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 2 finished in 605.4 seconds.
-Chain 4 finished in 624.9 seconds.
-Chain 3 finished in 851.5 seconds.
-Chain 1 finished in 852.4 seconds.
+Chain 3 finished in 261.3 seconds.
+Chain 4 finished in 363.7 seconds.
+Chain 2 finished in 376.8 seconds.
+Chain 1 finished in 386.7 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 733.5 seconds.
-Total execution time: 852.4 seconds.</code></pre>
+Mean chain execution time: 347.1 seconds.
+Total execution time: 386.8 seconds.</code></pre>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit3</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Variables: x = normal 
@@ -560,31 +560,31 @@ Phylogeny: repeated$phylogeny (Number of trees: 1)
 
 Autoregressive selection effects:
   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x    -1.57      0.77 -3.18 -0.20 1.00     3920     2089
-y    -1.32      0.71 -2.78 -0.12 1.00     4906     3238
+x    -1.58      0.77 -3.17 -0.21 1.00     5111     3604
+y    -1.34      0.71 -2.85 -0.15 1.00     5223     3187
 
 Cross selection effects:
       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x ⟶ y     0.42      0.85 -1.25  2.07 1.00     6608     5754
-y ⟶ x     0.03      0.87 -1.71  1.73 1.00     6875     5415
+x ⟶ y     0.42      0.86 -1.27  2.10 1.00     7501     6161
+y ⟶ x     0.04      0.85 -1.65  1.71 1.00     7967     6517
 
 Drift parameters:
          Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(x)        2.94      0.32 2.37  3.63 1.00     4183     5327
-sd(y)        2.58      0.29 2.05  3.20 1.00     4666     5667
-cor(x,y)     0.88      0.06 0.72  0.96 1.00     3234     4999
+sd(x)        2.93      0.32 2.37  3.60 1.00     5491     5809
+sd(y)        2.58      0.29 2.05  3.21 1.00     5128     6351
+cor(x,y)     0.87      0.06 0.71  0.96 1.00     3770     4970
 
 Continuous time intercept parameters:
   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x    -0.03      0.79 -1.59  1.51 1.00     6792     6144
-y     0.06      0.78 -1.51  1.58 1.00     7337     5761
+x    -0.06      0.78 -1.61  1.46 1.00     8432     5963
+y     0.04      0.76 -1.48  1.53 1.00     9003     5867
 
 Residual parameters:
          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(x)        0.28      0.02  0.23  0.33 1.00     8310     5374
-sd(y)        0.29      0.02  0.25  0.34 1.00     8427     5323
-cor(x,y)    -0.18      0.11 -0.38  0.03 1.00     7568     5759</code></pre>
-<pre><code>Warning: There were 36 divergent transitions after warmup.
+sd(x)        0.28      0.02  0.23  0.32 1.00     9704     5265
+sd(y)        0.29      0.02  0.25  0.34 1.00    10692     5832
+cor(x,y)    -0.18      0.10 -0.38  0.02 1.00     8699     5553</code></pre>
+<pre><code>Warning: There were 30 divergent transitions after warmup.
 http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
 <p>In the model output, we can see that <code><a href="../reference/coev_fit.html">coev_fit()</a></code> has
 detected the presence of repeated observations and has consequently
@@ -637,14 +637,14 @@ when using sets of different trees.</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 4 finished in 1598.6 seconds.
-Chain 3 finished in 1625.2 seconds.
-Chain 2 finished in 1633.5 seconds.
-Chain 1 finished in 2088.5 seconds.
+Chain 4 finished in 605.2 seconds.
+Chain 3 finished in 606.7 seconds.
+Chain 2 finished in 616.3 seconds.
+Chain 1 finished in 618.8 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 1736.5 seconds.
-Total execution time: 2088.7 seconds.</code></pre>
+Mean chain execution time: 611.7 seconds.
+Total execution time: 618.8 seconds.</code></pre>
 <div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit4</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Variables: political_authority = ordered_logistic 
@@ -656,34 +656,34 @@ Phylogeny: authority_multiphylo (Number of trees: 2)
 
 Autoregressive selection effects:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority    -0.64      0.52 -1.95 -0.02 1.00     5950     3489
-religious_authority    -0.70      0.55 -2.07 -0.03 1.00     6287     4187
+political_authority    -0.64      0.52 -1.92 -0.02 1.00     5613     3516
+religious_authority    -0.71      0.55 -2.06 -0.03 1.00     7194     4247
 
 Cross selection effects:
                                           Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority ⟶ religious_authority     2.05      1.03 0.37  4.34 1.00     2690     5116
-religious_authority ⟶ political_authority     2.12      1.08 0.26  4.47 1.00     2419     3669
+political_authority ⟶ religious_authority     2.16      1.03 0.45  4.45 1.00     2989     4592
+religious_authority ⟶ political_authority     2.00      1.03 0.21  4.26 1.00     2504     3559
 
 Drift parameters:
                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(political_authority)                          1.11      0.83  0.04  2.94 1.00      910     2354
-sd(religious_authority)                          0.88      0.68  0.03  2.50 1.00     1456     2887
-cor(political_authority,religious_authority)     0.05      0.33 -0.60  0.66 1.00     4522     5683
+sd(political_authority)                          1.09      0.82  0.04  2.89 1.00      913     3153
+sd(religious_authority)                          0.89      0.68  0.04  2.52 1.00     1426     3101
+cor(political_authority,religious_authority)     0.04      0.34 -0.61  0.67 1.00     5369     5862
 
 Continuous time intercept parameters:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority     0.34      0.91 -1.43  2.11 1.00     9445     6549
-religious_authority     0.42      0.92 -1.40  2.18 1.00    10164     5564
+political_authority     0.34      0.90 -1.45  2.03 1.00    10239     6144
+religious_authority     0.45      0.91 -1.36  2.24 1.00    10524     6090
 
 Ordinal cutpoint parameters:
                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority[1]    -1.55      0.90 -3.36  0.15 1.00     6041     5141
-political_authority[2]    -0.81      0.88 -2.59  0.85 1.00     6578     5453
-political_authority[3]     1.92      0.95  0.11  3.83 1.00     7628     5767
-religious_authority[1]    -1.83      0.88 -3.62 -0.13 1.00     6347     5593
-religious_authority[2]    -1.15      0.85 -2.87  0.52 1.00     7035     5596
-religious_authority[3]     1.67      0.93 -0.06  3.61 1.00     4677     4682</code></pre>
-<pre><code>Warning: There were 18 divergent transitions after warmup.
+political_authority[1]    -1.49      0.91 -3.35  0.24 1.00     5995     5599
+political_authority[2]    -0.76      0.89 -2.56  0.95 1.00     6697     5828
+political_authority[3]     1.92      0.92  0.16  3.80 1.00     8514     5958
+religious_authority[1]    -1.82      0.88 -3.58 -0.11 1.00     6588     5984
+religious_authority[2]    -1.14      0.86 -2.84  0.54 1.00     7245     6132
+religious_authority[3]     1.71      0.94 -0.03  3.65 1.00     5922     6285</code></pre>
+<pre><code>Warning: There were 15 divergent transitions after warmup.
 http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
 <p>The summary output correctly shows that we averaged over two trees.
 Note that with more trees, users should expect the computation time for
@@ -692,32 +692,35 @@ these models to increase.</p>
 <div class="section level2">
 <h2 id="controlling-for-spatial-location">Controlling for spatial location<a class="anchor" aria-label="anchor" href="#controlling-for-spatial-location"></a>
 </h2>
-<p>If we have data on the spatial location of taxa, sometimes it is
-useful to control for this spatial location to ensure that our model is
-capturing deep ancestral relationships rather than more recent diffusion
-among neighbours. For example, when studying the coevolution of
-political and religious authority in Austronesian societies, we would
-like to ensure that our results are due to coevolution over deep
-cultural time rather than more recent borrowing among societies with
-close geographic proximity.</p>
-<p>The <code>dist_mat</code> argument in the <code><a href="../reference/coev_fit.html">coev_fit()</a></code>
+<p>If we have data on the longitudes and latitudes of taxa, sometimes it
+is useful to control for this spatial location to ensure that our model
+is capturing deep ancestral relationships rather than shared
+environmental effects or more recent diffusion among neighbours. For
+example, when studying the coevolution of political and religious
+authority in Austronesian societies, we would like to ensure that our
+results are due to coevolution over deep cultural time rather than more
+recent borrowing among societies with close geographic proximity.</p>
+<p>The <code>lon_lat</code> argument in the <code><a href="../reference/coev_fit.html">coev_fit()</a></code>
 function allows us to easily control for spatial proximity. This
-argument takes a distance matrix between all taxa in the phylogeny. If
-the distance matrix is specified by the user, the function includes in
-the Stan code a separate Gaussian Process over spatial location for each
-variable in the model.</p>
-<p>Here is the geographic distance matrix (measured in metres) for the
-first five Austronesian societies:</p>
+argument takes a data frame of longitude and latitude coordinates (in
+decimal degrees) for taxa on the phylogeny. If longitude and latitude
+values are inputted by the user, the function calculates the Euclidean
+distances between these points on a unit sphere and includes a Gaussian
+process over these distances for each variable in the model.</p>
+<p>Here are the longitude and latitude values for the first five
+Austronesian societies:</p>
 <div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">authority</span><span class="op">$</span><span class="va">distance_matrix</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span></span></code></pre></div>
-<pre><code>                   Aiwoo     Alune AnejomAneityum     Anuta     Atoni
-Aiwoo                0.0 4250625.9      1158010.2  408692.9 4602028.5
-Alune          4250625.9       0.0      4863176.7 4649868.1  865094.2
-AnejomAneityum 1158010.2 4863176.7            0.0  951671.2 5013641.1
-Anuta           408692.9 4649868.1       951671.2       0.0 4977783.9
-Atoni          4602028.5  865094.2      5013641.1 4977783.9       0.0</code></pre>
-<p>We can include this distance matrix in the model. The matrix is
-scaled to vary between 0 and 1 under the hood to improve model
+<code class="sourceCode R"><span><span class="va">authority</span><span class="op">$</span><span class="va">coordinates</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="op">]</span></span></code></pre></div>
+<pre><code># A tibble: 5 × 3
+  id             latitude longitude
+  &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt;
+1 Aiwoo             -10.3      166.
+2 Alune              -3.1      128.
+3 AnejomAneityum    -20.2      170.
+4 Anuta             -11.6      170.
+5 Atoni              -9.7      124.</code></pre>
+<p>We can include these spatial coordinates in the model. The distance
+matrix is scaled to vary between 0 and 1 under the hood to improve model
 sampling.</p>
 <div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit5</span> <span class="op">&lt;-</span></span>
@@ -729,9 +732,8 @@ sampling.</p>
 <span>    <span class="op">)</span>,</span>
 <span>    id <span class="op">=</span> <span class="st">"language"</span>,</span>
 <span>    tree <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span>,</span>
-<span>    <span class="co"># declare distance matrix and covariance kernel</span></span>
-<span>    dist_mat <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">distance_matrix</span>,</span>
-<span>    dist_cov <span class="op">=</span> <span class="st">"exp_quad"</span>,</span>
+<span>    <span class="co"># declare longitude and latitude values</span></span>
+<span>    lon_lat <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">coordinates</span>,</span>
 <span>    <span class="co"># set manual prior</span></span>
 <span>    prior <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>A_offdiag <span class="op">=</span> <span class="st">"normal(0, 2)"</span><span class="op">)</span>,</span>
 <span>    <span class="co"># return log likelihood</span></span>
@@ -743,16 +745,17 @@ sampling.</p>
 <span>    refresh <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>    seed <span class="op">=</span> <span class="fl">1</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<pre><code>Running MCMC with 4 parallel chains...</code></pre>
-<pre><code>Chain 3 finished in 1566.6 seconds.
-Chain 1 finished in 1660.9 seconds.
-Chain 4 finished in 2080.0 seconds.
-Chain 2 finished in 2086.5 seconds.
+<pre><code>Running MCMC with 4 parallel chains...
+
+Chain 2 finished in 653.8 seconds.
+Chain 3 finished in 669.8 seconds.
+Chain 4 finished in 685.2 seconds.
+Chain 1 finished in 911.2 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 1848.5 seconds.
-Total execution time: 2086.7 seconds.</code></pre>
-<div class="sourceCode" id="cb40"><pre class="downlit sourceCode r">
+Mean chain execution time: 730.0 seconds.
+Total execution time: 911.4 seconds.</code></pre>
+<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit5</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Variables: political_authority = ordered_logistic 
            religious_authority = ordered_logistic 
@@ -763,45 +766,51 @@ Phylogeny: authority$phylogeny (Number of trees: 1)
 
 Autoregressive selection effects:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority    -0.69      0.54 -1.99 -0.03 1.00     5230     3961
-religious_authority    -0.77      0.58 -2.15 -0.03 1.00     5743     3919
+political_authority    -0.70      0.55 -2.04 -0.03 1.00     5198     3665
+religious_authority    -0.77      0.57 -2.14 -0.03 1.00     4905     2919
 
 Cross selection effects:
                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority ⟶ religious_authority     2.02      1.19 -0.45  4.34 1.00     2142     2494
-religious_authority ⟶ political_authority     1.65      1.23 -0.81  4.06 1.00     2656     3526
+political_authority ⟶ religious_authority     1.97      1.25 -0.67  4.37 1.00     2512     2004
+religious_authority ⟶ political_authority     1.49      1.28 -1.08  4.01 1.00     1885     3395
 
 Drift parameters:
                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(political_authority)                          1.52      0.80  0.11  3.11 1.00     1181     2182
-sd(religious_authority)                          1.02      0.69  0.05  2.54 1.00     1427     2927
-cor(political_authority,religious_authority)     0.16      0.33 -0.51  0.74 1.00     5589     5523
+sd(political_authority)                          1.26      0.74  0.06  2.83 1.00      974     1590
+sd(religious_authority)                          0.94      0.64  0.04  2.40 1.01     1590     2316
+cor(political_authority,religious_authority)     0.12      0.33 -0.54  0.70 1.00     3963     5106
 
 Continuous time intercept parameters:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority     0.32      0.94 -1.52  2.16 1.00     8469     5212
-religious_authority     0.30      0.97 -1.60  2.17 1.00     7767     5844
+political_authority     0.41      0.97 -1.51  2.32 1.00     6112     5721
+religious_authority     0.42      0.93 -1.37  2.26 1.00     6920     5885
 
 Ordinal cutpoint parameters:
                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority[1]    -1.49      0.98 -3.41  0.44 1.00     5038     5486
-political_authority[2]    -0.77      0.96 -2.64  1.16 1.00     4991     5665
-political_authority[3]     1.38      1.01 -0.58  3.42 1.00     4106     5215
-religious_authority[1]    -1.62      1.01 -3.58  0.38 1.00     6003     5297
-religious_authority[2]    -0.96      1.00 -2.84  1.01 1.00     6071     5604
-religious_authority[3]     1.46      1.04 -0.52  3.56 1.00     5740     5616
+political_authority[1]    -1.57      1.03 -3.56  0.44 1.00     4403     6008
+political_authority[2]    -0.85      1.01 -2.81  1.19 1.00     4441     5608
+political_authority[3]     1.30      1.06 -0.70  3.47 1.00     3242     5209
+religious_authority[1]    -1.87      1.06 -3.94  0.24 1.00     4308     5009
+religious_authority[2]    -1.16      1.04 -3.18  0.96 1.00     4488     4854
+religious_authority[3]     1.54      1.10 -0.53  3.76 1.00     3936     5472
 
 Gaussian Process parameters for distances:
                           Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-rho(political_authority)      0.05      0.09 0.00  0.33 1.00     1110     2047
-rho(religious_authority)      0.06      0.11 0.00  0.39 1.00      626     2322
-sdgp(political_authority)     1.82      1.21 0.16  4.73 1.00     1871     1720
-sdgp(religious_authority)     2.12      1.40 0.16  5.34 1.01     1185     2182</code></pre>
-<pre><code>Warning: There were 630 divergent transitions after warmup.
+rho(political_authority)      0.10      0.05 0.04  0.20 1.00      781     1298
+rho(religious_authority)      0.07      0.04 0.03  0.18 1.00      502      461
+sdgp(political_authority)     1.87      0.73 0.72  3.59 1.00     2167     2185
+sdgp(religious_authority)     2.40      0.80 1.04  4.16 1.00     2358     2639</code></pre>
+<pre><code>Warning: There were 10 divergent transitions after warmup.
 http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
 <p>The summary output shows that the model has estimated the parameters
-for two Gaussian Process functions over geographic locations, one for
+for two Gaussian process functions over geographic locations, one for
 each variable.</p>
+<p>In addition, it is possible to change the underlying covariance
+kernel for the Gaussian processes using the <code>dist_cov</code>
+argument and estimate approximate Hilbert-space Gaussian processes using
+the <code>dist_k</code> argument. The latter may be particularly useful
+for large datasets where exact Gaussian processes are intractable. See
+<code><a href="../reference/coev_fit.html">help(coev_fit)</a></code> for more details.</p>
 </div>
 <div class="section level2">
 <h2 id="model-comparison">Model comparison<a class="anchor" aria-label="anchor" href="#model-comparison"></a>
@@ -811,19 +820,19 @@ these models returns a log likelihood vector for all observations. With
 this, it is possible to compare different models using methods like
 approximate leave-one-out cross-validation. For example, we can use the
 <code>loo_compare()</code> function from the <a href="https://mc-stan.org/loo/index.html" class="external-link">loo</a> package to see whether
-adding the distance matrix in the authority example improved our
+adding the spatial control in the authority example improved our
 out-of-sample predictive accuracy.</p>
-<div class="sourceCode" id="cb43"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mc-stan.org/loo/" class="external-link">loo</a></span><span class="op">)</span></span>
 <span><span class="fu">loo_compare</span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    fit1 <span class="op">=</span> <span class="va">fit1</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="fu">loo</span><span class="op">(</span><span class="op">)</span>, <span class="co"># authority model without distance matrix</span></span>
-<span>    fit5 <span class="op">=</span> <span class="va">fit5</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="fu">loo</span><span class="op">(</span><span class="op">)</span>  <span class="co"># authority model with distance matrix</span></span>
+<span>    fit1 <span class="op">=</span> <span class="va">fit1</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="fu">loo</span><span class="op">(</span><span class="op">)</span>, <span class="co"># authority model without spatial control</span></span>
+<span>    fit5 <span class="op">=</span> <span class="va">fit5</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="fu">loo</span><span class="op">(</span><span class="op">)</span>  <span class="co"># authority model with spatial control</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <pre><code>     elpd_diff se_diff
 fit5  0.0       0.0   
-fit1 -1.9       2.8   </code></pre>
+fit1 -5.8       4.7   </code></pre>
 <p>This model comparison suggests that adding spatial location to the
 model did not improve out-of-sample predictive accuracy.</p>
 <p>This model comparison approach may also be useful for comparing

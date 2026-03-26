@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">0.1.0.9012</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
       </span>
     </div>
 
@@ -51,18 +51,19 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="development version" id="coevolve-development-version">coevolve (development version)<a class="anchor" aria-label="anchor" href="#coevolve-development-version"></a></h2>
+<h2 class="page-header" data-toc-text="1.0.0" id="coevolve-100">coevolve 1.0.0<a class="anchor" aria-label="anchor" href="#coevolve-100"></a></h2>
 <div class="section level4">
-<h4 id="bug-fixes-development-version">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-development-version"></a></h4>
+<h4 id="bug-fixes-1-0-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0"></a></h4>
 <ul><li>Fixed issue with <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> when <code>estimate_residual = FALSE</code> (<a href="https://github.com/ScottClaessens/coevolve/issues/95" class="external-link">#95</a>)</li>
 </ul></div>
 <div class="section level4">
-<h4 id="new-features-development-version">New Features<a class="anchor" aria-label="anchor" href="#new-features-development-version"></a></h4>
+<h4 id="new-features-1-0-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-1-0-0"></a></h4>
 <ul><li>Added <code>nutpie</code> as an alternative sampler for the Stan models (<a href="https://github.com/ScottClaessens/coevolve/issues/92" class="external-link">#92</a>)</li>
-<li>Re-use matrix computations when branch lengths are identical (<a href="https://github.com/ScottClaessens/coevolve/issues/93" class="external-link">#93</a>)</li>
+<li>Cached matrix computations when branch lengths are identical (<a href="https://github.com/ScottClaessens/coevolve/issues/93" class="external-link">#93</a>)</li>
+<li>Implemented Hilbert-space approximate Gaussian processes for spatial control, adding the <code>lon_lat</code> argument and deprecating the <code>dist_mat</code> argument in <code><a href="../reference/coev_fit.html">coev_fit()</a></code> (<a href="https://github.com/ScottClaessens/coevolve/issues/103" class="external-link">#103</a>)</li>
 </ul></div>
 <div class="section level4">
-<h4 id="other-changes-development-version">Other Changes<a class="anchor" aria-label="anchor" href="#other-changes-development-version"></a></h4>
+<h4 id="other-changes-1-0-0">Other Changes<a class="anchor" aria-label="anchor" href="#other-changes-1-0-0"></a></h4>
 <ul><li>Updated license</li>
 <li>Submitted to <a href="https://ropensci.org/" class="external-link">rOpenSci</a> for package review</li>
 <li>Linted package using <a href="https://lintr.r-lib.org/" class="external-link">lintr</a>
@@ -70,6 +71,8 @@
 <li>Implemented <a href="https://docs.ropensci.org/srr/" class="external-link">srr</a> compliance checks</li>
 <li>Added continuous integration checks using GitHub Actions</li>
 <li>Reduced cyclomatic complexity for some functions</li>
+<li>Re-factored Stan code generation to use <a href="https://github.com/edwindj/whisker" class="external-link">whisker</a> templates (<a href="https://github.com/ScottClaessens/coevolve/issues/99" class="external-link">#99</a>)</li>
+<li>Implemented automatic test fixture re-generation in GitHub Actions (<a href="https://github.com/ScottClaessens/coevolve/issues/100" class="external-link">#100</a>)</li>
 </ul></div>
 </div>
     <div class="section level2">
