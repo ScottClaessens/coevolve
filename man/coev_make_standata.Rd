@@ -11,7 +11,8 @@ coev_make_standata(
   tree,
   effects_mat = NULL,
   complete_cases = FALSE,
-  dist_mat = NULL,
+  lon_lat = NULL,
+  dist_k = NA,
   dist_cov = "exp_quad",
   measurement_error = NULL,
   prior = NULL,
@@ -19,7 +20,8 @@ coev_make_standata(
   estimate_correlated_drift = TRUE,
   estimate_residual = TRUE,
   log_lik = FALSE,
-  prior_only = FALSE
+  prior_only = FALSE,
+  dist_mat = deprecated()
 )
 }
 \arguments{
@@ -61,10 +63,19 @@ be TRUE in the matrix.}
 missing values are imputed by the model. If \code{TRUE}, taxa with missing
 data are excluded.}
 
-\item{dist_mat}{(optional) A distance matrix with row and column names
-exactly matching the tip labels in the phylogeny. If specified, the model
-will additionally control for spatial location by including a separate
-Gaussian Process over locations for every coevolving variable in the model.}
+\item{lon_lat}{(optional) A \code{data.frame} containing longitude and
+latitude values for all tips on the phylogeny. The data frame must contain
+the following columns: a column labelled "id" that exactly matches the tip
+labels on the phylogeny; a column labelled "longitude" that declares
+longitude values in decimal degrees; and a column labelled "latitude" that
+declares latitude values in decimal degrees. If specified, the model will
+additionally control for spatial location by including a separate Gaussian
+Process over locations for every coevolving variable in the model.}
+
+\item{dist_k}{An integer of length one specifying the number of basis
+functions for computing Hilbert-space approximate Gaussian Processes over
+locations. If \code{NA} (the default), exact Gaussian Processes are
+computed.}
 
 \item{dist_cov}{A string of length one specifying the covariance kernel used
 for Gaussian Processes over locations (case-sensitive). Currently supported
@@ -130,6 +141,9 @@ WAIC and LOO.}
 \item{prior_only}{Logical. If \code{FALSE} (default), the model is fitted to
 the data and returns a posterior distribution. If \code{TRUE}, the model
 samples from the prior only, ignoring the likelihood.}
+
+\item{dist_mat}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use the \code{lon_lat}
+argument instead.}
 }
 \value{
 A list containing the data for fitting the dynamic coevolutionary
@@ -178,7 +192,7 @@ stan_data <- coev_make_standata(
   effects_mat = effects_mat
 )
 
-# include distance matrix
+# include longitude/latitude values
 stan_data <- coev_make_standata(
   data = authority$data,
   variables = list(
@@ -187,7 +201,7 @@ stan_data <- coev_make_standata(
   ),
   id = "language",
   tree = authority$phylogeny,
-  dist_mat = authority$distance_matrix
+  lon_lat = authority$coordinates
 )
 
 # include measurement error

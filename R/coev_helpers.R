@@ -324,55 +324,124 @@ run_checks_effects_mat <- function(variables, effects_mat) {
   }
 }
 
-#' Internal helper function for checking dist_mat argument
+#' Internal helper function for checking lon_lat argument
 #'
 #' @srrstats {G1.4a} Non-exported function documented here
 #' @srrstats {G5.2, G5.2a} Unique error messages for each input
 #'
-#' @description Checks the dist_mat argument for the functions
+#' @description Checks the lon_lat argument for the functions
 #'   coev_make_stancode(), coev_make_standata(), and coev_fit().
 #'
 #' @returns Error message if any of the checks fail
 #'
 #' @noRd
-run_checks_dist_mat <- function(data, dist_mat, id) {
-  # if user entered a distance matrix
-  if (!is.null(dist_mat)) {
+run_checks_lon_lat <- function(data, tree, lon_lat) {
+  # if user entered longitude and latitude values
+  if (!is.null(lon_lat)) {
     # as data frame
     data <- as.data.frame(data)
-    # stop if dist_mat is not a matrix
-    #' @srrstats {G2.1, G2.8} Assertion on matrix input
-    if (!methods::is(dist_mat, "matrix")) {
-      stop2("Argument 'dist_mat' must be a matrix.")
+    # coerce lon_lat argument to data frame
+    lon_lat <- try(as.data.frame(lon_lat), silent = TRUE)
+    # stop if lon_lat not coercible to data frame
+    #' @srrstats {G2.7} Accepts multiple tabular forms
+    if (methods::is(lon_lat, "try-error") || !is.data.frame(lon_lat)) {
+      stop2("Argument 'lon_lat' must be coercible to a data.frame.")
     }
-    # stop if dist_mat is not numeric
-    if (!is.numeric(dist_mat)) {
-      stop2("Argument 'dist_mat' must be a numeric matrix.")
-    }
-    # stop if dist_mat is not symmetric
-    if (!isSymmetric(dist_mat)) {
-      stop2("Argument 'dist_mat' must be a symmetric matrix.")
-    }
-    # stop if diagonal of dist_mat is not 0
-    #' @srrstats {G2.4, G2.4b} Convert to continuous for checking
-    if (!identical(as.numeric(diag(dist_mat)), rep(0, nrow(dist_mat)))) {
-      stop2(
-        "Argument 'dist_mat' must have zeroes on the diagonal of the matrix."
-      )
-    }
-    # stop if dist_mat has missing row or column names
-    if (is.null(rownames(dist_mat)) || is.null(colnames(dist_mat))) {
-      stop2("Argument 'dist_mat' does not have valid row or column names.")
-    }
-    # stop if row and column names do not match tip labels exactly
-    if (!identical(sort(unique(data[, id])), sort(rownames(dist_mat))) ||
-          !identical(sort(unique(data[, id])), sort(colnames(dist_mat)))) {
+    # stop if lon_lat does not have required columns
+    if (!all(c("id", "longitude", "latitude") %in% colnames(lon_lat))) {
       stop2(
         paste0(
-          "Row and column names for argument 'dist_mat' do not match tree ",
-          "tip labels exactly."
+          "Argument 'lon_lat' does not contain the ",
+          "required columns: 'id', 'longitude', and 'latitude'"
         )
       )
+    }
+    tree <- phytools::as.multiPhylo(tree)
+    # stop if id column does not match tips exactly
+    if (!identical(sort(unique(lon_lat[, "id"])), sort(tree[[1]]$tip.label))) {
+      stop2(
+        paste0(
+          "The id column in 'lon_lat' does not match tree tip ",
+          "labels exactly."
+        )
+      )
+    }
+    # stop if longitude column is not numeric
+    if (!is.numeric(lon_lat[, "longitude"])) {
+      stop2("The longitude column in 'lon_lat' is not numeric.")
+    }
+    # stop if longitude column contains missing values
+    if (any(is.na(lon_lat[, "longitude"]))) {
+      stop2("The longitude column in 'lon_lat' contains missing values.")
+    }
+    # stop if longitude column contains values > 360
+    if (any(lon_lat[, "longitude"] > 360)) {
+      stop2(
+        paste0(
+          "The longitude column in 'lon_lat' contains values greater ",
+          "than 360."
+        )
+      )
+    }
+    # stop if longitude column contains values < -360
+    if (any(lon_lat[, "longitude"] < -360)) {
+      stop2(
+        paste0(
+          "The longitude column in 'lon_lat' contains values less than ",
+          "-360."
+        )
+      )
+    }
+    # stop if latitude column is not numeric
+    if (!is.numeric(lon_lat[, "latitude"])) {
+      stop2("The latitude column in 'lon_lat' is not numeric.")
+    }
+    # stop if latitude column contains missing values
+    if (any(is.na(lon_lat[, "latitude"]))) {
+      stop2("The latitude column in 'lon_lat' contains missing values.")
+    }
+    # stop if latitude column contains values > 90
+    if (any(lon_lat[, "latitude"] > 90)) {
+      stop2(
+        paste0(
+          "The latitude column in 'lon_lat' contains values greater ",
+          "than 90."
+        )
+      )
+    }
+    # stop if latitude column contains values < -90
+    if (any(lon_lat[, "latitude"] < -90)) {
+      stop2(
+        paste0(
+          "The latitude column in 'lon_lat' contains values less than ",
+          "-90."
+        )
+      )
+    }
+  }
+}
+
+#' Internal helper function for checking dist_k argument
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#' @srrstats {G5.2, G5.2a} Unique error messages for each input
+#'
+#' @description Checks the dist_k argument for the functions
+#'   coev_make_stancode(), coev_make_standata(), and coev_fit().
+#'
+#' @returns Error message if any of the checks fail
+#'
+#' @noRd
+run_checks_dist_k <- function(dist_k) {
+  # stop if dist_k is not of length 1
+  #' @srrstats {G2.0, G2.2} Assertion on length of input
+  if (length(dist_k) != 1) {
+    stop2("Argument 'dist_k' is not of length 1.")
+  }
+  if (!is.na(dist_k)) {
+    # stop if not positive integer
+    if (!is.numeric(dist_k) || dist_k != as.integer(dist_k) || dist_k < 1L) {
+      stop2("Argument 'dist_k' must be a positive integer.")
     }
   }
 }
@@ -544,16 +613,17 @@ run_checks_prior <- function(prior) {
 #'
 #' @noRd
 run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
-                       dist_mat, dist_cov, measurement_error, prior, scale,
-                       estimate_correlated_drift, estimate_residual, log_lik,
-                       prior_only) {
+                       lon_lat, dist_k, dist_cov, measurement_error, prior,
+                       scale, estimate_correlated_drift, estimate_residual,
+                       log_lik, prior_only, dist_mat) {
   # run checks from previous functions
   run_checks_data(data)
   run_checks_variables(data, variables)
   run_checks_id(data, id)
   run_checks_tree(data, id, tree)
   run_checks_effects_mat(variables, effects_mat)
-  run_checks_dist_mat(data, dist_mat, id)
+  run_checks_lon_lat(data, tree, lon_lat)
+  run_checks_dist_k(dist_k)
   run_checks_dist_cov(dist_cov)
   run_checks_measurement_error(data, variables, measurement_error)
   run_checks_prior(prior)
@@ -579,6 +649,14 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
   }
   if (!is.logical(prior_only) || length(prior_only) != 1) {
     stop2("Argument 'prior_only' must be a logical of length one.")
+  }
+  # check deprecated arguments
+  if (lifecycle::is_present(dist_mat)) {
+    lifecycle::deprecate_stop(
+      when = "1.0.0",
+      what = I("The 'dist_mat' argument"),
+      with = I("'lon_lat'")
+    )
   }
 }
 
@@ -608,4 +686,61 @@ stop2 <- function(...) {
 #' @noRd
 warning2 <- function(...) {
   warning(..., call. = FALSE)
+}
+
+#' Internal helper function for computing eigen functions for Gaussian Processes
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Computes the mth eigen function of an approximate GP. Used in
+#'   \code{coev_make_standata()}. Adapted from the brms package.
+#'
+#' @returns A numeric vector
+#'
+#' @noRd
+eigen_fun_laplacian <- function(x, m, l) {
+  x <- as.matrix(x)
+  d <- ncol(x)
+  stopifnot(length(m) == d, length(l) == d)
+  out <- vector("list", d)
+  for (i in seq_len(NCOL(x))) {
+    out[[i]] <- 1 / sqrt(l[i]) *
+      sin((m[i] * pi) / (2 * l[i]) * (x[, i] + l[i]))
+  }
+  Reduce("*", out)
+}
+
+#' Internal helper function for computing eigenvalues for Gaussian Processes
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Computes the mth eigenvalue of an approximate GP. Used in
+#'   \code{coev_make_standata()}. Adapted from the brms package.
+#'
+#' @returns A numeric vector
+#'
+#' @noRd
+eigen_val_laplacian <- function(m, l) {
+  ((m * pi) / (2 * l))^2
+}
+
+#' Internal helper function for returning the range of input data for which
+#' predictions should be made for Gaussian Processes
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Computes the range of input for which predictions should be made
+#'   in approximate GPs. Used in \code{coev_make_standata()}. Adapted from the
+#'   brms package.
+#'
+#' @returns Numeric
+#'
+#' @noRd
+choose_l <- function(x, c) {
+  if (!length(x)) {
+    range <- 1
+  } else {
+    range <- max(1, max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
+  }
+  c * range
 }

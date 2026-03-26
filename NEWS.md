@@ -1,4 +1,4 @@
-# coevolve (development version)
+# coevolve 1.0.0
 
 ### Bug Fixes
 
@@ -7,7 +7,10 @@
 ### New Features
 
 * Added `nutpie` as an alternative sampler for the Stan models (#92)
-* Re-use matrix computations when branch lengths are identical (#93) 
+* Cached matrix computations when branch lengths are identical (#93)
+* Implemented Hilbert-space approximate Gaussian processes for spatial control,
+  adding the `lon_lat` argument and deprecating the `dist_mat` argument in 
+  `coev_fit()` (#103)
 
 ### Other Changes
 
@@ -17,6 +20,9 @@
 * Implemented [srr](https://docs.ropensci.org/srr/) compliance checks
 * Added continuous integration checks using GitHub Actions
 * Reduced cyclomatic complexity for some functions
+* Re-factored Stan code generation to use 
+  [whisker](https://github.com/edwindj/whisker) templates (#99)
+* Implemented automatic test fixture re-generation in GitHub Actions (#100)
 
 # coevolve 0.1.0
 

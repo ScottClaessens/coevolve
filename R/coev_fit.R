@@ -75,10 +75,18 @@
 #' @param complete_cases (optional) Logical. If \code{FALSE} (default), all
 #'   missing values are imputed by the model. If \code{TRUE}, taxa with missing
 #'   data are excluded.
-#' @param dist_mat (optional) A distance matrix with row and column names
-#'   exactly matching the tip labels in the phylogeny. If specified, the model
-#'   will additionally control for spatial location by including a separate
-#'   Gaussian Process over locations for every coevolving variable in the model.
+#' @param lon_lat (optional) A \code{data.frame} containing longitude and
+#'   latitude values for all tips on the phylogeny. The data frame must contain
+#'   the following columns: a column labelled "id" that exactly matches the tip
+#'   labels on the phylogeny; a column labelled "longitude" that declares
+#'   longitude values in decimal degrees; and a column labelled "latitude" that
+#'   declares latitude values in decimal degrees. If specified, the model will
+#'   additionally control for spatial location by including a separate Gaussian
+#'   Process over locations for every coevolving variable in the model.
+#' @param dist_k An integer of length one specifying the number of basis
+#'   functions for computing Hilbert-space approximate Gaussian Processes over
+#'   locations. If \code{NA} (the default), exact Gaussian Processes are
+#'   computed.
 #' @param dist_cov A string of length one specifying the covariance kernel used
 #'   for Gaussian Processes over locations (strictly case-sensitive). Currently
 #'   supported are \code{"exp_quad"} (exponentiated-quadratic kernel; default),
@@ -146,6 +154,8 @@
 #'   \code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
 #'   specified, the model will be sampled using nutpie via reticulate. Note
 #'   that nutpie must be installed in your Python environment.
+#' @param dist_mat `r lifecycle::badge('deprecated')` Use the \code{lon_lat}
+#'   argument instead.
 #' @param ... Additional arguments. For sampling: arguments passed to
 #'   \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
 #'   \pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
@@ -235,9 +245,9 @@
 #'
 #'   \bold{Controlling for spatial location}
 #'
-#'   If users declare a distance matrix with the \code{dist_mat} argument,
-#'   the model will include several Gaussian processes (one per coevolving
-#'   variable) over spatial locations.
+#'   If users declare longitude and latitude values with the \code{lon_lat}
+#'   argument, the model will include several Gaussian processes (one per
+#'   coevolving variable) over spatial locations.
 #'
 #' @references
 #' Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
@@ -275,19 +285,21 @@
 #' @export
 coev_fit <- function(data, variables, id, tree,
                      effects_mat = NULL, complete_cases = FALSE,
-                     dist_mat = NULL, dist_cov = "exp_quad",
+                     lon_lat = NULL, dist_k = NA, dist_cov = "exp_quad",
                      measurement_error = NULL,
                      prior = NULL, scale = TRUE,
                      estimate_correlated_drift = TRUE,
                      estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
-                     adapt_delta = 0.95, backend = "cmdstanr", ...) {
+                     adapt_delta = 0.95, backend = "cmdstanr",
+                     dist_mat = deprecated(), ...) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, measurement_error, prior, scale,
-             estimate_correlated_drift, estimate_residual, log_lik, prior_only)
+  run_checks(data, variables, id, tree, effects_mat, complete_cases, lon_lat,
+             dist_k, dist_cov, measurement_error, prior, scale,
+             estimate_correlated_drift, estimate_residual, log_lik, prior_only,
+             dist_mat)
   # check backend argument
   if (!is.character(backend) || length(backend) != 1) {
     stop2("Argument 'backend' must be a character string of length one.")
@@ -297,13 +309,13 @@ coev_fit <- function(data, variables, id, tree,
   }
   # write stan code for model
   sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
-                           complete_cases, dist_mat, dist_cov,
+                           complete_cases, lon_lat, dist_k, dist_cov,
                            measurement_error, prior, scale,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
   # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
-                           complete_cases, dist_mat, dist_cov,
+                           complete_cases, lon_lat, dist_k, dist_cov,
                            measurement_error, prior, scale,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
@@ -467,7 +479,8 @@ coev_fit <- function(data, variables, id, tree,
       stan_data = sd,
       effects_mat = sd$effects_mat,
       complete_cases = complete_cases,
-      dist_mat = sd$dist_mat,
+      lon_lat = lon_lat,
+      dist_k = dist_k,
       dist_cov = dist_cov,
       measurement_error = measurement_error,
       scale = scale,
