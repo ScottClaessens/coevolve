@@ -310,3 +310,18 @@ save_coevfit_rds(coevfit_example_08)
 save_coevfit_rds(coevfit_example_09)
 save_coevfit_rds(coevfit_example_10)
 save_coevfit_rds(coevfit_example_11)
+
+# cleanup
+rm(
+  coevfit_example_01,
+  coevfit_example_02,
+  coevfit_example_03,
+  coevfit_example_04,
+  coevfit_example_05,
+  coevfit_example_06,
+  coevfit_example_07,
+  coevfit_example_08,
+  coevfit_example_09,
+  coevfit_example_10,
+  coevfit_example_11
+)

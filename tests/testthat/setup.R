@@ -1,6 +1,11 @@
 # global teardown: runs after all tests complete
 withr::defer({
   try({
+    # kill any leftover cmdstan processes
+    if (.Platform$OS.type == "unix") {
+      system("pkill -f cmdstan", ignore.stdout = TRUE, ignore.stderr = TRUE)
+      system("pkill -f stan", ignore.stdout = TRUE, ignore.stderr = TRUE)
+    }
     # force garbage collection
     gc()
     # finalise python (if used via reticulate)
