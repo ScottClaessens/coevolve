@@ -421,29 +421,30 @@ increase.
 
 ## Controlling for spatial location
 
-If we have data on the spatial location of taxa, sometimes it is useful to
-control for this spatial location to ensure that our model is capturing deep
-ancestral relationships rather than more recent diffusion among neighbours.
-For example, when studying the coevolution of political and religious authority
-in Austronesian societies, we would like to ensure that our results are due to
-coevolution over deep cultural time rather than more recent borrowing among
-societies with close geographic proximity.
+If we have data on the longitudes and latitudes of taxa, sometimes it is useful
+to control for this spatial location to ensure that our model is capturing deep
+ancestral relationships rather than shared environmental effects or more recent
+diffusion among neighbours. For example, when studying the coevolution of
+political and religious authority in Austronesian societies, we would like to
+ensure that our results are due to coevolution over deep cultural time rather
+than more recent borrowing among societies with close geographic proximity.
 
-The `dist_mat` argument in the `coev_fit()` function allows us to easily control
-for spatial proximity. This argument takes a distance matrix between all taxa in
-the phylogeny. If the distance matrix is specified by the user, the function
-includes in the Stan code a separate Gaussian Process over spatial location for
-each variable in the model.
+The `lon_lat` argument in the `coev_fit()` function allows us to easily control
+for spatial proximity. This argument takes a data frame of longitude and
+latitude coordinates (in decimal degrees) for taxa on the phylogeny. If
+longitude and latitude values are inputted by the user, the function calculates
+the Euclidean distances between these points on a unit sphere and includes a
+Gaussian process over these distances for each variable in the model.
 
-Here is the geographic distance matrix (measured in metres) for the first five
-Austronesian societies:
+Here are the longitude and latitude values for the first five Austronesian
+societies:
 
-```{r authority-distance-matrix}
-authority$distance_matrix[1:5, 1:5]
+```{r authority-coordinates}
+authority$coordinates[1:5, ]
 ```
 
-We can include this distance matrix in the model. The matrix is scaled to vary
-between 0 and 1 under the hood to improve model sampling.
+We can include these spatial coordinates in the model. The distance matrix is
+scaled to vary between 0 and 1 under the hood to improve model sampling.
 
 ```{r authority-fit-with-distance, warning=FALSE, message=FALSE}
 fit5 <-
@@ -455,9 +456,8 @@ fit5 <-
     ),
     id = "language",
     tree = authority$phylogeny,
-    # declare distance matrix and covariance kernel
-    dist_mat = authority$distance_matrix,
-    dist_cov = "exp_quad",
+    # declare longitude and latitude values
+    lon_lat = authority$coordinates,
     # set manual prior
     prior = list(A_offdiag = "normal(0, 2)"),
     # return log likelihood
@@ -476,7 +476,13 @@ summary(fit5)
 ```
 
 The summary output shows that the model has estimated the parameters for two
-Gaussian Process functions over geographic locations, one for each variable.
+Gaussian process functions over geographic locations, one for each variable.
+
+In addition, it is possible to change the underlying covariance kernel for the
+Gaussian processes using the `dist_cov` argument and estimate approximate
+Hilbert-space Gaussian processes using the `dist_k` argument. The latter may be
+particularly useful for large datasets where exact Gaussian processes are
+intractable. See `help(coev_fit)` for more details.
 
 ## Model comparison
 
@@ -485,15 +491,15 @@ a log likelihood vector for all observations. With this, it is possible to
 compare different models using methods like approximate leave-one-out
 cross-validation. For example, we can use the `loo_compare()` function from the
 [loo](https://mc-stan.org/loo/index.html) package to see whether adding the
-distance matrix in the authority example improved our out-of-sample predictive
+spatial control in the authority example improved our out-of-sample predictive
 accuracy.
 
 ```{r model-comparison, warning=FALSE, message=FALSE}
 library(loo)
 loo_compare(
   list(
-    fit1 = fit1$fit$loo(), # authority model without distance matrix
-    fit5 = fit5$fit$loo()  # authority model with distance matrix
+    fit1 = fit1$fit$loo(), # authority model without spatial control
+    fit5 = fit5$fit$loo()  # authority model with spatial control
   )
 )
 ```
