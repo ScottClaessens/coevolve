@@ -1451,15 +1451,7 @@ test_that("coev_make_standata() works with approximate GPs", {
   expect_equal(sd$NBgp, 5^3)
   expect_equal(sd$Xgp, xgp_l)
   expect_equal(sd$slambda, slambda)
-  # coevolve computes the same stan data as brms
-  d$x <- coords[, 1]
-  d$y <- coords[, 2]
-  d$z <- coords[, 3]
-  sd_brms <- brms::make_standata(formula = y ~ gp(x, y, z, k = 5), data = d)
-  expect_equal(sd$NBgp, sd_brms$NBgp_1)
-  expect_equal(sd$Xgp, sd_brms$Xgp_1)
-  expect_equal(sd$slambda, sd_brms$slambda_1)
-  # repeat for a different value of k
+  # repeat for k = 10
   sd <-
     coev_make_standata(
       data = d,
@@ -1472,8 +1464,19 @@ test_that("coev_make_standata() works with approximate GPs", {
       lon_lat = lon_lat,
       dist_k = 10
     )
-  sd_brms <- brms::make_standata(formula = y ~ gp(x, y, z, k = 10), data = d)
-  expect_equal(sd$NBgp, sd_brms$NBgp_1)
-  expect_equal(sd$Xgp, sd_brms$Xgp_1)
-  expect_equal(sd$slambda, sd_brms$slambda_1)
+  ks <- as.matrix(
+    do.call(
+      expand.grid,
+      replicate(3, seq_len(10), simplify = FALSE)
+    )
+  )
+  xgp_l <- matrix(nrow = nrow(xgp), ncol = nrow(ks))
+  slambda <- matrix(nrow = nrow(ks), ncol = 3)
+  for (m in seq_len(NROW(ks))) {
+    xgp_l[, m] <- eigen_fun_laplacian(xgp, m = ks[m, ], l = rep(l, 3))
+    slambda[m, ] <- sqrt(eigen_val_laplacian(m = ks[m, ], l = l))
+  }
+  expect_equal(sd$NBgp, 10^3)
+  expect_equal(sd$Xgp, xgp_l)
+  expect_equal(sd$slambda, slambda)
 })
