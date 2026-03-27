@@ -1,5 +1,4 @@
 library(ape)
-library(geosphere)
 library(phangorn)
 library(tidyverse)
 
@@ -69,20 +68,17 @@ lon_lat <-
     ),
     col_types = "cd"
   ) |>
-  dplyr::select(Language, Longitude, Latitude) |>
-  column_to_rownames(var = "Language") |>
-  as.matrix()
-
-# convert to geographic distance matrix
-dist_mat <- distm(lon_lat)
-rownames(dist_mat) <- rownames(lon_lat)
-colnames(dist_mat) <- rownames(lon_lat)
+  dplyr::rename(
+    id = Language,
+    longitude = Longitude,
+    latitude = Latitude
+  )
 
 # put together list
 authority <- list(
   data = data,
   phylogeny = phylogeny,
-  distance_matrix = dist_mat
+  coordinates = lon_lat
 )
 
 # save

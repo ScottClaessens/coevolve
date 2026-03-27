@@ -507,9 +507,9 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = "testing" # not of class matrix
+      lon_lat = log # not coercible to data frame
     ),
-    "Argument 'dist_mat' must be a matrix.",
+    "Argument 'lon_lat' must be coercible to a data.frame.",
     fixed = TRUE
   )
   expect_error(
@@ -521,71 +521,202 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      dist_mat = matrix(letters) # matrix not numeric
-    ),
-    "Argument 'dist_mat' must be a numeric matrix.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_fit(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      dist_mat = matrix(1:100, nrow = 10) # matrix not symmetric
-    ),
-    "Argument 'dist_mat' must be a symmetric matrix.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_fit(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      # matrix symmetric but diagonal not zero
-      dist_mat = matrix(rep(1, 100), nrow = 10)
-    ),
-    "Argument 'dist_mat' must have zeroes on the diagonal of the matrix.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_fit(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      dist_mat = matrix(0) # no row/col names
-    ),
-    "Argument 'dist_mat' does not have valid row or column names.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_fit(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      dist_mat = matrix(rep(0, 100), nrow = 10,
-                        # matrix row/col names do not match tips
-                        dimnames = list(letters[1:10], letters[1:10]))
+      lon_lat = data.frame(testing = 0) # wrong column names
     ),
     paste0(
-      "Row and column names for argument 'dist_mat' do not ",
-      "match tree tip labels exactly."
+      "Argument 'lon_lat' does not contain the ",
+      "required columns: 'id', 'longitude', and 'latitude'"
     ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = "test",
+        longitude = 0,
+        latitude = 0
+      ) # ids do not match tree
+    ),
+    "The id column in 'lon_lat' does not match tree tip labels exactly.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = "test",
+        latitude = 0
+      ) # longitude not numeric
+    ),
+    "The longitude column in 'lon_lat' is not numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = as.numeric(NA),
+        latitude = 0
+      ) # longitude contains missing values
+    ),
+    "The longitude column in 'lon_lat' contains missing values.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 1000,
+        latitude = 0
+      ) # longitude greater than 360
+    ),
+    "The longitude column in 'lon_lat' contains values greater than 360.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = -1000,
+        latitude = 0
+      ) # longitude less than -360
+    ),
+    "The longitude column in 'lon_lat' contains values less than -360.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = "test"
+      ) # latitude not numeric
+    ),
+    "The latitude column in 'lon_lat' is not numeric.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = as.numeric(NA)
+      ) # latitude contains missing values
+    ),
+    "The latitude column in 'lon_lat' contains missing values.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = 1000
+      ) # latitude greater than 90
+    ),
+    "The latitude column in 'lon_lat' contains values greater than 90.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      lon_lat = data.frame(
+        id = tree$tip.label,
+        longitude = 0,
+        latitude = -1000
+      ) # latitude less than -90
+    ),
+    "The latitude column in 'lon_lat' contains values less than -90.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_k = c(1, 2)
+    ),
+    "Argument 'dist_k' is not of length 1.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_k = "test"
+    ),
+    "Argument 'dist_k' must be a positive integer.",
     fixed = TRUE
   )
   expect_error(
@@ -792,6 +923,18 @@ test_that("coev_fit() produces expected errors", {
     ),
     "Argument 'backend' must be either 'cmdstanr' or 'nutpie'.",
     fixed = TRUE
+  )
+  lifecycle::expect_defunct(
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "bernoulli_logit",
+        y = "ordered_logistic"
+      ),
+      id = "id",
+      tree = tree,
+      dist_mat = "deprecated"
+    )
   )
 })
 
@@ -1078,4 +1221,25 @@ test_that("coev_fit() works with cmdstanr backend and nutpie arguments", {
       )
     )
   })
+})
+
+test_that("coev_fit() works with approximate GPs", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example_11.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_11-1.csv")
+  # suppress warnings
+  sw <- suppressWarnings
+  # fitted without error
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
+  # expect no errors for extract_samples method
+  expect_no_error(sw(extract_samples(m)))
+  expect_true(sw(methods::is(extract_samples(m), "list")))
+  # expect no errors for stancode or standata methods
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
 })

@@ -27,11 +27,11 @@ model{
   {{#gamma_seq}}
   shape{{j}} ~ {{prior_shape}};
   {{/gamma_seq}}
-  {{#dist_mat}}
+  {{#lon_lat}}
   to_vector(dist_z) ~ std_normal();
   sigma_dist ~ {{prior_sigma_dist}};
   rho_dist ~ {{prior_rho_dist}};
-  {{/dist_mat}}
+  {{/lon_lat}}
   {{#add_priors_residual_sds_cors}}
   {{#normal_present}}
   for (i in 1:N_obs) {

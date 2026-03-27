@@ -237,4 +237,57 @@ functions {
     return match_positions;
   }
 
+  {{#approximate_gps}}
+  {{#exp_quad}}
+  // spectral density function of Gaussian process with exp_quad kernel
+  vector spd_gp_exp_quad(data array[] vector x, real sdgp, real lscale) {
+    int NB = dims(x)[1];
+    int D = dims(x)[2];
+    real constant = square(sdgp) * sqrt(2 * pi())^D;
+    vector[NB] out;
+    real neg_half_lscale2 = -0.5 * square(lscale);
+    constant = constant * lscale^D;
+    for (m in 1:NB) {
+      out[m] = constant * exp(neg_half_lscale2 * dot_self(x[m]));
+    }
+    return out;
+  }
+  {{/exp_quad}}
+  {{#exponential}}
+  // spectral density function of Gaussian process with exponential kernel
+  vector spd_gp_exponential(data array[] vector x, real sdgp, real lscale) {
+    int NB = dims(x)[1];
+    int D = dims(x)[2];
+    real constant = square(sdgp) *
+      (2^D * pi()^(D / 2.0) * tgamma((D + 1.0) / 2)) / sqrt(pi());
+    real expo = -(D + 1.0) / 2;
+    vector[NB] out;
+    real lscale2 = square(lscale);
+    constant = constant * lscale^D;
+    for (m in 1:NB) {
+      out[m] = constant * (1 + lscale2 * dot_self(x[m]))^expo;
+    }
+    return out;
+  }
+  {{/exponential}}
+  {{#matern32}}
+  // spectral density function of Gaussian process with matern32 kernel
+  vector spd_gp_matern32(data array[] vector x, real sdgp, real lscale) {
+    int NB = dims(x)[1];
+    int D = dims(x)[2];
+    real constant = square(sdgp) *
+      (2^D * pi()^(D / 2.0) * tgamma((D + 3.0) / 2) * 3^(3.0 / 2)) /
+      (0.5 * sqrt(pi()));
+    real expo = -(D + 3.0) / 2;
+    vector[NB] out;
+    real lscale2 = square(lscale);
+    constant = constant * lscale^D;
+    for (m in 1:NB) {
+      out[m] = constant * (3 + lscale2 * dot_self(x[m]))^expo;
+    }
+    return out;
+  }
+  {{/matern32}}
+  {{/approximate_gps}}
+
 }
