@@ -1,11 +1,10 @@
-# Helper: read the functions template and append test wrapper functions
+# Helper: get rendered functions block and append test wrapper functions
 build_stan_code <- function(extra_functions) {
-  fn_lines <- readLines(
-    system.file("stan/templates/01-functions.stan", package = "coevolve")
+  fn_block <- coevolve:::write_functions_block(
+    lon_lat = NULL, dist_k = NA, dist_cov = "exp_quad"
   )
-  # Extract function bodies (strip outer "functions {" and "}")
-  fn_body <- paste(fn_lines[2:(length(fn_lines) - 1)], collapse = "\n")
-  paste0("functions {\n", fn_body, "\n", extra_functions, "\n}\n")
+  # Insert extra functions before the closing brace
+  sub("\\}\\s*$", paste0("\n", extra_functions, "\n}\n"), fn_block)
 }
 
 test_that("Cayley-Hamilton matrix_exp matches Stan matrix_exp for 2x2", {
