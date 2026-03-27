@@ -569,8 +569,8 @@ write_transformed_pars_block <- function(data, distributions, id, lon_lat,
       )
     }
   }
-  # number of variables (for specialized 2x2 optimizations)
-  J <- length(distributions)
+  # number of variables (for specialized 2x2/3x3 optimizations)
+  n_j <- length(distributions)
   # render template
   render_stan_template(
     filepath = "stan/templates/05-transformed-parameters.stan",
@@ -579,11 +579,10 @@ write_transformed_pars_block <- function(data, distributions, id, lon_lat,
       no_correlated_drift = !estimate_correlated_drift,
       tdrift = tdrift,
       residual = residual,
-      dist_cov_code = dist_cov_code,
       gps = gps,
-      j_equals_2 = (J == 2),
-      j_equals_3 = (J == 3),
-      j_general = (J >= 4)
+      j_equals_2 = (n_j == 2),
+      j_equals_3 = (n_j == 3),
+      j_general = (n_j >= 4)
     )
   )
 }
