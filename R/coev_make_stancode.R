@@ -518,6 +518,8 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
       "exp(-(sqrt(3.0) * dist_mat[i,m]) / rho_dist[j])"
     )
   }
+  # number of variables (for specialized 2x2 optimizations)
+  J <- length(distributions)
   # render template
   render_stan_template(
     filepath = "stan/templates/05-transformed-parameters.stan",
@@ -527,7 +529,10 @@ write_transformed_pars_block <- function(data, distributions, id, dist_mat,
       dist_mat = !is.null(dist_mat),
       tdrift = tdrift,
       residual = residual,
-      dist_cov_code = dist_cov_code
+      dist_cov_code = dist_cov_code,
+      j_equals_2 = (J == 2),
+      j_equals_3 = (J == 3),
+      j_general = (J >= 4)
     )
   )
 }
