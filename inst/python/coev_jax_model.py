@@ -820,6 +820,9 @@ class CoevJaxModel:
                     )
                 else:
                     L_cov_res = jnp.diag(params["sigma_residual"]) @ L_residual
+                    L_cov_res = jnp.broadcast_to(
+                        L_cov_res, (self.N_obs, J, J)
+                    )
                 obs_lp = obs_lp + mvn_chol_logp(residuals, L_cov_res)
 
             # Non-normal likelihoods
