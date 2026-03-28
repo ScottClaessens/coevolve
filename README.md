@@ -16,7 +16,7 @@
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian generalized
-dynamic phylogenetic models in Stan or PyMC. These models can be used to
+dynamic phylogenetic models in Stan. These models can be used to
 estimate how variables have coevolved over evolutionary time and to
 assess causal directionality (X → Y vs. Y → X) and contingencies (X,
 then Y) in evolution.
@@ -170,36 +170,21 @@ evolutionary time.
 
 ### Optional: Accelerated sampling (`nuts_sampler`)
 
-Sampling is selected with a single argument, consistent with PyMC’s
-`nuts_sampler`:
+Sampling is selected with a single argument:
 
-- **`nuts_sampler = "stan"`** (default): Stan model via **CmdStan** / **cmdstanr**
-  (Stan’s built-in HMC/NUTS).
-- **`nuts_sampler = "pymc"`**: same model translated to **PyMC**; PyMC’s default
-  NUTS (`pm.sample`). By default all **chains** run in parallel (`cores =
-  chains`); use **`parallel_chains`** or **`cores`** in `...` to limit
-  workers (e.g. `cores = 1` for sequential chains).
-- **`nuts_sampler = "nutpie"`**: PyMC model + **nutpie**’s Rust NUTS (like
-  `pymc.sample(..., nuts_sampler = "nutpie")`). Optional **`nuts_backend`** and
-  **`nuts_gradient_backend`** in `...` are passed to nutpie’s
-  `compile_pymc_model` (e.g. `"jax"` / `"numba"`). They are ignored when
-  `nuts_sampler = "stan"`.
-
-Stan via **BridgeStan** + nutpie (`backend = "nutpie"`) is no longer supported
-in `coev_fit()`; use `nuts_sampler = "nutpie"` on the PyMC translation instead.
-Low-level helpers `nutpie_sample()` / `nutpie_compile_stan_model()` remain for
-advanced use.
-
-**Stan vs PyMC density check:** `compare_stan_pymc_logprob()` takes the same
-arguments as `coev_make_stancode()` / `coev_make_pymc()`, draws one CmdStan
-posterior draw, maps primary parameters into PyMC’s transformed space (including
-remapping `z_drift` and subtracting Stan-only priors on tip-edge `z`’s), and
-returns `logprob_stan`, `logprob_stan_adj`, and `logprob_pymc`. Use it to
-investigate large timing or posterior discrepancies; read `?compare_stan_pymc_logprob`
-for caveats (e.g. `terminal_drift` only appears in PyMC under some Gaussian
-missing-data patterns).
+- **`nuts_sampler = "stan"`** (default): Stan model via **CmdStan** /
+  **cmdstanr** (Stan’s built-in HMC/NUTS).
+- **`nuts_sampler = "nutpie"`**: uses JAX to compute gradients and
+  **nutpie**’s Rust NUTS sampler for fast, parallel sampling.
 
 #### Setup
+
+The nutpie backend requires Python with JAX, NumPyro, and nutpie.
+Install them with:
+
+``` bash
+pip install jax numpyro nutpie
+```
 
 Python dependencies are managed automatically via `reticulate`’s `uv`
 environment. The project `.Rprofile` sets `RETICULATE_PYTHON = "managed"`
@@ -211,13 +196,12 @@ use. To pin a specific Python instead, set `RETICULATE_PYTHON` before
 Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
 ```
 
-#### Example: PyMC + nutpie (recommended accelerated path)
+#### Example: nutpie (recommended accelerated path)
 
 ``` r
 fit <- coev_fit(
   ...,
-  nuts_sampler = "nutpie",
-  nuts_backend = "jax" # optional; default is "jax"
+  nuts_sampler = "nutpie"
 )
 ```
 
@@ -225,9 +209,6 @@ fit <- coev_fit(
 Python (for example an older conda or mamba base environment), restart R
 after changing `RETICULATE_PYTHON` so the new interpreter is picked up
 cleanly.
-
-The deprecated argument `backend = "cmdstanr"` / `"pymc"` still works with a
-warning; map to `nuts_sampler = "stan"` / `"pymc"`.
 
 ## Citing coevolve
 

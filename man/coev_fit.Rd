@@ -136,45 +136,6 @@ WAIC and LOO.}
 \item{prior_only}{Logical. If \code{FALSE} (default), the model is fitted to
 the data and returns a posterior distribution. If \code{TRUE}, the model
 samples from the prior only, ignoring the likelihood.}
-
-\item{adapt_delta}{Target acceptance probability for the NUTS sampler
-(default \code{0.95}). Passed to \pkg{cmdstanr::sample()} as
-\code{adapt_delta}, and to PyMC / nutpie as \code{target_accept}.}
-
-\item{nuts_sampler}{Which NUTS implementation to use, aligned with
-PyMC's \code{nuts_sampler} concept for the PyMC paths: \code{"stan"}
-(default) fits the \strong{Stan} model with \strong{CmdStan} via \pkg{cmdstanr}
-(Stan’s built-in HMC/NUTS); \code{"pymc"} fits the \strong{PyMC} translation
-with \pkg{pymc}'s default NUTS; \code{"nutpie"} fits the same PyMC model
-using \strong{nutpie}'s Rust NUTS (same role as \code{nuts_sampler = "nutpie"}
-in \code{pymc.sample}). When \code{nuts_sampler = "nutpie"}, optional
-\code{nuts_backend} and \code{nuts_gradient_backend} (via \code{...}) are
-forwarded to nutpie's compiler (\code{compile_pymc_model}); other nutpie
-options (e.g. \code{low_rank_modified_mass_matrix}) are passed to
-\code{nutpie.sample}. These nutpie-only arguments have no effect when
-\code{nuts_sampler} is \code{"stan"} or \code{"pymc"} (without a warning).}
-
-\item{backend}{\strong{Deprecated.} Use \code{nuts_sampler} instead:
-\code{cmdstanr} \eqn{\rightarrow} \code{"stan"}, \code{pymc}
-\eqn{\rightarrow} \code{"pymc"}. \code{backend = "nutpie"} (Stan via
-BridgeStan) is no longer supported from \code{coev_fit()}; use
-\code{nuts_sampler = "nutpie"} for nutpie on the PyMC model.}
-
-\item{...}{Additional arguments. For \code{nuts_sampler = "stan"}: passed to
-\pkg{cmdstanr::sample()} (and compilation via \code{extra_stanc_args},
-\code{extra_compile_args}). For \code{"pymc"} or \code{"nutpie"}: sampling
-arguments such as \code{chains}, \code{iter_sampling}, \code{iter_warmup},
-\code{seed}; \code{parallel_chains} or \code{cores} set PyMC
-\code{pm.sample(cores=...)} for the default PyMC sampler (default is all
-chains in parallel, matching \code{chains}). For plain PyMC,
-\code{compile_mode = "mlx"} enables MLX on Apple Silicon. For
-\code{nuts_sampler = "nutpie"}, tuning arguments for \code{nutpie.sample}
-(e.g. \code{low_rank_modified_mass_matrix}, \code{mass_matrix_gamma}) can
-be passed via \code{...}; \code{nuts_backend} /
-\code{nuts_gradient_backend} set nutpie's compile \code{backend} /
-\code{gradient_backend}.
-The legacy names \code{nutpie_backend} and \code{sampler = "nutpie"} (with
-\code{backend = "pymc"}) are still accepted with a warning.}
 }
 \value{
 Fitted model of class \code{coevfit}

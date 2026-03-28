@@ -1,47 +1,105 @@
-#' Ensure PyMC and PyTensor are available via reticulate
+#' Ensure JAX and numpyro are available via reticulate
 #'
-#' @description Uses py_require to install (if needed) and then verifies that
-#'   pymc and pytensor can be imported.
+#' @description Checks that jax, numpyro, and nutpie can be imported.
 #'
-#' @param mlx Logical. If TRUE, also require mlx for Apple Silicon GPU.
-#'
-#' @returns Logical. TRUE if pymc is available, FALSE otherwise.
+#' @returns Logical. TRUE if all packages are available, FALSE otherwise.
 #'
 #' @noRd
-check_pymc_available <- function(mlx = FALSE) {
+check_jax_available <- function() {
   if (!requireNamespace("reticulate", quietly = TRUE)) {
     return(FALSE)
   }
   tryCatch({
-    pkgs <- c("pymc", "pytensor", "arviz")
-    if (mlx) pkgs <- c(pkgs, "mlx")
-    reticulate::py_require(pkgs)
-    reticulate::import("pymc", convert = FALSE)
-    reticulate::import("pytensor", convert = FALSE)
+    reticulate::py_require(c("jax", "numpyro", "nutpie"))
+    reticulate::import("jax", convert = FALSE)
+    reticulate::import("numpyro", convert = FALSE)
+    reticulate::import("nutpie", convert = FALSE)
     TRUE
   }, error = function(e) {
     FALSE
   })
 }
 
-#' Stop if PyMC is not available via reticulate
+#' Stop if JAX backend is not available
 #'
-#' @description Stops with an informative error if pymc or pytensor cannot be
-#'   imported via reticulate.
-#'
-#' @returns Error message if pymc is not available.
+#' @returns Error message if JAX is not available.
 #'
 #' @noRd
-stop_if_pymc_not_available <- function() {
-  if (!check_pymc_available()) {
+stop_if_jax_not_available <- function() {
+  if (!check_jax_available()) {
     stop2(
-      "PyMC/PyTensor is not available. Please install with: ",
-      "pip install pymc pytensor arviz. ",
-      "For Apple Silicon GPU support via MLX, also install mlx. ",
+      "JAX backend is not available. Please install with: ",
+      "pip install jax numpyro nutpie. ",
       "You may also need to configure reticulate to find your Python ",
       "installation."
     )
   }
+}
+
+#' Load the coev_jax_model Python module via reticulate
+#'
+#' @param convert Logical. Passed to \code{reticulate::import_from_path}.
+#'
+#' @returns Python module object with \code{build_nutpie_model} function.
+#'
+#' @noRd
+load_jax_model_module <- function(convert = FALSE) {
+  py_file <- system.file("python", "coev_jax_model.py", package = "coevolve")
+  if (!nzchar(py_file)) {
+    stop2("inst/python/coev_jax_model.py not found (broken package install?).")
+  }
+  reticulate::import_from_path(
+    tools::file_path_sans_ext(basename(py_file)),
+    path    = normalizePath(dirname(py_file), winslash = "/", mustWork = TRUE),
+    convert = convert
+  )
+}
+
+#' Convert R data list to Python dict for JAX model
+#'
+#' @param data_list Named list of model data.
+#'
+#' @returns Python dict (via reticulate).
+#'
+#' @noRd
+convert_r_to_python_data_jax <- function(data_list) {
+  np <- reticulate::import("numpy", convert = FALSE)
+
+  integer_vars <- c(
+    "node_seq", "parent", "tip", "effects_mat",
+    "tip_id", "N_tips", "N_tree", "N_obs", "J", "N_seg",
+    "num_effects", "prior_only", "miss", "length_index",
+    "tip_to_seg", "N_unique_lengths",
+    "n_levels", "max_level_size", "root_ids",
+    "level_node_ids", "level_parent_ids",
+    "level_length_idx", "level_is_internal",
+    "level_drift_idx", "level_sizes"
+  )
+
+  python_data <- list()
+  for (name in names(data_list)) {
+    value <- data_list[[name]]
+    is_int <- name %in% integer_vars || is.integer(value)
+
+    if (is.character(value) || (is.list(value) && !is.null(names(value)))) {
+      python_data[[name]] <- reticulate::r_to_py(value)
+    } else if (is.matrix(value) || is.array(value)) {
+      dtype <- if (is_int) "int32" else "float64"
+      value <- if (is_int) {
+        array(as.integer(value), dim = dim(value))
+      } else {
+        array(as.double(value), dim = dim(value))
+      }
+      python_data[[name]] <- np$array(value, dtype = dtype)
+    } else if (length(value) == 1) {
+      python_data[[name]] <- if (is_int) as.integer(value) else as.double(value)
+    } else {
+      dtype <- if (is_int) "int32" else "float64"
+      value <- if (is_int) as.integer(value) else as.double(value)
+      python_data[[name]] <- np$array(value, dtype = dtype)
+    }
+  }
+  reticulate::r_to_py(python_data)
 }
 
 #' Parse a Stan-style prior string
@@ -80,13 +138,10 @@ parse_stan_prior <- function(prior_str) {
 #' @param constraint One of "none", "lower_zero", "upper_zero".
 #'
 #' @returns Named list with \code{dist}, \code{args}, and \code{constraint}.
-#'   Passed to data_dict and consumed by \code{CoevPymcModel._make_rv()}.
 #'
 #' @noRd
 prior_spec_from_stan <- function(prior_str, constraint = "none") {
   p <- parse_stan_prior(prior_str)
-  # Use as.list() so reticulate always converts args to a Python list, not a
-  # scalar float (which would make `for a in args` fail in _make_rv).
   list(
     dist       = p$dist,
     args       = as.list(as.numeric(p$args)),
@@ -94,60 +149,37 @@ prior_spec_from_stan <- function(prior_str, constraint = "none") {
   )
 }
 
-#' Embed PyMC config flags into a Stan data dict
+#' Embed model config flags into a Stan data dict
 #'
-#' Merges the config list returned by \code{coev_make_pymc()} into the
-#' PyMC-ready data dict returned by \code{standata_to_pymc()}, producing
-#' a single dict that \code{CoevPymcModel().build()} can consume.
+#' Merges the config list returned by \code{coev_make_model_config()} into the
+#' JAX-ready data dict returned by \code{standata_to_jax()}, producing
+#' a single dict that the model builder can consume.
 #'
-#' @param sd_pymc Named list from \code{standata_to_pymc()}.
-#' @param config Named list from \code{coev_make_pymc()}.
+#' @param sd_jax Named list from \code{standata_to_jax()}.
+#' @param config Named list from \code{coev_make_model_config()}.
 #'
-#' @returns Extended named list suitable for \code{CoevPymcModel().build()}.
-#'
-#' @noRd
-embed_pymc_config <- function(sd_pymc, config) {
-  for (nm in names(config)) sd_pymc[[nm]] <- config[[nm]]
-  sd_pymc
-}
-
-#' Load the coev_pymc_model Python module via reticulate
-#'
-#' Imports \code{inst/python/coev_pymc_model.py} from the installed package
-#' and returns the module object.
-#'
-#' @param convert Logical. Passed to \code{reticulate::import_from_path}.
-#'
-#' @returns Python module object with \code{build_model} and
-#'   \code{CoevPymcModel} attributes.
+#' @returns Extended named list suitable for model building.
 #'
 #' @noRd
-load_pymc_model_module <- function(convert = FALSE) {
-  py_file <- system.file("python", "coev_pymc_model.py", package = "coevolve")
-  if (!nzchar(py_file)) {
-    stop2("inst/python/coev_pymc_model.py not found (broken package install?).")
-  }
-  reticulate::import_from_path(
-    tools::file_path_sans_ext(basename(py_file)),
-    path    = normalizePath(dirname(py_file), winslash = "/", mustWork = TRUE),
-    convert = convert
-  )
+embed_model_config <- function(sd_jax, config) {
+  for (nm in names(config)) sd_jax[[nm]] <- config[[nm]]
+  sd_jax
 }
 
-#' Convert Stan data list to PyMC-friendly format
+#' Convert Stan data list to JAX-friendly format
 #'
 #' @description Takes the output of \code{coev_make_standata()} and converts
-#'   it for use by the PyMC backend: 1-based indices become 0-based,
+#'   it for use by the JAX backend: 1-based indices become 0-based,
 #'   observed means for count variables are precomputed, and ordinal variable
 #'   metadata is attached.
 #'
 #' @param sd Named list from \code{coev_make_standata()}.
 #' @param distributions Character vector of response distributions.
 #'
-#' @returns Modified named list suitable for the PyMC model.
+#' @returns Modified named list suitable for the JAX model.
 #'
 #' @noRd
-standata_to_pymc <- function(sd, distributions) {
+standata_to_jax <- function(sd, distributions) {
   sd$node_seq <- sd$node_seq - 1L
   sd$parent <- sd$parent - 1L
   sd$tip_id <- sd$tip_id - 1L
@@ -197,7 +229,7 @@ standata_to_pymc <- function(sd, distributions) {
 
 #' Pre-compute level-batched tree traversal data
 #'
-#' Groups tree nodes by topological depth so the PyMC graph can process
+#' Groups tree nodes by topological depth so the model graph can process
 #' each level as a single batched operation instead of one op per node.
 #'
 #' @param node_seq_0 Integer matrix (N_tree, N_seg), 0-indexed node IDs in
@@ -301,52 +333,4 @@ compute_tree_levels <- function(node_seq_0, parent_0, tip_0,
     level_drift_idx = lvl_drift_idx,
     level_sizes     = lvl_sizes
   )
-}
-
-#' Convert R data list to Python dict for PyMC
-#'
-#' @param data_list Named list of model data.
-#'
-#' @returns Python dict (via reticulate).
-#'
-#' @noRd
-convert_r_to_python_data_pymc <- function(data_list) {
-  np <- reticulate::import("numpy", convert = FALSE)
-
-  integer_vars <- c("node_seq", "parent", "tip", "effects_mat",
-                     "tip_id", "N_tips", "N_tree", "N_obs", "J", "N_seg",
-                     "num_effects", "prior_only", "miss", "length_index",
-                     "tip_to_seg", "N_unique_lengths",
-                     "n_levels", "max_level_size", "root_ids",
-                     "level_node_ids", "level_parent_ids",
-                     "level_length_idx", "level_is_internal",
-                     "level_drift_idx", "level_sizes")
-
-  python_data <- list()
-  for (name in names(data_list)) {
-    value <- data_list[[name]]
-    is_int <- name %in% integer_vars || is.integer(value)
-
-    # Character vectors, named lists (e.g. prior_specs, distributions): pass
-    # through reticulate's default conversion without numeric coercion.
-    if (is.character(value) || (is.list(value) && !is.null(names(value)))) {
-      python_data[[name]] <- reticulate::r_to_py(value)
-    } else if (is.matrix(value) || is.array(value)) {
-      dtype <- if (is_int) "int32" else "float64"
-      value <- if (is_int) {
-        array(as.integer(value), dim = dim(value))
-      } else {
-        array(as.double(value), dim = dim(value))
-      }
-      python_data[[name]] <- np$array(value, dtype = dtype)
-    } else if (length(value) == 1) {
-      python_data[[name]] <- if (is_int) as.integer(value) else as.double(value)
-    } else {
-      # Handles length-0 and length > 1 numeric/integer vectors
-      dtype <- if (is_int) "int32" else "float64"
-      value <- if (is_int) as.integer(value) else as.double(value)
-      python_data[[name]] <- np$array(value, dtype = dtype)
-    }
-  }
-  reticulate::r_to_py(python_data)
 }

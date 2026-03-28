@@ -1,6 +1,6 @@
-#' Create a wrapper object for PyMC fits that mimics cmdstanr interface
+#' Create a wrapper object for JAX fits that mimics cmdstanr interface
 #'
-#' @param trace_result PyMC trace object (Python object via reticulate).
+#' @param trace_result JAX/NumPyro trace object (Python object via reticulate).
 #' @param draws_array A draws_array object from the posterior package.
 #' @param stan_variables Character vector of Stan-compatible variable names.
 #' @param iter_sampling Integer. Number of sampling iterations per chain.
@@ -8,12 +8,12 @@
 #' @param chains Integer. Number of chains.
 #' @param seed Integer. Random seed used.
 #'
-#' @returns An object of class 'pymc_fit' that mimics cmdstanr's interface.
+#' @returns An object of class 'jax_fit' that mimics cmdstanr's interface.
 #'
 #' @noRd
-create_pymc_wrapper <- function(trace_result, draws_array, stan_variables,
-                                iter_sampling, iter_warmup, chains,
-                                seed = NULL) {
+create_jax_wrapper <- function(trace_result, draws_array, stan_variables,
+                               iter_sampling, iter_warmup, chains,
+                               seed = NULL) {
   wrapper <- list(
     trace_result = trace_result,
     draws_array = draws_array,
@@ -23,16 +23,16 @@ create_pymc_wrapper <- function(trace_result, draws_array, stan_variables,
     chains = chains,
     seed = seed
   )
-  class(wrapper) <- "pymc_fit"
+  class(wrapper) <- "jax_fit"
 
   wrapper$draws <- function(variables = NULL, ...) {
-    draws.pymc_fit(wrapper, variables = variables, ...)
+    draws.jax_fit(wrapper, variables = variables, ...)
   }
   wrapper$summary <- function(variables = NULL, ...) {
-    summary.pymc_fit(wrapper, variables = variables, ...)
+    summary.jax_fit(wrapper, variables = variables, ...)
   }
   wrapper$metadata <- function() {
-    metadata.pymc_fit(wrapper)
+    metadata.jax_fit(wrapper)
   }
   wrapper$num_chains <- function() {
     wrapper$chains
@@ -63,7 +63,7 @@ create_pymc_wrapper <- function(trace_result, draws_array, stan_variables,
         list(num_divergent = 0L)
       }, error = function(e) {
         if (!quiet) {
-          warning("Could not extract divergence info from PyMC trace: ",
+          warning("Could not extract divergence info from JAX trace: ",
                   conditionMessage(e))
         }
         list(num_divergent = 0L)
@@ -75,17 +75,17 @@ create_pymc_wrapper <- function(trace_result, draws_array, stan_variables,
   wrapper
 }
 
-#' Extract draws from pymc_fit object
+#' Extract draws from jax_fit object
 #'
-#' @param x A pymc_fit object.
+#' @param x A jax_fit object.
 #' @param variables Character vector of variable names to extract.
 #' @param ... Additional arguments (ignored).
 #'
 #' @returns A draws_array object.
 #'
-#' @method draws pymc_fit
+#' @method draws jax_fit
 #' @export
-draws.pymc_fit <- function(x, variables = NULL, ...) {
+draws.jax_fit <- function(x, variables = NULL, ...) {
   if (is.null(variables)) {
     x$draws_array
   } else {
@@ -93,17 +93,17 @@ draws.pymc_fit <- function(x, variables = NULL, ...) {
   }
 }
 
-#' Summary statistics for pymc_fit object
+#' Summary statistics for jax_fit object
 #'
-#' @param object A pymc_fit object.
+#' @param object A jax_fit object.
 #' @param variables Character vector of variable names to summarize.
 #' @param ... Named summary spec arguments (cmdstanr style).
 #'
 #' @returns A data.frame with summary statistics.
 #'
-#' @method summary pymc_fit
+#' @method summary jax_fit
 #' @export
-summary.pymc_fit <- function(object, variables = NULL, ...) {
+summary.jax_fit <- function(object, variables = NULL, ...) {
   if (missing(variables) || is.null(variables)) {
     draws <- object$draws_array
   } else {
@@ -145,15 +145,15 @@ summary.pymc_fit <- function(object, variables = NULL, ...) {
   summary_df
 }
 
-#' Extract metadata from pymc_fit object
+#' Extract metadata from jax_fit object
 #'
-#' @param x A pymc_fit object.
+#' @param x A jax_fit object.
 #'
 #' @returns A list containing metadata.
 #'
-#' @method metadata pymc_fit
+#' @method metadata jax_fit
 #' @export
-metadata.pymc_fit <- function(x) {
+metadata.jax_fit <- function(x) {
   list(
     stan_variables = x$stan_variables,
     model_params = x$stan_variables,

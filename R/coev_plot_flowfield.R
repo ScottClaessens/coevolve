@@ -137,7 +137,7 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
   id_var2 <- which(names(object$variables) == var2)
   # get posterior draws
   # Handle both cmdstanr and nutpie
-  if (inherits(object$fit, c("nutpie_fit", "pymc_fit"))) {
+  if (inherits(object$fit, c("nutpie_fit", "jax_fit"))) {
     # For nutpie, extract draws first
     draws_obj <- object$fit$draws()
     draws <- posterior::as_draws_rvars(draws_obj)

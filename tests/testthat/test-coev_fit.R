@@ -776,21 +776,7 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       backend = 0
     ),
-    "Argument 'backend' must be a character string of length one.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_fit(
-      data = d,
-      variables = list(
-        x = "bernoulli_logit",
-        y = "ordered_logistic"
-      ),
-      id = "id",
-      tree = tree,
-      backend = "testing"
-    ),
-    "Unknown 'backend'",
+    "'backend' is deprecated",
     fixed = TRUE
   )
   expect_error(
@@ -804,7 +790,7 @@ test_that("coev_fit() produces expected errors", {
       tree = tree,
       nuts_sampler = "testing"
     ),
-    "Argument 'nuts_sampler' must be one of: stan, pymc, nutpie.",
+    "one of: stan, nutpie",
     fixed = TRUE
   )
 })

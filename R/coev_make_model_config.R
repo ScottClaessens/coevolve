@@ -1,15 +1,15 @@
-#' Make PyMC model configuration for dynamic coevolutionary model
+#' Make model configuration for dynamic coevolutionary model
 #'
-#' Computes model structure flags and prior specifications consumed by the
-#' Python \code{CoevPymcModel} builder in \code{inst/python/coev_pymc_model.py}.
-#' The returned list is embedded into the PyMC data dict (via
-#' \code{embed_pymc_config}) so that \code{CoevPymcModel().build(data)} can
+#' Computes model structure flags and prior specifications consumed by
+#' the JAX/NumPyro model builder. The returned list is embedded into the
+#' data dict (via \code{embed_model_config}) so the model builder can
 #' construct the model without any R-level string generation.
 #'
 #' @inheritParams coev_make_stancode
 #'
-#' @returns A named list of model configuration flags and prior specifications.
-#'   Intended to be merged into the Stan data list via \code{embed_pymc_config}.
+#' @returns A named list of model configuration flags and prior
+#'   specifications. Merged into the data list via
+#'   \code{embed_model_config}.
 #'
 #' @author Erik Ringen \email{erikjacob.ringen@@uzh.ch}
 #'
@@ -17,7 +17,7 @@
 #'   \code{\link{coev_fit}}
 #'
 #' @examples
-#' cfg <- coev_make_pymc(
+#' cfg <- coev_make_model_config(
 #'   data = authority$data,
 #'   variables = list(
 #'     political_authority = "ordered_logistic",
@@ -28,14 +28,14 @@
 #' )
 #'
 #' @export
-coev_make_pymc <- function(data, variables, id, tree,
-                           effects_mat = NULL, complete_cases = FALSE,
-                           dist_mat = NULL, dist_cov = "exp_quad",
-                           measurement_error = NULL,
-                           prior = NULL, scale = TRUE,
-                           estimate_correlated_drift = TRUE,
-                           estimate_residual = TRUE,
-                           prior_only = FALSE) {
+coev_make_model_config <- function(data, variables, id, tree,
+                                   effects_mat = NULL, complete_cases = FALSE,
+                                   dist_mat = NULL, dist_cov = "exp_quad",
+                                   measurement_error = NULL,
+                                   prior = NULL, scale = TRUE,
+                                   estimate_correlated_drift = TRUE,
+                                   estimate_residual = TRUE,
+                                   prior_only = FALSE) {
 
   run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
              dist_cov, measurement_error, prior, scale,

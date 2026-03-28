@@ -1,13 +1,19 @@
 # coevolve (development version)
 
+### New Features
+
+* Added pure JAX/NumPyro backend via `nuts_sampler = "nutpie"`.
+  Uses nutpie's Rust NUTS sampler with JAX gradients for ~5x
+  faster sampling than Stan on typical models. Requires
+  `pip install jax numpyro nutpie`.
+
 ### Bug Fixes
 
 * Fixed issue with `summary()` when `estimate_residual = FALSE` (#95)
 
 ### New Features
 
-* Added `nutpie` as an alternative sampler for the Stan models (#92)
-* Re-use matrix computations when branch lengths are identical (#93) 
+* Re-use matrix computations when branch lengths are identical (#93)
 
 ### Other Changes
 

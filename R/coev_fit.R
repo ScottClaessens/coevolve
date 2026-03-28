@@ -138,41 +138,26 @@
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
-#' @param adapt_delta Target acceptance probability for the NUTS sampler
-#'   (default \code{0.95}). Passed to \pkg{cmdstanr::sample()} as
-#'   \code{adapt_delta}, and to PyMC / nutpie as \code{target_accept}.
-#' @param nuts_sampler Which NUTS implementation to use, aligned with
-#'   PyMC's \code{nuts_sampler} concept for the PyMC paths: \code{"stan"}
-#'   (default) fits the **Stan** model with **CmdStan** via \pkg{cmdstanr}
-#'   (Stan’s built-in HMC/NUTS); \code{"pymc"} fits the **PyMC** translation
-#'   with \pkg{pymc}'s default NUTS; \code{"nutpie"} fits the same PyMC model
-#'   using **nutpie**'s Rust NUTS (same role as \code{nuts_sampler = "nutpie"}
-#'   in \code{pymc.sample}). When \code{nuts_sampler = "nutpie"}, optional
-#'   \code{nuts_backend} and \code{nuts_gradient_backend} (via \code{...}) are
-#'   forwarded to nutpie's compiler (\code{compile_pymc_model}); other nutpie
-#'   options (e.g. \code{low_rank_modified_mass_matrix}) are passed to
-#'   \code{nutpie.sample}. These nutpie-only arguments have no effect when
-#'   \code{nuts_sampler} is \code{"stan"} or \code{"pymc"} (without a warning).
-#' @param backend \strong{Deprecated.} Use \code{nuts_sampler} instead:
-#'   \code{cmdstanr} \eqn{\rightarrow} \code{"stan"}, \code{pymc}
-#'   \eqn{\rightarrow} \code{"pymc"}. \code{backend = "nutpie"} (Stan via
-#'   BridgeStan) is no longer supported from \code{coev_fit()}; use
-#'   \code{nuts_sampler = "nutpie"} for nutpie on the PyMC model.
-#' @param ... Additional arguments. For \code{nuts_sampler = "stan"}: passed to
-#'   \pkg{cmdstanr::sample()} (and compilation via \code{extra_stanc_args},
-#'   \code{extra_compile_args}). For \code{"pymc"} or \code{"nutpie"}: sampling
-#'   arguments such as \code{chains}, \code{iter_sampling}, \code{iter_warmup},
-#'   \code{seed}; \code{parallel_chains} or \code{cores} set PyMC
-#'   \code{pm.sample(cores=...)} for the default PyMC sampler (default is all
-#'   chains in parallel, matching \code{chains}). For plain PyMC,
-#'   \code{compile_mode = "mlx"} enables MLX on Apple Silicon. For
-#'   \code{nuts_sampler = "nutpie"}, tuning arguments for \code{nutpie.sample}
-#'   (e.g. \code{low_rank_modified_mass_matrix}, \code{mass_matrix_gamma}) can
-#'   be passed via \code{...}; \code{nuts_backend} /
-#'   \code{nuts_gradient_backend} set nutpie's compile \code{backend} /
-#'   \code{gradient_backend}.
-#'   The legacy names \code{nutpie_backend} and \code{sampler = "nutpie"} (with
-#'   \code{backend = "pymc"}) are still accepted with a warning.
+#’ @param adapt_delta Target acceptance probability for the
+#’   NUTS sampler (default \code{0.95}). Passed to
+#’   \pkg{cmdstanr::sample()} as \code{adapt_delta}, or to
+#’   NumPyro as \code{target_accept_prob}.
+#’ @param nuts_sampler Which NUTS implementation to use.
+#’   \code{"stan"} (default) fits the Stan model with
+#’   CmdStan via \pkg{cmdstanr}. \code{"nutpie"} fits a
+#’   pure JAX model using nutpie’s Rust NUTS sampler with
+#’   JAX gradients via \code{jax.value_and_grad}.
+#’ @param backend Legacy alias for \code{nuts_sampler}.
+#’   \code{backend = "cmdstanr"} maps to
+#’   \code{nuts_sampler = "stan"}. Prefer
+#’   \code{nuts_sampler} directly.
+#’ @param ... Additional arguments. For
+#’   \code{nuts_sampler = "stan"}: passed to
+#’   \pkg{cmdstanr::sample()} (and compilation via
+#’   \code{extra_stanc_args}, \code{extra_compile_args}).
+#’   For \code{nuts_sampler = "nutpie"}: sampling arguments
+#’   such as \code{chains}, \code{iter_sampling},
+#’   \code{iter_warmup}, \code{seed}.
 #'
 #' @returns Fitted model of class \code{coevfit}
 #'
@@ -306,54 +291,37 @@ coev_fit <- function(data, variables, id, tree,
              estimate_correlated_drift, estimate_residual, log_lik, prior_only)
   if (!is.null(backend)) {
     if (!is.character(backend) || length(backend) != 1L) {
-      stop2("Argument 'backend' must be a character string of length one.")
+      stop2("'backend' is deprecated. Use nuts_sampler.")
     }
     b <- tolower(backend)
-    if (b == "nutpie") {
-      stop2(
-        "backend = \"nutpie\" (Stan via BridgeStan) was removed from coev_fit(). ",
-        "Use nuts_sampler = \"nutpie\" to run nutpie on the PyMC model."
-      )
-    }
-    if (!b %in% c("cmdstanr", "pymc")) {
-      stop2("Unknown 'backend'; use nuts_sampler = \"stan\", \"pymc\", or \"nutpie\".")
-    }
-    b_map <- if (b == "cmdstanr") "stan" else "pymc"
-    if (!missing(nuts_sampler)) {
-      ns_chk <- normalize_nuts_sampler(nuts_sampler)
-      if (ns_chk != b_map) {
-        stop2(
-          "`backend` (deprecated) conflicts with `nuts_sampler`. ",
-          "Remove `backend` and set only `nuts_sampler`."
-        )
-      }
-      nuts_sampler <- ns_chk
-    } else {
-      nuts_sampler <- b_map
-    }
+    b_map <- if (b == "cmdstanr") "stan" else "nutpie"
+    nuts_sampler <- b_map
     warning(
-      "`backend` is deprecated; use `nuts_sampler = \"", nuts_sampler, "\"` instead.",
+      "`backend` is deprecated; use `nuts_sampler = \"",
+      nuts_sampler, "\"` instead.",
       call. = FALSE
     )
   } else {
     nuts_sampler <- normalize_nuts_sampler(nuts_sampler)
   }
-  if (nuts_sampler %in% c("pymc", "nutpie")) {
+  if (nuts_sampler == "nutpie") {
     if (!is.null(dist_mat)) {
       stop2(
-        "GP models (dist_mat) are not yet supported in the PyMC/nutpie backend: ",
-        "the spatial covariance translation is currently being refactored. ",
+        "GP models (dist_mat) are not yet supported ",
+        "in the nutpie/JAX backend. ",
         "Use nuts_sampler = \"stan\" for GP models."
       )
     }
   }
   # generate code/config and data for model
-  if (nuts_sampler %in% c("pymc", "nutpie")) {
-    pymc_cfg <- coev_make_pymc(data, variables, id, tree, effects_mat,
-                               complete_cases, dist_mat, dist_cov,
-                               measurement_error, prior, scale,
-                               estimate_correlated_drift, estimate_residual,
-                               prior_only)
+  if (nuts_sampler == "nutpie") {
+    model_cfg <- coev_make_model_config(
+      data, variables, id, tree, effects_mat,
+      complete_cases, dist_mat, dist_cov,
+      measurement_error, prior, scale,
+      estimate_correlated_drift, estimate_residual,
+      prior_only
+    )
   } else {
     sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
                              complete_cases, dist_mat, dist_cov,
@@ -367,102 +335,40 @@ coev_fit <- function(data, variables, id, tree,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
   # fit model using specified sampler
-  if (nuts_sampler %in% c("pymc", "nutpie")) {
+  if (nuts_sampler == "nutpie") {
     sample_args <- list(...)
-    num_chains  <- if ("chains" %in% names(sample_args))
+    num_chains <- if ("chains" %in% names(sample_args))
       as.integer(sample_args$chains) else 4L
     num_samples <- if ("iter_sampling" %in% names(sample_args))
       as.integer(sample_args$iter_sampling) else 1000L
-    num_warmup  <- if ("iter_warmup" %in% names(sample_args))
+    num_warmup <- if ("iter_warmup" %in% names(sample_args))
       as.integer(sample_args$iter_warmup) else 1000L
     seed <- if ("seed" %in% names(sample_args))
       as.integer(sample_args$seed) else 0L
-    compile_mode <- if ("compile_mode" %in% names(sample_args))
-      sample_args$compile_mode else "cpu"
-    use_nutpie <- identical(nuts_sampler, "nutpie")
-    if (!use_nutpie && "sampler" %in% names(sample_args) &&
-        tolower(sample_args$sampler) == "nutpie") {
-      warning(
-        "`sampler = \"nutpie\"` is deprecated; use `nuts_sampler = \"nutpie\"`.",
-        call. = FALSE
-      )
-      use_nutpie <- TRUE
-    }
-    # Must check availability with mlx flag BEFORE Python initializes
-    use_mlx <- identical(tolower(compile_mode), "mlx")
-    if (!check_pymc_available(mlx = use_mlx)) {
-      stop2("PyMC/PyTensor is not available. Please install with: ",
-            "pip install pymc pytensor arviz",
-            if (use_mlx) " mlx" else "", ". ",
-            "You may also need to configure reticulate to find your Python.")
-    }
-    if (use_nutpie) {
-      tryCatch(reticulate::py_require(c("nutpie", "jax")),
-               error = function(e) NULL)
-      if (!check_nutpie_available()) {
-        stop2("nutpie is not available. Please install with: pip install nutpie")
-      }
-    }
-    nutpie_backend <- "jax"
-    if ("nuts_backend" %in% names(sample_args)) {
-      nutpie_backend <- sample_args$nuts_backend
-    } else if ("nutpie_backend" %in% names(sample_args)) {
-      warning("`nutpie_backend` is deprecated; use `nuts_backend`.", call. = FALSE)
-      nutpie_backend <- sample_args$nutpie_backend
-    }
-    if ("nuts_gradient_backend" %in% names(sample_args)) {
-      sample_args$gradient_backend <- sample_args$nuts_gradient_backend
-    }
+    stop_if_jax_not_available()
     nutpie_args <- sample_args
-    if ("parallel_chains" %in% names(nutpie_args) &&
-        !("cores" %in% names(nutpie_args))) {
-      nutpie_args$cores <- as.integer(nutpie_args$parallel_chains)
-    }
     nutpie_args[c(
       "chains", "iter_sampling", "iter_warmup", "seed",
-      "compile_mode", "sampler", "nutpie_backend", "nuts_backend",
-      "nuts_gradient_backend", "parallel_chains", "refresh"
+      "parallel_chains", "refresh", "nuts_backend",
+      "nuts_gradient_backend", "compile_mode"
     )] <- NULL
     distributions <- as.character(variables)
-    sd_pymc <- embed_pymc_config(standata_to_pymc(sd, distributions), pymc_cfg)
-    if (use_nutpie) {
-      pymc_result <- pymc_run_nutpie(
-        data_list      = sd_pymc,
-        num_chains     = num_chains,
-        num_samples    = num_samples,
-        num_warmup     = num_warmup,
-        seed           = seed,
-        target_accept  = adapt_delta,
-        nutpie_backend = nutpie_backend,
-        nutpie_args    = nutpie_args
-      )
-    } else {
-      pymc_cores <- if ("cores" %in% names(sample_args)) {
-        as.integer(sample_args$cores)
-      } else if ("parallel_chains" %in% names(sample_args)) {
-        as.integer(sample_args$parallel_chains)
-      } else {
-        num_chains
-      }
-      if (length(pymc_cores) != 1L || is.na(pymc_cores) || pymc_cores < 1L) {
-        pymc_cores <- num_chains
-      }
-      pymc_cores <- min(pymc_cores, num_chains)
-      pymc_result <- pymc_run_mcmc(
-        data_list     = sd_pymc,
-        num_chains    = num_chains,
-        num_samples   = num_samples,
-        num_warmup    = num_warmup,
-        seed          = seed,
-        target_accept = adapt_delta,
-        compile_mode  = compile_mode,
-        cores         = pymc_cores
-      )
-    }
-    draws_array <- pymc_result$draws_array
+    sd_jax <- embed_model_config(
+      standata_to_jax(sd, distributions), model_cfg
+    )
+    jax_result <- jax_run_nutpie(
+      data_list     = sd_jax,
+      num_chains    = num_chains,
+      num_samples   = num_samples,
+      num_warmup    = num_warmup,
+      seed          = seed,
+      target_accept = adapt_delta,
+      nutpie_args   = nutpie_args
+    )
+    draws_array <- jax_result$draws_array
     stan_variables <- posterior::variables(draws_array)
-    model <- create_pymc_wrapper(
-      trace_result   = pymc_result$trace,
+    model <- create_jax_wrapper(
+      trace_result   = jax_result$trace,
       draws_array    = draws_array,
       stan_variables = stan_variables,
       iter_sampling  = num_samples,
@@ -496,7 +402,7 @@ coev_fit <- function(data, variables, id, tree,
         cpp_options <- list(stan_threads = TRUE)
       }
     }
-    # remove PyMC / nutpie-only arguments from sampling args
+    # remove JAX/nutpie-only arguments from sampling args
     cmdstanr_args <- all_args
     cmdstanr_args$extra_stanc_args <- NULL
     cmdstanr_args$extra_compile_args <- NULL
@@ -555,8 +461,8 @@ coev_fit <- function(data, variables, id, tree,
       estimate_residual = estimate_residual,
       prior_only = prior_only,
       nuts_sampler = nuts_sampler,
-      # legacy field: cmdstanr for Stan path, pymc for PyMC translation (incl. nutpie)
-      backend = if (identical(nuts_sampler, "stan")) "cmdstanr" else "pymc",
+      backend = if (identical(nuts_sampler, "stan"))
+        "cmdstanr" else "nutpie",
       nsamples = nsamples,
       has_lp__ = has_lp__
     )
@@ -567,15 +473,17 @@ coev_fit <- function(data, variables, id, tree,
 #' @noRd
 normalize_nuts_sampler <- function(x) {
   if (!is.character(x) || length(x) != 1L || is.na(x[1])) {
-    stop2("Argument 'nuts_sampler' must be a single non-missing character string.")
+    stop2(
+      "Argument 'nuts_sampler' must be a single ",
+      "non-missing character string."
+    )
   }
   v <- tolower(x[1])
-  ok <- c("stan", "pymc", "nutpie")
+  ok <- c("stan", "nutpie")
   if (!v %in% ok) {
     stop2(
-      "Argument 'nuts_sampler' must be one of: ",
-      paste(ok, collapse = ", "),
-      "."
+      "Argument 'nuts_sampler' must be ",
+      "one of: ", paste(ok, collapse = ", "), "."
     )
   }
   v
