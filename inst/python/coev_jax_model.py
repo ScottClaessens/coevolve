@@ -1031,48 +1031,30 @@ _sampling_state = {}
 
 
 def start_sampling(compiled_model, **kwargs):
-    """Start nutpie sampling in a background thread with PTY-based progress.
+    """Start nutpie sampling in a background thread.
 
-    Redirects stderr to a PTY so Rust's indicatif progress bar renders
-    (isatty(2) == True).  The PTY master is set non-blocking so that R
-    can drain it during polling without risk of blocking.
-    Only one Python thread (the sampler) — no reader thread.
+    Returns immediately so R can poll via check_sampling().
     """
-    import fcntl
     import nutpie
-    import os
     import threading
     import time
-
-    master_fd, slave_fd = os.openpty()
-    old_stderr_fd = os.dup(2)
-    os.dup2(slave_fd, 2)
-    os.close(slave_fd)
-
-    flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
-    fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     state = {
         "result": None,
         "error": None,
         "done": False,
         "start_time": time.time(),
-        "progress_text": "",
-        "master_fd": master_fd,
-        "old_stderr_fd": old_stderr_fd,
     }
 
     def run():
         try:
             state["result"] = nutpie.sample(
-                compiled_model, progress_bar=True, **kwargs
+                compiled_model, progress_bar=False, **kwargs
             )
         except Exception as e:
             state["error"] = str(e)
         finally:
             state["done"] = True
-            os.dup2(state["old_stderr_fd"], 2)
-            os.close(state["old_stderr_fd"])
 
     t = threading.Thread(target=run, daemon=True)
     t.start()
@@ -1081,59 +1063,23 @@ def start_sampling(compiled_model, **kwargs):
 
 
 def check_sampling():
-    """Drain PTY buffer and return progress text (called from R)."""
-    import os
-    import re
+    """Return sampling status (called from R polling loop)."""
     import time
 
-    state = _sampling_state.get("current")
-    if not state:
-        return {"done": True, "elapsed": 0, "error": None,
-                "progress_text": ""}
-
-    master_fd = state.get("master_fd")
-    if master_fd is not None:
-        chunks = []
-        while True:
-            try:
-                data = os.read(master_fd, 65536)
-                if data:
-                    chunks.append(data)
-                else:
-                    break
-            except (BlockingIOError, OSError):
-                break
-        if chunks:
-            text = b"".join(chunks).decode("utf-8", errors="replace")
-            lines = text.split("\r")
-            last = lines[-1].strip()
-            if last:
-                state["progress_text"] = re.sub(
-                    r"\x1b\[[0-9;]*[a-zA-Z]", "", last
-                )
-
+    state = _sampling_state.get("current", {})
     return {
         "done": state.get("done", True),
         "elapsed": time.time() - state.get("start_time", time.time()),
         "error": state.get("error"),
-        "progress_text": state.get("progress_text", ""),
     }
 
 
 def collect_result():
     """Block until sampling finishes and return the ArviZ trace."""
-    import os
-
     state = _sampling_state.get("current")
     if not state:
         raise RuntimeError("No active sampling session")
     state["_thread"].join(timeout=600)
-    master_fd = state.pop("master_fd", None)
-    if master_fd is not None:
-        try:
-            os.close(master_fd)
-        except OSError:
-            pass
     if state["error"]:
         raise RuntimeError(state["error"])
     return state["result"]

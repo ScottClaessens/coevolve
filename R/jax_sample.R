@@ -49,25 +49,14 @@ jax_run_nutpie <- function(data_list,
     sample_kwargs[names(nutpie_args)] <- nutpie_args
   }
 
-  # Start sampling in background thread so R can show progress
+  # Start sampling in background thread, poll until done
   do.call(jax_mod$start_sampling, sample_kwargs)
 
   while (TRUE) {
     status <- reticulate::py_to_r(jax_mod$check_sampling())
     if (isTRUE(status$done)) break
-    prog <- status$progress_text
-    if (nzchar(prog)) {
-      cat(sprintf("\r%s", prog))
-    } else {
-      cat(sprintf(
-        "\r  Sampling %d chains x %d draws | %.0fs elapsed",
-        num_chains, num_warmup + num_samples, status$elapsed
-      ))
-    }
-    utils::flush.console()
-    Sys.sleep(0.2)
+    Sys.sleep(0.5)
   }
-  cat("\n")
 
   if (!is.null(status$error)) {
     stop2("nutpie sampling failed: ", status$error)
