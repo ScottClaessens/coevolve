@@ -73,7 +73,8 @@ convert_r_to_python_data_jax <- function(data_list) {
     "n_levels", "max_level_size", "root_ids",
     "level_node_ids", "level_parent_ids",
     "level_length_idx", "level_is_internal",
-    "level_drift_idx", "level_sizes"
+    "level_drift_idx", "level_sizes",
+    "NBgp"
   )
 
   python_data <- list()

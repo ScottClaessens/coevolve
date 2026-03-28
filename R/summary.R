@@ -209,7 +209,7 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
   }
   # summarise gaussian process parameters
   gpterms <- NULL
-  if (!is.null(object$dist_mat)) {
+  if (!is.null(object$lon_lat)) {
     gpterms <- s[stringr::str_starts(s$variable, "rho_dist") |
                    stringr::str_starts(s$variable, "sigma_dist"), ]
     gpvars <- stringr::str_extract(gpterms$variable, pattern = "[^_]+")

@@ -30,15 +30,16 @@
 #' @export
 coev_make_model_config <- function(data, variables, id, tree,
                                    effects_mat = NULL, complete_cases = FALSE,
-                                   dist_mat = NULL, dist_cov = "exp_quad",
+                                   lon_lat = NULL, dist_k = NA,
+                                   dist_cov = "exp_quad",
                                    measurement_error = NULL,
                                    prior = NULL, scale = TRUE,
                                    estimate_correlated_drift = TRUE,
                                    estimate_residual = TRUE,
                                    prior_only = FALSE) {
 
-  run_checks(data, variables, id, tree, effects_mat, complete_cases, dist_mat,
-             dist_cov, measurement_error, prior, scale,
+  run_checks(data, variables, id, tree, effects_mat, complete_cases, lon_lat,
+             dist_k, dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual,
              log_lik = FALSE, prior_only = prior_only)
 
@@ -120,8 +121,9 @@ coev_make_model_config <- function(data, variables, id, tree,
     residual_v              = as.integer(residual_v),
     estimate_correlated_drift = as.integer(estimate_correlated_drift),
     n_offdiag               = as.integer(n_offdiag),
-    has_dist_mat            = as.integer(!is.null(dist_mat)),
-    dist_cov_type           = if (!is.null(dist_mat)) dist_cov else "",
+    has_lon_lat             = as.integer(!is.null(lon_lat)),
+    use_hsgp                = as.integer(!is.null(lon_lat) && !is.na(dist_k)),
+    dist_cov_type           = if (!is.null(lon_lat)) dist_cov else "",
     has_measurement_error   = as.integer(!is.null(measurement_error)),
     ordered_j               = ordered_j,
     ordered_ncuts           = ordered_ncuts,

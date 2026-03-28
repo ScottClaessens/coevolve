@@ -315,35 +315,59 @@ test_that("JAX fit works with simple normal model", {
   expect_no_error(sw(summary(fit)))
 })
 
-test_that("JAX backend rejects GP models (dist_mat)", {
+test_that("JAX fit with exact GP returns coevfit with GP params", {
   skip_if_not(
     coevolve:::check_jax_available(),
     message = "JAX not available - skipping JAX tests"
   )
-  withr::with_seed(1, {
-    n <- 5
-    tree <- ape::rcoal(n)
-    d <- data.frame(
-      id = tree$tip.label,
-      x = rnorm(n),
-      y = rnorm(n)
-    )
-    dm <- matrix(0, n, n)
-    rownames(dm) <- colnames(dm) <- tree$tip.label
-  })
-  expect_error(
-    coev_fit(
-      data = d,
-      variables = list(
-        x = "normal",
-        y = "normal"
-      ),
-      id = "id",
-      tree = tree,
-      nuts_sampler = "nutpie",
-      dist_mat = dm
+  fit <- coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
     ),
-    "GP models.*not yet supported.*JAX",
-    fixed = FALSE
+    id = "language",
+    tree = authority$phylogeny,
+    lon_lat = authority$coordinates,
+    prior = list(A_offdiag = "normal(0, 2)"),
+    nuts_sampler = "nutpie",
+    chains = 1,
+    iter_warmup = 50,
+    iter_sampling = 50,
+    seed = 1
   )
+  expect_s3_class(fit, "coevfit")
+  expect_s3_class(fit$fit, "jax_fit")
+  vars <- posterior::variables(fit$fit$draws())
+  expect_true(any(grepl("^sigma_dist", vars)))
+  expect_true(any(grepl("^rho_dist", vars)))
+})
+
+test_that("JAX fit with HSGP returns coevfit with GP params", {
+  skip_if_not(
+    coevolve:::check_jax_available(),
+    message = "JAX not available - skipping JAX tests"
+  )
+  fit <- coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    lon_lat = authority$coordinates,
+    dist_k = 3,
+    prior = list(A_offdiag = "normal(0, 2)"),
+    nuts_sampler = "nutpie",
+    chains = 1,
+    iter_warmup = 50,
+    iter_sampling = 50,
+    seed = 1
+  )
+  expect_s3_class(fit, "coevfit")
+  expect_s3_class(fit$fit, "jax_fit")
+  vars <- posterior::variables(fit$fit$draws())
+  expect_true(any(grepl("^sigma_dist", vars)))
+  expect_true(any(grepl("^rho_dist", vars)))
 })

@@ -24,9 +24,8 @@ jax_run_nutpie <- function(data_list,
                            target_accept = 0.95,
                            nutpie_args = list()) {
   Sys.setenv(PYTHONIOENCODING = "utf-8")
+  Sys.setenv(PYTHONUNBUFFERED = "1")
   Sys.setenv(JAX_PLATFORMS = "cpu")
-
-  nutpie <- reticulate::import("nutpie", convert = FALSE)
 
   py_data <- convert_r_to_python_data_jax(data_list)
   jax_mod <- load_jax_model_module(convert = FALSE)
@@ -50,7 +49,31 @@ jax_run_nutpie <- function(data_list,
     sample_kwargs[names(nutpie_args)] <- nutpie_args
   }
 
-  trace <- do.call(nutpie$sample, sample_kwargs)
+  # Start sampling in background thread so R can show progress
+  do.call(jax_mod$start_sampling, sample_kwargs)
+
+  while (TRUE) {
+    status <- reticulate::py_to_r(jax_mod$check_sampling())
+    if (isTRUE(status$done)) break
+    prog <- status$progress_text
+    if (nzchar(prog)) {
+      cat(sprintf("\r%s", prog))
+    } else {
+      cat(sprintf(
+        "\r  Sampling %d chains x %d draws | %.0fs elapsed",
+        num_chains, num_warmup + num_samples, status$elapsed
+      ))
+    }
+    utils::flush.console()
+    Sys.sleep(0.2)
+  }
+  cat("\n")
+
+  if (!is.null(status$error)) {
+    stop2("nutpie sampling failed: ", status$error)
+  }
+
+  trace <- jax_mod$collect_result()
 
   draws_array <- convert_jax_draws(trace, num_chains)
 

@@ -60,6 +60,85 @@ def mvn_chol_logp(value, chol):
 
 
 # --------------------------------------------------------------------------
+# GP kernel and spectral density functions
+# --------------------------------------------------------------------------
+
+
+def gp_cov_exp_quad(coords, sigma, rho):
+    """Exponentiated-quadratic (RBF) covariance matrix."""
+    sq_dist = jnp.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1)
+    return sigma**2 * jnp.exp(-0.5 * sq_dist / rho**2)
+
+
+def gp_cov_exponential(coords, sigma, rho):
+    """Exponential covariance matrix."""
+    dist = jnp.sqrt(
+        jnp.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1)
+    )
+    return sigma**2 * jnp.exp(-dist / rho)
+
+
+def gp_cov_matern32(coords, sigma, rho):
+    """Matern 3/2 covariance matrix."""
+    dist = jnp.sqrt(
+        jnp.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1)
+    )
+    s3 = jnp.sqrt(3.0) * dist / rho
+    return sigma**2 * (1.0 + s3) * jnp.exp(-s3)
+
+
+def spd_exp_quad(slambda, sigma, rho):
+    """Spectral density for exp_quad kernel (HSGP)."""
+    D = slambda.shape[1]
+    constant = sigma**2 * jnp.sqrt(2 * jnp.pi) ** D * rho**D
+    return constant * jnp.exp(-0.5 * rho**2 * jnp.sum(slambda**2, axis=1))
+
+
+def spd_exponential(slambda, sigma, rho):
+    """Spectral density for exponential kernel (HSGP)."""
+    D = slambda.shape[1]
+    constant = (
+        sigma**2
+        * 2**D
+        * jnp.pi ** (D / 2.0)
+        * jnp.exp(jax.lax.lgamma((D + 1.0) / 2))
+        / jnp.sqrt(jnp.pi)
+        * rho**D
+    )
+    expo = -(D + 1.0) / 2
+    return constant * (1 + rho**2 * jnp.sum(slambda**2, axis=1)) ** expo
+
+
+def spd_matern32(slambda, sigma, rho):
+    """Spectral density for Matern 3/2 kernel (HSGP)."""
+    D = slambda.shape[1]
+    constant = (
+        sigma**2
+        * 2**D
+        * jnp.pi ** (D / 2.0)
+        * jnp.exp(jax.lax.lgamma((D + 3.0) / 2))
+        * 3 ** (3.0 / 2)
+        / (0.5 * jnp.sqrt(jnp.pi))
+        * rho**D
+    )
+    expo = -(D + 3.0) / 2
+    return constant * (3 + rho**2 * jnp.sum(slambda**2, axis=1)) ** expo
+
+
+GP_COV_FNS = {
+    "exp_quad": gp_cov_exp_quad,
+    "exponential": gp_cov_exponential,
+    "matern32": gp_cov_matern32,
+}
+
+SPD_FNS = {
+    "exp_quad": spd_exp_quad,
+    "exponential": spd_exponential,
+    "matern32": spd_matern32,
+}
+
+
+# --------------------------------------------------------------------------
 # Parameter transforms (unconstrained -> constrained)
 # --------------------------------------------------------------------------
 
@@ -195,8 +274,22 @@ class CoevJaxModel:
         self.estimate_correlated_drift = bool(
             int(data["estimate_correlated_drift"])
         )
-        self.has_dist_mat = bool(int(data["has_dist_mat"]))
+        self.has_lon_lat = bool(int(data["has_lon_lat"]))
+        self.use_hsgp = bool(int(data["use_hsgp"]))
+        self.dist_cov_type = str(data["dist_cov_type"])
         self.has_measurement_error = bool(int(data["has_measurement_error"]))
+
+        if self.has_lon_lat:
+            if self.use_hsgp:
+                self.NBgp = int(data["NBgp"])
+                self.Xgp = jnp.array(data["Xgp"], dtype=jnp.float64)
+                self.slambda = jnp.array(
+                    data["slambda"], dtype=jnp.float64
+                )
+            else:
+                self.coords = jnp.array(
+                    data["coords"], dtype=jnp.float64
+                )
 
         self.ordered_j = [int(x) for x in np.atleast_1d(data["ordered_j"])]
         self.ordered_ncuts = [
@@ -321,8 +414,9 @@ class CoevJaxModel:
             info.append((f"shape{j0 + 1}", (1,), "lower_zero"))
 
         # GP parameters
-        if self.has_dist_mat:
-            info.append(("dist_z", (self.N_tips, J), "none"))
+        if self.has_lon_lat:
+            dz_dim = self.NBgp if self.use_hsgp else self.N_tips
+            info.append(("dist_z", (dz_dim, J), "none"))
             info.append(("sigma_dist", (J,), "lower_zero"))
             info.append(("rho_dist", (J,), "lower_zero"))
 
@@ -356,6 +450,9 @@ class CoevJaxModel:
             vs.append((f"phi{j0 + 1}", ()))
         for j0 in self.gamma_j0:
             vs.append((f"shape{j0 + 1}", ()))
+        if self.has_lon_lat:
+            vs.append(("sigma_dist", (J,)))
+            vs.append(("rho_dist", (J,)))
         if self.repeated:
             vs.append(("sigma_residual", (J,)))
             vs.append(("cor_residual", (J, J)))
@@ -495,7 +592,7 @@ class CoevJaxModel:
                 params[f"shape{j0 + 1}"], self.prior_specs["shape"]
             )
 
-        if self.has_dist_mat:
+        if self.has_lon_lat:
             lp = lp + dist.Normal(0.0, 1.0).log_prob(params["dist_z"]).sum()
             lp = lp + prior_logp(
                 params["sigma_dist"], self.prior_specs["sigma_dist"]
@@ -597,6 +694,34 @@ class CoevJaxModel:
             D_res = jnp.diag(params["sigma_residual"])
             residual_v = (D_res @ L_residual @ params["residual_z"]).T
 
+        # Compute spatial GP effects (N_tips x J)
+        dist_v = None
+        if self.has_lon_lat:
+            dist_v = jnp.zeros((self.N_tips, J))
+            if self.use_hsgp:
+                spd_fn = SPD_FNS[self.dist_cov_type]
+                for j in range(J):
+                    spd_vals = spd_fn(
+                        self.slambda,
+                        params["sigma_dist"][j],
+                        params["rho_dist"][j],
+                    )
+                    rgp = jnp.sqrt(spd_vals) * params["dist_z"][:, j]
+                    dist_v = dist_v.at[:, j].set(self.Xgp @ rgp)
+            else:
+                cov_fn = GP_COV_FNS[self.dist_cov_type]
+                for j in range(J):
+                    K = cov_fn(
+                        self.coords,
+                        params["sigma_dist"][j],
+                        params["rho_dist"][j],
+                    )
+                    K = K + 1e-12 * jnp.eye(self.N_tips)
+                    L_K = jnp.linalg.cholesky(K)
+                    dist_v = dist_v.at[:, j].set(
+                        L_K @ params["dist_z"][:, j]
+                    )
+
         # --- Likelihood ---
         if not self.prior_only:
             lp = lp + self._likelihood(
@@ -606,6 +731,7 @@ class CoevJaxModel:
                 tdrift_trees,
                 residual_v,
                 L_residual if self.repeated else None,
+                dist_v,
             )
 
         return lp
@@ -618,6 +744,7 @@ class CoevJaxModel:
         tdrift_trees,
         residual_v,
         L_residual,
+        dist_v=None,
     ):
         """Compute the log-likelihood contribution."""
         J = self.J
@@ -633,9 +760,10 @@ class CoevJaxModel:
             obs_lp = jnp.zeros(self.N_obs)
 
             # Build base linear model accessor
-            def base_lmod(j0):
-                lm = eta_obs[:, j0]
-                # GP spatial effects would be added here
+            def base_lmod(j0, _eta_obs=eta_obs, _dist_v=dist_v):
+                lm = _eta_obs[:, j0]
+                if _dist_v is not None:
+                    lm = lm + _dist_v[tid, j0]
                 return lm
 
             if has_normal and not self.repeated:
@@ -818,6 +946,10 @@ class CoevJaxModel:
             for j0 in self.gamma_j0:
                 vals.append(params[f"shape{j0 + 1}"].squeeze())
 
+            if self.has_lon_lat:
+                vals.append(params["sigma_dist"])
+                vals.append(params["rho_dist"])
+
             if self.repeated:
                 vals.append(params["sigma_residual"])
                 n_corr_res = J * (J - 1) // 2
@@ -890,3 +1022,115 @@ def build_nutpie_model(data):
     )
 
     return compiled, model
+
+
+_sampling_state = {}
+
+
+def start_sampling(compiled_model, **kwargs):
+    """Start nutpie sampling in a background thread with PTY-based progress.
+
+    Redirects stderr to a PTY so Rust's indicatif progress bar renders
+    (isatty(2) == True).  The PTY master is set non-blocking so that R
+    can drain it during polling without risk of blocking.
+    Only one Python thread (the sampler) — no reader thread.
+    """
+    import fcntl
+    import nutpie
+    import os
+    import threading
+    import time
+
+    master_fd, slave_fd = os.openpty()
+    old_stderr_fd = os.dup(2)
+    os.dup2(slave_fd, 2)
+    os.close(slave_fd)
+
+    flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+    fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
+    state = {
+        "result": None,
+        "error": None,
+        "done": False,
+        "start_time": time.time(),
+        "progress_text": "",
+        "master_fd": master_fd,
+        "old_stderr_fd": old_stderr_fd,
+    }
+
+    def run():
+        try:
+            state["result"] = nutpie.sample(
+                compiled_model, progress_bar=True, **kwargs
+            )
+        except Exception as e:
+            state["error"] = str(e)
+        finally:
+            state["done"] = True
+            os.dup2(state["old_stderr_fd"], 2)
+            os.close(state["old_stderr_fd"])
+
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    state["_thread"] = t
+    _sampling_state["current"] = state
+
+
+def check_sampling():
+    """Drain PTY buffer and return progress text (called from R)."""
+    import os
+    import re
+    import time
+
+    state = _sampling_state.get("current")
+    if not state:
+        return {"done": True, "elapsed": 0, "error": None,
+                "progress_text": ""}
+
+    master_fd = state.get("master_fd")
+    if master_fd is not None:
+        chunks = []
+        while True:
+            try:
+                data = os.read(master_fd, 65536)
+                if data:
+                    chunks.append(data)
+                else:
+                    break
+            except (BlockingIOError, OSError):
+                break
+        if chunks:
+            text = b"".join(chunks).decode("utf-8", errors="replace")
+            lines = text.split("\r")
+            last = lines[-1].strip()
+            if last:
+                state["progress_text"] = re.sub(
+                    r"\x1b\[[0-9;]*[a-zA-Z]", "", last
+                )
+
+    return {
+        "done": state.get("done", True),
+        "elapsed": time.time() - state.get("start_time", time.time()),
+        "error": state.get("error"),
+        "progress_text": state.get("progress_text", ""),
+    }
+
+
+def collect_result():
+    """Block until sampling finishes and return the ArviZ trace."""
+    import os
+
+    state = _sampling_state.get("current")
+    if not state:
+        raise RuntimeError("No active sampling session")
+    state["_thread"].join(timeout=600)
+    master_fd = state.pop("master_fd", None)
+    if master_fd is not None:
+        try:
+            os.close(master_fd)
+        except OSError:
+            pass
+    if state["error"]:
+        raise RuntimeError(state["error"])
+    return state["result"]
