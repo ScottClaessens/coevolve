@@ -759,13 +759,18 @@ class CoevJaxModel:
         """Return a function that maps flat unconstrained -> named params.
 
         Keys are returned in the exact order of _expand_var_list().
+        The JAX computation is JIT-compiled; only the final
+        jax->numpy conversion runs in Python.
         """
         J = self.J
         var_order = [n for n, _ in self._expand_var_list()]
+        expand_shapes = {n: s for n, s in self._expand_var_list()}
 
-        def expand(x):
+        # JIT-compile the pure JAX part
+        @jax.jit
+        def _expand_jax(x):
             params, _ = self.unpack_params(x)
-            vals = {}
+            vals = []
 
             # Build A matrix
             A_mat = jnp.diag(params["A_diag"])
@@ -778,39 +783,43 @@ class CoevJaxModel:
                                 params["A_offdiag"][ticker]
                             )
                             ticker += 1
-            vals["A"] = A_mat
+            vals.append(A_mat)  # A
 
             # Build Q matrix and cor_R
             if self.estimate_correlated_drift:
                 n_corr = J * (J - 1) // 2
                 if n_corr > 0:
-                    L_R, _ = raw_to_cholesky(params["_L_R_raw"], J)
+                    L_R, _ = raw_to_cholesky(
+                        params["_L_R_raw"], J
+                    )
                 else:
                     L_R = jnp.eye(J)
                 D = jnp.diag(params["Q_sigma"])
-                vals["Q"] = D @ (L_R @ L_R.T) @ D
-                vals["cor_R"] = L_R @ L_R.T
+                vals.append(D @ (L_R @ L_R.T) @ D)  # Q
             else:
-                vals["Q"] = jnp.diag(params["Q_sigma"] ** 2)
+                vals.append(jnp.diag(params["Q_sigma"] ** 2))  # Q
 
-            vals["A_diag"] = params["A_diag"]
+            vals.append(params["A_diag"])
             if self.n_offdiag > 0:
-                vals["A_offdiag"] = params["A_offdiag"]
-            vals["Q_sigma"] = params["Q_sigma"]
-            vals["b"] = params["b"]
-            vals["eta_anc"] = params["eta_anc"]
+                vals.append(params["A_offdiag"])
+            vals.append(params["Q_sigma"])
+            vals.append(params["b"])
+            vals.append(params["eta_anc"])
+
+            if self.estimate_correlated_drift:
+                vals.append(L_R @ L_R.T)  # cor_R
 
             for j1, nc in zip(self.ordered_j, self.ordered_ncuts):
-                vals[f"c{j1}"] = params[f"c{j1}"]
+                vals.append(params[f"c{j1}"])
 
             for j0 in self.nb_j0:
-                vals[f"phi{j0 + 1}"] = params[f"phi{j0 + 1}"].squeeze()
+                vals.append(params[f"phi{j0 + 1}"].squeeze())
 
             for j0 in self.gamma_j0:
-                vals[f"shape{j0 + 1}"] = params[f"shape{j0 + 1}"].squeeze()
+                vals.append(params[f"shape{j0 + 1}"].squeeze())
 
             if self.repeated:
-                vals["sigma_residual"] = params["sigma_residual"]
+                vals.append(params["sigma_residual"])
                 n_corr_res = J * (J - 1) // 2
                 if n_corr_res > 0:
                     L_res, _ = raw_to_cholesky(
@@ -818,13 +827,21 @@ class CoevJaxModel:
                     )
                 else:
                     L_res = jnp.eye(J)
-                vals["cor_residual"] = L_res @ L_res.T
+                vals.append(L_res @ L_res.T)  # cor_residual
 
-            # Return in declared order with correct dtypes
+            return vals
+
+        # Warm up JIT
+        _x0 = jnp.zeros(self.ndim)
+        _expand_jax(_x0)
+
+        def expand(x):
+            jax_vals = _expand_jax(jnp.asarray(x))
             result = {}
-            for name in var_order:
-                v = vals[name]
-                result[name] = np.asarray(v, dtype=np.float64)
+            for i, name in enumerate(var_order):
+                result[name] = np.asarray(
+                    jax_vals[i], dtype=np.float64
+                )
             return result
 
         return expand
@@ -846,10 +863,15 @@ def build_nutpie_model(data):
 
     def make_logp_fn():
         logp_and_grad = jax.jit(jax.value_and_grad(model.log_density))
+        # Warm up JIT (includes tracing + XLA compilation)
+        _x0 = jnp.zeros(model.ndim)
+        logp_and_grad(_x0)
 
         def logp(x):
             val, grad = logp_and_grad(x)
-            return float(val), np.asarray(grad, dtype=np.float64)
+            # np.asarray on a JAX DeviceArray is a zero-copy
+            # view when both are on CPU
+            return val.item(), np.asarray(grad)
 
         return logp
 
