@@ -340,7 +340,7 @@ nutpie_sample <- function(stan_code, data_list,
   # stop if nutpie is not available
   stop_if_nutpie_not_available()
   # import nutpie
-  nutpie <- reticulate::import("nutpie", convert = FALSE)
+  nutpie <- reticulate::import("nutpie", convert = FALSE) # nolint
   # separate compilation arguments from sampling arguments
   all_additional_args <- list(...)
   # known compilation arguments for compile_stan_model

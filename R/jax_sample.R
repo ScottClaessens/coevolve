@@ -27,8 +27,8 @@ jax_run_nutpie <- function(data_list,
   Sys.setenv(PYTHONUNBUFFERED = "1")
   Sys.setenv(JAX_PLATFORMS = "cpu")
 
-  py_data <- convert_r_to_python_data_jax(data_list)
-  jax_mod <- load_jax_model_module(convert = FALSE)
+  py_data <- convert_r_to_python_data_jax(data_list) # nolint
+  jax_mod <- load_jax_model_module(convert = FALSE) # nolint
 
   message("Compiling JAX model with nutpie ...")
   build_result <- jax_mod$build_nutpie_model(py_data)

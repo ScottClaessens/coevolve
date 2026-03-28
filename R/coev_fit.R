@@ -318,7 +318,7 @@ coev_fit <- function(data, variables, id, tree,
   }
   # generate code/config and data for model
   if (nuts_sampler == "nutpie") {
-    model_cfg <- coev_make_model_config(
+    model_cfg <- coev_make_model_config( # nolint: object_usage_linter.
       data, variables, id, tree, effects_mat,
       complete_cases, lon_lat, dist_k, dist_cov,
       measurement_error, prior, scale,
@@ -348,7 +348,7 @@ coev_fit <- function(data, variables, id, tree,
       as.integer(sample_args$iter_warmup) else 1000L
     seed <- if ("seed" %in% names(sample_args))
       as.integer(sample_args$seed) else 0L
-    stop_if_jax_not_available()
+    stop_if_jax_not_available() # nolint: object_usage_linter.
     nutpie_args <- sample_args
     nutpie_args[c(
       "chains", "iter_sampling", "iter_warmup", "seed",
@@ -356,10 +356,12 @@ coev_fit <- function(data, variables, id, tree,
       "nuts_gradient_backend", "compile_mode"
     )] <- NULL
     distributions <- as.character(variables)
-    sd_jax <- embed_model_config(
-      standata_to_jax(sd, distributions), model_cfg
+    sd_jax <- embed_model_config( # nolint: object_usage_linter.
+      standata_to_jax( # nolint: object_usage_linter.
+        sd, distributions
+      ), model_cfg
     )
-    jax_result <- jax_run_nutpie(
+    jax_result <- jax_run_nutpie( # nolint: object_usage_linter.
       data_list     = sd_jax,
       num_chains    = num_chains,
       num_samples   = num_samples,
@@ -370,7 +372,7 @@ coev_fit <- function(data, variables, id, tree,
     )
     draws_array <- jax_result$draws_array
     stan_variables <- posterior::variables(draws_array)
-    model <- create_jax_wrapper(
+    model <- create_jax_wrapper( # nolint: object_usage_linter.
       trace_result   = jax_result$trace,
       draws_array    = draws_array,
       stan_variables = stan_variables,

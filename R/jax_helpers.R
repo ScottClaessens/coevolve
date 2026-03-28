@@ -246,7 +246,8 @@ standata_to_jax <- function(sd, distributions) {
 #'
 #' @noRd
 compute_tree_levels <- function(node_seq_0, parent_0, tip_0,
-                                length_index_0, N_tree, N_seg) {
+                                length_index_0, # nolint
+                                N_tree, N_seg) { # nolint
   all_depths <- matrix(0L, N_tree, N_seg)
   root_ids <- integer(N_tree)
 

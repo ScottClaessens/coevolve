@@ -11,7 +11,8 @@ coev_make_model_config(
   tree,
   effects_mat = NULL,
   complete_cases = FALSE,
-  dist_mat = NULL,
+  lon_lat = NULL,
+  dist_k = NA,
   dist_cov = "exp_quad",
   measurement_error = NULL,
   prior = NULL,
@@ -60,10 +61,19 @@ be TRUE in the matrix.}
 missing values are imputed by the model. If \code{TRUE}, taxa with missing
 data are excluded.}
 
-\item{dist_mat}{(optional) A distance matrix with row and column names
-exactly matching the tip labels in the phylogeny. If specified, the model
-will additionally control for spatial location by including a separate
-Gaussian Process over locations for every coevolving variable in the model.}
+\item{lon_lat}{(optional) A \code{data.frame} containing longitude and
+latitude values for all tips on the phylogeny. The data frame must contain
+the following columns: a column labelled "id" that exactly matches the tip
+labels on the phylogeny; a column labelled "longitude" that declares
+longitude values in decimal degrees; and a column labelled "latitude" that
+declares latitude values in decimal degrees. If specified, the model will
+additionally control for spatial location by including a separate Gaussian
+Process over locations for every coevolving variable in the model.}
+
+\item{dist_k}{An integer of length one specifying the number of basis
+functions for computing Hilbert-space approximate Gaussian Processes over
+locations. If \code{NA} (the default), exact Gaussian Processes are
+computed.}
 
 \item{dist_cov}{A string of length one specifying the covariance kernel used
 for Gaussian Processes over locations (strictly case-sensitive). Currently

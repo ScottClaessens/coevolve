@@ -39,7 +39,7 @@ compare_stan_jax_logprob <- function(
       "compare_stan_jax_logprob()."
     )
   }
-  stop_if_jax_not_available()
+  stop_if_jax_not_available() # nolint
 
   distributions <- as.character(variables)
 
@@ -50,7 +50,7 @@ compare_stan_jax_logprob <- function(
     estimate_correlated_drift, estimate_residual,
     log_lik = FALSE, prior_only = prior_only
   )
-  cfg <- coev_make_model_config(
+  cfg <- coev_make_model_config( # nolint
     data, variables, id, tree, effects_mat,
     complete_cases, lon_lat, dist_k, dist_cov,
     measurement_error, prior, scale,
@@ -64,8 +64,8 @@ compare_stan_jax_logprob <- function(
     estimate_correlated_drift, estimate_residual,
     log_lik = FALSE, prior_only = prior_only
   )
-  sd_jax <- embed_model_config(
-    standata_to_jax(sd, distributions), cfg
+  sd_jax <- embed_model_config( # nolint
+    standata_to_jax(sd, distributions), cfg # nolint
   )
 
   # Compile Stan and get unconstrained dimension
@@ -105,8 +105,8 @@ compare_stan_jax_logprob <- function(
   )
 
   # Build JAX model and evaluate at the same points
-  py_data <- convert_r_to_python_data_jax(sd_jax)
-  jax_mod <- load_jax_model_module(convert = FALSE)
+  py_data <- convert_r_to_python_data_jax(sd_jax) # nolint
+  jax_mod <- load_jax_model_module(convert = FALSE) # nolint
   jax <- reticulate::import("jax", convert = FALSE)
   jax$config$update("jax_platforms", "cpu")
   jax$config$update("jax_enable_x64", TRUE)

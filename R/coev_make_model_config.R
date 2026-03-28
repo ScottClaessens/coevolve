@@ -46,7 +46,7 @@ coev_make_model_config <- function(data, variables, id, tree,
   data <- as.data.frame(data)
   distributions <- as.character(variables)
   variables <- names(variables)
-  J <- length(variables)
+  J <- length(variables) # nolint: object_name_linter.
 
   priors <- list(
     b              = "std_normal()",
@@ -94,9 +94,14 @@ coev_make_model_config <- function(data, variables, id, tree,
     }
   }
 
-  lkj_eta_drift    <- as.numeric(parse_stan_prior(priors$L_R)$args[1])
-  lkj_eta_residual <- as.numeric(parse_stan_prior(priors$L_residual)$args[1])
+  lkj_eta_drift <- as.numeric(
+    parse_stan_prior(priors$L_R)$args[1] # nolint: object_usage_linter.
+  )
+  lkj_eta_residual <- as.numeric(
+    parse_stan_prior(priors$L_residual)$args[1] # nolint: object_usage_linter.
+  )
 
+  # nolint start: object_usage_linter.
   prior_specs <- list(
     A_diag         = prior_spec_from_stan(priors$A_diag,         "upper_zero"),
     A_offdiag      = prior_spec_from_stan(priors$A_offdiag,      "none"),
@@ -112,6 +117,7 @@ coev_make_model_config <- function(data, variables, id, tree,
   if (!is.null(priors$phi)) {
     prior_specs$phi <- prior_spec_from_stan(priors$phi, "lower_zero")
   }
+  # nolint end: object_usage_linter.
 
   list(
     distributions           = distributions,
