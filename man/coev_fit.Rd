@@ -147,6 +147,32 @@ WAIC and LOO.}
 \item{prior_only}{Logical. If \code{FALSE} (default), the model is fitted to
 the data and returns a posterior distribution. If \code{TRUE}, the model
 samples from the prior only, ignoring the likelihood.}
+
+\item{adapt_delta}{Target acceptance probability for the
+NUTS sampler (default \code{0.95}). Passed to
+\pkg{cmdstanr::sample()} as \code{adapt_delta}, or to
+nutpie as \code{target_accept}.}
+
+\item{nuts_sampler}{Which NUTS implementation to use.
+\code{"stan"} (default) fits the Stan model with
+CmdStan via \pkg{cmdstanr}. \code{"nutpie"} fits a
+pure JAX model using nutpie's Rust NUTS sampler with
+JAX gradients via \code{jax.value_and_grad}.}
+
+\item{backend}{Legacy alias for \code{nuts_sampler}.
+\code{backend = "cmdstanr"} maps to
+\code{nuts_sampler = "stan"}. Prefer
+\code{nuts_sampler} directly.}
+
+\item{dist_mat}{Deprecated. Use the \code{lon_lat} argument instead.}
+
+\item{...}{Additional arguments. For
+\code{nuts_sampler = "stan"}: passed to
+\pkg{cmdstanr::sample()} (and compilation via
+\code{extra_stanc_args}, \code{extra_compile_args}).
+For \code{nuts_sampler = "nutpie"}: sampling arguments
+such as \code{chains}, \code{iter_sampling},
+\code{iter_warmup}, \code{seed}.}
 }
 \value{
 Fitted model of class \code{coevfit}
