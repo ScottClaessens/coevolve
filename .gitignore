@@ -10,3 +10,6 @@ docs
 bench/
 __pycache__/
 *.pyc
+Rplots.pdf
+quick_debug.R
+.claude/

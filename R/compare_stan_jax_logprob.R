@@ -21,7 +21,8 @@ compare_stan_jax_logprob <- function(
     tree,
     effects_mat = NULL,
     complete_cases = FALSE,
-    dist_mat = NULL,
+    lon_lat = NULL,
+    dist_k = NA,
     dist_cov = "exp_quad",
     measurement_error = NULL,
     prior = NULL,
@@ -44,21 +45,21 @@ compare_stan_jax_logprob <- function(
 
   sc <- coev_make_stancode(
     data, variables, id, tree, effects_mat,
-    complete_cases, dist_mat, dist_cov,
+    complete_cases, lon_lat, dist_k, dist_cov,
     measurement_error, prior, scale,
     estimate_correlated_drift, estimate_residual,
     log_lik = FALSE, prior_only = prior_only
   )
   cfg <- coev_make_model_config(
     data, variables, id, tree, effects_mat,
-    complete_cases, dist_mat, dist_cov,
+    complete_cases, lon_lat, dist_k, dist_cov,
     measurement_error, prior, scale,
     estimate_correlated_drift, estimate_residual,
     prior_only = prior_only
   )
   sd <- coev_make_standata(
     data, variables, id, tree, effects_mat,
-    complete_cases, dist_mat, dist_cov,
+    complete_cases, lon_lat, dist_k, dist_cov,
     measurement_error, prior, scale,
     estimate_correlated_drift, estimate_residual,
     log_lik = FALSE, prior_only = prior_only
