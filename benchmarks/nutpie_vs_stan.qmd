@@ -1,5 +1,5 @@
 ---
-title: "Benchmark: nutpie (JAX) vs Stan"
+title: "Benchmark: nutpie (JAX) vs nutpie (BridgeStan) vs Stan"
 format:
   html:
     toc: true
@@ -22,16 +22,23 @@ theme_set(theme_minimal(base_size = 14))
 # Sampling settings
 N_CHAINS  <- 4L
 N_WARMUP  <- 500L
-N_SAMPLES <- 1000L
+N_SAMPLES <- 2000L
 SEED      <- 42L
 ```
 
 ## Overview
 
-We benchmark **Stan** (`nuts_sampler = "stan"`) against **nutpie/JAX**
-(`nuts_sampler = "nutpie"`) across all vignette models that the JAX backend
-supports. For each model and backend we record wall-clock sampling time and
-the per-parameter bulk/tail effective sample sizes.
+We benchmark three sampling backends across all vignette models that the JAX
+backend supports:
+
+1. **Stan** (`nuts_sampler = "stan"`) — CmdStan's built-in NUTS sampler
+2. **nutpie/JAX** (`nuts_sampler = "nutpie"`) — pure JAX log-density + nutpie
+3. **nutpie/BridgeStan** — compiled Stan model sampled via nutpie through
+   BridgeStan (legacy approach, run separately on the `main` branch via
+   `benchmarks/bench_bridgestan.R`)
+
+For each model and backend we record wall-clock sampling time and the
+per-parameter bulk/tail effective sample sizes.
 
 Models:
 
@@ -100,8 +107,7 @@ auth_nutpie <- fit_and_summarise(
   id = "language",
   tree = authority$phylogeny,
   prior = list(A_offdiag = "normal(0, 2)"),
-  nuts_sampler = "nutpie",
-  use_grad_based_mass_matrix=FALSE
+  nuts_sampler = "nutpie"
 )
 ```
 
@@ -132,8 +138,7 @@ prim_nutpie <- fit_and_summarise(
   ),
   id = "species",
   tree = primates_phylogeny,
-  nuts_sampler = "nutpie",
-  use_grad_based_mass_matrix=FALSE
+  nuts_sampler = "nutpie"
 )
 ```
 
@@ -155,8 +160,7 @@ rep_nutpie <- fit_and_summarise(
   variables = list(x = "normal", y = "normal"),
   id = "species",
   tree = repeated$phylogeny,
-  nuts_sampler = "nutpie",
-  use_grad_based_mass_matrix=FALSE
+  nuts_sampler = "nutpie"
 )
 ```
 
@@ -188,8 +192,7 @@ multi_nutpie <- fit_and_summarise(
   id = "language",
   tree = authority_multiphylo,
   prior = list(A_offdiag = "normal(0, 2)"),
-  nuts_sampler = "nutpie",
-  use_grad_based_mass_matrix=FALSE
+  nuts_sampler = "nutpie"
 )
 ```
 
@@ -224,8 +227,7 @@ me_nutpie <- fit_and_summarise(
   id = "id",
   tree = tree_me,
   measurement_error = list(x = "x_se", y = "y_se"),
-  nuts_sampler = "nutpie",
-  use_grad_based_mass_matrix=FALSE
+  nuts_sampler = "nutpie"
 )
 ```
 
@@ -257,8 +259,7 @@ gp_nutpie <- fit_and_summarise(
   tree = authority$phylogeny,
   lon_lat = authority$coordinates,
   prior = list(A_offdiag = "normal(0, 2)"),
-  nuts_sampler = "nutpie",
-  use_grad_based_mass_matrix=FALSE
+  nuts_sampler = "nutpie"
 )
 ```
 
@@ -292,15 +293,15 @@ hsgp_nutpie <- fit_and_summarise(
   lon_lat = authority$coordinates,
   dist_k = 5,
   prior = list(A_offdiag = "normal(0, 2)"),
-  nuts_sampler = "nutpie",
-  use_grad_based_mass_matrix=FALSE
+  nuts_sampler = "nutpie"
 )
 ```
 
 ## Combine and save results
 
 ```{r save-results}
-all_ess <- bind_rows(
+# Stan + JAX results from this run
+jax_stan_ess <- bind_rows(
   auth_stan, auth_nutpie,
   prim_stan, prim_nutpie,
   rep_stan, rep_nutpie,
@@ -309,6 +310,19 @@ all_ess <- bind_rows(
   gp_stan, gp_nutpie,
   hsgp_stan, hsgp_nutpie
 )
+
+# BridgeStan results pre-computed on main via bench_bridgestan.R
+bs_ess <- read.csv("nutpie_bs_ess.csv")
+
+all_ess <- bind_rows(jax_stan_ess, bs_ess)
+
+# Nicer labels for plotting
+all_ess <- all_ess |>
+  mutate(backend = factor(
+    backend,
+    levels = c("stan", "nutpie_bs", "nutpie"),
+    labels = c("Stan", "nutpie (BridgeStan)", "nutpie (JAX)")
+  ))
 
 saveRDS(all_ess, "nutpie_vs_stan_ess.rds")
 write.csv(all_ess, "nutpie_vs_stan_ess.csv", row.names = FALSE)
@@ -325,7 +339,11 @@ time_df <- all_ess |>
 ggplot(time_df, aes(x = model, y = elapsed, fill = backend)) +
   geom_col(position = "dodge") +
   labs(y = "Wall-clock time (seconds)", x = NULL, fill = "Backend") +
-  scale_fill_manual(values = c(stan = "#4575b4", nutpie = "#d73027"))
+  scale_fill_manual(values = c(
+    "Stan" = "#4575b4",
+    "nutpie (BridgeStan)" = "#fdae61",
+    "nutpie (JAX)" = "#d73027"
+  ))
 ```
 
 ### ESS distributions
@@ -335,7 +353,11 @@ ggplot(all_ess, aes(x = backend, y = ess_bulk, fill = backend)) +
   geom_violin(alpha = 0.6, draw_quantiles = c(0.25, 0.5, 0.75)) +
   facet_wrap(~model, scales = "free_y") +
   labs(y = "Bulk ESS", x = NULL) +
-  scale_fill_manual(values = c(stan = "#4575b4", nutpie = "#d73027")) +
+  scale_fill_manual(values = c(
+    "Stan" = "#4575b4",
+    "nutpie (BridgeStan)" = "#fdae61",
+    "nutpie (JAX)" = "#d73027"
+  )) +
   theme(legend.position = "none")
 ```
 
@@ -344,7 +366,11 @@ ggplot(all_ess, aes(x = backend, y = ess_tail, fill = backend)) +
   geom_violin(alpha = 0.6, draw_quantiles = c(0.25, 0.5, 0.75)) +
   facet_wrap(~model, scales = "free_y") +
   labs(y = "Tail ESS", x = NULL) +
-  scale_fill_manual(values = c(stan = "#4575b4", nutpie = "#d73027")) +
+  scale_fill_manual(values = c(
+    "Stan" = "#4575b4",
+    "nutpie (BridgeStan)" = "#fdae61",
+    "nutpie (JAX)" = "#d73027"
+  )) +
   theme(legend.position = "none")
 ```
 
@@ -357,7 +383,11 @@ all_ess |>
   geom_violin(alpha = 0.6, draw_quantiles = c(0.25, 0.5, 0.75)) +
   facet_wrap(~model, scales = "free_y") +
   labs(y = "Bulk ESS / second", x = NULL) +
-  scale_fill_manual(values = c(stan = "#4575b4", nutpie = "#d73027")) +
+  scale_fill_manual(values = c(
+    "Stan" = "#4575b4",
+    "nutpie (BridgeStan)" = "#fdae61",
+    "nutpie (JAX)" = "#d73027"
+  )) +
   theme(legend.position = "none")
 ```
 

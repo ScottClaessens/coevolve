@@ -31,10 +31,13 @@ jax_run_nutpie <- function(data_list,
   jax_mod <- load_jax_model_module(convert = FALSE) # nolint
 
   message("Compiling JAX model with nutpie ...")
+  .t_compile_start <- proc.time()[["elapsed"]]
   build_result <- jax_mod$build_nutpie_model(py_data)
   compiled <- build_result[[0]]
+  .t_compile_end <- proc.time()[["elapsed"]]
 
   message("Sampling with nutpie (Rust NUTS + JAX gradients) ...")
+  .t_sample_start <- proc.time()[["elapsed"]]
   sample_kwargs <- list(
     compiled_model = compiled,
     draws          = as.integer(num_samples),
@@ -57,6 +60,14 @@ jax_run_nutpie <- function(data_list,
     if (isTRUE(status$done)) break
     Sys.sleep(0.5)
   }
+
+  .t_sample_end <- proc.time()[["elapsed"]]
+
+  message(sprintf(
+    "  Compile: %.1fs | Sample: %.1fs",
+    .t_compile_end - .t_compile_start,
+    .t_sample_end - .t_sample_start
+  ))
 
   if (!is.null(status$error)) {
     stop2("nutpie sampling failed: ", status$error)

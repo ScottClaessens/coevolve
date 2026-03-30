@@ -14,7 +14,7 @@ import numpyro.distributions as dist
 
 
 # --------------------------------------------------------------------------
-# Math helpers
+# Math helpers  (cf. Stan 01-functions.stan)
 # --------------------------------------------------------------------------
 
 
@@ -72,18 +72,18 @@ def gp_cov_exp_quad(coords, sigma, rho):
 
 def gp_cov_exponential(coords, sigma, rho):
     """Exponential covariance matrix."""
-    dist = jnp.sqrt(
+    d = jnp.sqrt(
         jnp.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1)
     )
-    return sigma**2 * jnp.exp(-dist / rho)
+    return sigma**2 * jnp.exp(-d / rho)
 
 
 def gp_cov_matern32(coords, sigma, rho):
     """Matern 3/2 covariance matrix."""
-    dist = jnp.sqrt(
+    d = jnp.sqrt(
         jnp.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1)
     )
-    s3 = jnp.sqrt(3.0) * dist / rho
+    s3 = jnp.sqrt(3.0) * d / rho
     return sigma**2 * (1.0 + s3) * jnp.exp(-s3)
 
 
@@ -246,7 +246,17 @@ def prior_logp(value, spec):
 
 
 class CoevJaxModel:
-    """Build a pure JAX log-density function from a data_dict."""
+    """Build a pure JAX log-density function from a data_dict.
+
+    Method structure mirrors the Stan template blocks:
+      _build_A_matrix    -> 05-transformed-parameters: fill off-diagonal of A
+      _build_Q_matrix    -> 05-transformed-parameters: Q = D * (L_R L_R') * D
+      _compute_priors    -> 06-model: priors
+      _compute_caches    -> 05-transformed-parameters: branch-length caches
+      _tree_traversal    -> 05-transformed-parameters: tree loop over segments
+      _transformed_params -> 05-transformed-parameters: tdrift, residual_v, dist_v
+      _likelihood        -> 06-model: likelihood
+    """
 
     def build(self, data):
         """Parse data dict and return (log_density_fn, param_info).
@@ -361,6 +371,10 @@ class CoevJaxModel:
 
         return self
 
+    # ------------------------------------------------------------------
+    # Parameter layout  (cf. Stan 04-parameters.stan)
+    # ------------------------------------------------------------------
+
     def _build_param_layout(self):
         """Define the unconstrained parameter vector layout.
 
@@ -466,6 +480,10 @@ class CoevJaxModel:
         dtypes = [np.dtype("float64")] * len(vs)
         return names, shapes, dtypes
 
+    # ------------------------------------------------------------------
+    # Unpack flat vector -> named constrained params
+    # ------------------------------------------------------------------
+
     def unpack_params(self, x):
         """Unpack flat unconstrained vector into named constrained params.
 
@@ -497,18 +515,22 @@ class CoevJaxModel:
 
         return params, logdet
 
-    def log_density(self, x):
-        """Compute log-density at unconstrained parameter vector x.
+    # ------------------------------------------------------------------
+    # Transformed parameters  (cf. Stan 05-transformed-parameters.stan)
+    # ------------------------------------------------------------------
 
-        This is the function that gets JIT-compiled and differentiated by JAX.
+    def _build_A_matrix(self, params):
+        """Build selection matrix A from diagonal and off-diagonal params.
+
+        Mirrors Stan 05-transformed-parameters.stan lines 26-40:
+          A = diag_matrix(A_diag);
+          { int ticker = 1;
+            for (i in 1:J) for (j in 1:J) if (i != j)
+              if (effects_mat[i,j] == 1) { A[i,j] = A_offdiag[ticker]; ... }
+          }
         """
-        params, logdet_jac = self.unpack_params(x)
         J = self.J
-        lp = logdet_jac
-
-        # --- Build A matrix ---
-        A_diag = params["A_diag"]
-        A_mat = jnp.diag(A_diag)
+        A_mat = jnp.diag(params["A_diag"])
         if self.n_offdiag > 0:
             ticker = 0
             for i in range(J):
@@ -518,14 +540,26 @@ class CoevJaxModel:
                             params["A_offdiag"][ticker]
                         )
                         ticker += 1
+        return A_mat
 
-        # --- Build Q matrix ---
+    def _build_Q_matrix(self, params):
+        """Build drift matrix Q and return (Q, L_R).
+
+        Mirrors Stan 05-transformed-parameters.stan lines 5-10:
+          Q = diag_matrix(Q_sigma) * (L_R * L_R') * diag_matrix(Q_sigma);
+        or:
+          Q = diag_matrix(Q_sigma^2);
+        """
+        J = self.J
+        lp = 0.0
         if self.estimate_correlated_drift:
             n_corr = J * (J - 1) // 2
             if n_corr > 0:
                 L_R, lkj_jac = raw_to_cholesky(params["_L_R_raw"], J)
-                lp = lp + lkj_jac  # tanh jacobian
-                lp = lp + lkj_cholesky_logp(L_R, self.lkj_eta_drift, J)
+                lp = lp + lkj_jac
+                lp = lp + lkj_cholesky_logp(
+                    L_R, self.lkj_eta_drift, J
+                )
             else:
                 L_R = jnp.eye(J)
             D = jnp.diag(params["Q_sigma"])
@@ -533,103 +567,32 @@ class CoevJaxModel:
         else:
             L_R = None
             Q = jnp.diag(params["Q_sigma"] ** 2)
+        return Q, L_R, lp
 
-        # --- Priors ---
-        lp = lp + prior_logp(params["A_diag"], self.prior_specs["A_diag"])
-        if self.n_offdiag > 0:
-            lp = lp + prior_logp(
-                params["A_offdiag"], self.prior_specs["A_offdiag"]
-            )
-        lp = lp + prior_logp(params["Q_sigma"], self.prior_specs["Q_sigma"])
-        lp = lp + prior_logp(params["b"], self.prior_specs["b"])
-        lp = lp + prior_logp(params["eta_anc"], self.prior_specs["eta_anc"])
-        lp = lp + dist.Normal(0.0, 1.0).log_prob(params["z_drift"]).sum()
+    def _compute_caches(self, A_mat, Q_inf, params):
+        """Compute branch-length caches for matrix exponentials & drift VCV.
 
-        if self.needs_terminal_drift:
-            has_normal = len(self.normal_j0) > 0
-            if has_normal and not self.repeated:
-                # Only add std_normal prior for non-normal variables
-                # (normal variables get their prior from the likelihood)
-                for j0 in self.nonnormal_j0:
-                    lp = lp + (
-                        dist.Normal(0.0, 1.0)
-                        .log_prob(params["terminal_drift"][:, :, j0])
-                        .sum()
-                    )
-                if self.prior_only:
-                    for j0 in self.normal_j0:
-                        lp = lp + (
-                            dist.Normal(0.0, 1.0)
-                            .log_prob(params["terminal_drift"][:, :, j0])
-                            .sum()
-                        )
-            else:
-                lp = lp + (
-                    dist.Normal(0.0, 1.0)
-                    .log_prob(params["terminal_drift"])
-                    .sum()
-                )
+        Mirrors Stan 05-transformed-parameters.stan lines 43-60:
+          for (u in 1:N_unique_lengths) {
+            A_delta_cache[u] = matrix_exp(A * unique_lengths[u]);
+            VCV_cache[u] = Q_inf - quad_form_sym(Q_inf, A_delta_cache[u]');
+            L_VCV_cache[u] = cholesky_decompose(VCV_cache[u]);
+            A_solve_cache[u] = A \\ add_diag(A_delta_cache[u], -1);
+            // symmetrize A_solve_cache[u]
+          }
 
-        for j1, nc in zip(self.ordered_j, self.ordered_ncuts):
-            lp = lp + prior_logp(params[f"c{j1}"], self.prior_specs["c"])
-
-        for j0 in self.nb_j0:
-            j1 = j0 + 1
-            phi_spec = self.prior_specs.get("phi")
-            if phi_spec is None:
-                lp = lp + (
-                    dist.TruncatedNormal(
-                        self.inv_overdisp[j0], self.inv_overdisp[j0], low=0.0
-                    )
-                    .log_prob(params[f"phi{j1}"])
-                    .sum()
-                )
-            else:
-                lp = lp + prior_logp(params[f"phi{j1}"], phi_spec)
-
-        for j0 in self.gamma_j0:
-            lp = lp + prior_logp(
-                params[f"shape{j0 + 1}"], self.prior_specs["shape"]
-            )
-
-        if self.has_lon_lat:
-            lp = lp + dist.Normal(0.0, 1.0).log_prob(params["dist_z"]).sum()
-            lp = lp + prior_logp(
-                params["sigma_dist"], self.prior_specs["sigma_dist"]
-            )
-            lp = lp + prior_logp(
-                params["rho_dist"], self.prior_specs["rho_dist"]
-            )
-
-        if self.repeated:
-            lp = lp + (
-                dist.Normal(0.0, 1.0).log_prob(params["residual_z"]).sum()
-            )
-            lp = lp + prior_logp(
-                params["sigma_residual"], self.prior_specs["sigma_residual"]
-            )
-            n_corr_res = J * (J - 1) // 2
-            if n_corr_res > 0:
-                L_residual, lkj_jac_res = raw_to_cholesky(
-                    params["_L_residual_raw"], J
-                )
-                lp = lp + lkj_jac_res
-                lp = lp + lkj_cholesky_logp(
-                    L_residual, self.lkj_eta_residual, J
-                )
-            else:
-                L_residual = jnp.eye(J)
-
-        # --- Transformed parameters ---
-        Q_inf = ksolve(A_mat, Q, J)
-
-        # Matrix exponential cache (batched over unique branch lengths)
+        Returns (A_delta_cache, L_VCV_cache, A_solve_cache, b_delta_cache).
+        """
+        J = self.J
         eye_J = jnp.eye(J)
+
+        # Batched matrix exponential over unique branch lengths
         A_dt = A_mat[None, :, :] * (
             self.unique_lengths[:, None, None] / 256.0
         )
         A_delta_cache = matrix_exp_batch(A_dt)
 
+        # VCV = Q_inf - A_delta @ Q_inf @ A_delta'  (symmetrized)
         Qi = Q_inf[None, :, :]
         V = Qi - jnp.matmul(
             A_delta_cache, jnp.matmul(Qi, A_delta_cache.transpose(0, 2, 1))
@@ -637,17 +600,39 @@ class CoevJaxModel:
         VCV_cache = 0.5 * (V + V.transpose(0, 2, 1))
         L_VCV_cache = jnp.linalg.cholesky(VCV_cache)
 
+        # A_solve = A^{-1} (A_delta - I)  (symmetrized)
         A_inv = jnp.linalg.solve(A_mat, eye_J)
         As = jnp.matmul(
             A_inv[None, :, :],
-            A_delta_cache - jnp.broadcast_to(eye_J[None, :, :], A_delta_cache.shape),
+            A_delta_cache - jnp.broadcast_to(
+                eye_J[None, :, :], A_delta_cache.shape
+            ),
         )
         A_solve_cache = 0.5 * (As + As.transpose(0, 2, 1))
+
+        # b_delta = A_solve @ b  (precomputed for tree traversal)
         b_delta_cache = jnp.matmul(
             A_solve_cache, params["b"][None, :, None]
         )[:, :, 0]
 
-        # --- Tree traversal ---
+        return A_delta_cache, L_VCV_cache, A_solve_cache, b_delta_cache
+
+    def _tree_traversal(self, params, A_delta_cache, L_VCV_cache,
+                        b_delta_cache):
+        """Propagate ancestral states down each tree.
+
+        Mirrors Stan 05-transformed-parameters.stan lines 61-101:
+          for (t in 1:N_tree) {
+            eta[t, node_seq[t,1]] = eta_anc[t];
+            for (i in 2:N_seg) {
+              // eta[t, node_seq[t,i]] = A_delta * eta[parent] + A_solve*b
+              //   + L_VCV * z_drift  (internal only)
+            }
+          }
+
+        Returns (eta_trees, tip_L_VCV_trees) — lists of length N_tree.
+        """
+        J = self.J
         eta_trees = []
         tip_L_VCV_trees = []
         for t in range(self.N_tree):
@@ -677,7 +662,20 @@ class CoevJaxModel:
             _tip_li = self.length_index[t][self.tip_to_seg[t]]
             tip_L_VCV_trees.append(L_VCV_cache[_tip_li])
 
-        # Compute tdrift if needed
+        return eta_trees, tip_L_VCV_trees
+
+    def _transformed_params(self, params, tip_L_VCV_trees, L_residual):
+        """Compute tdrift, residual_v, and dist_v.
+
+        Mirrors Stan 05-transformed-parameters.stan lines 103-128:
+          tdrift[t,i] = L_VCV_tips[t,i] * to_vector(terminal_drift[t][i,]);
+          residual_v = (diag_pre_multiply(sigma_residual, L_residual)
+                        * residual_z)';
+          dist_v[,j] = cholesky_decompose(dist_cov) * dist_z[,j];
+        """
+        J = self.J
+
+        # Terminal drift: tdrift[t,i] = L_VCV_tips[t,i] * terminal_drift[t,i]
         tdrift_trees = None
         if self.tdrift and self.needs_terminal_drift:
             tdrift_trees = []
@@ -688,13 +686,13 @@ class CoevJaxModel:
                 )[:, :, 0]
                 tdrift_trees.append(td)
 
-        # Compute residual_v if needed
+        # Residual effects: residual_v = (D * L_residual * residual_z)'
         residual_v = None
         if self.residual_v_flag and self.repeated:
             D_res = jnp.diag(params["sigma_residual"])
             residual_v = (D_res @ L_residual @ params["residual_z"]).T
 
-        # Compute spatial GP effects (N_tips x J)
+        # Spatial GP effects (N_tips x J)
         dist_v = None
         if self.has_lon_lat:
             dist_v = jnp.zeros((self.N_tips, J))
@@ -722,31 +720,151 @@ class CoevJaxModel:
                         L_K @ params["dist_z"][:, j]
                     )
 
-        # --- Likelihood ---
-        if not self.prior_only:
-            lp = lp + self._likelihood(
-                params,
-                eta_trees,
-                tip_L_VCV_trees,
-                tdrift_trees,
-                residual_v,
-                L_residual if self.repeated else None,
-                dist_v,
+        return tdrift_trees, residual_v, dist_v
+
+    # ------------------------------------------------------------------
+    # Priors  (cf. Stan 06-model.stan, lines 1-51)
+    # ------------------------------------------------------------------
+
+    def _compute_priors(self, params, L_residual):
+        """Evaluate all prior log-densities.
+
+        Mirrors the prior section of Stan 06-model.stan.
+        """
+        J = self.J
+        lp = 0.0
+
+        # b ~ prior_b
+        lp = lp + prior_logp(params["b"], self.prior_specs["b"])
+
+        # for (t in 1:N_tree) {
+        #   eta_anc[t] ~ prior_eta_anc;
+        #   z_drift[t, i] ~ std_normal();
+        #   terminal_drift[t] ~ std_normal();  (conditional)
+        # }
+        lp = lp + prior_logp(params["eta_anc"], self.prior_specs["eta_anc"])
+        lp = lp + dist.Normal(0.0, 1.0).log_prob(params["z_drift"]).sum()
+
+        if self.needs_terminal_drift:
+            has_normal = len(self.normal_j0) > 0
+            if has_normal and not self.repeated:
+                # Only non-normal variables get explicit std_normal prior;
+                # normal variables get their prior from the likelihood
+                # (Stan 06-model.stan: {{#add_terminal_drift_prior}})
+                for j0 in self.nonnormal_j0:
+                    lp = lp + (
+                        dist.Normal(0.0, 1.0)
+                        .log_prob(params["terminal_drift"][:, :, j0])
+                        .sum()
+                    )
+                if self.prior_only:
+                    for j0 in self.normal_j0:
+                        lp = lp + (
+                            dist.Normal(0.0, 1.0)
+                            .log_prob(params["terminal_drift"][:, :, j0])
+                            .sum()
+                        )
+            else:
+                lp = lp + (
+                    dist.Normal(0.0, 1.0)
+                    .log_prob(params["terminal_drift"])
+                    .sum()
+                )
+
+        # A_offdiag ~ prior_A_offdiag;  A_diag ~ prior_A_diag
+        lp = lp + prior_logp(params["A_diag"], self.prior_specs["A_diag"])
+        if self.n_offdiag > 0:
+            lp = lp + prior_logp(
+                params["A_offdiag"], self.prior_specs["A_offdiag"]
             )
+
+        # Q_sigma ~ prior_Q_sigma
+        lp = lp + prior_logp(params["Q_sigma"], self.prior_specs["Q_sigma"])
+
+        # c ~ prior_c  (ordered cutpoints)
+        for j1, nc in zip(self.ordered_j, self.ordered_ncuts):
+            lp = lp + prior_logp(params[f"c{j1}"], self.prior_specs["c"])
+
+        # phi ~ normal(inv_overdisp, inv_overdisp)  or manual prior
+        for j0 in self.nb_j0:
+            j1 = j0 + 1
+            phi_spec = self.prior_specs.get("phi")
+            if phi_spec is None:
+                lp = lp + (
+                    dist.TruncatedNormal(
+                        self.inv_overdisp[j0], self.inv_overdisp[j0], low=0.0
+                    )
+                    .log_prob(params[f"phi{j1}"])
+                    .sum()
+                )
+            else:
+                lp = lp + prior_logp(params[f"phi{j1}"], phi_spec)
+
+        # shape ~ prior_shape  (gamma shape)
+        for j0 in self.gamma_j0:
+            lp = lp + prior_logp(
+                params[f"shape{j0 + 1}"], self.prior_specs["shape"]
+            )
+
+        # GP priors: dist_z ~ std_normal(); sigma_dist, rho_dist ~ priors
+        if self.has_lon_lat:
+            lp = lp + dist.Normal(0.0, 1.0).log_prob(params["dist_z"]).sum()
+            lp = lp + prior_logp(
+                params["sigma_dist"], self.prior_specs["sigma_dist"]
+            )
+            lp = lp + prior_logp(
+                params["rho_dist"], self.prior_specs["rho_dist"]
+            )
+
+        # Residual priors (repeated measures)
+        # Matches Stan 06-model.stan lines 35-51:
+        #   for normal vars: if (miss[i,j]==0) residual_z[j,i] ~ std_normal()
+        #   for non-normal vars: residual_z[j,i] ~ std_normal()
+        if self.repeated:
+            rz = params["residual_z"]  # (J, N_obs)
+            rz_lp = jnp.zeros(())
+            for j0 in self.normal_j0:
+                obs_mask = self.miss[:, j0] == 0
+                rz_lp = rz_lp + jnp.where(
+                    obs_mask,
+                    dist.Normal(0.0, 1.0).log_prob(rz[j0]),
+                    0.0,
+                ).sum()
+            for j0 in self.nonnormal_j0:
+                rz_lp = rz_lp + (
+                    dist.Normal(0.0, 1.0).log_prob(rz[j0]).sum()
+                )
+            lp = lp + rz_lp
+
+            # sigma_residual ~ prior_sigma_residual
+            lp = lp + prior_logp(
+                params["sigma_residual"], self.prior_specs["sigma_residual"]
+            )
+
+            # L_residual ~ lkj_corr_cholesky(eta)
+            n_corr_res = J * (J - 1) // 2
+            if n_corr_res > 0:
+                lp = lp + lkj_cholesky_logp(
+                    L_residual, self.lkj_eta_residual, J
+                )
 
         return lp
 
-    def _likelihood(
-        self,
-        params,
-        eta_trees,
-        tip_L_VCV_trees,
-        tdrift_trees,
-        residual_v,
-        L_residual,
-        dist_v=None,
-    ):
-        """Compute the log-likelihood contribution."""
+    # ------------------------------------------------------------------
+    # Likelihood  (cf. Stan 06-model.stan, lines 53-104)
+    # ------------------------------------------------------------------
+
+    def _likelihood(self, params, eta_trees, tip_L_VCV_trees,
+                    tdrift_trees, residual_v, L_residual, dist_v=None):
+        """Compute the log-likelihood contribution.
+
+        Mirrors Stan 06-model.stan:
+          for (i in 1:N_obs) {
+            vector[N_tree] lp = rep_vector(0.0, N_tree);
+            for (t in 1:N_tree) { ... }
+            target += log_sum_exp(lp);
+          }
+        """
         J = self.J
         tid = self.tip_id
         has_normal = "normal" in self.distributions
@@ -759,12 +877,18 @@ class CoevJaxModel:
             eta_obs = eta_trees[t][tid]
             obs_lp = jnp.zeros(self.N_obs)
 
-            # Build base linear model accessor
+            # Linear model base: eta[t, tip_id[i]][j] + dist_v[tip_id[i], j]
             def base_lmod(j0, _eta_obs=eta_obs, _dist_v=dist_v):
                 lm = _eta_obs[:, j0]
                 if _dist_v is not None:
                     lm = lm + _dist_v[tid, j0]
                 return lm
+
+            # --- Normal variables ---
+            # Non-repeated: set_tdrift path (tdrift vector evaluated under
+            #   MVN with L_VCV_tips covariance)
+            # Repeated: set_residuals path (residuals evaluated under
+            #   MVN with diag(sigma_residual) @ L_residual covariance)
 
             if has_normal and not self.repeated:
                 L_cov_obs = tip_L_VCV_trees[t][tid]
@@ -825,7 +949,7 @@ class CoevJaxModel:
                     )
                 obs_lp = obs_lp + mvn_chol_logp(residuals, L_cov_res)
 
-            # Non-normal likelihoods
+            # --- Non-normal likelihoods ---
             for j0, d in enumerate(self.distributions):
                 if d == "normal":
                     continue
@@ -852,7 +976,6 @@ class CoevJaxModel:
                 elif d == "ordered_logistic":
                     y_safe = jnp.where(miss_j, 1.0, y_obs)
                     cutpoints = params[f"c{j1}"]
-                    # OrderedLogistic: P(Y=k) via cumulative logistic
                     y_int = (y_safe - 1).astype(jnp.int32)
                     ll = dist.OrderedLogistic(
                         predictor=lmod, cutpoints=cutpoints
@@ -860,12 +983,13 @@ class CoevJaxModel:
                 elif d == "poisson_softplus":
                     y_safe = jnp.where(miss_j, 0.0, y_obs)
                     mu = self.obs_means[j0] * jax.nn.softplus(lmod)
-                    ll = dist.Poisson(rate=mu).log_prob(y_safe.astype(jnp.int32))
+                    ll = dist.Poisson(rate=mu).log_prob(
+                        y_safe.astype(jnp.int32)
+                    )
                 elif d == "negative_binomial_softplus":
                     y_safe = jnp.where(miss_j, 0.0, y_obs)
                     mu = self.obs_means[j0] * jax.nn.softplus(lmod)
                     phi = params[f"phi{j1}"].squeeze()
-                    # NegBinomial2: mu parameterization
                     ll = dist.NegativeBinomial2(
                         mean=mu, concentration=phi
                     ).log_prob(y_safe.astype(jnp.int32))
@@ -886,6 +1010,75 @@ class CoevJaxModel:
         all_tree_lps = jnp.stack(tree_lps, axis=0)
         return jnp.sum(jax.scipy.special.logsumexp(all_tree_lps, axis=0))
 
+    # ------------------------------------------------------------------
+    # Main log-density  (orchestrates all blocks)
+    # ------------------------------------------------------------------
+
+    def log_density(self, x):
+        """Compute log-density at unconstrained parameter vector x.
+
+        This is the function that gets JIT-compiled and differentiated by JAX.
+        Mirrors the Stan block flow:
+          transformed parameters -> model { priors; likelihood }
+        """
+        params, logdet_jac = self.unpack_params(x)
+        J = self.J
+        lp = logdet_jac
+
+        # --- Build A and Q matrices (05-transformed-parameters) ---
+        A_mat = self._build_A_matrix(params)
+        Q, L_R, lp_Q = self._build_Q_matrix(params)
+        lp = lp + lp_Q
+
+        # --- Build L_residual (needed by both priors and likelihood) ---
+        L_residual = None
+        if self.repeated:
+            n_corr_res = J * (J - 1) // 2
+            if n_corr_res > 0:
+                L_residual, lkj_jac_res = raw_to_cholesky(
+                    params["_L_residual_raw"], J
+                )
+                lp = lp + lkj_jac_res
+            else:
+                L_residual = jnp.eye(J)
+
+        # --- Priors (06-model) ---
+        lp = lp + self._compute_priors(params, L_residual)
+
+        # --- Branch-length caches (05-transformed-parameters) ---
+        Q_inf = ksolve(A_mat, Q, J)
+        A_delta_cache, L_VCV_cache, A_solve_cache, b_delta_cache = (
+            self._compute_caches(A_mat, Q_inf, params)
+        )
+
+        # --- Tree traversal (05-transformed-parameters) ---
+        eta_trees, tip_L_VCV_trees = self._tree_traversal(
+            params, A_delta_cache, L_VCV_cache, b_delta_cache
+        )
+
+        # --- Derived quantities: tdrift, residual_v, dist_v ---
+        tdrift_trees, residual_v, dist_v = self._transformed_params(
+            params, tip_L_VCV_trees, L_residual
+        )
+
+        # --- Likelihood (06-model) ---
+        if not self.prior_only:
+            lp = lp + self._likelihood(
+                params,
+                eta_trees,
+                tip_L_VCV_trees,
+                tdrift_trees,
+                residual_v,
+                L_residual if self.repeated else None,
+                dist_v,
+            )
+
+        return lp
+
+    # ------------------------------------------------------------------
+    # Expand function for nutpie output
+    # ------------------------------------------------------------------
+
     def make_expand_fn(self, seed1=0, seed2=0, chain=0):
         """Return a function that maps flat unconstrained -> named params.
 
@@ -895,7 +1088,6 @@ class CoevJaxModel:
         """
         J = self.J
         var_order = [n for n, _ in self._expand_var_list()]
-        expand_shapes = {n: s for n, s in self._expand_var_list()}
 
         # JIT-compile the pure JAX part
         @jax.jit
@@ -903,32 +1095,11 @@ class CoevJaxModel:
             params, _ = self.unpack_params(x)
             vals = []
 
-            # Build A matrix
-            A_mat = jnp.diag(params["A_diag"])
-            if self.n_offdiag > 0:
-                ticker = 0
-                for i in range(J):
-                    for j in range(J):
-                        if i != j and self.effects_mat[i, j] == 1:
-                            A_mat = A_mat.at[i, j].set(
-                                params["A_offdiag"][ticker]
-                            )
-                            ticker += 1
+            # A and Q — use shared builders
+            A_mat = self._build_A_matrix(params)
+            Q, L_R, _ = self._build_Q_matrix(params)
             vals.append(A_mat)  # A
-
-            # Build Q matrix and cor_R
-            if self.estimate_correlated_drift:
-                n_corr = J * (J - 1) // 2
-                if n_corr > 0:
-                    L_R, _ = raw_to_cholesky(
-                        params["_L_R_raw"], J
-                    )
-                else:
-                    L_R = jnp.eye(J)
-                D = jnp.diag(params["Q_sigma"])
-                vals.append(D @ (L_R @ L_R.T) @ D)  # Q
-            else:
-                vals.append(jnp.diag(params["Q_sigma"] ** 2))  # Q
+            vals.append(Q)      # Q
 
             vals.append(params["A_diag"])
             if self.n_offdiag > 0:
@@ -980,6 +1151,11 @@ class CoevJaxModel:
             return result
 
         return expand
+
+
+# --------------------------------------------------------------------------
+# Entry points (called from R via reticulate)
+# --------------------------------------------------------------------------
 
 
 def build_nutpie_model(data):
