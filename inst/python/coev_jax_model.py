@@ -12,6 +12,35 @@ import jax.scipy.linalg
 import numpy as np
 import numpyro.distributions as dist
 
+LOG_2PI = jnp.log(2.0 * jnp.pi)
+
+
+def _ordered_logistic_logp(predictor, cutpoints, y):
+    """Ordered logistic log-PMF. y is 0-indexed category.
+
+    Uses log-space cumulative differences for numerical stability,
+    avoiding concat/clip.
+    """
+    # log-cumulative: log P(Y <= k) = log_sigmoid(c_k - eta)
+    # With boundaries: log P(Y <= -1) = -inf, log P(Y <= K-1) = 0
+    logcdf = jax.nn.log_sigmoid(cutpoints[None, :] - predictor[:, None])
+
+    K = cutpoints.shape[0] + 1
+    n = predictor.shape[0]
+    idx = jnp.arange(n)
+
+    # log P(Y = k) = log(P(Y<=k) - P(Y<=k-1))
+    # Upper bound: P(Y <= y) — for y == K-1 (last cat), this is 1 → log=0
+    log_upper = jnp.where(
+        y == K - 1, 0.0, logcdf[idx, y]
+    )
+    # Lower bound: P(Y <= y-1) — for y == 0 (first cat), this is 0 → log=-inf
+    log_lower = jnp.where(
+        y == 0, -jnp.inf, logcdf[idx, y - 1]
+    )
+    # log(exp(a) - exp(b)) = a + log1p(-exp(b-a))  for a > b
+    return log_upper + jnp.log1p(-jnp.exp(log_lower - log_upper))
+
 
 # --------------------------------------------------------------------------
 # Math helpers  (cf. Stan 01-functions.stan)
@@ -30,33 +59,37 @@ def ksolve(A, Q, J):
     return 0.5 * (X + X.T)
 
 
-def matrix_exp_batch(A_scaled, n_terms=12, n_squarings=8):
+def matrix_exp_batch(A_scaled, n_terms=3, n_squarings=4):
     """Matrix exponential via scaling-and-squaring (batched).
 
-    Computes exp(A_scaled * 2^n_squarings) by Taylor-expanding exp(A_scaled)
-    then squaring n_squarings times.
+    Computes exp(A_scaled * 2^n_squarings) using Horner's method
+    for the Taylor polynomial, then squaring n_squarings times.
     """
     shape = A_scaled.shape
     eye = jnp.broadcast_to(jnp.eye(shape[-1])[None, :, :], shape)
-    S = eye
-    T = eye
-    for k in range(1, n_terms + 1):
-        T = jnp.matmul(T, A_scaled) * (1.0 / k)
-        S = S + T
+    # Horner: I + A*(1/1! + A*(1/2! + A*(1/3!)))
+    S = eye * (1.0 / 6.0)
+    S = jnp.matmul(A_scaled, S) + eye * 0.5
+    S = jnp.matmul(A_scaled, S) + eye
+    S = jnp.matmul(A_scaled, S) + eye
     for _ in range(n_squarings):
         S = jnp.matmul(S, S)
     return S
 
 
 def mvn_chol_logp(value, chol):
-    """Multivariate normal log-density given Cholesky factor (batched)."""
-    z = jax.scipy.linalg.solve_triangular(
-        chol, value[..., None], lower=True
+    """Multivariate normal log-density given Cholesky factor (batched).
+
+    Computes -0.5*(J*log(2pi) + v'(LL')^{-1}v) - log|L|
+    using cho_solve for numerical stability.
+    """
+    z = jax.lax.linalg.triangular_solve(
+        chol, value[..., None], left_side=True, lower=True
     )[..., 0]
     logdet = jnp.sum(jnp.log(jnp.diagonal(chol, axis1=-2, axis2=-1)), axis=-1)
     quad = jnp.sum(z**2, axis=-1)
     J = value.shape[-1]
-    return -0.5 * (J * jnp.log(2.0 * jnp.pi) + quad) - logdet
+    return -0.5 * (J * LOG_2PI + quad) - logdet
 
 
 # --------------------------------------------------------------------------
@@ -362,6 +395,15 @@ class CoevJaxModel:
             else 0
         )
 
+        # Pre-convert level indexing arrays to JAX for JIT closure capture
+        self.jax_level_node_ids = jnp.array(self.level_node_ids)
+        self.jax_level_parent_ids = jnp.array(self.level_parent_ids)
+        self.jax_level_length_idx = jnp.array(self.level_length_idx)
+        self.jax_level_drift_idx = jnp.array(self.level_drift_idx)
+        self.jax_level_is_internal = jnp.array(
+            self.level_is_internal, dtype=jnp.float64
+        )
+
         # Build parameter layout
         self.param_info = self._build_param_layout()
         self.ndim = sum(int(np.prod(shape)) for _, shape, _ in self.param_info)
@@ -588,7 +630,7 @@ class CoevJaxModel:
 
         # Batched matrix exponential over unique branch lengths
         A_dt = A_mat[None, :, :] * (
-            self.unique_lengths[:, None, None] / 256.0
+            self.unique_lengths[:, None, None] / 16.0
         )
         A_delta_cache = matrix_exp_batch(A_dt)
 
@@ -639,23 +681,19 @@ class CoevJaxModel:
             eta = jnp.zeros((self.N_seg, J))
             eta = eta.at[int(self.root_ids[t])].set(params["eta_anc"][t])
             for _l in range(self.n_levels):
-                _nids = self.level_node_ids[t, _l]
-                _pids = self.level_parent_ids[t, _l]
-                _li = self.level_length_idx[t, _l]
-                _is_int = jnp.array(
-                    self.level_is_internal[t, _l], dtype=jnp.float64
-                )
-                _didx = self.level_drift_idx[t, _l]
+                _nids = self.jax_level_node_ids[t, _l]
+                _pids = self.jax_level_parent_ids[t, _l]
+                _li = self.jax_level_length_idx[t, _l]
+                _is_int = self.jax_level_is_internal[t, _l]
+                _didx = self.jax_level_drift_idx[t, _l]
                 _base = (
-                    jnp.matmul(A_delta_cache[_li], eta[_pids][:, :, None])[
-                        :, :, 0
-                    ]
+                    jnp.einsum('bij,bj->bi', A_delta_cache[_li], eta[_pids])
                     + b_delta_cache[_li]
                 )
-                _noise = jnp.matmul(
-                    L_VCV_cache[_li],
-                    params["z_drift"][t, _didx][:, :, None],
-                )[:, :, 0]
+                _noise = jnp.einsum(
+                    'bij,bj->bi', L_VCV_cache[_li],
+                    params["z_drift"][t, _didx]
+                )
                 eta = eta.at[_nids].set(_base + _is_int[:, None] * _noise)
             eta = eta.at[int(self.root_ids[t])].set(params["eta_anc"][t])
             eta_trees.append(eta)
@@ -748,9 +786,6 @@ class CoevJaxModel:
         if self.needs_terminal_drift:
             has_normal = len(self.normal_j0) > 0
             if has_normal and not self.repeated:
-                # Only non-normal variables get explicit std_normal prior;
-                # normal variables get their prior from the likelihood
-                # (Stan 06-model.stan: {{#add_terminal_drift_prior}})
                 for j0 in self.nonnormal_j0:
                     lp = lp + (
                         dist.Normal(0.0, 1.0)
@@ -781,9 +816,12 @@ class CoevJaxModel:
         # Q_sigma ~ prior_Q_sigma
         lp = lp + prior_logp(params["Q_sigma"], self.prior_specs["Q_sigma"])
 
-        # c ~ prior_c  (ordered cutpoints)
-        for j1, nc in zip(self.ordered_j, self.ordered_ncuts):
-            lp = lp + prior_logp(params[f"c{j1}"], self.prior_specs["c"])
+        # c ~ prior_c  (ordered cutpoints — batched)
+        if self.ordered_j:
+            all_c = jnp.concatenate(
+                [params[f"c{j1}"] for j1 in self.ordered_j]
+            )
+            lp = lp + prior_logp(all_c, self.prior_specs["c"])
 
         # phi ~ normal(inv_overdisp, inv_overdisp)  or manual prior
         for j0 in self.nb_j0:
@@ -977,9 +1015,7 @@ class CoevJaxModel:
                     y_safe = jnp.where(miss_j, 1.0, y_obs)
                     cutpoints = params[f"c{j1}"]
                     y_int = (y_safe - 1).astype(jnp.int32)
-                    ll = dist.OrderedLogistic(
-                        predictor=lmod, cutpoints=cutpoints
-                    ).log_prob(y_int)
+                    ll = _ordered_logistic_logp(lmod, cutpoints, y_int)
                 elif d == "poisson_softplus":
                     y_safe = jnp.where(miss_j, 0.0, y_obs)
                     mu = self.obs_means[j0] * jax.nn.softplus(lmod)

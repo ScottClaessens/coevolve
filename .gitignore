@@ -13,3 +13,4 @@ __pycache__/
 Rplots.pdf
 quick_debug.R
 .claude/
+benchmarks/authority_data_cache.json
