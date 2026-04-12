@@ -1,18 +1,19 @@
-#' Compare Stan and JAX log density at the same parameters
+#' Compare Stan and JAX log density at the same unconstrained point
 #'
-#' Compiles both Stan and JAX models, evaluates their log densities at
-#' the same parameter point, and returns the difference. No MCMC sampling
-#' is used: the evaluation point is a seeded random draw in Stan's
-#' unconstrained space.
+#' Compiles both Stan and JAX models, evaluates their log-densities and
+#' gradients at the same unconstrained parameter vector, and checks
+#' agreement. The log-densities may differ by a constant (normalization
+#' terms Stan drops), but the gradients should match to machine precision.
 #'
 #' @inheritParams coev_make_stancode
-#' @param seed Integer seed for the evaluation point (default \code{1L}).
-#' @param tol_warn Absolute difference above which a warning is issued
-#'   (default \code{0.1} on log scale).
+#' @param seed Integer seed for the evaluation points (default \code{1L}).
+#' @param n_points Number of random points to evaluate (default \code{5}).
+#' @param grad_tol Maximum allowed gradient discrepancy (default \code{1e-6}).
 #'
-#' @returns A list with \code{logprob_stan}, \code{logprob_jax},
-#'   \code{abs_diff}, and \code{n_params}.
+#' @returns A list with \code{constant_offset} (Stan - JAX logp, should be
+#'   constant), \code{max_grad_diff}, and \code{mean_grad_diff}.
 #'
+#' @importFrom stats rnorm
 #' @export
 compare_stan_jax_logprob <- function(
     data,
@@ -31,31 +32,23 @@ compare_stan_jax_logprob <- function(
     estimate_residual = TRUE,
     prior_only = TRUE,
     seed = 1L,
-    tol_warn = 0.1) {
+    n_points = 5L,
+    grad_tol = 1e-6) {
 
   if (!requireNamespace("cmdstanr", quietly = TRUE)) {
-    stop2(
-      "Package 'cmdstanr' is required for ",
-      "compare_stan_jax_logprob()."
-    )
+    stop2("Package 'cmdstanr' is required.")
   }
   stop_if_jax_not_available() # nolint
 
   distributions <- as.character(variables)
 
+  # --- Stan model ---
   sc <- coev_make_stancode(
     data, variables, id, tree, effects_mat,
     complete_cases, lon_lat, dist_k, dist_cov,
     measurement_error, prior, scale,
     estimate_correlated_drift, estimate_residual,
     log_lik = FALSE, prior_only = prior_only
-  )
-  cfg <- coev_make_model_config( # nolint
-    data, variables, id, tree, effects_mat,
-    complete_cases, lon_lat, dist_k, dist_cov,
-    measurement_error, prior, scale,
-    estimate_correlated_drift, estimate_residual,
-    prior_only = prior_only
   )
   sd <- coev_make_standata(
     data, variables, id, tree, effects_mat,
@@ -64,48 +57,32 @@ compare_stan_jax_logprob <- function(
     estimate_correlated_drift, estimate_residual,
     log_lik = FALSE, prior_only = prior_only
   )
+
+  mod <- cmdstanr::cmdstan_model(
+    cmdstanr::write_stan_file(sc), force_recompile = TRUE
+  )
+  fit <- suppressWarnings(mod$sample(
+    data = sd, chains = 1L, iter_warmup = 1L,
+    iter_sampling = 1L, seed = 1L, refresh = 0,
+    show_messages = FALSE, init = 0
+  ))
+  n_upars <- ncol(posterior::as_draws_matrix(
+    fit$unconstrain_draws(draws = fit$draws())
+  ))
+
+  # --- JAX model ---
+  cfg <- coev_make_model_config( # nolint
+    data, variables, id, tree, effects_mat,
+    complete_cases, lon_lat, dist_k, dist_cov,
+    measurement_error, prior, scale,
+    estimate_correlated_drift, estimate_residual,
+    prior_only = prior_only
+  )
   sd_jax <- embed_model_config( # nolint
     standata_to_jax(sd, distributions), cfg # nolint
   )
-
-  # Compile Stan and get unconstrained dimension
-  mod <- cmdstanr::cmdstan_model(
-    cmdstanr::write_stan_file(sc),
-    force_recompile = TRUE
-  )
-  fit <- mod$sample(
-    data = sd,
-    chains = 1L,
-    parallel_chains = 1L,
-    iter_warmup = 1L,
-    iter_sampling = 1L,
-    seed = 1L,
-    refresh = 0,
-    show_messages = FALSE,
-    init = 0
-  )
-
-  n_upars <- ncol(
-    posterior::as_draws_matrix(
-      fit$unconstrain_draws(draws = fit$draws())
-    )
-  )
-
-  # Evaluate Stan at two points:
-  # reference (u=0) and target (seeded random)
-  u_0 <- numeric(n_upars)
-  set.seed(as.integer(seed))
-  u_1 <- rnorm(n_upars, 0, 0.5)
-
-  logp_stan_0 <- as.numeric(
-    fit$log_prob(u_0, jacobian = FALSE)
-  )
-  logp_stan_1 <- as.numeric(
-    fit$log_prob(u_1, jacobian = FALSE)
-  )
-
-  # Build JAX model and evaluate at the same points
   py_data <- convert_r_to_python_data_jax(sd_jax) # nolint
+
   jax_mod <- load_jax_model_module(convert = FALSE) # nolint
   jax <- reticulate::import("jax", convert = FALSE)
   jax$config$update("jax_platforms", "cpu")
@@ -113,53 +90,86 @@ compare_stan_jax_logprob <- function(
 
   model_obj <- jax_mod$CoevJaxModel()
   model_obj$build(py_data)
-
-  # JAX model uses same unconstrained param vector
-  # but has different dimension (excludes Stan's
-  # tip-edge z_drift, uses different LKJ param)
-  # So we evaluate both at their own unconstrained=0
-  # reference, then compare the DIFFERENCE
   jax_ndim <- reticulate::py_to_r(model_obj$ndim)
+
+  if (n_upars != jax_ndim) {
+    stop2(
+      "Dimension mismatch: Stan has ", n_upars,
+      " unconstrained params, JAX has ", jax_ndim
+    )
+  }
 
   np <- reticulate::import("numpy", convert = FALSE)
   jnp <- reticulate::import("jax.numpy", convert = FALSE)
 
-  jax_u_0 <- jnp$zeros(as.integer(jax_ndim), dtype = "float64")
-  logp_jax_0 <- reticulate::py_to_r(
-    model_obj$log_density(jax_u_0)
+  # Set up JIT-compiled value_and_grad
+  py_main <- reticulate::import("__main__", convert = FALSE)
+  py_main$model_obj <- model_obj
+  reticulate::py_run_string(
+    "import jax; vg = jax.jit(jax.value_and_grad(model_obj.log_density))"
   )
 
+  # Evaluate at random points
   set.seed(as.integer(seed))
-  jax_u_1_r <- rnorm(jax_ndim, 0, 0.5)
-  jax_u_1 <- jnp$array(
-    np$array(jax_u_1_r, dtype = "float64")
-  )
-  logp_jax_1 <- reticulate::py_to_r(
-    model_obj$log_density(jax_u_1)
-  )
+  offsets <- numeric(n_points)
+  max_grad_diffs <- numeric(n_points)
 
-  # Compare log-density DIFFERENCES to cancel
-  # normalization constants
-  stan_diff <- logp_stan_1 - logp_stan_0
-  jax_diff <- logp_jax_1 - logp_jax_0
+  for (i in seq_len(n_points)) {
+    u <- rnorm(n_upars, 0, 0.3)
 
-  abs_diff <- abs(stan_diff - jax_diff)
+    logp_stan <- as.numeric(
+      fit$log_prob(u, jacobian = TRUE)
+    )
+    stan_grad <- fit$grad_log_prob(u, jacobian = TRUE)
 
-  if (abs_diff > tol_warn) {
+    u_jax <- jnp$array(np$array(u, dtype = "float64"))
+    py_main$u_jax <- u_jax
+    reticulate::py_run_string("
+import numpy as np
+lp, g = vg(u_jax)
+lp.block_until_ready()
+_lp_val = float(lp.item())
+_grad_np = np.array(g)
+")
+    logp_jax <- reticulate::py_to_r(py_main$`_lp_val`)
+    jax_grad <- reticulate::py_to_r(py_main$`_grad_np`)
+
+    offsets[i] <- logp_stan - logp_jax
+    max_grad_diffs[i] <- max(abs(stan_grad - jax_grad))
+  }
+
+  offset_sd <- if (n_points > 1) sd(offsets) else 0
+  max_grad_diff <- max(max_grad_diffs)
+
+  if (offset_sd > 1e-6) {
     warning(
-      "Large |delta_logp Stan - delta_logp JAX| = ",
-      format(abs_diff, digits = 5),
-      ". Stan n_upars=", n_upars,
-      ", JAX ndim=", jax_ndim,
+      "logp offset is NOT constant (sd = ",
+      format(offset_sd, digits = 4),
+      "). Stan and JAX log-densities disagree.",
+      call. = FALSE
+    )
+  }
+  if (max_grad_diff > grad_tol) {
+    warning(
+      "Max gradient discrepancy = ",
+      format(max_grad_diff, digits = 4),
+      " exceeds tolerance ", grad_tol,
       call. = FALSE
     )
   }
 
+  message(
+    "Stan vs JAX: ndim=", n_upars,
+    ", constant_offset=", format(offsets[1], digits = 6),
+    ", offset_sd=", format(offset_sd, digits = 4),
+    ", max_grad_diff=", format(max_grad_diff, digits = 4)
+  )
+
   list(
-    logprob_stan_diff = stan_diff,
-    logprob_jax_diff  = jax_diff,
-    abs_diff          = abs_diff,
-    n_params_stan     = n_upars,
-    n_params_jax      = jax_ndim
+    n_params         = n_upars,
+    constant_offset  = offsets[1],
+    offset_sd        = offset_sd,
+    max_grad_diff    = max_grad_diff,
+    mean_grad_diff   = mean(max_grad_diffs)
   )
 }

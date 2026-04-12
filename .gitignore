@@ -14,3 +14,9 @@ Rplots.pdf
 quick_debug.R
 .claude/
 benchmarks/authority_data_cache.json
+benchmarks/*.csv
+benchmarks/*.rds
+benchmarks/*.html
+benchmarks/*_files/
+coevolve.Rcheck/
+*.tar.gz

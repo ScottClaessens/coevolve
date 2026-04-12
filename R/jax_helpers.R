@@ -277,14 +277,12 @@ compute_tree_levels <- function(node_seq_0, parent_0, tip_0,
     }
   }
 
-  internal_slot <- matrix(-1L, N_tree, N_seg)
+  # Map each segment position to its z_drift index (= segment_pos - 1,
+  # matching Stan's z_drift[t, i-1] indexing for i in 2:N_seg).
+  seg_drift_slot <- matrix(0L, N_tree, N_seg)
   for (t in seq_len(N_tree)) {
-    cnt <- 0L
     for (i in 2:N_seg) {
-      if (tip_0[t, i] == 0L) {
-        internal_slot[t, i] <- cnt
-        cnt <- cnt + 1L
-      }
+      seg_drift_slot[t, i] <- i - 2L
     }
   }
 
@@ -313,7 +311,7 @@ compute_tree_levels <- function(node_seq_0, parent_0, tip_0,
         lvl_parent_ids[t, l, k]  <- pa[s]
         lvl_length_idx[t, l, k]  <- li[s]
         lvl_is_internal[t, l, k] <- if (tp[s] == 0L) 1L else 0L
-        lvl_drift_idx[t, l, k]   <- if (tp[s] == 0L) internal_slot[t, s] else 0L
+        lvl_drift_idx[t, l, k]   <- seg_drift_slot[t, s]
       }
       if (sz < max_level_size) {
         for (k in (sz + 1L):max_level_size) {

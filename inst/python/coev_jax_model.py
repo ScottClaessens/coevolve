@@ -177,35 +177,34 @@ SPD_FNS = {
 
 
 def transform_upper_zero(raw):
-    """Unconstrained -> upper=0: use -softplus."""
-    return -jax.nn.softplus(raw)
+    """Unconstrained -> upper=0: matches Stan <upper=0> transform."""
+    return -jnp.exp(raw)
 
 
 def transform_upper_zero_logdet(raw):
-    """Log abs det jacobian for upper=0 transform."""
-    return jnp.sum(jax.nn.log_sigmoid(raw))
+    """Log abs det jacobian for upper=0 transform (Stan convention)."""
+    return jnp.sum(raw)
 
 
 def transform_lower_zero(raw):
-    """Unconstrained -> lower=0: use softplus."""
-    return jax.nn.softplus(raw)
+    """Unconstrained -> lower=0: matches Stan <lower=0> transform."""
+    return jnp.exp(raw)
 
 
 def transform_lower_zero_logdet(raw):
-    """Log abs det jacobian for lower=0 transform."""
-    return jnp.sum(jax.nn.log_sigmoid(raw))
+    """Log abs det jacobian for lower=0 transform (Stan convention)."""
+    return jnp.sum(raw)
 
 
 def transform_ordered(raw):
-    """Unconstrained -> ordered vector via cumulative softplus."""
-    # first element is unconstrained, rest are positive increments
-    increments = jax.nn.softplus(raw[1:])
+    """Unconstrained -> ordered vector: matches Stan ordered transform."""
+    increments = jnp.exp(raw[1:])
     return jnp.concatenate([raw[:1], raw[:1] + jnp.cumsum(increments)])
 
 
 def transform_ordered_logdet(raw):
-    """Log abs det jacobian for ordered transform."""
-    return jnp.sum(jax.nn.log_sigmoid(raw[1:]))
+    """Log abs det jacobian for ordered transform (Stan convention)."""
+    return jnp.sum(raw[1:])
 
 
 def raw_to_cholesky(raw_vec, n):
@@ -404,6 +403,12 @@ class CoevJaxModel:
             self.level_is_internal, dtype=jnp.float64
         )
 
+        # Precompute tip length-index for tree traversal output
+        self._tip_li_index = jnp.array([
+            self.length_index[t][self.tip_to_seg[t]]
+            for t in range(self.N_tree)
+        ])
+
         # Build parameter layout
         self.param_info = self._build_param_layout()
         self.ndim = sum(int(np.prod(shape)) for _, shape, _ in self.param_info)
@@ -448,8 +453,11 @@ class CoevJaxModel:
         # eta_anc: (N_tree, J), unconstrained
         info.append(("eta_anc", (self.N_tree, J), "none"))
 
-        # z_drift: (N_tree, N_internal, J), unconstrained
-        info.append(("z_drift", (self.N_tree, self.N_internal, J), "none"))
+        # z_drift: (N_tree, N_seg-1, J) — matches Stan's z_drift shape
+        # Includes entries for ALL non-root segments (internal + tip).
+        # Tip entries don't affect eta but get std_normal prior.
+        n_drift = self.N_seg - 1 if self.N_seg > 1 else 0
+        info.append(("z_drift", (self.N_tree, n_drift, J), "none"))
 
         # terminal_drift: (N_tree, N_tips, J), unconstrained
         if self.needs_terminal_drift:
@@ -663,43 +671,65 @@ class CoevJaxModel:
                         b_delta_cache):
         """Propagate ancestral states down each tree.
 
-        Mirrors Stan 05-transformed-parameters.stan lines 61-101:
-          for (t in 1:N_tree) {
-            eta[t, node_seq[t,1]] = eta_anc[t];
-            for (i in 2:N_seg) {
-              // eta[t, node_seq[t,i]] = A_delta * eta[parent] + A_solve*b
-              //   + L_VCV * z_drift  (internal only)
-            }
-          }
+        Uses jax.vmap to process all trees in parallel at each level.
+        Levels are sequential (parent-child dependency), but within
+        each level every tree is independent.
 
         Returns (eta_trees, tip_L_VCV_trees) — lists of length N_tree.
         """
         J = self.J
-        eta_trees = []
-        tip_L_VCV_trees = []
-        for t in range(self.N_tree):
-            eta = jnp.zeros((self.N_seg, J))
-            eta = eta.at[int(self.root_ids[t])].set(params["eta_anc"][t])
-            for _l in range(self.n_levels):
-                _nids = self.jax_level_node_ids[t, _l]
-                _pids = self.jax_level_parent_ids[t, _l]
-                _li = self.jax_level_length_idx[t, _l]
-                _is_int = self.jax_level_is_internal[t, _l]
-                _didx = self.jax_level_drift_idx[t, _l]
+        N_tree = self.N_tree
+
+        # eta: (N_tree, N_seg, J)
+        eta = jnp.zeros((N_tree, self.N_seg, J))
+        for t in range(N_tree):
+            eta = eta.at[t, int(self.root_ids[t])].set(
+                params["eta_anc"][t]
+            )
+
+        # Level-by-level, vmapped across trees
+        for _l in range(self.n_levels):
+            nids = self.jax_level_node_ids[:, _l]
+            pids = self.jax_level_parent_ids[:, _l]
+            li = self.jax_level_length_idx[:, _l]
+            is_int = self.jax_level_is_internal[:, _l]
+            didx = self.jax_level_drift_idx[:, _l]
+
+            def _one_tree_level(eta_t, nids_t, pids_t, li_t,
+                                is_int_t, didx_t, z_drift_t):
                 _base = (
-                    jnp.einsum('bij,bj->bi', A_delta_cache[_li], eta[_pids])
-                    + b_delta_cache[_li]
+                    jnp.einsum(
+                        'bij,bj->bi',
+                        A_delta_cache[li_t],
+                        eta_t[pids_t],
+                    )
+                    + b_delta_cache[li_t]
                 )
                 _noise = jnp.einsum(
-                    'bij,bj->bi', L_VCV_cache[_li],
-                    params["z_drift"][t, _didx]
+                    'bij,bj->bi',
+                    L_VCV_cache[li_t],
+                    z_drift_t[didx_t],
                 )
-                eta = eta.at[_nids].set(_base + _is_int[:, None] * _noise)
-            eta = eta.at[int(self.root_ids[t])].set(params["eta_anc"][t])
-            eta_trees.append(eta)
-            _tip_li = self.length_index[t][self.tip_to_seg[t]]
-            tip_L_VCV_trees.append(L_VCV_cache[_tip_li])
+                return eta_t.at[nids_t].set(
+                    _base + is_int_t[:, None] * _noise
+                )
 
+            eta = jax.vmap(_one_tree_level)(
+                eta, nids, pids, li, is_int, didx,
+                params["z_drift"],
+            )
+
+        # Reset root values (in case scatter overwrote them)
+        for t in range(N_tree):
+            eta = eta.at[t, int(self.root_ids[t])].set(
+                params["eta_anc"][t]
+            )
+
+        # Gather tip L_VCV per tree
+        tip_L_VCV = L_VCV_cache[self._tip_li_index]
+
+        eta_trees = [eta[t] for t in range(N_tree)]
+        tip_L_VCV_trees = [tip_L_VCV[t] for t in range(N_tree)]
         return eta_trees, tip_L_VCV_trees
 
     def _transformed_params(self, params, tip_L_VCV_trees, L_residual):
