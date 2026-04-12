@@ -173,6 +173,99 @@ test_that("coev_ancestral_states() prob argument changes CI width", {
   expect_true(all(ci_width_wide >= ci_width_narrow - 1e-10))
 })
 
+test_that("coev_ancestral_states() response scale: bernoulli_logit returns probabilities", {
+  # m09: bernoulli_logit x2, single tree
+  m09 <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
+  m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
+  sw <- suppressWarnings
+  result <- sw(coev_ancestral_states(m09, scale = "response"))
+  # probabilities should be in [0, 1]
+  expect_true(all(result$estimate >= 0 & result$estimate <= 1))
+  expect_true(all(result$lower >= 0))
+  expect_true(all(result$upper <= 1))
+})
+
+test_that("coev_ancestral_states() response scale: poisson returns positive counts", {
+  # m04: poisson_softplus + negative_binomial_softplus
+  m04 <- readRDS(test_path("fixtures", "coevfit_example_04.rds"))
+  m04 <- reload_fit(m04, filename = "coevfit_example_04-1.csv")
+  sw <- suppressWarnings
+  result <- sw(coev_ancestral_states(m04, scale = "response"))
+  # expected counts should be positive
+  expect_true(all(result$estimate > 0))
+  expect_true(all(result$lower >= 0))
+})
+
+test_that("coev_ancestral_states() response scale: normal is same as latent", {
+  # m10: normal x2
+  m10 <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
+  m10 <- reload_fit(m10, filename = "coevfit_example_10-1.csv")
+  sw <- suppressWarnings
+  latent <- sw(coev_ancestral_states(m10, scale = "latent"))
+  response <- sw(coev_ancestral_states(m10, scale = "response"))
+  # for normal distribution, latent and response should be identical
+  expect_equal(latent$estimate, response$estimate, tolerance = 1e-10)
+  expect_equal(latent$lower, response$lower, tolerance = 1e-10)
+  expect_equal(latent$upper, response$upper, tolerance = 1e-10)
+})
+
+test_that("coev_ancestral_states() response scale: gamma returns positive values", {
+  # m01 has gamma_log as variable u
+  m01 <- readRDS(test_path("fixtures", "coevfit_example_01.rds"))
+  m01 <- reload_fit(m01, filename = "coevfit_example_01-1.csv")
+  sw <- suppressWarnings
+  result <- sw(coev_ancestral_states(m01, variables = "u", scale = "response"))
+  # gamma_log response scale is exp(eta), should be positive
+  expect_true(all(result$estimate > 0))
+  expect_true(all(result$lower > 0))
+})
+
+test_that("coev_ancestral_states() response scale: ordered_logistic returns probs", {
+  # m02: bernoulli_logit + ordered_logistic
+  m02 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
+  m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
+  sw <- suppressWarnings
+  result <- sw(coev_ancestral_states(m02, variables = "x", scale = "response"))
+  # ordered logistic on response scale returns category probabilities
+  # so result should have prob_1, prob_2, ... columns instead of estimate
+  expect_true(any(grepl("^prob_", names(result))))
+  # probabilities should be in [0, 1]
+  prob_cols <- grep("^prob_", names(result), value = TRUE)
+  for (col in prob_cols) {
+    expect_true(all(result[[col]] >= 0 & result[[col]] <= 1))
+  }
+  # probabilities should sum to ~1 per node
+  prob_sums <- rowSums(result[, prob_cols])
+  expect_equal(prob_sums, rep(1, nrow(result)), tolerance = 0.01)
+})
+
+test_that("coev_ancestral_states() multi-tree with tree_id selects single tree", {
+  # m08: multiPhylo with 2 trees, bernoulli_logit x2
+  m08 <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
+  m08 <- reload_fit(m08, filename = "coevfit_example_08-1.csv")
+  sw <- suppressWarnings
+  # should work with tree_id = 1
+  result1 <- sw(coev_ancestral_states(m08, tree_id = 1))
+  expect_true(is.data.frame(result1))
+  expect_true(all(result1$clade_pp == 1.0))
+  # should work with tree_id = 2
+  result2 <- sw(coev_ancestral_states(m08, tree_id = 2))
+  expect_true(is.data.frame(result2))
+  # results from different trees may differ
+  # (they have different topologies, different eta values)
+})
+
+test_that("coev_ancestral_states() multi-tree default uses tree 1", {
+  # m08: multiPhylo with 2 trees
+  m08 <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
+  m08 <- reload_fit(m08, filename = "coevfit_example_08-1.csv")
+  sw <- suppressWarnings
+  # default (tree_id = NULL) should use tree 1 for now
+  result_default <- sw(coev_ancestral_states(m08))
+  result_t1 <- sw(coev_ancestral_states(m08, tree_id = 1))
+  expect_equal(result_default$estimate, result_t1$estimate)
+})
+
 test_that("coev_ancestral_states() works across all fixture models", {
   sw <- suppressWarnings
   models <- list(
@@ -181,6 +274,7 @@ test_that("coev_ancestral_states() works across all fixture models", {
     m04 = list(rds = "coevfit_example_04.rds", csv = "coevfit_example_04-1.csv"),
     m05 = list(rds = "coevfit_example_05.rds", csv = "coevfit_example_05-1.csv"),
     m06 = list(rds = "coevfit_example_06.rds", csv = "coevfit_example_06-1.csv"),
+    m08 = list(rds = "coevfit_example_08.rds", csv = "coevfit_example_08-1.csv"),
     m09 = list(rds = "coevfit_example_09.rds", csv = "coevfit_example_09-1.csv"),
     m10 = list(rds = "coevfit_example_10.rds", csv = "coevfit_example_10-1.csv")
   )
@@ -191,5 +285,9 @@ test_that("coev_ancestral_states() works across all fixture models", {
     result <- sw(coev_ancestral_states(m))
     expect_true(is.data.frame(result), label = name)
     expect_true(all(is.finite(result$estimate)), label = name)
+    # response scale should also work
+    expect_no_error(
+      sw(coev_ancestral_states(m, scale = "response")), label = name
+    )
   }
 })

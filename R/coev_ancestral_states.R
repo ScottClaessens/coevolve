@@ -151,25 +151,62 @@ coev_ancestral_states <- function(
   # extract draws for selected nodes and variables
   # result: [draws, length(selected_nodes), length(var_idx)]
   draws_subset <- eta_t[, selected_nodes, var_idx, drop = FALSE]
+  # apply response-scale transform if requested
+  if (scale == "response") {
+    # compute mean of observed (non-missing) values per variable
+    # needed for poisson_softplus and negative_binomial_softplus
+    obs_means <- compute_obs_means(object, var_idx)
+    # get cutpoints for ordered_logistic variables
+    cutpoints <- extract_cutpoints(post, distributions, var_idx)
+    draws_subset <- apply_inverse_link(
+      draws_subset, distributions[var_idx], obs_means, cutpoints
+    )
+  }
+  # check if any variables are ordered_logistic on response scale
+  has_ordinal_response <- scale == "response" &&
+    any(distributions[var_idx] == "ordered_logistic")
   if (summary) {
     # compute posterior summaries
     probs <- c((1 - prob) / 2, 1 - (1 - prob) / 2)
     rows <- list()
     for (n_i in seq_along(selected_nodes)) {
       for (v_i in seq_along(var_idx)) {
-        node_draws <- draws_subset[, n_i, v_i]
-        rows[[length(rows) + 1]] <- data.frame(
-          node = selected_nodes[n_i],
-          variable = var_names[v_i],
-          estimate = stats::median(node_draws),
-          lower = stats::quantile(node_draws, probs[1], names = FALSE),
-          upper = stats::quantile(node_draws, probs[2], names = FALSE),
-          clade_pp = 1.0,
-          stringsAsFactors = FALSE
-        )
+        dist <- distributions[var_idx[v_i]]
+        if (scale == "response" && dist == "ordered_logistic") {
+          # draws_subset is a list for ordinal variables
+          # draws_subset[[v_i]][draw, node, category]
+          cat_draws <- draws_subset[[v_i]][, n_i, , drop = FALSE]
+          n_cats <- dim(cat_draws)[3]
+          row <- data.frame(
+            node = selected_nodes[n_i],
+            variable = var_names[v_i],
+            stringsAsFactors = FALSE
+          )
+          for (k in seq_len(n_cats)) {
+            cat_k <- cat_draws[, 1, k]
+            row[[paste0("prob_", k)]] <- stats::median(cat_k)
+          }
+          row$clade_pp <- 1.0
+          rows[[length(rows) + 1]] <- row
+        } else {
+          if (is.list(draws_subset)) {
+            node_draws <- draws_subset[[v_i]][, n_i, 1]
+          } else {
+            node_draws <- draws_subset[, n_i, v_i]
+          }
+          rows[[length(rows) + 1]] <- data.frame(
+            node = selected_nodes[n_i],
+            variable = var_names[v_i],
+            estimate = stats::median(node_draws),
+            lower = stats::quantile(node_draws, probs[1], names = FALSE),
+            upper = stats::quantile(node_draws, probs[2], names = FALSE),
+            clade_pp = 1.0,
+            stringsAsFactors = FALSE
+          )
+        }
       }
     }
-    result <- do.call(rbind, rows)
+    result <- do.call(dplyr::bind_rows, rows)
     result <- tibble::as_tibble(result)
     attr(result, "ref_tree") <- ref_tree
     attr(result, "prob") <- prob
@@ -177,11 +214,13 @@ coev_ancestral_states <- function(
     return(result)
   } else {
     # return raw draws
-    dimnames(draws_subset) <- list(
-      draw = NULL,
-      node = selected_nodes,
-      variable = var_names
-    )
+    if (!is.list(draws_subset)) {
+      dimnames(draws_subset) <- list(
+        draw = NULL,
+        node = selected_nodes,
+        variable = var_names
+      )
+    }
     return(list(
       draws = draws_subset,
       ref_tree = ref_tree,
@@ -189,6 +228,127 @@ coev_ancestral_states <- function(
       variable_names = var_names
     ))
   }
+}
+
+#' Compute mean of observed (non-missing) values per variable
+#' @noRd
+compute_obs_means <- function(object, var_idx) {
+  var_names <- names(object$variables)
+  data <- object$data
+  obs_means <- numeric(length(var_idx))
+  for (i in seq_along(var_idx)) {
+    vname <- var_names[var_idx[i]]
+    vals <- data[[vname]]
+    # remove NAs and convert to numeric
+    vals <- as.numeric(vals[!is.na(vals)])
+    obs_means[i] <- mean(vals)
+  }
+  obs_means
+}
+
+#' Extract cutpoints for ordered_logistic variables from posterior
+#' @noRd
+extract_cutpoints <- function(post, distributions, var_idx) {
+  cutpoints <- list()
+  all_dists <- distributions
+  for (i in seq_along(var_idx)) {
+    j <- var_idx[i]
+    if (all_dists[j] == "ordered_logistic") {
+      # cutpoints are named c1, c2, ... in posterior (by original position)
+      cp_name <- paste0("c", j)
+      if (cp_name %in% names(post)) {
+        cutpoints[[i]] <- post[[cp_name]] # [draws, n_cutpoints]
+      }
+    } else {
+      cutpoints[[i]] <- NULL
+    }
+  }
+  cutpoints
+}
+
+#' Apply inverse link function to draws
+#' @noRd
+apply_inverse_link <- function(draws, distributions, obs_means, cutpoints) {
+  n_draws <- dim(draws)[1]
+  n_nodes <- dim(draws)[2]
+  n_vars <- dim(draws)[3]
+  has_ordinal <- any(distributions == "ordered_logistic")
+  if (has_ordinal) {
+    # need to return a list since ordinal variables have different dimensions
+    result <- vector("list", n_vars)
+    for (v in seq_len(n_vars)) {
+      dist <- distributions[v]
+      eta_v <- draws[, , v] # [draws, nodes]
+      if (is.null(dim(eta_v))) {
+        eta_v <- matrix(eta_v, nrow = n_draws, ncol = n_nodes)
+      }
+      if (dist == "ordered_logistic" && !is.null(cutpoints[[v]])) {
+        cp <- cutpoints[[v]] # [draws, n_cutpoints]
+        if (is.null(dim(cp))) cp <- matrix(cp, ncol = 1)
+        n_cats <- ncol(cp) + 1
+        # result: [draws, nodes, categories]
+        cat_probs <- array(NA, dim = c(n_draws, n_nodes, n_cats))
+        for (d in seq_len(n_draws)) {
+          for (n in seq_len(n_nodes)) {
+            cat_probs[d, n, ] <- ordered_logistic_probs(
+              eta_v[d, n], cp[d, ]
+            )
+          }
+        }
+        result[[v]] <- cat_probs
+      } else {
+        # wrap scalar transform in 3D array [draws, nodes, 1]
+        transformed <- transform_eta(eta_v, dist, obs_means[v])
+        result[[v]] <- array(transformed, dim = c(n_draws, n_nodes, 1))
+      }
+    }
+    return(result)
+  } else {
+    # all variables are non-ordinal: apply element-wise transforms
+    for (v in seq_len(n_vars)) {
+      eta_v <- draws[, , v]
+      if (is.null(dim(eta_v))) {
+        eta_v <- matrix(eta_v, nrow = n_draws, ncol = n_nodes)
+      }
+      draws[, , v] <- transform_eta(eta_v, distributions[v], obs_means[v])
+    }
+    return(draws)
+  }
+}
+
+#' Apply scalar inverse link for a single distribution
+#' @noRd
+transform_eta <- function(eta, distribution, obs_mean = NULL) {
+  switch(
+    distribution,
+    "normal" = eta,
+    "bernoulli_logit" = stats::plogis(eta),
+    "poisson_softplus" = obs_mean * log1p(exp(eta)),
+    "negative_binomial_softplus" = obs_mean * log1p(exp(eta)),
+    "gamma_log" = exp(eta),
+    eta # fallback: identity
+  )
+}
+
+#' Compute ordered logistic probabilities from eta and cutpoints
+#' @noRd
+ordered_logistic_probs <- function(eta, cutpoints) {
+  # P(Y = k) for ordered logistic model
+  # P(Y <= k) = logistic(c_k - eta)
+  # P(Y = k) = P(Y <= k) - P(Y <= k-1)
+  n_cats <- length(cutpoints) + 1
+  probs <- numeric(n_cats)
+  for (k in seq_len(n_cats)) {
+    if (k == 1) {
+      probs[k] <- stats::plogis(cutpoints[1] - eta)
+    } else if (k == n_cats) {
+      probs[k] <- 1 - stats::plogis(cutpoints[k - 1] - eta)
+    } else {
+      probs[k] <- stats::plogis(cutpoints[k] - eta) -
+        stats::plogis(cutpoints[k - 1] - eta)
+    }
+  }
+  probs
 }
 
 #' Input validation for coev_ancestral_states
