@@ -460,10 +460,10 @@ class CoevJaxModel:
         info.append(("z_drift", (self.N_tree, n_drift, J), "none"))
 
         # terminal_drift: (N_tree, N_tips, J), unconstrained
-        if self.needs_terminal_drift:
-            info.append(
-                ("terminal_drift", (self.N_tree, self.N_tips, J), "none")
-            )
+        # Always included to match Stan's unconditional declaration.
+        info.append(
+            ("terminal_drift", (self.N_tree, self.N_tips, J), "none")
+        )
 
         # ordered cutpoints
         for j1, nc in zip(self.ordered_j, self.ordered_ncuts):
@@ -481,8 +481,8 @@ class CoevJaxModel:
         if self.has_lon_lat:
             dz_dim = self.NBgp if self.use_hsgp else self.N_tips
             info.append(("dist_z", (dz_dim, J), "none"))
-            info.append(("sigma_dist", (J,), "lower_zero"))
             info.append(("rho_dist", (J,), "lower_zero"))
+            info.append(("sigma_dist", (J,), "lower_zero"))
 
         # Residual parameters
         if self.repeated:
@@ -813,28 +813,30 @@ class CoevJaxModel:
         lp = lp + prior_logp(params["eta_anc"], self.prior_specs["eta_anc"])
         lp = lp + dist.Normal(0.0, 1.0).log_prob(params["z_drift"]).sum()
 
-        if self.needs_terminal_drift:
-            has_normal = len(self.normal_j0) > 0
-            if has_normal and not self.repeated:
-                for j0 in self.nonnormal_j0:
-                    lp = lp + (
-                        dist.Normal(0.0, 1.0)
-                        .log_prob(params["terminal_drift"][:, :, j0])
-                        .sum()
-                    )
-                if self.prior_only:
-                    for j0 in self.normal_j0:
-                        lp = lp + (
-                            dist.Normal(0.0, 1.0)
-                            .log_prob(params["terminal_drift"][:, :, j0])
-                            .sum()
-                        )
-            else:
-                lp = lp + (
-                    dist.Normal(0.0, 1.0)
-                    .log_prob(params["terminal_drift"])
-                    .sum()
-                )
+        # terminal_drift prior — match Stan exactly:
+        #   add_terminal_drift_prior (= self.tdrift): global std_normal
+        #   set_tdrift (= !self.tdrift): inline per-obs prior on normal
+        #     columns (only when likelihood is evaluated, i.e. !prior_only)
+        if self.tdrift:
+            # Stan: to_vector(terminal_drift[t]) ~ std_normal();
+            lp = lp + (
+                dist.Normal(0.0, 1.0)
+                .log_prob(params["terminal_drift"])
+                .sum()
+            )
+        elif not self.prior_only:
+            # Stan set_tdrift block: for observed normal vars,
+            #   terminal_drift[t][tip_id[i],j] ~ std_normal()
+            # For non-normal vars: no separate prior (enters via MVN)
+            tid = self.tip_id
+            for j0 in self.normal_j0:
+                observed = self.miss[:, j0] == 0
+                td_vals = params["terminal_drift"][:, tid, j0]
+                lp = lp + jnp.where(
+                    observed[None, :],
+                    dist.Normal(0.0, 1.0).log_prob(td_vals),
+                    0.0,
+                ).sum()
 
         # A_offdiag ~ prior_A_offdiag;  A_diag ~ prior_A_diag
         lp = lp + prior_logp(params["A_diag"], self.prior_specs["A_diag"])

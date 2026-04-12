@@ -95,7 +95,7 @@ test_that("logp agrees: negative_binomial_softplus (simulated)", {
     d <- data.frame(
       id = tree$tip.label,
       x = rnorm(n),
-      y = rnbinom(n, size = 5, mu = 10)
+      y = as.integer(rnbinom(n, size = 5, mu = 10))
     )
   })
   expect_logp_agreement(
@@ -209,11 +209,13 @@ test_that("logp agrees: with effects_mat restricting cross-effects", {
       y = rnorm(n)
     )
   })
+  em <- matrix(c(TRUE, FALSE, TRUE, TRUE), nrow = 2,
+               dimnames = list(c("x", "y"), c("x", "y")))
   expect_logp_agreement(
     data = d,
     variables = list(x = "normal", y = "normal"),
     id = "id",
     tree = tree,
-    effects_mat = matrix(c(TRUE, FALSE, TRUE, TRUE), nrow = 2)
+    effects_mat = em
   )
 })
