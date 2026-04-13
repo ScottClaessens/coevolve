@@ -219,3 +219,119 @@ test_that("logp agrees: with effects_mat restricting cross-effects", {
     effects_mat = em
   )
 })
+
+# ------------------------------------------------------------------
+# prior_only=FALSE: test the full likelihood
+# ------------------------------------------------------------------
+
+test_that("logp agrees WITH likelihood: ordered logistic", {
+  expect_logp_agreement(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    prior = list(A_offdiag = "normal(0, 2)"),
+    prior_only = FALSE
+  )
+})
+
+test_that("logp agrees WITH likelihood: normal", {
+  withr::with_seed(1, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+  })
+  expect_logp_agreement(
+    data = d,
+    variables = list(x = "normal", y = "normal"),
+    id = "id",
+    tree = tree,
+    prior_only = FALSE
+  )
+})
+
+test_that("logp agrees WITH likelihood: mixed normal + bernoulli", {
+  withr::with_seed(2, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rbinom(n, 1, 0.5)
+    )
+  })
+  expect_logp_agreement(
+    data = d,
+    variables = list(x = "normal", y = "bernoulli_logit"),
+    id = "id",
+    tree = tree,
+    prior_only = FALSE
+  )
+})
+
+test_that("logp agrees WITH likelihood: poisson_softplus", {
+  withr::with_seed(3, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rpois(n, 5)
+    )
+  })
+  expect_logp_agreement(
+    data = d,
+    variables = list(x = "normal", y = "poisson_softplus"),
+    id = "id",
+    tree = tree,
+    prior_only = FALSE
+  )
+})
+
+test_that("logp agrees WITH likelihood: exact GP", {
+  expect_logp_agreement(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    lon_lat = authority$coordinates,
+    prior = list(A_offdiag = "normal(0, 2)"),
+    prior_only = FALSE
+  )
+})
+
+test_that("logp agrees WITH likelihood: repeated measures", {
+  expect_logp_agreement(
+    data = repeated$data,
+    variables = list(x = "normal", y = "normal"),
+    id = "species",
+    tree = repeated$phylogeny,
+    prior_only = FALSE
+  )
+})
+
+test_that("logp agrees WITH likelihood: multiphylo", {
+  tree2 <- c(authority$phylogeny, authority$phylogeny)
+  class(tree2) <- "multiPhylo"
+  expect_logp_agreement(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = tree2,
+    prior = list(A_offdiag = "normal(0, 2)"),
+    prior_only = FALSE
+  )
+})
