@@ -543,9 +543,23 @@ class CoevJaxModel:
         logdet = 0.0
         offset = 0
 
+        # Stan's `matrix[R, C]` is stored column-major (first index varies
+        # fastest), so the flat layout is [all rows col0, all rows col1, ...].
+        # For these params we reshape swapping the last two axes, then
+        # transpose — equivalent to Fortran-order for the matrix portion.
+        matrix_params = {"terminal_drift", "dist_z", "residual_z"}
+
         for name, shape, transform in self.param_info:
             size = int(np.prod(shape))
-            raw = x[offset : offset + size].reshape(shape)
+            block = x[offset : offset + size]
+            if name in matrix_params and len(shape) >= 2:
+                perm = list(range(len(shape) - 2)) + [
+                    len(shape) - 1, len(shape) - 2
+                ]
+                c_shape = tuple(shape[i] for i in perm)
+                raw = block.reshape(c_shape).transpose(perm)
+            else:
+                raw = block.reshape(shape)
             offset += size
 
             if transform == "none":
