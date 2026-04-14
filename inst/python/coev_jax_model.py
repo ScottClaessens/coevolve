@@ -742,11 +742,10 @@ class CoevJaxModel:
         # Gather tip L_VCV per tree
         tip_L_VCV = L_VCV_cache[self._tip_li_index]
 
-        eta_trees = [eta[t] for t in range(N_tree)]
-        tip_L_VCV_trees = [tip_L_VCV[t] for t in range(N_tree)]
-        return eta_trees, tip_L_VCV_trees
+        # Return stacked tensors (N_tree, ...) for vmap-friendly downstream.
+        return eta, tip_L_VCV
 
-    def _transformed_params(self, params, tip_L_VCV_trees, L_residual):
+    def _transformed_params(self, params, tip_L_VCV, L_residual):
         """Compute tdrift, residual_v, and dist_v.
 
         Mirrors Stan 05-transformed-parameters.stan lines 103-128:
@@ -757,16 +756,15 @@ class CoevJaxModel:
         """
         J = self.J
 
-        # Terminal drift: tdrift[t,i] = L_VCV_tips[t,i] * terminal_drift[t,i]
-        tdrift_trees = None
+        # Terminal drift: tdrift[t,i] = L_VCV_tips[t,i] @ terminal_drift[t,i]
+        # Single batched matmul over all trees simultaneously.
+        tdrift = None
         if self.tdrift and self.needs_terminal_drift:
-            tdrift_trees = []
-            for t in range(self.N_tree):
-                td = jnp.matmul(
-                    tip_L_VCV_trees[t],
-                    params["terminal_drift"][t][:, :, None],
-                )[:, :, 0]
-                tdrift_trees.append(td)
+            tdrift = jnp.einsum(
+                "tijk,tik->tij",
+                tip_L_VCV,  # (N_tree, N_tips, J, J)
+                params["terminal_drift"],  # (N_tree, N_tips, J)
+            )
 
         # Residual effects: residual_v = (D * L_residual * residual_z)'
         residual_v = None
@@ -802,7 +800,7 @@ class CoevJaxModel:
                         L_K @ params["dist_z"][:, j]
                     )
 
-        return tdrift_trees, residual_v, dist_v
+        return tdrift, residual_v, dist_v
 
     # ------------------------------------------------------------------
     # Priors  (cf. Stan 06-model.stan, lines 1-51)
@@ -938,9 +936,13 @@ class CoevJaxModel:
     # Likelihood  (cf. Stan 06-model.stan, lines 53-104)
     # ------------------------------------------------------------------
 
-    def _likelihood(self, params, eta_trees, tip_L_VCV_trees,
-                    tdrift_trees, residual_v, L_residual, dist_v=None):
+    def _likelihood(self, params, eta, tip_L_VCV, tdrift, residual_v,
+                    L_residual, dist_v=None):
         """Compute the log-likelihood contribution.
+
+        Trees are processed in parallel via jax.vmap, replacing the
+        per-tree Python loop. All tree-dependent inputs are stacked
+        tensors with a leading N_tree dimension.
 
         Mirrors Stan 06-model.stan:
           for (i in 1:N_obs) {
@@ -956,26 +958,22 @@ class CoevJaxModel:
             j for j, d in enumerate(self.distributions) if d == "normal"
         ]
 
-        tree_lps = []
-        for t in range(self.N_tree):
-            eta_obs = eta_trees[t][tid]
+        def _one_tree(eta_t, tip_L_VCV_t, tdrift_t, terminal_drift_t):
+            """Log-likelihood contribution per observation for one tree."""
+            eta_obs = eta_t[tid]
             obs_lp = jnp.zeros(self.N_obs)
 
-            # Linear model base: eta[t, tip_id[i]][j] + dist_v[tip_id[i], j]
-            def base_lmod(j0, _eta_obs=eta_obs, _dist_v=dist_v):
-                lm = _eta_obs[:, j0]
-                if _dist_v is not None:
-                    lm = lm + _dist_v[tid, j0]
+            def base_lmod(j0):
+                lm = eta_obs[:, j0]
+                if dist_v is not None:
+                    lm = lm + dist_v[tid, j0]
                 return lm
 
-            # --- Normal variables ---
-            # Non-repeated: set_tdrift path (tdrift vector evaluated under
-            #   MVN with L_VCV_tips covariance)
-            # Repeated: set_residuals path (residuals evaluated under
-            #   MVN with diag(sigma_residual) @ L_residual covariance)
+            tdrift_vec = None
+            residuals = None
 
             if has_normal and not self.repeated:
-                L_cov_obs = tip_L_VCV_trees[t][tid]
+                L_cov_obs = tip_L_VCV_t[tid]
                 if self.has_measurement_error:
                     VCV_obs = jnp.matmul(
                         L_cov_obs, L_cov_obs.transpose(0, 2, 1)
@@ -986,13 +984,13 @@ class CoevJaxModel:
                     L_cov_obs = jnp.linalg.cholesky(VCV_obs + se_diag)
 
                 if self.needs_terminal_drift:
-                    tdrift_vec = params["terminal_drift"][t][tid]
+                    tdrift_vec = terminal_drift_t[tid]
                 else:
                     tdrift_vec = jnp.zeros((self.N_obs, J))
 
                 for j in normal_idx:
                     missing_fill = (
-                        params["terminal_drift"][t][tid][:, j]
+                        terminal_drift_t[tid][:, j]
                         if self.needs_terminal_drift
                         else 0.0
                     )
@@ -1008,7 +1006,7 @@ class CoevJaxModel:
             elif has_normal and self.repeated:
                 residuals = params["residual_z"].T  # (N_obs, J)
                 for j in normal_idx:
-                    tdrift_expr = tdrift_trees[t][tid][:, j]
+                    tdrift_expr = tdrift_t[tid][:, j]
                     residuals = residuals.at[:, j].set(
                         jnp.where(
                             self.miss[:, j] == 0,
@@ -1043,7 +1041,7 @@ class CoevJaxModel:
                 if not self.repeated and has_normal:
                     lmod = base + tdrift_vec[:, j0]
                 elif self.tdrift and not self.repeated:
-                    lmod = base + tdrift_trees[t][tid][:, j0]
+                    lmod = base + tdrift_t[tid][:, j0]
                 elif self.repeated and not has_normal:
                     lmod = base + residual_v[:, j0]
                 elif self.repeated and has_normal:
@@ -1087,9 +1085,27 @@ class CoevJaxModel:
 
                 obs_lp = obs_lp + jnp.where(self.miss[:, j0] == 0, ll, 0.0)
 
-            tree_lps.append(obs_lp)
+            return obs_lp
 
-        all_tree_lps = jnp.stack(tree_lps, axis=0)
+        # Prepare inputs with leading N_tree axis for vmap.
+        # tdrift and terminal_drift may be None/absent for some configs —
+        # pass dummy arrays that the inner code won't actually read.
+        tdrift_batched = (
+            tdrift
+            if tdrift is not None
+            else jnp.zeros((self.N_tree, self.N_tips, J))
+        )
+        terminal_drift_batched = (
+            params["terminal_drift"]
+            if "terminal_drift" in params
+            else jnp.zeros((self.N_tree, self.N_tips, J))
+        )
+
+        # vmap over the leading N_tree axis of each input.
+        all_tree_lps = jax.vmap(
+            _one_tree, in_axes=(0, 0, 0, 0)
+        )(eta, tip_L_VCV, tdrift_batched, terminal_drift_batched)
+
         return jnp.sum(jax.scipy.special.logsumexp(all_tree_lps, axis=0))
 
     # ------------------------------------------------------------------
@@ -1134,22 +1150,23 @@ class CoevJaxModel:
         )
 
         # --- Tree traversal (05-transformed-parameters) ---
-        eta_trees, tip_L_VCV_trees = self._tree_traversal(
+        # Returns stacked tensors (leading N_tree axis).
+        eta, tip_L_VCV = self._tree_traversal(
             params, A_delta_cache, L_VCV_cache, b_delta_cache
         )
 
         # --- Derived quantities: tdrift, residual_v, dist_v ---
-        tdrift_trees, residual_v, dist_v = self._transformed_params(
-            params, tip_L_VCV_trees, L_residual
+        tdrift, residual_v, dist_v = self._transformed_params(
+            params, tip_L_VCV, L_residual
         )
 
         # --- Likelihood (06-model) ---
         if not self.prior_only:
             lp = lp + self._likelihood(
                 params,
-                eta_trees,
-                tip_L_VCV_trees,
-                tdrift_trees,
+                eta,
+                tip_L_VCV,
+                tdrift,
                 residual_v,
                 L_residual if self.repeated else None,
                 dist_v,
