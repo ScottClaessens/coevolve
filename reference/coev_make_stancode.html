@@ -19,7 +19,7 @@ returned as a character string."><meta property="og:image" content="https://scot
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0.9000</span>
       </span>
     </div>
 
@@ -49,7 +49,7 @@ returned as a character string."><meta property="og:image" content="https://scot
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Make Stan code for dynamic coevolutionary model</h1>
-    <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/v1.0.0/R/coev_make_stancode.R" class="external-link"><code>R/coev_make_stancode.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/main/R/coev_make_stancode.R" class="external-link"><code>R/coev_make_stancode.R</code></a></small>
     <div class="hidden name"><code>coev_make_stancode.Rd</code></div>
     </div>
 
@@ -94,14 +94,14 @@ to that class) containing data of all variables used in the model.</p></dd>
 <dd><p>A named list identifying variables that should coevolve in
 the model and their associated response distributions as character strings
 (e.g. <code>list(var1 = "bernoulli_logit", var2 = "ordered_logistic")</code>).
-Must identify at least two variables. Variable names must refer to valid
-column names in data. Currently, the only supported response distributions
-are <code>bernoulli_logit</code>, <code>ordered_logistic</code>,
-<code>poisson_softplus</code>, <code>negative_binomial_softplus</code>, <code>normal</code>,
-and <code>gamma_log</code>. Bernoulli variables must be 0/1 integers, ordered
-variables must be ordered factors, Poisson and negative binomial variables
-must be positive integers, normal variables must be continuous numeric,
-and gamma variables must be positive numeric.</p></dd>
+Variable names must refer to valid column names in data. Currently, the
+only supported response distributions are <code>bernoulli_logit</code>,
+<code>ordered_logistic</code>, <code>poisson_softplus</code>,
+<code>negative_binomial_softplus</code>, <code>normal</code>, and <code>gamma_log</code>.
+Bernoulli variables must be 0/1 integers, ordered variables must be ordered
+factors, Poisson and negative binomial variables must be positive integers,
+normal variables must be continuous numeric, and gamma variables must be
+positive numeric.</p></dd>
 
 
 <dt id="arg-id">id<a class="anchor" aria-label="anchor" href="#arg-id"></a></dt>
