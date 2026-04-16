@@ -1,6 +1,27 @@
+#' Get pinned Python dependency specs for the JAX backend
+#'
+#' @description Returns a character vector of pip-style version specs
+#'   read from \code{inst/python/requirements.txt}.
+#'
+#' @returns Character vector, e.g. \code{c("jax==0.5.3", ...)}.
+#'
+#' @noRd
+jax_python_deps <- function() {
+  req_file <- system.file(
+    "python", "requirements.txt", package = "coevolve"
+  )
+  if (!nzchar(req_file)) {
+    return(c("jax", "numpyro", "nutpie"))
+  }
+  lines <- readLines(req_file, warn = FALSE)
+  lines <- trimws(lines)
+  lines[nzchar(lines) & !startsWith(lines, "#")]
+}
+
 #' Ensure JAX and numpyro are available via reticulate
 #'
-#' @description Checks that jax, numpyro, and nutpie can be imported.
+#' @description Checks that jax, numpyro, and nutpie can be imported
+#'   at the pinned versions from \code{inst/python/requirements.txt}.
 #'
 #' @returns Logical. TRUE if all packages are available, FALSE otherwise.
 #'
@@ -10,7 +31,7 @@ check_jax_available <- function() {
     return(FALSE)
   }
   tryCatch({
-    reticulate::py_require(c("jax", "numpyro", "nutpie"))
+    reticulate::py_require(jax_python_deps())
     reticulate::import("jax", convert = FALSE)
     reticulate::import("numpyro", convert = FALSE)
     reticulate::import("nutpie", convert = FALSE)
@@ -28,10 +49,11 @@ check_jax_available <- function() {
 stop_if_jax_not_available <- function() {
   if (!check_jax_available()) {
     stop2(
-      "JAX backend is not available. Please install with: ",
-      "pip install jax numpyro nutpie. ",
-      "You may also need to configure reticulate to find your Python ",
-      "installation."
+      "JAX backend is not available. Install pinned dependencies with:\n",
+      "  pip install -r ",
+      system.file("python", "requirements.txt", package = "coevolve"),
+      "\nOr let reticulate manage it automatically by ensuring ",
+      "RETICULATE_PYTHON is configured."
     )
   }
 }
