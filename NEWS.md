@@ -1,3 +1,9 @@
+# coevolve - development version
+
+### New Features
+
+* Allow for single traits (#107)
+
 # coevolve 1.0.0
 
 ### Bug Fixes
