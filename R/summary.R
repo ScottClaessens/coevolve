@@ -82,25 +82,6 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
     )
   ]
   auto <- auto[, 2:ncol(auto)]
-  # summarise cross selection effects
-  cross <- a[!equal, ]
-  rownames(cross) <-
-    paste0(
-      names(object$variables)[
-        readr::parse_number(
-          stringr::str_extract(cross$variable, pattern = "\\,\\d+\\]")
-        )
-      ],
-      " \U27F6 ",
-      names(object$variables)[
-        readr::parse_number(
-          stringr::str_extract(cross$variable, pattern = "A\\[(\\d+)\\,")
-        )
-      ]
-    )
-  cross <- cross[, 2:ncol(cross)]
-  # only include cross selection effects that have been estimated in summary
-  cross <- cross[!is.na(cross$Rhat), ]
   # summarise drift sd parameters
   sd_drift <- s[stringr::str_starts(s$variable, pattern = "Q_sigma\\["), ]
   rownames(sd_drift) <- paste0(
@@ -113,47 +94,70 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
     ")"
   )
   sd_drift <- sd_drift[, 2:ncol(sd_drift)]
-  # summarise drift cor parameters
-  cor_drift <- NULL
-  if (object$estimate_correlated_drift) {
-    cor_drift <- s[stringr::str_starts(s$variable, "cor_R"), ]
-    for (i in seq_along(object$variables)) {
-      for (j in seq_along(object$variables)) {
-        if (i >= j) {
-          var <- paste0("cor_R[", i, ",", j, "]")
-          cor_drift <- cor_drift[cor_drift$variable != var, ]
-        }
-      }
-    }
-    rownames(cor_drift) <- paste0(
-      "cor(",
-      names(object$variables)[
-        readr::parse_number(
-          stringr::str_extract(
-            cor_drift$variable,
-            pattern = "cor\\_R\\[(\\d+)\\,"
-          )
-        )
-      ],
-      ",",
-      names(object$variables)[
-        readr::parse_number(
-          stringr::str_extract(
-            cor_drift$variable,
-            pattern = "\\,(\\d+)\\]"
-          )
-        )
-      ],
-      ")"
-    )
-    cor_drift <- cor_drift[, 2:ncol(cor_drift)]
-  }
   # summarise SDE intercepts
   sde_intercepts <- s[stringr::str_starts(s$variable, "b"), ]
   rownames(sde_intercepts) <- names(object$variables)[
     readr::parse_number(sde_intercepts$variable)
   ]
   sde_intercepts <- sde_intercepts[, 2:ncol(sde_intercepts)]
+  # summarise cross-selection effects and drift cor parameters
+  cross <- NULL
+  cor_drift <- NULL
+  if (length(object$variables) >= 2) {
+    # cross-selection effects
+    cross <- a[!equal, ]
+    rownames(cross) <-
+      paste0(
+        names(object$variables)[
+          readr::parse_number(
+            stringr::str_extract(cross$variable, pattern = "\\,\\d+\\]")
+          )
+        ],
+        " \U27F6 ",
+        names(object$variables)[
+          readr::parse_number(
+            stringr::str_extract(cross$variable, pattern = "A\\[(\\d+)\\,")
+          )
+        ]
+      )
+    cross <- cross[, 2:ncol(cross)]
+    # only include cross selection effects that have been estimated in summary
+    cross <- cross[!is.na(cross$Rhat), ]
+    # drift cor parameters
+    if (object$estimate_correlated_drift) {
+      cor_drift <- s[stringr::str_starts(s$variable, "cor_R"), ]
+      for (i in seq_along(object$variables)) {
+        for (j in seq_along(object$variables)) {
+          if (i >= j) {
+            var <- paste0("cor_R[", i, ",", j, "]")
+            cor_drift <- cor_drift[cor_drift$variable != var, ]
+          }
+        }
+      }
+      rownames(cor_drift) <- paste0(
+        "cor(",
+        names(object$variables)[
+          readr::parse_number(
+            stringr::str_extract(
+              cor_drift$variable,
+              pattern = "cor\\_R\\[(\\d+)\\,"
+            )
+          )
+        ],
+        ",",
+        names(object$variables)[
+          readr::parse_number(
+            stringr::str_extract(
+              cor_drift$variable,
+              pattern = "\\,(\\d+)\\]"
+            )
+          )
+        ],
+        ")"
+      )
+      cor_drift <- cor_drift[, 2:ncol(cor_drift)]
+    }
+  }
   # summarise ordinal cutpoints
   cutpoints <- NULL
   if ("ordered_logistic" %in% object$variables) {
@@ -343,7 +347,7 @@ print.coevsummary <- function(x, digits = 2, ...) {
   print_format(x$auto, digits = digits)
   cat("\n")
   # print cross effects (if any have been estimated)
-  if (nrow(x$cross) > 0) {
+  if (!is.null(x$cross) && nrow(x$cross) > 0) {
     cat("Cross selection effects:\n")
     print_format(x$cross, digits = digits)
     cat("\n")

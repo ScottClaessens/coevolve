@@ -276,6 +276,14 @@ run_checks_pred_series <- function(object, eta_anc, intervention_values,
       )
     )
   }
+  if (!(length(object$variables) >= 2)) {
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "with at least two coevolving variables."
+      )
+    )
+  }
   if (!is.null(eta_anc)) {
     # stop if eta_anc argument is not a named list
     #' @srrstats {G2.1} Assertion on type of input

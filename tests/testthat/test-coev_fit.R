@@ -85,19 +85,6 @@ test_that("coev_fit() produces expected errors", {
   )
   expect_error(
     coev_fit(
-      data = d,
-      variables = list(
-        # only x declared
-        x = "bernoulli_logit"
-      ),
-      id = "id",
-      tree = tree
-    ),
-    "Must be at least two coevolving variables.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_fit(
       data = dplyr::tibble(
         id = tree$tip.label,
         x = list("test"),
@@ -1227,6 +1214,27 @@ test_that("coev_fit() works with approximate GPs", {
   # load model
   m <- readRDS(test_path("fixtures", "coevfit_example_11.rds"))
   m <- reload_fit(m, filename = "coevfit_example_11-1.csv")
+  # suppress warnings
+  sw <- suppressWarnings
+  # fitted without error
+  expect_no_error(sw(m))
+  expect_no_error(sw(summary(m)))
+  expect_output(sw(print(m)))
+  expect_output(sw(print(summary(m))))
+  # expect no errors for extract_samples method
+  expect_no_error(sw(extract_samples(m)))
+  expect_true(sw(methods::is(extract_samples(m), "list")))
+  # expect no errors for stancode or standata methods
+  expect_no_error(sw(stancode(m)))
+  expect_no_error(sw(standata(m)))
+  expect_output(sw(stancode(m)))
+  expect_true(sw(methods::is(standata(m), "list")))
+})
+
+test_that("coev_fit() works with single traits", {
+  # load model
+  m <- readRDS(test_path("fixtures", "coevfit_example_12.rds"))
+  m <- reload_fit(m, filename = "coevfit_example_12-1.csv")
   # suppress warnings
   sw <- suppressWarnings
   # fitted without error

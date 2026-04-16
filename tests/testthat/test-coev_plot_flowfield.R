@@ -10,6 +10,8 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
   m08 <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
   m09 <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
   m10 <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
+  m11 <- readRDS(test_path("fixtures", "coevfit_example_11.rds"))
+  m12 <- readRDS(test_path("fixtures", "coevfit_example_12.rds"))
   m01 <- reload_fit(m01, filename = "coevfit_example_01-1.csv")
   m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
   m03 <- reload_fit(m03, filename = "coevfit_example_03-1.csv")
@@ -20,11 +22,21 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
   m08 <- reload_fit(m08, filename = "coevfit_example_08-1.csv")
   m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
   m10 <- reload_fit(m10, filename = "coevfit_example_10-1.csv")
+  m11 <- reload_fit(m11, filename = "coevfit_example_11-1.csv")
+  m12 <- reload_fit(m12, filename = "coevfit_example_12-1.csv")
   # expect the following errors
   #' @srrstats {G5.2, G5.2b} Test all error messages
   expect_error(
     coev_plot_flowfield(object = "fail", var1 = "x", var2 = "y"),
     "Argument 'object' must be a fitted coevolutionary model of class coevfit."
+  )
+  expect_error(
+    coev_plot_flowfield(object = m12),
+    paste0(
+      "Argument 'object' must be a fitted coevolutionary model ",
+      "with at least two coevolving variables."
+    ),
+    fixed = TRUE
   )
   expect_error(
     coev_plot_flowfield(object = m01, var1 = 0:1, var2 = "y"),
@@ -85,6 +97,7 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
   expect_no_error(fun(m08, "y", "x"))
   expect_no_error(fun(m09, "y", "x"))
   expect_no_error(fun(m10, "x", "y"))
+  expect_no_error(fun(m11, "x", "y"))
   expect_no_error(fun(m01, "x", "y", nullclines = TRUE))
   expect_no_error(fun(m02, "w", "x", nullclines = TRUE))
   expect_no_error(fun(m03, "w", "x", nullclines = TRUE))
@@ -95,6 +108,7 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
   expect_no_error(fun(m08, "y", "x", nullclines = TRUE))
   expect_no_error(fun(m09, "y", "x", nullclines = TRUE))
   expect_no_error(fun(m10, "x", "y", nullclines = TRUE))
+  expect_no_error(fun(m11, "x", "y", nullclines = TRUE))
   expect_no_error(fun(m01, "x", "y", limits = c(-3, 3)))
   expect_no_error(fun(m02, "w", "x", limits = c(-3, 3)))
   expect_no_error(fun(m03, "w", "x", limits = c(-3, 3)))
@@ -105,4 +119,5 @@ test_that("coev_plot_flowfield() produces expected errors and output", {
   expect_no_error(fun(m08, "y", "x", limits = c(-3, 3)))
   expect_no_error(fun(m09, "y", "x", limits = c(-3, 3)))
   expect_no_error(fun(m10, "x", "y", limits = c(-3, 3)))
+  expect_no_error(fun(m11, "x", "y", limits = c(-3, 3)))
 })

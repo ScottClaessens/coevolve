@@ -68,6 +68,14 @@ coev_plot_pred_series <- function(object, prob = 0.95, ...) {
       )
     )
   }
+  if (!(length(object$variables) >= 2)) {
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "with at least two coevolving variables."
+      )
+    )
+  }
   # check if prob is between 0 and 1
   #' @srrstats {G2.0, G2.1, G2.2} Assertion on length and type of input
   if (!is.numeric(prob) || length(prob) != 1 || prob <= 0 || prob >= 1) {

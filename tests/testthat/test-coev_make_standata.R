@@ -85,19 +85,6 @@ test_that("coev_make_standata() produces expected errors", {
   )
   expect_error(
     coev_make_standata(
-      data = d,
-      variables = list(
-        # only x declared
-        x = "bernoulli_logit"
-      ),
-      id = "id",
-      tree = tree
-    ),
-    "Must be at least two coevolving variables.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_standata(
       data = dplyr::tibble(
         id = tree$tip.label,
         x = list("test"),
@@ -1477,4 +1464,26 @@ test_that("coev_make_standata() works with approximate GPs", {
   expect_equal(sd$NBgp, 10^3)
   expect_equal(sd$Xgp, xgp_l)
   expect_equal(sd$slambda, slambda)
+})
+
+test_that("coev_make_standata() works with single traits", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(id = tree$tip.label, x = rnorm(n))
+  })
+  # create stan data with only one trait
+  expect_no_error({
+    sdata <- coev_make_standata(
+      data = d,
+      variables = list(x = "normal"),
+      id = "id",
+      tree = tree
+    )
+  })
+  # expectations for stan data list
+  expect_equal(sdata$J, 1)
+  expect_equal(sdata$effects_mat, matrix(1, dimnames = list("x", "x")))
+  expect_equal(sdata$num_effects, 1)
 })

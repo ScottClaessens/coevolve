@@ -10,6 +10,8 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   m08 <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
   m09 <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
   m10 <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
+  m11 <- readRDS(test_path("fixtures", "coevfit_example_11.rds"))
+  m12 <- readRDS(test_path("fixtures", "coevfit_example_12.rds"))
   m01 <- reload_fit(m01, filename = "coevfit_example_01-1.csv")
   m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
   m03 <- reload_fit(m03, filename = "coevfit_example_03-1.csv")
@@ -20,6 +22,8 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   m08 <- reload_fit(m08, filename = "coevfit_example_08-1.csv")
   m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
   m10 <- reload_fit(m10, filename = "coevfit_example_10-1.csv")
+  m11 <- reload_fit(m11, filename = "coevfit_example_11-1.csv")
+  m12 <- reload_fit(m12, filename = "coevfit_example_12-1.csv")
   # expect the following errors
   #' @srrstats {G5.2, G5.2b} Test all error messages
   expect_error(
@@ -27,6 +31,14 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
     paste0(
       "Argument 'object' must be a fitted coevolutionary model of class ",
       "'coevfit'."
+    ),
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_pred_series(object = m12),
+    paste0(
+      "Argument 'object' must be a fitted coevolutionary model ",
+      "with at least two coevolving variables."
     ),
     fixed = TRUE
   )
@@ -48,6 +60,7 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   expect_no_error(sw(coev_plot_pred_series(m08)))
   expect_no_error(sw(coev_plot_pred_series(m09)))
   expect_no_error(sw(coev_plot_pred_series(m10)))
+  expect_no_error(sw(coev_plot_pred_series(m11)))
   expect_no_error(sw(coev_plot_pred_series(m01, stochastic = TRUE)))
   expect_no_error(sw(coev_plot_pred_series(m02, stochastic = TRUE)))
   expect_no_error(sw(coev_plot_pred_series(m03, stochastic = TRUE)))
@@ -58,6 +71,7 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   expect_no_error(sw(coev_plot_pred_series(m08, stochastic = TRUE)))
   expect_no_error(sw(coev_plot_pred_series(m09, stochastic = TRUE)))
   expect_no_error(sw(coev_plot_pred_series(m10, stochastic = TRUE)))
+  expect_no_error(sw(coev_plot_pred_series(m11, stochastic = TRUE)))
   expect_no_error(sw(coev_plot_pred_series(m01, ndraws = 1)))
   expect_no_error(sw(coev_plot_pred_series(m02, ndraws = 1)))
   expect_no_error(sw(coev_plot_pred_series(m03, ndraws = 1)))
@@ -68,6 +82,7 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   expect_no_error(sw(coev_plot_pred_series(m08, ndraws = 1)))
   expect_no_error(sw(coev_plot_pred_series(m09, ndraws = 1)))
   expect_no_error(sw(coev_plot_pred_series(m10, ndraws = 1)))
+  expect_no_error(sw(coev_plot_pred_series(m11, ndraws = 1)))
   expect_no_error(
     sw(
       coev_plot_pred_series(
@@ -118,6 +133,7 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   expect_no_error(sw(coev_plot_pred_series(m08, eta_anc = list(x = 0, y = 0))))
   expect_no_error(sw(coev_plot_pred_series(m09, eta_anc = list(x = 0, y = 0))))
   expect_no_error(sw(coev_plot_pred_series(m10, eta_anc = list(x = 0, y = 0))))
+  expect_no_error(sw(coev_plot_pred_series(m11, eta_anc = list(x = 0, y = 0))))
   expect_true(methods::is(sw(coev_plot_pred_series(m01)), "ggplot"))
   expect_true(methods::is(sw(coev_plot_pred_series(m02)), "ggplot"))
   expect_true(methods::is(sw(coev_plot_pred_series(m03)), "ggplot"))
@@ -128,4 +144,5 @@ test_that("coev_plot_pred_series() produces expected errors and output", {
   expect_true(methods::is(sw(coev_plot_pred_series(m08)), "ggplot"))
   expect_true(methods::is(sw(coev_plot_pred_series(m09)), "ggplot"))
   expect_true(methods::is(sw(coev_plot_pred_series(m10)), "ggplot"))
+  expect_true(methods::is(sw(coev_plot_pred_series(m11)), "ggplot"))
 })
