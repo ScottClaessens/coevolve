@@ -1,4 +1,4 @@
-# coevolve - development version
+# coevolve (development version)
 
 ### New Features
 
