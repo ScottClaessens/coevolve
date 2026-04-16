@@ -23,14 +23,21 @@ for:
   tree traversal, derived quantities, and likelihood in parallel across
   trees — something Stan's language has no mechanism for.
 
-On the authority dataset (97 taxa, 2 ordered-logistic variables), JAX
-is **3-5x faster wall-clock** than Stan across 1-50 trees.
-Population-parameter ESS/s (effective samples per second) is **modestly
-better** with JAX at moderate tree counts (~1.5x median at 10 trees)
-and roughly comparable at 50 trees. JAX produces fewer effective samples
-per draw than Stan, but the per-draw speed advantage more than
-compensates. These are local CPU benchmarks; GPU acceleration is
-supported but not yet tested.
+On the authority dataset (97 taxa, 2 ordered-logistic variables, 5
+trees), a clean benchmark (compilation excluded, 3 replicates, fixed
+seeds) shows:
+
+|                           | Stan (CmdStan) | JAX (nutpie) |
+|---------------------------|----------------|--------------|
+| Wall-clock (median)       | 322 s          | 101 s        |
+| Min pop-param ESS/s       | 2.7            | 10.3         |
+| Median pop-param ESS/s    | 9.0            | 28.7         |
+| Max Rhat                  | 1.007          | 1.004        |
+
+JAX is **~3x faster wall-clock** and **~3x better ESS/s** on the
+population parameters of interest (A, Q, b, cutpoints, cor_R).
+Both backends converge well. These are local CPU benchmarks; GPU
+acceleration is supported but not yet tested.
 
 ## How this replaces the existing nutpie-via-BridgeStan path
 
