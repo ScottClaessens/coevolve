@@ -64,11 +64,6 @@ run_checks_variables <- function(data, variables) {
       )
     )
   }
-  # stop if not at least two variables
-  #' @srrstats {G2.0} Assertion on length of input
-  if (!(length(variables) >= 2)) {
-    stop2("Must be at least two coevolving variables.")
-  }
   # stop if data contains list columns
   #' @srrstats {G2.12} Checking for list columns
   if ("list" %in% sapply(data[, variables], class)) {
@@ -81,7 +76,7 @@ run_checks_variables <- function(data, variables) {
     stop2("Data must not contain undefined values (i.e., Inf or -Inf).")
   }
   # stop if any columns contain only NAs
-  if (any(apply(data[, variables], 2, function(x) all(is.na(x))))) {
+  if (any(apply(data[variables], 2, function(x) all(is.na(x))))) {
     stop2("Data must not contain columns with only NA values.")
   }
   # check distributional constraints

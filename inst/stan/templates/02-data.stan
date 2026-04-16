@@ -3,14 +3,14 @@ data{
   int<lower=1> N_tips; // number of tips
   int<lower=1> N_tree; // number of trees
   int<lower=1> N_obs; // number of observations
-  int<lower=2> J; // number of response traits
+  int<lower=1> J; // number of response traits
   int<lower=1> N_seg; // total number of segments in the trees
   array[N_tree, N_seg] int<lower=1> node_seq; // index of tree nodes
   array[N_tree, N_seg] int<lower=0> parent; // index of parent nodes
   array[N_tree, N_seg] real ts; // time since parent
   array[N_tree, N_seg] int<lower=0,upper=1> tip; // segment ends in tip
   array[J,J] int<lower=0,upper=1> effects_mat; // effects matrix
-  int<lower=2> num_effects; // number of effects being estimated
+  int<lower=1> num_effects; // number of effects being estimated
   matrix[N_obs,J] y; // observed data
   matrix[N_obs,J] miss; // are data points missing?
   {{#measurement_error}}

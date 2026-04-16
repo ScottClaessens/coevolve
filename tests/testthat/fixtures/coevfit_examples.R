@@ -265,6 +265,19 @@ coevfit_example_11 <-
     seed = 12345
   )
 
+# fit model with a single trait
+coevfit_example_12 <-
+  coev_fit(
+    data = d,
+    variables = list(x = "normal"),
+    id = "id",
+    tree = tree,
+    chains = chains,
+    iter_warmup = warmup,
+    iter_sampling = iter,
+    seed = 12345
+  )
+
 # update cmdstanr file locations
 update_file_location <- function(coevfit) {
   coevfit$fit$save_output_files(
@@ -286,6 +299,7 @@ suppressMessages({
   update_file_location(coevfit_example_09)
   update_file_location(coevfit_example_10)
   update_file_location(coevfit_example_11)
+  update_file_location(coevfit_example_12)
 })
 
 # save coevfit objects as rds files
@@ -310,6 +324,7 @@ save_coevfit_rds(coevfit_example_08)
 save_coevfit_rds(coevfit_example_09)
 save_coevfit_rds(coevfit_example_10)
 save_coevfit_rds(coevfit_example_11)
+save_coevfit_rds(coevfit_example_12)
 
 # cleanup
 rm(
@@ -323,5 +338,6 @@ rm(
   coevfit_example_08,
   coevfit_example_09,
   coevfit_example_10,
-  coevfit_example_11
+  coevfit_example_11,
+  coevfit_example_12
 )

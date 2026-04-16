@@ -26,14 +26,14 @@
 #' @param variables A named list identifying variables that should coevolve in
 #'   the model and their associated response distributions as character strings
 #'   (e.g. \code{list(var1 = "bernoulli_logit", var2 = "ordered_logistic")}).
-#'   Must identify at least two variables. Variable names must refer to valid
-#'   column names in data. Currently, the only supported response distributions
-#'   are \code{bernoulli_logit}, \code{ordered_logistic},
-#'   \code{poisson_softplus}, \code{negative_binomial_softplus}, \code{normal},
-#'   and \code{gamma_log}. Bernoulli variables must be 0/1 integers, ordered
-#'   variables must be ordered factors, Poisson and negative binomial variables
-#'   must be positive integers, normal variables must be continuous numeric,
-#'   and gamma variables must be positive numeric.
+#'   Variable names must refer to valid column names in data. Currently, the
+#'   only supported response distributions are \code{bernoulli_logit},
+#'   \code{ordered_logistic}, \code{poisson_softplus},
+#'   \code{negative_binomial_softplus}, \code{normal}, and \code{gamma_log}.
+#'   Bernoulli variables must be 0/1 integers, ordered variables must be ordered
+#'   factors, Poisson and negative binomial variables must be positive integers,
+#'   normal variables must be continuous numeric, and gamma variables must be
+#'   positive numeric.
 #' @param id A character of length one identifying the variable in the data that
 #'   links rows to tips on the phylogeny (strictly case-sensitive). Must refer
 #'   to a valid column name in the data. The id column must exactly match the
@@ -291,7 +291,7 @@ coev_make_standata <- function(data, variables, id, tree,
              dimnames = list(names(variables), names(variables)))
   }
   # match effects_mat to vector of variables
-  effects_mat <- effects_mat[names(variables), names(variables)]
+  effects_mat <- effects_mat[names(variables), names(variables), drop = FALSE]
   # convert effects_mat to integer matrix (unary conversion +)
   effects_mat <- +effects_mat
   # stop for internal mismatches

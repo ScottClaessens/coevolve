@@ -10,6 +10,8 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
   m08 <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
   m09 <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
   m10 <- readRDS(test_path("fixtures", "coevfit_example_10.rds"))
+  m11 <- readRDS(test_path("fixtures", "coevfit_example_11.rds"))
+  m12 <- readRDS(test_path("fixtures", "coevfit_example_12.rds"))
   m01 <- reload_fit(m01, filename = "coevfit_example_01-1.csv")
   m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
   m03 <- reload_fit(m03, filename = "coevfit_example_03-1.csv")
@@ -20,11 +22,21 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
   m08 <- reload_fit(m08, filename = "coevfit_example_08-1.csv")
   m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
   m10 <- reload_fit(m10, filename = "coevfit_example_10-1.csv")
+  m11 <- reload_fit(m11, filename = "coevfit_example_11-1.csv")
+  m12 <- reload_fit(m12, filename = "coevfit_example_12-1.csv")
   # expect the following errors
   #' @srrstats {G5.2, G5.2b} Test all error messages
   expect_error(
     coev_plot_trait_values(object = "fail"),
     "Argument 'object' must be a fitted coevolutionary model of class coevfit.",
+    fixed = TRUE
+  )
+  expect_error(
+    coev_plot_trait_values(object = m12),
+    paste0(
+      "Argument 'object' must be a fitted coevolutionary model ",
+      "with at least two coevolving variables."
+    ),
     fixed = TRUE
   )
   expect_error(
@@ -105,6 +117,7 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
   expect_no_error(fun(m08))
   expect_no_error(fun(m09))
   expect_no_error(fun(m10))
+  expect_no_error(fun(m11))
   expect_true(methods::is(fun(m01), "patchwork"))
   expect_true(methods::is(fun(m02), "patchwork"))
   expect_true(methods::is(fun(m03), "patchwork"))
@@ -116,6 +129,7 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
   expect_true(methods::is(fun(m08), "patchwork"))
   expect_true(methods::is(fun(m09), "patchwork"))
   expect_true(methods::is(fun(m10), "patchwork"))
+  expect_true(methods::is(fun(m11), "patchwork"))
   expect_no_error(fun(m01, variables = c("u", "v")))
   expect_no_error(fun(m02, variables = c("w", "x")))
   expect_no_error(fun(m03, variables = c("w", "x")))
@@ -126,6 +140,7 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
   expect_no_error(fun(m08, variables = c("x", "y")))
   expect_no_error(fun(m09, variables = c("x", "y")))
   expect_no_error(fun(m10, variables = c("x", "y")))
+  expect_no_error(fun(m11, variables = c("x", "y")))
   expect_no_error(fun(m01, ndraws = 10))
   expect_no_error(fun(m02, ndraws = 10))
   expect_no_error(fun(m03, ndraws = 10))
@@ -136,6 +151,7 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
   expect_no_error(fun(m08, ndraws = 10))
   expect_no_error(fun(m09, ndraws = 10))
   expect_no_error(fun(m10, ndraws = 10))
+  expect_no_error(fun(m11, ndraws = 10))
   expect_no_error(fun(m01, tree_id = 1))
   expect_no_error(fun(m02, tree_id = 1))
   expect_no_error(fun(m03, tree_id = 1))
@@ -146,6 +162,7 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
   expect_no_error(fun(m08, tree_id = 1))
   expect_no_error(fun(m09, tree_id = 1))
   expect_no_error(fun(m10, tree_id = 1))
+  expect_no_error(fun(m11, tree_id = 1))
   expect_no_error(fun(m01, xlim = c(-1, 1), ylim = c(-1, 1)))
   expect_no_error(fun(m02, xlim = c(-1, 1), ylim = c(-1, 1)))
   expect_no_error(fun(m03, xlim = c(-1, 1), ylim = c(-1, 1)))
@@ -156,4 +173,5 @@ test_that("coev_plot_trait_values() produces expected errors and output", {
   expect_no_error(fun(m08, xlim = c(-1, 1), ylim = c(-1, 1)))
   expect_no_error(fun(m09, xlim = c(-1, 1), ylim = c(-1, 1)))
   expect_no_error(fun(m10, xlim = c(-1, 1), ylim = c(-1, 1)))
+  expect_no_error(fun(m11, xlim = c(-1, 1), ylim = c(-1, 1)))
 })

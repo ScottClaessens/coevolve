@@ -307,6 +307,14 @@ run_checks_plot_trait_values <- function(object, variables, ndraws, tree_id,
       )
     )
   }
+  if (!(length(object$variables) >= 2)) {
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "with at least two coevolving variables."
+      )
+    )
+  }
   if (!is.null(variables)) {
     if (!is.character(variables) || !(length(variables) >= 2)) {
       # stop if variables is not a character string

@@ -83,6 +83,14 @@ coev_plot_delta_theta <- function(object, variables = NULL, prob = 0.66,
       )
     )
   }
+  if (!(length(object$variables) >= 2)) {
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "with at least two coevolving variables."
+      )
+    )
+  }
   # if user specifies variables argument:
   if (!is.null(variables)) {
     if (!methods::is(variables, "character")) {
