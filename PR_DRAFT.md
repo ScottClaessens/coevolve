@@ -32,7 +32,6 @@ seeds) shows:
 | Wall-clock (median)       | 322 s          | 101 s        |
 | Min pop-param ESS/s       | 2.7            | 10.3         |
 | Median pop-param ESS/s    | 9.0            | 28.7         |
-| Max Rhat                  | 1.007          | 1.004        |
 
 JAX is **~3x faster wall-clock** and **~3x better ESS/s** on the
 population parameters of interest (A, Q, b, cutpoints, cor_R).
@@ -41,12 +40,11 @@ acceleration is supported but not yet tested.
 
 ## How this replaces the existing nutpie-via-BridgeStan path
 
-On `main`, `backend = "nutpie"` compiles the same Stan model to C++
-via BridgeStan (`nutpie.compile_stan_model`), then samples with nutpie's
-Rust NUTS. This uses nutpie's Rust NUTS sampler but the model itself is still the
-compiled Stan C++ binary (via BridgeStan). The log-density and gradient
-computations are the same as Stan — nutpie just replaces the sampler,
-not the model evaluation.
+On `main`, `backend = "nutpie"` uses BridgeStan: the Stan model is
+compiled to a C++ shared library, and nutpie's Rust NUTS sampler calls
+into it via C FFI for log-density and gradient evaluations (using
+Stan's autodiff). This replaces CmdStan's sampler but not the model
+evaluation — gradients are still computed by Stan Math in C++.
 
 This branch replaces that entire path. Instead of compiling Stan to
 C++ and calling it through BridgeStan:
