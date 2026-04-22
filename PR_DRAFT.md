@@ -27,16 +27,18 @@ On the authority dataset (97 taxa, 2 ordered-logistic variables, 5
 trees), a clean benchmark (compilation excluded, 3 replicates, fixed
 seeds) shows:
 
-|                           | Stan (CmdStan) | JAX (nutpie) |
-|---------------------------|----------------|--------------|
-| Wall-clock (median)       | 322 s          | 101 s        |
-| Min pop-param ESS/s       | 2.7            | 10.3         |
-| Median pop-param ESS/s    | 9.0            | 28.7         |
+|                           | Stan (CmdStan) | BridgeStan (nutpie) | JAX (nutpie) |
+|---------------------------|----------------|---------------------|--------------|
+| Wall-clock (median)       | 322 s          | 679 s               | 101 s        |
+| Min pop-param ESS/s       | 2.7            | 1.6                 | 10.3         |
+| Median pop-param ESS/s    | 9.0            | 4.2                 | 28.7         |
 
-JAX is **~3x faster wall-clock** and **~3x better ESS/s** on the
-population parameters of interest (A, Q, b, cutpoints, cor_R).
-Both backends converge well. These are local CPU benchmarks; GPU
-acceleration is supported but not yet tested.
+JAX is **~3x faster wall-clock** and **~3x better ESS/s** than Stan
+on the population parameters of interest (A, Q, b, cutpoints, cor_R).
+BridgeStan is slower than both — nutpie's sampler doesn't compensate
+for the overhead of calling Stan's C++ binary via FFI on this model.
+These are local CPU benchmarks; GPU acceleration is supported but not
+yet tested.
 
 ## How this replaces the existing nutpie-via-BridgeStan path
 
