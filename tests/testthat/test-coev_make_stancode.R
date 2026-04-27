@@ -85,19 +85,6 @@ test_that("coev_make_stancode() produces expected errors", {
   )
   expect_error(
     coev_make_stancode(
-      data = d,
-      variables = list(
-        # only x declared
-        x = "bernoulli_logit"
-      ),
-      id = "id",
-      tree = tree
-    ),
-    "Must be at least two coevolving variables.",
-    fixed = TRUE
-  )
-  expect_error(
-    coev_make_stancode(
       data = dplyr::tibble(
         id = tree$tip.label,
         x = list("test"),
@@ -1697,4 +1684,22 @@ test_that("coev_make_stancode() works with approximate GPs", {
   test_stan_code_match(match = "int<lower=1> NBgp;")
   test_stan_code_match(match = "matrix[N_tips, NBgp] Xgp;")
   test_stan_code_match(match = "array[NBgp] vector[3] slambda;")
+})
+
+test_that("coev_make_stancode() works with single traits", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(id = tree$tip.label, x = rnorm(n))
+  })
+  # create stan code with only one trait
+  expect_no_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(x = "normal"),
+      id = "id",
+      tree = tree
+    )
+  )
 })

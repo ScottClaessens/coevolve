@@ -92,6 +92,14 @@ coev_plot_flowfield <- function(object, var1, var2, nullclines = FALSE,
       )
     )
   }
+  if (!(length(object$variables) >= 2)) {
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model ",
+        "with at least two coevolving variables."
+      )
+    )
+  }
   if (!is.character(var1) || length(var1) != 1) {
     # stop if var1 not character string of length one
     #' @srrstats {G2.0, G2.1, G2.2} Assertion on length and type of input
