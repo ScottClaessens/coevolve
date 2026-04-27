@@ -1,14 +1,16 @@
 ---
 title: "Ancestral State Reconstruction with coevolve"
-format:
-  html:
+output:
+  rmarkdown::html_vignette:
     toc: true
-    code-fold: false
-    fig-width: 8
-    fig-height: 6
-execute:
-  warning: false
-  message: false
+pkgdown:
+  as_is: true
+date: "2026-04-27"
+author: "Erik Ringen"
+vignette: >
+  %\VignetteIndexEntry{Ancestral State Reconstruction with coevolve}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ## Overview
@@ -16,17 +18,16 @@ execute:
 The `coev_ancestral_states()` function extracts posterior estimates of latent
 trait values at internal (ancestral) nodes of the phylogeny from a fitted
 `coevfit` model. Because the model estimates latent states at every node in the
-tree, ancestral state reconstruction is a natural byproduct of model fitting ---
+tree, ancestral state reconstruction is a natural byproduct of model fitting --
 no separate analysis is needed.
 
-This notebook demonstrates the function using the **authority** dataset bundled
+This vignette demonstrates the function using the **authority** dataset bundled
 with the package: political and religious authority among 97 Austronesian
 societies.
 
 ## Setup
 
-```{r}
-#| label: setup
+``` r
 library(coevolve)
 library(ggplot2)
 library(dplyr)
@@ -41,9 +42,7 @@ We fit a coevolutionary model with two ordered-logistic variables. For
 demonstration purposes we use moderate sampling settings; in practice you would
 want more iterations and to check convergence carefully.
 
-```{r}
-#| label: fit-model
-#| cache: true
+``` r
 fit <- coev_fit(
   data = authority$data,
   variables = list(
@@ -60,11 +59,74 @@ fit <- coev_fit(
 )
 ```
 
+```
+Running MCMC with 4 parallel chains...
+
+Chain 4 finished in 84.6 seconds.
+Chain 3 finished in 114.0 seconds.
+Chain 1 finished in 115.0 seconds.
+Chain 2 finished in 119.0 seconds.
+
+All 4 chains finished successfully.
+Mean chain execution time: 108.1 seconds.
+Total execution time: 119.2 seconds.
+```
+
 Quick check that the model sampled adequately:
 
-```{r}
-#| label: model-summary
+``` r
 summary(fit)
+```
+
+```
+Variables: political_authority = ordered_logistic
+           religious_authority = ordered_logistic
+     Data: authority$data (Number of observations: 97)
+Phylogeny: authority$phylogeny (Number of trees: 1)
+    Draws: 4 chains, each with iter = 500; warmup = 500; thin = 1
+           total post-warmup draws = 2000
+
+Autoregressive selection effects:
+                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority    -0.53      0.44 -1.64 -0.02 1.00     1420     1270
+religious_authority    -0.60      0.48 -1.82 -0.03 1.00     1549     1137
+
+Cross selection effects:
+                                          Estimate Est.Error  2.5% 97.5% Rhat
+political_authority ⟶ religious_authority     1.50      0.74 -0.04  2.87 1.00
+religious_authority ⟶ political_authority     1.05      0.83 -0.62  2.64 1.00
+                                          Bulk_ESS Tail_ESS
+political_authority ⟶ religious_authority      842     1055
+religious_authority ⟶ political_authority      701     1384
+
+Drift parameters:
+                                             Estimate Est.Error  2.5% 97.5%
+sd(political_authority)                          2.15      0.82  0.37  3.70
+sd(religious_authority)                          1.46      0.82  0.13  3.10
+cor(political_authority,religious_authority)     0.37      0.30 -0.35  0.85
+                                             Rhat Bulk_ESS Tail_ESS
+sd(political_authority)                      1.00      453      406
+sd(religious_authority)                      1.01      416      887
+cor(political_authority,religious_authority) 1.00     1116     1360
+
+Continuous time intercept parameters:
+                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority     0.31      0.91 -1.55  2.12 1.00     2426     1337
+religious_authority     0.31      0.91 -1.47  2.14 1.01     3135     1612
+
+Ordinal cutpoint parameters:
+                       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority[1]    -1.44      0.88 -3.13  0.23 1.00     1266     1010
+political_authority[2]    -0.70      0.86 -2.36  1.01 1.00     1418     1276
+political_authority[3]     1.48      0.86 -0.20  3.19 1.00     1661     1415
+religious_authority[1]    -1.59      0.92 -3.32  0.24 1.00     1424     1248
+religious_authority[2]    -0.92      0.90 -2.61  0.87 1.00     1699     1531
+religious_authority[3]     1.45      0.92 -0.24  3.28 1.00     1913     1488
+```
+
+```
+Warning: There were 2 divergent transitions after warmup.
+http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
 ## Ancestral states on the latent scale
@@ -72,10 +134,21 @@ summary(fit)
 The default call returns posterior summaries (median + 95% credible interval) for
 all internal nodes on the latent (eta) scale:
 
-```{r}
-#| label: asr-latent
+``` r
 asr_latent <- coev_ancestral_states(fit)
 head(asr_latent)
+```
+
+```
+# A tibble: 6 x 6
+   node variable            estimate lower upper clade_pp
+  <int> <chr>                  <dbl> <dbl> <dbl>    <dbl>
+1    98 political_authority    0.377 -1.44  2.15        1
+2    98 religious_authority    0.292 -1.52  1.92        1
+3    99 political_authority    0.363 -1.39  2.20        1
+4    99 religious_authority    0.282 -1.44  1.87        1
+5   100 political_authority    0.235 -1.94  2.44        1
+6   100 religious_authority    0.276 -1.61  2.20        1
 ```
 
 The result is a tibble with one row per node-variable combination. The `node`
@@ -88,9 +161,7 @@ We can paint the tree with estimated ancestral values by mapping the posterior
 median to a diverging color gradient. Blue indicates low latent values; red
 indicates high:
 
-```{r}
-#| label: plot-latent-tree
-#| fig-height: 10
+``` r
 tree <- attr(asr_latent, "ref_tree")
 n_tips <- length(tree$tip.label)
 asr_all <- coev_ancestral_states(fit, nodes = "all")
@@ -133,14 +204,17 @@ axis(1, at = round(seq(global_range[1], global_range[2], length.out = 5), 1),
 mtext("Latent value (eta)", side = 1, line = 1.2, cex = 0.7)
 ```
 
+<div class="figure" style="text-align: center">
+<img src="asr-latent-tree-1.png" alt="plot of chunk asr-latent-tree" width="80%" />
+</div>
+
 ### Joint latent-space scatterplot
 
 We can also look at the joint distribution of ancestral states across the two
 variables. Each point is an internal node, with crosshairs showing the 95%
 credible interval:
 
-```{r}
-#| label: plot-latent-scatter
+``` r
 asr_wide <- asr_latent |>
   select(node, variable, estimate, lower, upper) |>
   pivot_wider(
@@ -169,18 +243,33 @@ ggplot(asr_wide,
   )
 ```
 
+<div class="figure" style="text-align: center">
+<img src="asr-latent-scatter-1.png" alt="plot of chunk asr-latent-scatter" width="60%" />
+</div>
+
 ## Ancestral states on the response scale
 
 For ordered-logistic variables, the response scale returns estimated category
-probabilities at each node --- how likely each level of authority (absent,
+probabilities at each node -- how likely each level of authority (absent,
 sublocal, local, supralocal) was at that ancestral node:
 
-```{r}
-#| label: asr-response
+``` r
 asr_resp <- coev_ancestral_states(
   fit, nodes = "all", scale = "response"
 )
 head(asr_resp)
+```
+
+```
+# A tibble: 6 x 7
+   node variable            prob_1 prob_2 prob_3 prob_4 clade_pp
+  <int> <chr>                <dbl>  <dbl>  <dbl>  <dbl>    <dbl>
+1     1 political_authority 0.0442 0.0419  0.346  0.536        1
+2     1 religious_authority 0.0348 0.0284  0.340  0.581        1
+3     2 political_authority 0.107  0.0830  0.403  0.323        1
+4     2 religious_authority 0.0889 0.0636  0.427  0.342        1
+5     3 political_authority 0.0763 0.0645  0.399  0.417        1
+6     3 religious_authority 0.0604 0.0458  0.421  0.435        1
 ```
 
 Notice the output now has `prob_1`, `prob_2`, etc. columns instead of
@@ -194,10 +283,7 @@ category. At the tips, observed values are shown as solid colors (one category
 with probability 1). If a tip has missing data, the model-estimated
 probabilities are shown instead.
 
-```{r}
-#| label: plot-pie-tree
-#| fig-height: 12
-#| fig-width: 10
+``` r
 cat_labels <- c("Absent", "Sublocal", "Local", "Supralocal")
 cat_colors <- c("#FFFFB2", "#FECC5C", "#FD8D3C", "#E31A1C")
 prob_cols <- grep("^prob_", names(asr_resp), value = TRUE)
@@ -250,23 +336,33 @@ legend("center", legend = cat_labels, fill = cat_colors,
        horiz = TRUE, bty = "n", cex = 0.9, title = "Authority level")
 ```
 
+<div class="figure" style="text-align: center">
+<img src="asr-pie-tree-1.png" alt="plot of chunk asr-pie-tree" width="80%" />
+</div>
+
 ## Working with raw posterior draws
 
 Setting `summary = FALSE` returns the full posterior array, which is useful for
 custom summaries or propagating uncertainty:
 
-```{r}
-#| label: asr-draws
+``` r
 asr_draws <- coev_ancestral_states(fit, summary = FALSE)
 str(asr_draws, max.level = 1)
+```
+
+```
+List of 4
+ $ draws         : num [1:2000, 1:96, 1:2] 0.914 0.294 1.224 0.221 0.319 ...
+ $ ref_tree      :List of 5
+ $ node_ids      : int [1:96] 98 99 100 101 102 103 104 105 106 107 ...
+ $ variable_names: chr [1:2] "political_authority" "religious_authority"
 ```
 
 The `draws` element is a 3D array with dimensions `[draws, nodes, variables]`.
 Here's an example: the posterior density of latent values at the root node for
 both variables:
 
-```{r}
-#| label: plot-root-density
+``` r
 root_node_idx <- which(asr_draws$node_ids == n_tips + 1)
 
 root_df <- data.frame(
@@ -290,17 +386,23 @@ ggplot(root_df, aes(x = eta, fill = variable)) +
   )
 ```
 
+<div class="figure" style="text-align: center">
+<img src="asr-root-density-1.png" alt="plot of chunk asr-root-density" width="60%" />
+</div>
+
 ## Identifying nodes on the tree
 
 To query ancestral states for specific nodes, you first need to know their IDs.
 The `coev_plot_node_labels()` function plots the tree with internal node IDs
 displayed in red:
 
-```{r}
-#| label: plot-node-labels
-#| fig-height: 10
+``` r
 tree <- coev_plot_node_labels(fit)
 ```
+
+<div class="figure" style="text-align: center">
+<img src="asr-node-labels-1.png" alt="plot of chunk asr-node-labels" width="60%" />
+</div>
 
 Node numbering follows ape's convention: tips are `1:N_tips` and internal nodes
 are `(N_tips + 1):(2 * N_tips - 1)`.
@@ -308,12 +410,10 @@ are `(N_tips + 1):(2 * N_tips - 1)`.
 ### Interactive node selection
 
 In an interactive R session you can click directly on the tree to identify nodes.
-After plotting, call `identify()` on the returned tree object --- click on nodes
+After plotting, call `identify()` on the returned tree object -- click on nodes
 of interest, then press Escape to finish:
 
-```{r}
-#| label: identify-nodes
-#| eval: false
+``` r
 tree <- coev_plot_node_labels(fit)
 selected <- identify(tree)
 # selected$nodes contains the node IDs you clicked on
@@ -325,8 +425,7 @@ coev_ancestral_states(fit, nodes = selected$nodes)
 Once you know the node IDs, you can target specific nodes or variables to reduce
 computation and focus the output:
 
-```{r}
-#| label: asr-subset
+``` r
 # only religious authority, at three specific internal nodes
 asr_sub <- coev_ancestral_states(
   fit,
@@ -336,9 +435,11 @@ asr_sub <- coev_ancestral_states(
 asr_sub
 ```
 
-## Session info
-
-```{r}
-#| label: session-info
-sessionInfo()
+```
+# A tibble: 3 x 6
+   node variable            estimate lower upper clade_pp
+  <int> <chr>                  <dbl> <dbl> <dbl>    <dbl>
+1    98 religious_authority    0.292 -1.52  1.92        1
+2    99 religious_authority    0.282 -1.44  1.87        1
+3   100 religious_authority    0.276 -1.61  2.20        1
 ```
