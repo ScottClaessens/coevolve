@@ -6,6 +6,13 @@
 
 # coevolve 1.0.0
 
+### New Features
+
+* Added pure JAX/NumPyro backend via `nuts_sampler = "nutpie"`.
+  Uses nutpie's Rust NUTS sampler with JAX gradients for ~5x
+  faster sampling than Stan on typical models. Requires
+  `pip install jax numpyro nutpie`.
+
 ### Bug Fixes
 
 * Fixed issue with `summary()` when `estimate_residual = FALSE` (#95)
@@ -15,8 +22,11 @@
 * Added `nutpie` as an alternative sampler for the Stan models (#92)
 * Cached matrix computations when branch lengths are identical (#93)
 * Implemented Hilbert-space approximate Gaussian processes for spatial control,
-  adding the `lon_lat` argument and deprecating the `dist_mat` argument in 
+  adding the `lon_lat` argument and deprecating the `dist_mat` argument in
   `coev_fit()` (#103)
+* Added pure JAX/NumPyro backend via `nuts_sampler = "nutpie"`.
+  Uses nutpie's Rust NUTS sampler with JAX gradients for fast
+  sampling. Requires `pip install jax numpyro nutpie`.
 
 ### Other Changes
 

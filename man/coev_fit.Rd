@@ -22,7 +22,8 @@ coev_fit(
   log_lik = FALSE,
   prior_only = FALSE,
   adapt_delta = 0.95,
-  backend = "cmdstanr",
+  nuts_sampler = "stan",
+  backend = NULL,
   dist_mat = deprecated(),
   ...
 )
@@ -147,32 +148,31 @@ WAIC and LOO.}
 the data and returns a posterior distribution. If \code{TRUE}, the model
 samples from the prior only, ignoring the likelihood.}
 
-\item{adapt_delta}{Target acceptance probability for the NUTS sampler.
-Default is 0.95. For \code{backend = "cmdstanr"}, this is passed directly
-to \pkg{cmdstanr::sample()}. For \code{backend = "nutpie"}, this is mapped
-to the \code{target_accept} parameter.}
+\item{adapt_delta}{Target acceptance probability for the
+NUTS sampler (default \code{0.95}). Passed to
+\pkg{cmdstanr::sample()} as \code{adapt_delta}, or to
+nutpie as \code{target_accept}.}
 
-\item{backend}{Character string specifying which backend to use. Options are
-\code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
-specified, the model will be sampled using nutpie via reticulate. Note
-that nutpie must be installed in your Python environment.}
+\item{nuts_sampler}{Which NUTS implementation to use.
+\code{"stan"} (default) fits the Stan model with
+CmdStan via \pkg{cmdstanr}. \code{"nutpie"} fits a
+pure JAX model using nutpie's Rust NUTS sampler with
+JAX gradients via \code{jax.value_and_grad}.}
 
-\item{dist_mat}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} Use the \code{lon_lat}
-argument instead.}
+\item{backend}{Legacy alias for \code{nuts_sampler}.
+\code{backend = "cmdstanr"} maps to
+\code{nuts_sampler = "stan"}. Prefer
+\code{nuts_sampler} directly.}
 
-\item{...}{Additional arguments. For sampling: arguments passed to
-\pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
-\pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
-\code{extra_stanc_args} and \code{extra_compile_args} work for both
-samplers. Common sampling arguments include \code{chains},
-\code{iter_sampling}, \code{iter_warmup}, and \code{seed}. For
-\code{backend = "nutpie"}, sampler-specific arguments such as
-\code{low_rank_modified_mass_matrix} (logical, enables low-rank modified
-mass matrix adaptation), \code{mass_matrix_gamma}, and
-\code{mass_matrix_eigval_cutoff} can be passed via \code{...}. Common
-compilation arguments include \code{extra_stanc_args = list("--O1")} for
-optimization and \code{extra_compile_args = list("STAN_THREADS=true")} for
-threading.}
+\item{dist_mat}{Deprecated. Use the \code{lon_lat} argument instead.}
+
+\item{...}{Additional arguments. For
+\code{nuts_sampler = "stan"}: passed to
+\pkg{cmdstanr::sample()} (and compilation via
+\code{extra_stanc_args}, \code{extra_compile_args}).
+For \code{nuts_sampler = "nutpie"}: sampling arguments
+such as \code{chains}, \code{iter_sampling},
+\code{iter_warmup}, \code{seed}.}
 }
 \value{
 Fitted model of class \code{coevfit}

@@ -46,9 +46,9 @@ knitr::opts_chunk$set(
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian generalized dynamic
-phylogenetic models in Stan. These models can be used to estimate how variables 
-have coevolved over evolutionary time and to assess causal directionality
-(X → Y vs. Y → X) and contingencies (X, then Y) in evolution.
+phylogenetic models in Stan. These models can be used to estimate how
+variables have coevolved over evolutionary time and to assess causal
+directionality (X → Y vs. Y → X) and contingencies (X, then Y) in evolution.
 
 While existing methods only allow pairs of binary traits to coevolve
 (e.g., [BayesTraits](https://www.evolution.reading.ac.uk/BayesTraitsV4.1.2/BayesTraitsV4.1.2.html)),
@@ -142,47 +142,46 @@ increase in the optimal trait value for religious authority, and vice versa.
 In other words, these two variables reciprocally coevolve over evolutionary
 time.
 
-### Optional: Using nutpie as an alternative sampler
+### Optional: Accelerated sampling (`nuts_sampler`)
 
-The **coevolve** package supports using `nutpie` as an alternative 
-high-performance sampler. To use nutpie:
+Sampling is selected with a single argument:
 
-1. **Install nutpie** in a Python environment:
+- **`nuts_sampler = "stan"`** (default): Stan model via **CmdStan** /
+  **cmdstanr** (Stan's built-in HMC/NUTS).
+- **`nuts_sampler = "nutpie"`**: uses JAX to compute gradients and
+  **nutpie**'s Rust NUTS sampler for fast, parallel sampling.
 
-   ```bash
-   pip install "nutpie[stan]"
-   ```
+#### Setup
 
-2. **Configure reticulate** to use the Python environment with nutpie installed.
-   Choose one of the following options:
+The nutpie backend requires Python with JAX, NumPyro, and nutpie. Install
+them with:
 
-   **Option A: Set environment variable** (recommended for reproducibility):
-   ```bash
-   export RETICULATE_PYTHON=/path/to/python
-   ```
-   Or in R:
-   ```r
-   Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
-   ```
+```bash
+pip install jax numpyro nutpie
+```
 
-   **Option B: Use virtual environment**:
-   ```r
-   reticulate::use_virtualenv("~/.venvs/nutpie-env")
-   ```
+Python dependencies are managed automatically via `reticulate`'s `uv`
+environment. The project `.Rprofile` sets `RETICULATE_PYTHON = "managed"`
+by default, so `reticulate` will install the required packages on first
+use. To pin a specific Python instead, set `RETICULATE_PYTHON` before
+`reticulate` initialises:
 
-   **Option C: Use Python directly**:
-   ```r
-   reticulate::use_python("/path/to/python")
-   ```
+```r
+Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
+```
 
-3. **Use nutpie** by setting `backend = "nutpie"` in `coev_fit()`:
-   ```r
-   fit <- coev_fit(..., backend = "nutpie")
-   ```
+#### Example: nutpie (recommended accelerated path)
 
-**Note**: Explicit configuration is required to ensure reproducibility and avoid
-version conflicts. The package does not automatically search for nutpie 
-installations.
+```r
+fit <- coev_fit(
+  ...,
+  nuts_sampler = "nutpie"
+)
+```
+
+**Note**: If you have previously pointed `reticulate` at a different Python
+(for example an older conda or mamba base environment), restart R after
+changing `RETICULATE_PYTHON` so the new interpreter is picked up cleanly.
 
 ## Citing coevolve
 
