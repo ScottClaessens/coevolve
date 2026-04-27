@@ -11,8 +11,8 @@
 #'   If \code{NULL} (default), all variables from the fitted model are included.
 #' @param nodes Which nodes to include. Either \code{"internal"} (default) for
 #'   internal nodes only, \code{"all"} for both tips and internal nodes, or an
-#'   integer vector of specific node IDs (using ape's node numbering convention
-#'   where tips are 1:N_tips and internal nodes are (N_tips+1):(N_tips+N_internal)).
+#'   integer vector of specific node IDs (using ape's node
+#'   numbering: tips = 1:N_tips, internal = (N_tips+1):total).
 #' @param tree_id (optional) An integer indicating which tree to use when the
 #'   model was fit with a \code{multiPhylo} object. If \code{NULL} (default),
 #'   uses tree 1 when only one tree is present, or integrates over trees when
@@ -41,7 +41,7 @@
 #'
 #'   If \code{summary = FALSE}, a list with elements:
 #'   \describe{
-#'     \item{draws}{A 3D array with dimensions [draws, nodes, variables]}
+#'     \item{draws}{A 3D array (draws x nodes x variables)}
 #'     \item{ref_tree}{The reference phylo object}
 #'     \item{node_ids}{Integer vector of node IDs (matching dim 2 of draws)}
 #'     \item{variable_names}{Character vector of variable names}
@@ -79,15 +79,12 @@
 #' @seealso \code{\link{coev_fit}}, \code{\link{coev_plot_trait_values}}
 #'
 #' @export
-coev_ancestral_states <- function(
-    object,
-    variables = NULL,
-    nodes = "internal",
-    tree_id = NULL,
-    scale = "latent",
-    summary = TRUE,
-    prob = 0.95
-) {
+coev_ancestral_states <- function(object, variables = NULL,
+                                  nodes = "internal",
+                                  tree_id = NULL,
+                                  scale = "latent",
+                                  summary = TRUE,
+                                  prob = 0.95) {
   # input validation
   run_checks_ancestral_states(
     object, variables, nodes, tree_id, scale, summary, prob
@@ -95,14 +92,11 @@ coev_ancestral_states <- function(
   # get tree(s) from fitted model
   tree <- object$tree
   if (!inherits(tree, "multiPhylo")) {
-    tree <- c(tree) # coerce single phylo to multiPhylo
+    tree <- list(tree)
     class(tree) <- "multiPhylo"
   }
-  n_tree <- object$stan_data$N_tree
   n_tips <- object$stan_data$N_tips
   n_seg <- object$stan_data$N_seg
-  node_seq <- object$stan_data$node_seq # matrix [N_tree, N_seg]
-  tip_indicator <- object$stan_data$tip # matrix [N_tree, N_seg]
   var_names <- names(object$variables)
   distributions <- unlist(object$variables)
   j <- length(var_names)
@@ -162,9 +156,6 @@ coev_ancestral_states <- function(
       draws_subset, distributions[var_idx], obs_means, cutpoints
     )
   }
-  # check if any variables are ordered_logistic on response scale
-  has_ordinal_response <- scale == "response" &&
-    any(distributions[var_idx] == "ordered_logistic")
   if (summary) {
     # compute posterior summaries
     probs <- c((1 - prob) / 2, 1 - (1 - prob) / 2)
@@ -173,8 +164,6 @@ coev_ancestral_states <- function(
       for (v_i in seq_along(var_idx)) {
         dist <- distributions[var_idx[v_i]]
         if (scale == "response" && dist == "ordered_logistic") {
-          # draws_subset is a list for ordinal variables
-          # draws_subset[[v_i]][draw, node, category]
           cat_draws <- draws_subset[[v_i]][, n_i, , drop = FALSE]
           n_cats <- dim(cat_draws)[3]
           row <- data.frame(
@@ -211,7 +200,7 @@ coev_ancestral_states <- function(
     attr(result, "ref_tree") <- ref_tree
     attr(result, "prob") <- prob
     attr(result, "scale") <- scale
-    return(result)
+    result
   } else {
     # return raw draws
     if (!is.list(draws_subset)) {
@@ -221,12 +210,12 @@ coev_ancestral_states <- function(
         variable = var_names
       )
     }
-    return(list(
+    list(
       draws = draws_subset,
       ref_tree = ref_tree,
       node_ids = selected_nodes,
       variable_names = var_names
-    ))
+    )
   }
 }
 
@@ -302,7 +291,7 @@ apply_inverse_link <- function(draws, distributions, obs_means, cutpoints) {
         result[[v]] <- array(transformed, dim = c(n_draws, n_nodes, 1))
       }
     }
-    return(result)
+    result
   } else {
     # all variables are non-ordinal: apply element-wise transforms
     for (v in seq_len(n_vars)) {
@@ -312,7 +301,7 @@ apply_inverse_link <- function(draws, distributions, obs_means, cutpoints) {
       }
       draws[, , v] <- transform_eta(eta_v, distributions[v], obs_means[v])
     }
-    return(draws)
+    draws
   }
 }
 
@@ -333,9 +322,6 @@ transform_eta <- function(eta, distribution, obs_mean = NULL) {
 #' Compute ordered logistic probabilities from eta and cutpoints
 #' @noRd
 ordered_logistic_probs <- function(eta, cutpoints) {
-  # P(Y = k) for ordered logistic model
-  # P(Y <= k) = logistic(c_k - eta)
-  # P(Y = k) = P(Y <= k) - P(Y <= k-1)
   n_cats <- length(cutpoints) + 1
   probs <- numeric(n_cats)
   for (k in seq_len(n_cats)) {
@@ -353,9 +339,9 @@ ordered_logistic_probs <- function(eta, cutpoints) {
 
 #' Input validation for coev_ancestral_states
 #' @noRd
-run_checks_ancestral_states <- function(
-    object, variables, nodes, tree_id, scale, summary, prob
-) {
+run_checks_ancestral_states <- function(object, variables, nodes,
+                                        tree_id, scale,
+                                        summary, prob) {
   if (!methods::is(object, "coevfit")) {
     stop2(
       paste0(

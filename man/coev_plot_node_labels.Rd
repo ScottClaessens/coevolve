@@ -4,14 +4,27 @@
 \alias{coev_plot_node_labels}
 \title{Plot phylogenetic tree with node labels from a fitted coevolutionary model}
 \usage{
-coev_plot_node_labels(object, tip_labels = TRUE, ...)
+coev_plot_node_labels(
+  object,
+  tip_labels = FALSE,
+  node_cex = NULL,
+  node_col = "#B2182B",
+  ...
+)
 }
 \arguments{
 \item{object}{An object of class \code{coevfit}}
 
-\item{tip_labels}{Logical. If \code{TRUE} (default), tip labels are shown.}
+\item{tip_labels}{Logical. If \code{FALSE} (default), tip labels are
+hidden to reduce clutter. Set to \code{TRUE} to display tip labels.}
 
-\item{...}{Additional arguments passed to \code{\link[ape]{plot.phylo}}.}
+\item{node_cex}{Numeric scaling factor for node label size. If \code{NULL}
+(default), the size is chosen automatically based on the number of tips.}
+
+\item{node_col}{Color for node labels. Default is \code{"#B2182B"} (red).}
+
+\item{...}{Additional arguments passed to \code{\link[ape]{plot.phylo}}
+(e.g. \code{cex} for tip label size, \code{edge.width}, \code{type}).}
 }
 \value{
 The \code{phylo} tree object, returned invisibly.
@@ -29,6 +42,11 @@ This function is a convenience wrapper around
 displays internal node IDs using ape's numbering convention: tips are
 numbered \code{1:N_tips} and internal nodes are
 \code{(N_tips + 1):(N_tips + N_internal)}.
+
+Node label size scales automatically with tree size when
+\code{node_cex = NULL}. For large trees, consider hiding tip labels
+(the default) and using the interactive workflow below to identify
+nodes of interest.
 
 In an interactive R session, the returned tree can be passed to
 \code{identify()} to click on nodes and retrieve their IDs:
@@ -55,8 +73,12 @@ fit <- coev_fit(
   seed = 1
 )
 
-# plot tree with node labels
+# plot tree with node labels (no tip labels by default)
 coev_plot_node_labels(fit)
+
+# show tip labels and customise node appearance
+coev_plot_node_labels(fit, tip_labels = TRUE, node_cex = 0.4,
+                      cex = 0.4)
 
 # interactive node selection (in interactive R sessions)
 tree <- coev_plot_node_labels(fit)

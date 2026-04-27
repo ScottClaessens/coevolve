@@ -22,8 +22,8 @@ If \code{NULL} (default), all variables from the fitted model are included.}
 
 \item{nodes}{Which nodes to include. Either \code{"internal"} (default) for
 internal nodes only, \code{"all"} for both tips and internal nodes, or an
-integer vector of specific node IDs (using ape's node numbering convention
-where tips are 1:N_tips and internal nodes are (N_tips+1):(N_tips+N_internal)).}
+integer vector of specific node IDs (using ape's node
+numbering: tips = 1:N_tips, internal = (N_tips+1):total).}
 
 \item{tree_id}{(optional) An integer indicating which tree to use when the
 model was fit with a \code{multiPhylo} object. If \code{NULL} (default),
@@ -57,7 +57,7 @@ The data frame has attributes \code{ref_tree} (the phylo object used),
 
 If \code{summary = FALSE}, a list with elements:
 \describe{
-\item{draws}{A 3D array with dimensions \link{draws, nodes, variables}}
+\item{draws}{A 3D array (draws x nodes x variables)}
 \item{ref_tree}{The reference phylo object}
 \item{node_ids}{Integer vector of node IDs (matching dim 2 of draws)}
 \item{variable_names}{Character vector of variable names}
