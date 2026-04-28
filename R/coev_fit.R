@@ -146,29 +146,24 @@
 #' @param prior_only Logical. If \code{FALSE} (default), the model is fitted to
 #'   the data and returns a posterior distribution. If \code{TRUE}, the model
 #'   samples from the prior only, ignoring the likelihood.
-#' @param adapt_delta Target acceptance probability for the NUTS sampler.
-#'   Default is 0.95. For \code{backend = "cmdstanr"}, this is passed directly
-#'   to \pkg{cmdstanr::sample()}. For \code{backend = "nutpie"}, this is mapped
-#'   to the \code{target_accept} parameter.
-#' @param backend Character string specifying which backend to use. Options are
-#'   \code{"cmdstanr"} (default) or \code{"nutpie"}. When \code{"nutpie"} is
-#'   specified, the model will be sampled using nutpie via reticulate. Note
-#'   that nutpie must be installed in your Python environment.
-#' @param dist_mat `r lifecycle::badge('deprecated')` Use the \code{lon_lat}
-#'   argument instead.
-#' @param ... Additional arguments. For sampling: arguments passed to
-#'   \pkg{cmdstanr::sample()} (when \code{backend = "cmdstanr"}) or
-#'   \pkg{nutpie.sample()} (when \code{backend = "nutpie"}). For compilation:
-#'   \code{extra_stanc_args} and \code{extra_compile_args} work for both
-#'   samplers. Common sampling arguments include \code{chains},
-#'   \code{iter_sampling}, \code{iter_warmup}, and \code{seed}. For
-#'   \code{backend = "nutpie"}, sampler-specific arguments such as
-#'   \code{low_rank_modified_mass_matrix} (logical, enables low-rank modified
-#'   mass matrix adaptation), \code{mass_matrix_gamma}, and
-#'   \code{mass_matrix_eigval_cutoff} can be passed via \code{...}. Common
-#'   compilation arguments include \code{extra_stanc_args = list("--O1")} for
-#'   optimization and \code{extra_compile_args = list("STAN_THREADS=true")} for
-#'   threading.
+#' @param adapt_delta Target acceptance probability for the
+#'   NUTS sampler (default \code{0.95}). Passed to
+#'   \pkg{cmdstanr::sample()} as \code{adapt_delta}, or to
+#'   nutpie as \code{target_accept}.
+#' @param nuts_sampler Which NUTS implementation to use.
+#'   \code{"stan"} (default) fits the Stan model with
+#'   CmdStan via \pkg{cmdstanr}. \code{"nutpie"} fits a
+#'   pure JAX model using nutpie's Rust NUTS sampler with
+#'   JAX gradients via \code{jax.value_and_grad}.
+#' @param backend Deprecated. Use the \code{nuts_sampler} argument instead.
+#' @param dist_mat Deprecated. Use the \code{lon_lat} argument instead.
+#' @param ... Additional arguments. For
+#'   \code{nuts_sampler = "stan"}: passed to
+#'   \pkg{cmdstanr::sample()} (and compilation via
+#'   \code{extra_stanc_args}, \code{extra_compile_args}).
+#'   For \code{nuts_sampler = "nutpie"}: sampling arguments
+#'   such as \code{chains}, \code{iter_sampling},
+#'   \code{iter_warmup}, \code{seed}.
 #'
 #' @returns Fitted model of class \code{coevfit}
 #'
@@ -291,125 +286,88 @@ coev_fit <- function(data, variables, id, tree,
                      estimate_correlated_drift = TRUE,
                      estimate_residual = TRUE,
                      log_lik = FALSE, prior_only = FALSE,
-                     adapt_delta = 0.95, backend = "cmdstanr",
+                     adapt_delta = 0.95,
+                     nuts_sampler = "stan",
+                     backend = deprecated(),
                      dist_mat = deprecated(), ...) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, complete_cases, lon_lat,
-             dist_k, dist_cov, measurement_error, prior, scale,
-             estimate_correlated_drift, estimate_residual, log_lik, prior_only,
-             dist_mat)
-  # check backend argument
-  if (!is.character(backend) || length(backend) != 1) {
-    stop2("Argument 'backend' must be a character string of length one.")
+  run_checks( # nolint: object_usage_linter.
+    data, variables, id, tree, effects_mat, complete_cases, lon_lat,
+    dist_k, dist_cov, measurement_error, prior, scale,
+    estimate_correlated_drift, estimate_residual, log_lik, prior_only,
+    dist_mat, backend
+  )
+  nuts_sampler <- normalize_nuts_sampler(nuts_sampler)
+  # generate code/config and data for model
+  if (nuts_sampler == "nutpie") {
+    model_cfg <- coev_make_model_config( # nolint: object_usage_linter.
+      data, variables, id, tree, effects_mat,
+      complete_cases, lon_lat, dist_k, dist_cov,
+      measurement_error, prior, scale,
+      estimate_correlated_drift, estimate_residual,
+      prior_only
+    )
+  } else {
+    sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
+                             complete_cases, lon_lat, dist_k, dist_cov,
+                             measurement_error, prior, scale,
+                             estimate_correlated_drift, estimate_residual,
+                             log_lik, prior_only)
   }
-  if (!backend %in% c("cmdstanr", "nutpie")) {
-    stop2("Argument 'backend' must be either 'cmdstanr' or 'nutpie'.")
-  }
-  # write stan code for model
-  sc <- coev_make_stancode(data, variables, id, tree, effects_mat,
-                           complete_cases, lon_lat, dist_k, dist_cov,
-                           measurement_error, prior, scale,
-                           estimate_correlated_drift, estimate_residual,
-                           log_lik, prior_only)
-  # get data list for stan
   sd <- coev_make_standata(data, variables, id, tree, effects_mat,
                            complete_cases, lon_lat, dist_k, dist_cov,
                            measurement_error, prior, scale,
                            estimate_correlated_drift, estimate_residual,
                            log_lik, prior_only)
   # fit model using specified sampler
-  if (backend == "nutpie") {
-    # check if nutpie is available
-    stop_if_nutpie_not_available()
-    # extract sampling arguments from ...
-    # Only map essential cmdstanr arguments; pass everything else generically
+  if (nuts_sampler == "nutpie") {
     sample_args <- list(...)
-    # Extract and map essential arguments
-    # uses default values if none have been specified
-    num_chains <- 4L
-    num_samples <- 1000L
-    num_warmup <- 1000L
-    seed <- NULL
-    num_chains <- if ("chains" %in% names(sample_args)) {
-      as.integer(sample_args$chains)
-    }
-    num_samples <- if ("iter_sampling" %in% names(sample_args)) {
-      as.integer(sample_args$iter_sampling)
-    }
-    num_warmup <- if ("iter_warmup" %in% names(sample_args)) {
-      as.integer(sample_args$iter_warmup)
-    }
-    seed <- if ("seed" %in% names(sample_args)) {
-      as.integer(sample_args$seed)
-    }
-    # Map cmdstanr argument names to nutpie argument names
-    # adapt_delta -> target_accept (nutpie uses target_accept)
-    target_accept <- adapt_delta
-    # Create argument name mapping for nutpie-specific conversions
-    # Maps cmdstanr argument names to nutpie argument names
-    # If nutpie uses the same name, no mapping needed (it passes through)
-    nutpie_arg_mapping <- c(
-      "parallel_chains" = "cores"
-    )
-    # Remove cmdstanr-specific arguments that are handled explicitly
-    # or don't apply to nutpie
+    num_chains <- if ("chains" %in% names(sample_args))
+      as.integer(sample_args$chains) else 4L
+    num_samples <- if ("iter_sampling" %in% names(sample_args))
+      as.integer(sample_args$iter_sampling) else 1000L
+    num_warmup <- if ("iter_warmup" %in% names(sample_args))
+      as.integer(sample_args$iter_warmup) else 1000L
+    seed <- if ("seed" %in% names(sample_args))
+      as.integer(sample_args$seed) else 0L
+    stop_if_jax_not_available() # nolint: object_usage_linter.
     nutpie_args <- sample_args
-    nutpie_args[c("chains", "iter_sampling", "iter_warmup", "seed",
-                  "adapt_delta", "refresh")] <- NULL
-    # Convert argument names according to mapping
-    # This allows cmdstanr argument names to be converted to nutpie names
-    for (cmdstanr_name in names(nutpie_arg_mapping)) {
-      if (cmdstanr_name %in% names(nutpie_args)) {
-        nutpie_name <- nutpie_arg_mapping[[cmdstanr_name]]
-        # Convert to appropriate type for nutpie
-        # cores needs to be an integer
-        if (nutpie_name == "cores") {
-          nutpie_args[[nutpie_name]] <- as.integer(nutpie_args[[cmdstanr_name]])
-        } else {
-          nutpie_args[[nutpie_name]] <- nutpie_args[[cmdstanr_name]]
-        }
-        nutpie_args[[cmdstanr_name]] <- NULL
-      }
-    }
-    # sample with nutpie
-    #' @srrstats {BS2.15} Errors in model fitting will be reported by nutpie
-    trace <- do.call(
-      nutpie_sample,
-      c(
-        list(
-          stan_code = sc,
-          data_list = sd,
-          num_chains = num_chains,
-          num_samples = num_samples,
-          num_warmup = num_warmup,
-          seed = seed,
-          target_accept = target_accept
-        ),
-        nutpie_args
-      )
+    nutpie_args[c(
+      "chains", "iter_sampling", "iter_warmup", "seed",
+      "parallel_chains", "refresh", "nuts_backend",
+      "nuts_gradient_backend", "compile_mode"
+    )] <- NULL
+    distributions <- as.character(variables)
+    sd_jax <- embed_model_config( # nolint: object_usage_linter.
+      standata_to_jax( # nolint: object_usage_linter.
+        sd, distributions
+      ), model_cfg
     )
-    # convert draws to draws_array format
-    draws_array <- convert_nutpie_draws(trace)
-    # extract variable names from draws
+    jax_result <- jax_run_nutpie( # nolint: object_usage_linter.
+      data_list     = sd_jax,
+      num_chains    = num_chains,
+      num_samples   = num_samples,
+      num_warmup    = num_warmup,
+      seed          = seed,
+      target_accept = adapt_delta,
+      nutpie_args   = nutpie_args
+    )
+    draws_array <- jax_result$draws_array
     stan_variables <- posterior::variables(draws_array)
-    # create wrapper object
-    model <- create_nutpie_wrapper(
-      trace = trace,
-      draws_array = draws_array,
+    model <- create_jax_wrapper( # nolint: object_usage_linter.
+      trace_result   = jax_result$trace,
+      draws_array    = draws_array,
       stan_variables = stan_variables,
-      iter_sampling = num_samples,
-      iter_warmup = num_warmup,
-      chains = num_chains,
-      seed = seed
+      iter_sampling  = num_samples,
+      iter_warmup    = num_warmup,
+      chains         = num_chains,
+      seed           = seed
     )
-    # extract metadata for coevfit object
-    # number of samples (total draws across all chains)
     nsamples <- posterior::ndraws(draws_array)
-    # Check if lp__ exists (nutpie typically doesn't include it)
     has_lp__ <- "lp__" %in% stan_variables
-  } else if (backend == "cmdstanr") {
+  } else {
     # use cmdstanr (default)
     # extract compilation and sampling arguments
     all_args <- list(...)
@@ -433,10 +391,15 @@ coev_fit <- function(data, variables, id, tree,
         cpp_options <- list(stan_threads = TRUE)
       }
     }
-    # remove nutpie-specific arguments from sampling args
+    # remove JAX/nutpie-only arguments from sampling args
     cmdstanr_args <- all_args
     cmdstanr_args$extra_stanc_args <- NULL
     cmdstanr_args$extra_compile_args <- NULL
+    drop_stan <- c(
+      "nuts_backend", "nuts_gradient_backend", "nutpie_backend",
+      "gradient_backend", "sampler", "compile_mode"
+    )
+    cmdstanr_args[drop_stan] <- NULL
     # remove NULL elements
     cmdstanr_args <- cmdstanr_args[!sapply(cmdstanr_args, is.null)]
     #' @srrstats {BS2.15} Errors in model fitting will be reported by cmdstanr
@@ -475,7 +438,7 @@ coev_fit <- function(data, variables, id, tree,
       id = id,
       tree = tree,
       tree_name = deparse(substitute(tree)),
-      stan_code = sc,
+      stan_code = if (nuts_sampler == "stan") sc else NULL,
       stan_data = sd,
       effects_mat = sd$effects_mat,
       complete_cases = complete_cases,
@@ -487,9 +450,31 @@ coev_fit <- function(data, variables, id, tree,
       estimate_correlated_drift = estimate_correlated_drift,
       estimate_residual = estimate_residual,
       prior_only = prior_only,
-      nsamples = nsamples, # total number of draws across all chains
-      has_lp__ = has_lp__  # whether lp__ variable exists
+      nuts_sampler = nuts_sampler,
+      backend = if (identical(nuts_sampler, "stan"))
+        "cmdstanr" else "nutpie",
+      nsamples = nsamples,
+      has_lp__ = has_lp__
     )
   class(out) <- "coevfit"
   out
+}
+
+#' @noRd
+normalize_nuts_sampler <- function(x) {
+  if (!is.character(x) || length(x) != 1L || is.na(x[1])) {
+    stop2(
+      "Argument 'nuts_sampler' must be a single ",
+      "non-missing character string."
+    )
+  }
+  v <- tolower(x[1])
+  ok <- c("stan", "nutpie")
+  if (!v %in% ok) {
+    stop2(
+      "Argument 'nuts_sampler' must be ",
+      "one of: ", paste(ok, collapse = ", "), "."
+    )
+  }
+  v
 }
