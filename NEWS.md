@@ -3,15 +3,12 @@
 ### New Features
 
 * Allow for single traits (#107)
-
-# coevolve 1.0.0
-
-### New Features
-
 * Added pure JAX/NumPyro backend via `nuts_sampler = "nutpie"`.
   Uses nutpie's Rust NUTS sampler with JAX gradients for ~5x
   faster sampling than Stan on typical models. Requires
-  `pip install jax numpyro nutpie`.
+  `pip install jax numpyro nutpie` (#109)
+
+# coevolve 1.0.0
 
 ### Bug Fixes
 
