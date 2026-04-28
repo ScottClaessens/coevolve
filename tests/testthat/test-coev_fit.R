@@ -883,7 +883,7 @@ test_that("coev_fit() produces expected errors", {
     "Argument 'prior_only' must be a logical of length one.",
     fixed = TRUE
   )
-  expect_error(
+  lifecycle::expect_defunct(
     coev_fit(
       data = d,
       variables = list(
@@ -893,9 +893,7 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree,
       backend = 0
-    ),
-    "'backend' is deprecated",
-    fixed = TRUE
+    )
   )
   expect_error(
     coev_fit(

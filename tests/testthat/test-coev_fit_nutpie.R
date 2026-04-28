@@ -91,7 +91,38 @@ test_that("stop_if_jax_not_available gives informative error", {
   )
 })
 
-test_that("coev_fit with nuts_sampler='jax' returns coevfit", {
+test_that("summary.jax_fit forwards quantile formulas as columns", {
+  draws <- posterior::as_draws_array(
+    array(
+      stats::rnorm(4 * 100 * 2),
+      dim = c(100, 4, 2),
+      dimnames = list(
+        iteration = NULL,
+        chain = NULL,
+        variable = c("a", "b")
+      )
+    )
+  )
+  fit <- coevolve:::create_jax_wrapper(
+    trace_result = NULL,
+    draws_array = draws,
+    stan_variables = c("a", "b"),
+    iter_sampling = 100L,
+    iter_warmup = 100L,
+    chains = 4L
+  )
+  s <- fit$summary(
+    NULL,
+    Estimate = "mean",
+    `Est.Error` = "sd",
+    ~quantile(.x, probs = c(0.025, 0.975)),
+    Rhat = "rhat"
+  )
+  expect_true(all(c("Estimate", "Est.Error", "2.5%", "97.5%", "Rhat")
+                  %in% names(s)))
+})
+
+test_that("coev_fit with nuts_sampler='nutpie' returns coevfit", {
   skip_if_not(
     coevolve:::check_jax_available(),
     message = "JAX not available - skipping JAX tests"

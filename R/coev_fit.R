@@ -155,10 +155,7 @@
 #'   CmdStan via \pkg{cmdstanr}. \code{"nutpie"} fits a
 #'   pure JAX model using nutpie's Rust NUTS sampler with
 #'   JAX gradients via \code{jax.value_and_grad}.
-#' @param backend Legacy alias for \code{nuts_sampler}.
-#'   \code{backend = "cmdstanr"} maps to
-#'   \code{nuts_sampler = "stan"}. Prefer
-#'   \code{nuts_sampler} directly.
+#' @param backend Deprecated. Use the \code{nuts_sampler} argument instead.
 #' @param dist_mat Deprecated. Use the \code{lon_lat} argument instead.
 #' @param ... Additional arguments. For
 #'   \code{nuts_sampler = "stan"}: passed to
@@ -291,30 +288,18 @@ coev_fit <- function(data, variables, id, tree,
                      log_lik = FALSE, prior_only = FALSE,
                      adapt_delta = 0.95,
                      nuts_sampler = "stan",
-                     backend = NULL,
+                     backend = deprecated(),
                      dist_mat = deprecated(), ...) {
   #' @srrstats {BS2.1} Pre-processing routines in this function ensure that all
   #'   input data is dimensionally commensurate
   # check arguments
-  run_checks(data, variables, id, tree, effects_mat, complete_cases, lon_lat,
-             dist_k, dist_cov, measurement_error, prior, scale,
-             estimate_correlated_drift, estimate_residual, log_lik, prior_only,
-             dist_mat)
-  if (!is.null(backend)) {
-    if (!is.character(backend) || length(backend) != 1L) {
-      stop2("'backend' is deprecated. Use nuts_sampler.")
-    }
-    b <- tolower(backend)
-    b_map <- if (b == "cmdstanr") "stan" else "nutpie"
-    nuts_sampler <- b_map
-    warning(
-      "`backend` is deprecated; use `nuts_sampler = \"",
-      nuts_sampler, "\"` instead.",
-      call. = FALSE
-    )
-  } else {
-    nuts_sampler <- normalize_nuts_sampler(nuts_sampler)
-  }
+  run_checks( # nolint: object_usage_linter.
+    data, variables, id, tree, effects_mat, complete_cases, lon_lat,
+    dist_k, dist_cov, measurement_error, prior, scale,
+    estimate_correlated_drift, estimate_residual, log_lik, prior_only,
+    dist_mat, backend
+  )
+  nuts_sampler <- normalize_nuts_sampler(nuts_sampler)
   # generate code/config and data for model
   if (nuts_sampler == "nutpie") {
     model_cfg <- coev_make_model_config( # nolint: object_usage_linter.

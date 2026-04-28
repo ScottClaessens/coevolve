@@ -610,7 +610,8 @@ run_checks_prior <- function(prior) {
 run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
                        lon_lat, dist_k, dist_cov, measurement_error, prior,
                        scale, estimate_correlated_drift, estimate_residual,
-                       log_lik, prior_only, dist_mat) {
+                       log_lik, prior_only, dist_mat,
+                       backend = deprecated()) {
   # run checks from previous functions
   run_checks_data(data)
   run_checks_variables(data, variables)
@@ -653,6 +654,13 @@ run_checks <- function(data, variables, id, tree, effects_mat, complete_cases,
       with = I("'lon_lat'")
     )
   }
+  if (lifecycle::is_present(backend)) {
+    lifecycle::deprecate_stop(
+      when = "1.0.0.9001",
+      what = I("The 'backend' argument"),
+      with = I("'nuts_sampler'")
+    )
+  }
 }
 
 #' Internal helper function for producing errors
@@ -681,6 +689,35 @@ stop2 <- function(...) {
 #' @noRd
 warning2 <- function(...) {
   warning(..., call. = FALSE)
+}
+
+#' Default priors for the dynamic coevolutionary model
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Single source of truth for the default prior specifications,
+#'   shared between the Stan code generator (\code{coev_make_stancode}) and
+#'   the JAX model config (\code{coev_make_model_config}). The default for
+#'   \code{phi} (overdispersion) is set inside the Stan model code, not here.
+#'
+#' @returns Named list of Stan-syntax prior strings.
+#'
+#' @noRd
+default_priors <- function() {
+  list(
+    b              = "std_normal()",
+    eta_anc        = "std_normal()",
+    A_offdiag      = "std_normal()",
+    A_diag         = "std_normal()",
+    L_R            = "lkj_corr_cholesky(4)",
+    Q_sigma        = "std_normal()",
+    c              = "normal(0, 2)",
+    shape          = "gamma(0.01, 0.01)",
+    sigma_dist     = "exponential(1)",
+    rho_dist       = "exponential(5)",
+    sigma_residual = "exponential(1)",
+    L_residual     = "lkj_corr_cholesky(4)"
+  )
 }
 
 #' Internal helper function for computing eigen functions for Gaussian Processes

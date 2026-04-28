@@ -23,7 +23,7 @@ coev_fit(
   prior_only = FALSE,
   adapt_delta = 0.95,
   nuts_sampler = "stan",
-  backend = NULL,
+  backend = deprecated(),
   dist_mat = deprecated(),
   ...
 )
@@ -159,10 +159,7 @@ CmdStan via \pkg{cmdstanr}. \code{"nutpie"} fits a
 pure JAX model using nutpie's Rust NUTS sampler with
 JAX gradients via \code{jax.value_and_grad}.}
 
-\item{backend}{Legacy alias for \code{nuts_sampler}.
-\code{backend = "cmdstanr"} maps to
-\code{nuts_sampler = "stan"}. Prefer
-\code{nuts_sampler} directly.}
+\item{backend}{Deprecated. Use the \code{nuts_sampler} argument instead.}
 
 \item{dist_mat}{Deprecated. Use the \code{lon_lat} argument instead.}
 

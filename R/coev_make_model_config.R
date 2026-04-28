@@ -1,33 +1,10 @@
 #' Make model configuration for dynamic coevolutionary model
 #'
 #' Computes model structure flags and prior specifications consumed by
-#' the JAX/NumPyro model builder. The returned list is embedded into the
-#' data dict (via \code{embed_model_config}) so the model builder can
-#' construct the model without any R-level string generation.
+#' the JAX/NumPyro model builder. Internal helper called from the JAX
+#' sampling path; not user-facing.
 #'
-#' @inheritParams coev_make_stancode
-#'
-#' @returns A named list of model configuration flags and prior
-#'   specifications. Merged into the data list via
-#'   \code{embed_model_config}.
-#'
-#' @author Erik Ringen \email{erikjacob.ringen@@uzh.ch}
-#'
-#' @seealso \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}},
-#'   \code{\link{coev_fit}}
-#'
-#' @examples
-#' cfg <- coev_make_model_config(
-#'   data = authority$data,
-#'   variables = list(
-#'     political_authority = "ordered_logistic",
-#'     religious_authority = "ordered_logistic"
-#'   ),
-#'   id = "language",
-#'   tree = authority$phylogeny
-#' )
-#'
-#' @export
+#' @noRd
 coev_make_model_config <- function(data, variables, id, tree,
                                    effects_mat = NULL, complete_cases = FALSE,
                                    lon_lat = NULL, dist_k = NA,
@@ -48,20 +25,7 @@ coev_make_model_config <- function(data, variables, id, tree,
   variables <- names(variables)
   J <- length(variables) # nolint: object_name_linter.
 
-  priors <- list(
-    b              = "std_normal()",
-    eta_anc        = "std_normal()",
-    A_offdiag      = "std_normal()",
-    A_diag         = "std_normal()",
-    L_R            = "lkj_corr_cholesky(4)",
-    Q_sigma        = "std_normal()",
-    c              = "normal(0, 2)",
-    shape          = "gamma(0.01, 0.01)",
-    sigma_dist     = "exponential(1)",
-    rho_dist       = "exponential(5)",
-    sigma_residual = "exponential(1)",
-    L_residual     = "lkj_corr_cholesky(4)"
-  )
+  priors <- default_priors() # nolint: object_usage_linter.
   if (!is.null(prior)) {
     for (nm in names(prior)) priors[[nm]] <- prior[[nm]]
   }

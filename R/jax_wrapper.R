@@ -111,25 +111,8 @@ summary.jax_fit <- function(object, variables = NULL, ...) {
   }
 
   summary_specs <- list(...)
-  function_map <- list(
-    "mean" = "mean", "median" = "median", "sd" = "sd",
-    "mad" = "mad", "rhat" = "rhat",
-    "ess_bulk" = "ess_bulk", "ess_tail" = "ess_tail"
-  )
-
-  posterior_args <- list()
-  for (col_name in names(summary_specs)) {
-    spec <- summary_specs[[col_name]]
-    if (is.character(spec) && length(spec) == 1 &&
-          spec %in% names(function_map)) {
-      posterior_args[[col_name]] <- function_map[[spec]]
-    } else {
-      posterior_args[[col_name]] <- spec
-    }
-  }
-
-  if (length(posterior_args) == 0) {
-    posterior_args <- list(
+  if (length(summary_specs) == 0) {
+    summary_specs <- list(
       mean = "mean", sd = "sd", rhat = "rhat",
       ess_bulk = "ess_bulk", ess_tail = "ess_tail"
     )
@@ -137,7 +120,7 @@ summary.jax_fit <- function(object, variables = NULL, ...) {
 
   summary_df <- do.call(
     posterior::summarise_draws,
-    c(list(.x = draws), posterior_args)
+    c(list(.x = draws), summary_specs)
   )
   if (!"variable" %in% names(summary_df)) {
     summary_df$variable <- rownames(summary_df)

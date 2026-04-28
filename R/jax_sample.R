@@ -23,61 +23,66 @@ jax_run_nutpie <- function(data_list,
                            seed = 0L,
                            target_accept = 0.95,
                            nutpie_args = list()) {
-  Sys.setenv(PYTHONIOENCODING = "utf-8")
-  Sys.setenv(PYTHONUNBUFFERED = "1")
-  Sys.setenv(JAX_PLATFORMS = "cpu")
+  withr::with_envvar(
+    new = c(
+      PYTHONIOENCODING = "utf-8",
+      PYTHONUNBUFFERED = "1",
+      JAX_PLATFORMS    = "cpu"
+    ),
+    {
+      py_data <- convert_r_to_python_data_jax(data_list) # nolint
+      jax_mod <- load_jax_model_module(convert = FALSE) # nolint
 
-  py_data <- convert_r_to_python_data_jax(data_list) # nolint
-  jax_mod <- load_jax_model_module(convert = FALSE) # nolint
+      message("Compiling JAX model with nutpie ...")
+      .t_compile_start <- proc.time()[["elapsed"]]
+      build_result <- jax_mod$build_nutpie_model(py_data)
+      compiled <- build_result[[0]]
+      .t_compile_end <- proc.time()[["elapsed"]]
 
-  message("Compiling JAX model with nutpie ...")
-  .t_compile_start <- proc.time()[["elapsed"]]
-  build_result <- jax_mod$build_nutpie_model(py_data)
-  compiled <- build_result[[0]]
-  .t_compile_end <- proc.time()[["elapsed"]]
+      message("Sampling with nutpie (Rust NUTS + JAX gradients) ...")
+      .t_sample_start <- proc.time()[["elapsed"]]
+      sample_kwargs <- list(
+        compiled_model = compiled,
+        draws          = as.integer(num_samples),
+        tune           = as.integer(num_warmup),
+        chains         = as.integer(num_chains),
+        seed           = as.integer(seed)
+      )
+      if (!is.null(target_accept)) {
+        sample_kwargs$target_accept <- as.double(target_accept)
+      }
+      if (length(nutpie_args)) {
+        sample_kwargs[names(nutpie_args)] <- nutpie_args
+      }
 
-  message("Sampling with nutpie (Rust NUTS + JAX gradients) ...")
-  .t_sample_start <- proc.time()[["elapsed"]]
-  sample_kwargs <- list(
-    compiled_model = compiled,
-    draws          = as.integer(num_samples),
-    tune           = as.integer(num_warmup),
-    chains         = as.integer(num_chains),
-    seed           = as.integer(seed)
+      # Start sampling in background thread, poll until done
+      do.call(jax_mod$start_sampling, sample_kwargs)
+
+      while (TRUE) {
+        status <- reticulate::py_to_r(jax_mod$check_sampling())
+        if (isTRUE(status$done)) break
+        Sys.sleep(0.5)
+      }
+
+      .t_sample_end <- proc.time()[["elapsed"]]
+
+      message(sprintf(
+        "  Compile: %.1fs | Sample: %.1fs",
+        .t_compile_end - .t_compile_start,
+        .t_sample_end - .t_sample_start
+      ))
+
+      if (!is.null(status$error)) {
+        stop2("nutpie sampling failed: ", status$error)
+      }
+
+      trace <- jax_mod$collect_result()
+
+      draws_array <- convert_jax_draws(trace, num_chains)
+
+      list(trace = trace, draws_array = draws_array)
+    }
   )
-  if (!is.null(target_accept)) {
-    sample_kwargs$target_accept <- as.double(target_accept)
-  }
-  if (length(nutpie_args)) {
-    sample_kwargs[names(nutpie_args)] <- nutpie_args
-  }
-
-  # Start sampling in background thread, poll until done
-  do.call(jax_mod$start_sampling, sample_kwargs)
-
-  while (TRUE) {
-    status <- reticulate::py_to_r(jax_mod$check_sampling())
-    if (isTRUE(status$done)) break
-    Sys.sleep(0.5)
-  }
-
-  .t_sample_end <- proc.time()[["elapsed"]]
-
-  message(sprintf(
-    "  Compile: %.1fs | Sample: %.1fs",
-    .t_compile_end - .t_compile_start,
-    .t_sample_end - .t_sample_start
-  ))
-
-  if (!is.null(status$error)) {
-    stop2("nutpie sampling failed: ", status$error)
-  }
-
-  trace <- jax_mod$collect_result()
-
-  draws_array <- convert_jax_draws(trace, num_chains)
-
-  list(trace = trace, draws_array = draws_array)
 }
 
 #' Convert JAX/nutpie trace to posterior draws_array

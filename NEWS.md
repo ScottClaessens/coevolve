@@ -24,9 +24,6 @@
 * Implemented Hilbert-space approximate Gaussian processes for spatial control,
   adding the `lon_lat` argument and deprecating the `dist_mat` argument in
   `coev_fit()` (#103)
-* Added pure JAX/NumPyro backend via `nuts_sampler = "nutpie"`.
-  Uses nutpie's Rust NUTS sampler with JAX gradients for fast
-  sampling. Requires `pip install jax numpyro nutpie`.
 
 ### Other Changes
 

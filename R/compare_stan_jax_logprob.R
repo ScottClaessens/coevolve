@@ -1,20 +1,13 @@
 #' Compare Stan and JAX log density at the same unconstrained point
 #'
-#' Compiles both Stan and JAX models, evaluates their log-densities and
-#' gradients at the same unconstrained parameter vector, and checks
-#' agreement. The log-densities may differ by a constant (normalization
-#' terms Stan drops), but the gradients should match to machine precision.
-#'
-#' @inheritParams coev_make_stancode
-#' @param seed Integer seed for the evaluation points (default \code{1L}).
-#' @param n_points Number of random points to evaluate (default \code{5}).
-#' @param grad_tol Maximum allowed gradient discrepancy (default \code{1e-6}).
-#'
-#' @returns A list with \code{constant_offset} (Stan - JAX logp, should be
-#'   constant), \code{max_grad_diff}, and \code{mean_grad_diff}.
+#' Internal diagnostic used in development and the package test suite to
+#' verify that the JAX log-density agrees with Stan's. Compiles both
+#' models, evaluates log-density and gradient at the same unconstrained
+#' parameter vector, and checks that the log-density offset is constant
+#' across points and gradients agree to a tolerance.
 #'
 #' @importFrom stats rnorm
-#' @export
+#' @noRd
 compare_stan_jax_logprob <- function(
     data,
     variables,
@@ -142,19 +135,17 @@ _grad_np = np.array(g)
   max_grad_diff <- max(max_grad_diffs)
 
   if (offset_sd > 1e-6) {
-    warning(
+    warning2(
       "logp offset is NOT constant (sd = ",
       format(offset_sd, digits = 4),
-      "). Stan and JAX log-densities disagree.",
-      call. = FALSE
+      "). Stan and JAX log-densities disagree."
     )
   }
   if (max_grad_diff > grad_tol) {
-    warning(
+    warning2(
       "Max gradient discrepancy = ",
       format(max_grad_diff, digits = 4),
-      " exceeds tolerance ", grad_tol,
-      call. = FALSE
+      " exceeds tolerance ", grad_tol
     )
   }
 
