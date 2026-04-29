@@ -273,7 +273,7 @@ apply_inverse_link <- function(draws, distributions, obs_means, cutpoints) {
       }
       if (dist == "ordered_logistic" && !is.null(cutpoints[[v]])) {
         cp <- cutpoints[[v]] # [draws, n_cutpoints]
-        if (is.null(dim(cp))) cp <- matrix(cp, ncol = 1)
+        if (is.null(dim(cp))) cp <- matrix(cp, ncol = 1) # nocov
         n_cats <- ncol(cp) + 1
         # result: [draws, nodes, categories]
         cat_probs <- array(NA, dim = c(n_draws, n_nodes, n_cats))
@@ -315,7 +315,7 @@ transform_eta <- function(eta, distribution, obs_mean = NULL) {
     "poisson_softplus" = obs_mean * log1p(exp(eta)),
     "negative_binomial_softplus" = obs_mean * log1p(exp(eta)),
     "gamma_log" = exp(eta),
-    eta # fallback: identity
+    eta # nocov
   )
 }
 

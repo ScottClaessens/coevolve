@@ -25,6 +25,11 @@ test_that("coev_ancestral_states() produces expected errors", {
     fixed = TRUE
   )
   expect_error(
+    coev_ancestral_states(object = m01, nodes = TRUE),
+    "Argument 'nodes' must be",
+    fixed = TRUE
+  )
+  expect_error(
     coev_ancestral_states(object = m01, tree_id = "fail"),
     "Argument 'tree_id' must be a single integer.",
     fixed = TRUE
@@ -229,6 +234,33 @@ test_that("coev_ancestral_states() multi-tree default = tree 1", {
   result_default <- sw(coev_ancestral_states(m08))
   result_t1 <- sw(coev_ancestral_states(m08, tree_id = 1))
   expect_equal(result_default$estimate, result_t1$estimate)
+})
+
+test_that("coev_ancestral_states() single-node response works (ordinal)", {
+  m02 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
+  m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
+  sw <- suppressWarnings
+  n_tips <- m02$stan_data$N_tips
+  result <- sw(coev_ancestral_states(
+    m02, nodes = n_tips + 1L, scale = "response"
+  ))
+  expect_true(is.data.frame(result))
+  expect_equal(nrow(result), length(m02$variables))
+  prob_cols <- grep("^prob_", names(result), value = TRUE)
+  expect_true(length(prob_cols) > 0)
+})
+
+test_that("coev_ancestral_states() single-node response works (non-ordinal)", {
+  m09 <- readRDS(test_path("fixtures", "coevfit_example_09.rds"))
+  m09 <- reload_fit(m09, filename = "coevfit_example_09-1.csv")
+  sw <- suppressWarnings
+  n_tips <- m09$stan_data$N_tips
+  result <- sw(coev_ancestral_states(
+    m09, nodes = n_tips + 1L, scale = "response"
+  ))
+  expect_true(is.data.frame(result))
+  expect_equal(nrow(result), length(m09$variables))
+  expect_true(all(result$estimate >= 0 & result$estimate <= 1))
 })
 
 test_that("coev_ancestral_states() works across fixture models", {

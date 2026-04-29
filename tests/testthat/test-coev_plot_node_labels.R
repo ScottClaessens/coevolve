@@ -37,3 +37,11 @@ test_that("coev_plot_node_labels() produces expected errors and output", {
     coev_plot_node_labels(m01, node_cex = 0.4, node_col = "blue")
   )
 })
+
+test_that("coev_plot_node_labels() handles multiPhylo trees", {
+  m08 <- readRDS(test_path("fixtures", "coevfit_example_08.rds"))
+  m08 <- reload_fit(m08, filename = "coevfit_example_08-1.csv")
+  expect_true(inherits(m08$tree, "multiPhylo"))
+  expect_no_error(result <- coev_plot_node_labels(m08))
+  expect_true(inherits(result, "phylo"))
+})
