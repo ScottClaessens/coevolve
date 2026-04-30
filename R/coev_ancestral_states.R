@@ -1,10 +1,12 @@
 #' Extract ancestral state estimates from a fitted coevolutionary model
 #'
-#' Extracts posterior estimates of latent trait values at internal nodes
-#' of the phylogenetic tree from a fitted \code{coevfit} object. The latent
-#' \code{eta} parameters in the model correspond directly to nodes in the
-#' phylogeny, making ancestral state reconstruction a natural byproduct of
-#' the model fitting process.
+#' Extracts posterior estimates of trait values at internal nodes of the
+#' phylogenetic tree from a fitted \code{coevfit} object. By default,
+#' estimates are returned on the latent (eta) scale; use
+#' \code{scale = "response"} to apply the inverse link for each variable's
+#' response distribution. The latent \code{eta} parameters in the model
+#' correspond directly to nodes in the phylogeny, making ancestral state
+#' reconstruction a natural byproduct of model fitting.
 #'
 #' @param object An object of class \code{coevfit}
 #' @param variables (optional) A character vector of variable names to include.
@@ -15,29 +17,37 @@
 #'   numbering: tips = 1:N_tips, internal = (N_tips+1):total).
 #' @param tree_id (optional) An integer indicating which tree to use when the
 #'   model was fit with a \code{multiPhylo} object. If \code{NULL} (default),
-#'   uses tree 1 when only one tree is present, or integrates over trees when
-#'   multiple trees are present.
+#'   uses tree 1. (Integration over trees with topological uncertainty is
+#'   not yet implemented.)
 #' @param scale Character string, either \code{"latent"} (default) to return
 #'   values on the latent eta scale, or \code{"response"} to apply the inverse
 #'   link function for each variable's response distribution.
-#' @param summary Logical. If \code{TRUE} (default), returns a summary data
-#'   frame with posterior median and credible intervals. If \code{FALSE},
-#'   returns the raw posterior draws.
+#' @param summary Logical. If \code{TRUE} (default), returns a long-format
+#'   data frame with posterior point estimates and credible intervals. If
+#'   \code{FALSE}, returns the raw posterior draws.
 #' @param prob A single numeric value between 0 and 1 indicating the desired
 #'   probability mass for the credible interval. Default is 0.95.
 #'
-#' @returns If \code{summary = TRUE}, a data frame (tibble) with columns:
+#' @returns If \code{summary = TRUE}, a long-format data frame (tibble) with
+#'   columns:
 #'   \describe{
 #'     \item{node}{Integer node ID in the reference tree}
 #'     \item{variable}{Character variable name}
-#'     \item{estimate}{Posterior median}
-#'     \item{lower}{Lower bound of the credible interval}
-#'     \item{upper}{Upper bound of the credible interval}
-#'     \item{clade_pp}{Clade posterior probability (1.0 for single-tree models)}
+#'     \item{category}{For ordinal variables on the response scale, the
+#'       category label (\code{"cat_1"}, \code{"cat_2"}, ...). \code{NA}
+#'       otherwise.}
+#'     \item{estimate}{Posterior point estimate. For ordinal-response
+#'       category probabilities this is the posterior \emph{mean} (so the
+#'       per-node category estimates sum to 1, matching the convention of
+#'       \code{predict.brmsfit}); for all other cases it is the posterior
+#'       median.}
+#'     \item{lower}{Lower bound of the credible interval (per-category
+#'       quantile for ordinal-response rows)}
+#'     \item{upper}{Upper bound of the credible interval (per-category
+#'       quantile for ordinal-response rows)}
 #'   }
 #'   The data frame has attributes \code{ref_tree} (the phylo object used),
-#'   \code{prob}, and \code{scale}. The format is compatible with ggtree's
-#'   \code{\%<+\%} operator for plotting.
+#'   \code{prob}, and \code{scale}.
 #'
 #'   If \code{summary = FALSE}, a list with elements:
 #'   \describe{
@@ -157,7 +167,8 @@ coev_ancestral_states <- function(object, variables = NULL,
     )
   }
   if (summary) {
-    # compute posterior summaries
+    # compute posterior summaries (long format: one row per
+    # node x variable x category)
     probs <- c((1 - prob) / 2, 1 - (1 - prob) / 2)
     rows <- list()
     for (n_i in seq_along(selected_nodes)) {
@@ -166,17 +177,19 @@ coev_ancestral_states <- function(object, variables = NULL,
         if (scale == "response" && dist == "ordered_logistic") {
           cat_draws <- draws_subset[[v_i]][, n_i, , drop = FALSE]
           n_cats <- dim(cat_draws)[3]
-          row <- data.frame(
-            node = selected_nodes[n_i],
-            variable = var_names[v_i],
-            stringsAsFactors = FALSE
-          )
           for (k in seq_len(n_cats)) {
             cat_k <- cat_draws[, 1, k]
-            row[[paste0("prob_", k)]] <- stats::median(cat_k)
+            # use mean so per-node category estimates sum to 1
+            rows[[length(rows) + 1]] <- data.frame(
+              node = selected_nodes[n_i],
+              variable = var_names[v_i],
+              category = paste0("cat_", k),
+              estimate = mean(cat_k),
+              lower = stats::quantile(cat_k, probs[1], names = FALSE),
+              upper = stats::quantile(cat_k, probs[2], names = FALSE),
+              stringsAsFactors = FALSE
+            )
           }
-          row$clade_pp <- 1.0
-          rows[[length(rows) + 1]] <- row
         } else {
           if (is.list(draws_subset)) {
             node_draws <- draws_subset[[v_i]][, n_i, 1]
@@ -186,10 +199,10 @@ coev_ancestral_states <- function(object, variables = NULL,
           rows[[length(rows) + 1]] <- data.frame(
             node = selected_nodes[n_i],
             variable = var_names[v_i],
+            category = NA_character_,
             estimate = stats::median(node_draws),
             lower = stats::quantile(node_draws, probs[1], names = FALSE),
             upper = stats::quantile(node_draws, probs[2], names = FALSE),
-            clade_pp = 1.0,
             stringsAsFactors = FALSE
           )
         }

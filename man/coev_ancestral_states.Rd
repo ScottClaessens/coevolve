@@ -27,33 +27,41 @@ numbering: tips = 1:N_tips, internal = (N_tips+1):total).}
 
 \item{tree_id}{(optional) An integer indicating which tree to use when the
 model was fit with a \code{multiPhylo} object. If \code{NULL} (default),
-uses tree 1 when only one tree is present, or integrates over trees when
-multiple trees are present.}
+uses tree 1. (Integration over trees with topological uncertainty is
+not yet implemented.)}
 
 \item{scale}{Character string, either \code{"latent"} (default) to return
 values on the latent eta scale, or \code{"response"} to apply the inverse
 link function for each variable's response distribution.}
 
-\item{summary}{Logical. If \code{TRUE} (default), returns a summary data
-frame with posterior median and credible intervals. If \code{FALSE},
-returns the raw posterior draws.}
+\item{summary}{Logical. If \code{TRUE} (default), returns a long-format
+data frame with posterior point estimates and credible intervals. If
+\code{FALSE}, returns the raw posterior draws.}
 
 \item{prob}{A single numeric value between 0 and 1 indicating the desired
 probability mass for the credible interval. Default is 0.95.}
 }
 \value{
-If \code{summary = TRUE}, a data frame (tibble) with columns:
+If \code{summary = TRUE}, a long-format data frame (tibble) with
+columns:
 \describe{
 \item{node}{Integer node ID in the reference tree}
 \item{variable}{Character variable name}
-\item{estimate}{Posterior median}
-\item{lower}{Lower bound of the credible interval}
-\item{upper}{Upper bound of the credible interval}
-\item{clade_pp}{Clade posterior probability (1.0 for single-tree models)}
+\item{category}{For ordinal variables on the response scale, the
+category label (\code{"cat_1"}, \code{"cat_2"}, ...). \code{NA}
+otherwise.}
+\item{estimate}{Posterior point estimate. For ordinal-response
+category probabilities this is the posterior \emph{mean} (so the
+per-node category estimates sum to 1, matching the convention of
+\code{predict.brmsfit}); for all other cases it is the posterior
+median.}
+\item{lower}{Lower bound of the credible interval (per-category
+quantile for ordinal-response rows)}
+\item{upper}{Upper bound of the credible interval (per-category
+quantile for ordinal-response rows)}
 }
 The data frame has attributes \code{ref_tree} (the phylo object used),
-\code{prob}, and \code{scale}. The format is compatible with ggtree's
-\code{\%<+\%} operator for plotting.
+\code{prob}, and \code{scale}.
 
 If \code{summary = FALSE}, a list with elements:
 \describe{
@@ -64,11 +72,13 @@ If \code{summary = FALSE}, a list with elements:
 }
 }
 \description{
-Extracts posterior estimates of latent trait values at internal nodes
-of the phylogenetic tree from a fitted \code{coevfit} object. The latent
-\code{eta} parameters in the model correspond directly to nodes in the
-phylogeny, making ancestral state reconstruction a natural byproduct of
-the model fitting process.
+Extracts posterior estimates of trait values at internal nodes of the
+phylogenetic tree from a fitted \code{coevfit} object. By default,
+estimates are returned on the latent (eta) scale; use
+\code{scale = "response"} to apply the inverse link for each variable's
+response distribution. The latent \code{eta} parameters in the model
+correspond directly to nodes in the phylogeny, making ancestral state
+reconstruction a natural byproduct of model fitting.
 }
 \examples{
 \dontrun{

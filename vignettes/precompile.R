@@ -2,3 +2,7 @@
 # Need to change figure paths in Rmd files afterwards (remove "vignettes/")
 # see: https://ropensci.org/blog/2019/12/08/precompute-vignettes/
 knitr::knit("vignettes/coevolve.Rmd.orig", "vignettes/coevolve.Rmd")
+knitr::knit(
+  "vignettes/ancestral_states.Rmd.orig",
+  "vignettes/ancestral_states.Rmd"
+)

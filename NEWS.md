@@ -2,6 +2,14 @@
 
 ### New Features
 
+* Added `coev_ancestral_states()` for extracting posterior estimates of
+  ancestral trait values at internal phylogenetic nodes, on either the
+  latent or response scale (#86)
+* Added `coev_plot_node_labels()` for plotting the tree with internal
+  node IDs displayed
+* Added `coev_identify_nodes()` for interactive multi-click node selection,
+  wrapping `ape::identify.phylo()` in a loop
+* Added vignette "Ancestral State Reconstruction with coevolve"
 * Allow for single traits (#107)
 
 # coevolve 1.0.0

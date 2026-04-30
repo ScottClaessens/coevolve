@@ -69,11 +69,12 @@ test_that("coev_ancestral_states() returns correct structure", {
 
   expect_true(is.data.frame(result))
   expect_true(all(
-    c("node", "variable", "estimate", "lower", "upper") %in%
+    c("node", "variable", "category", "estimate", "lower", "upper") %in%
       names(result)
   ))
-  expect_true("clade_pp" %in% names(result))
-  expect_true(all(result$clade_pp == 1.0))
+  expect_false("clade_pp" %in% names(result))
+  # latent scale: category is always NA
+  expect_true(all(is.na(result$category)))
   n_tips <- m01$stan_data$N_tips
   n_internal <- n_tips - 1
   n_vars <- length(m01$variables)
@@ -94,6 +95,7 @@ test_that("coev_ancestral_states() nodes = 'all' includes tips", {
   m01 <- readRDS(test_path("fixtures", "coevfit_example_01.rds"))
   m01 <- reload_fit(m01, filename = "coevfit_example_01-1.csv")
   sw <- suppressWarnings
+  # latent scale: one row per node x variable (no category expansion)
   result <- sw(coev_ancestral_states(m01, nodes = "all"))
   n_tips <- m01$stan_data$N_tips
   n_seg <- m01$stan_data$N_seg
@@ -196,24 +198,45 @@ test_that("coev_ancestral_states() gamma response is positive", {
   expect_true(all(result$lower > 0))
 })
 
-test_that("coev_ancestral_states() ordinal response has probs", {
+test_that("coev_ancestral_states() ordinal response uses category column", {
   m02 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
   m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
   sw <- suppressWarnings
   result <- sw(coev_ancestral_states(
     m02, variables = "x", scale = "response"
   ))
-  expect_true(any(grepl("^prob_", names(result))))
-  prob_cols <- grep("^prob_", names(result), value = TRUE)
-  for (col in prob_cols) {
-    expect_true(all(result[[col]] >= 0 & result[[col]] <= 1))
-  }
-  # medians of individual category probabilities need not sum to
+  # long format: category column populated for ordinal-response rows
+  expect_true("category" %in% names(result))
+  expect_true(all(grepl("^cat_", result$category)))
+  expect_true(all(result$estimate >= 0 & result$estimate <= 1))
+  expect_true(all(result$lower >= 0 & result$upper <= 1))
+  # per-node category estimates should sum to 1 exactly
+  # (means distribute over sums)
+  sums_per_node <- vapply(
+    split(result$estimate, result$node),
+    sum, numeric(1)
+  )
+  expect_equal(unname(sums_per_node), rep(1, length(sums_per_node)),
+               tolerance = 1e-10)
+})
 
-  # exactly 1 (median doesn't distribute over sums), but should
-  # be close
-  prob_sums <- rowSums(result[, prob_cols])
-  expect_true(all(prob_sums > 0.5 & prob_sums < 1.5))
+test_that("coev_ancestral_states() mixed ordinal/non-ordinal output", {
+  # m02 has bernoulli_logit + ordered_logistic
+  m02 <- readRDS(test_path("fixtures", "coevfit_example_02.rds"))
+  m02 <- reload_fit(m02, filename = "coevfit_example_02-1.csv")
+  sw <- suppressWarnings
+  result <- sw(coev_ancestral_states(m02, scale = "response"))
+  ord_vars <- names(m02$variables)[
+    unlist(m02$variables) == "ordered_logistic"
+  ]
+  non_ord_vars <- setdiff(names(m02$variables), ord_vars)
+  # category populated only for ordinal-response rows
+  expect_true(all(is.na(result$category[result$variable %in% non_ord_vars])))
+  expect_true(all(!is.na(result$category[result$variable %in% ord_vars])))
+  # estimate, lower, upper columns populated for every row
+  expect_true(all(is.finite(result$estimate)))
+  expect_true(all(is.finite(result$lower)))
+  expect_true(all(is.finite(result$upper)))
 })
 
 test_that("coev_ancestral_states() multi-tree tree_id works", {
@@ -222,7 +245,7 @@ test_that("coev_ancestral_states() multi-tree tree_id works", {
   sw <- suppressWarnings
   result1 <- sw(coev_ancestral_states(m08, tree_id = 1))
   expect_true(is.data.frame(result1))
-  expect_true(all(result1$clade_pp == 1.0))
+  expect_false("clade_pp" %in% names(result1))
   result2 <- sw(coev_ancestral_states(m08, tree_id = 2))
   expect_true(is.data.frame(result2))
 })
@@ -242,12 +265,12 @@ test_that("coev_ancestral_states() single-node response works (ordinal)", {
   sw <- suppressWarnings
   n_tips <- m02$stan_data$N_tips
   result <- sw(coev_ancestral_states(
-    m02, nodes = n_tips + 1L, scale = "response"
+    m02, variables = "x", nodes = n_tips + 1L, scale = "response"
   ))
   expect_true(is.data.frame(result))
-  expect_equal(nrow(result), length(m02$variables))
-  prob_cols <- grep("^prob_", names(result), value = TRUE)
-  expect_true(length(prob_cols) > 0)
+  # one row per category for the single ordinal variable
+  expect_true(all(grepl("^cat_", result$category)))
+  expect_true(nrow(result) >= 2)
 })
 
 test_that("coev_ancestral_states() single-node response works (non-ordinal)", {
