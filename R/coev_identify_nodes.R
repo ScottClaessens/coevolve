@@ -58,8 +58,11 @@ coev_identify_nodes <- function(tree, n = NULL) {
   repeat {
     i <- i + 1L
     if (!is.null(n) && i > n) break
+    # dispatch to ape::identify.phylo via the graphics::identify generic;
+    # ape only registers identify.phylo as an S3 method (not a plain
+    # export), so calling ape::identify.phylo directly is invalid
     sel <- tryCatch(
-      ape::identify.phylo(tree, quiet = TRUE),
+      graphics::identify(tree, quiet = TRUE),
       error = function(e) NULL
     )
     if (is.null(sel) || length(sel$nodes) == 0L) break
