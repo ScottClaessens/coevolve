@@ -1,3 +1,8 @@
 url: https://scottclaessens.github.io/coevolve/
 template:
   math-rendering: mathjax
+articles:
+- title: Vignettes
+  contents:
+  - coevolve
+  - ancestral_states

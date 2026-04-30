@@ -1,0 +1,315 @@
+---
+title: "Ancestral State Reconstruction with coevolve"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+pkgdown:
+  as_is: true
+date: "`r Sys.Date()`"
+author: "Erik Ringen"
+vignette: >
+  %\VignetteIndexEntry{Ancestral State Reconstruction with coevolve}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+options(width = 120)
+knitr::opts_chunk$set(
+  comment = NA,
+  fig.path = "vignettes/",
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.8,
+  out.width = "60%",
+  fig.align = "center"
+)
+```
+
+## Overview
+
+The `coev_ancestral_states()` function extracts posterior estimates of latent
+trait values at internal (ancestral) nodes of the phylogeny from a fitted
+`coevfit` model. Because the model estimates latent states at every node in the
+tree, ancestral state reconstruction is a natural byproduct of model fitting --
+no separate analysis is needed.
+
+This vignette demonstrates the function using the **authority** dataset bundled
+with the package: political and religious authority among 97 Austronesian
+societies.
+
+## Setup
+
+```{r libraries, warning=FALSE, message=FALSE}
+library(coevolve)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(ape)
+theme_set(theme_minimal(base_size = 13))
+```
+
+## Fit the model
+
+We fit a coevolutionary model with two ordered-logistic variables. For
+demonstration purposes we use moderate sampling settings; in practice you would
+want more iterations and to check convergence carefully.
+
+```{r asr-fit, warning=FALSE, message=FALSE}
+fit <- coev_fit(
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  parallel_chains = 4,
+  chains = 4,
+  iter_sampling = 500,
+  iter_warmup = 500,
+  seed = 42
+)
+```
+
+Quick check that the model sampled adequately:
+
+```{r asr-summary}
+summary(fit)
+```
+
+## Ancestral states on the latent scale
+
+The default call returns posterior summaries (median + 95% credible interval) for
+all internal nodes on the latent (eta) scale:
+
+```{r asr-latent}
+asr_latent <- coev_ancestral_states(fit)
+head(asr_latent)
+```
+
+The result is a long-format tibble with one row per node-variable combination
+(or one row per node-variable-category for ordinal-response output below). The
+`category` column is `NA` on the latent scale and for non-ordinal variables; it
+holds category labels for ordinal-response output. The `node` column uses ape's
+numbering convention (tips are `1:N_tips`, internal nodes are
+`(N_tips+1):(2*N_tips-1)`), so it integrates directly with phylo objects.
+
+### Visualizing latent ancestral states on the tree
+
+We can paint the tree with estimated ancestral values by mapping the posterior
+median to a diverging color gradient. Blue indicates low latent values; red
+indicates high:
+
+```{r asr-latent-tree, fig.asp=0.55, out.width="80%"}
+tree <- attr(asr_latent, "ref_tree")
+n_tips <- length(tree$tip.label)
+asr_all <- coev_ancestral_states(fit, nodes = "all")
+
+pal <- colorRampPalette(c("#2166AC", "#F7F7F7", "#B2182B"))(100)
+rng <- range(asr_all$estimate)
+
+# helper: map values onto the palette
+to_color <- function(x) {
+  pal[pmax(1, pmin(100, findInterval(x, seq(rng[1], rng[2], length.out = 101))))]
+}
+
+par(mfrow = c(1, 2), mar = c(2, 0, 2, 0))
+
+for (var in unique(asr_all$variable)) {
+  vals <- setNames(asr_all$estimate[asr_all$variable == var],
+                   asr_all$node[asr_all$variable == var])
+  plot(tree, show.tip.label = FALSE, edge.width = 1.5,
+       edge.color = "grey70", main = gsub("_", " ", var))
+  internal_ids <- (n_tips + 1):(n_tips + tree$Nnode)
+  nodelabels(pch = 21, bg = to_color(vals[as.character(internal_ids)]),
+             col = NA, cex = 1.2)
+}
+
+# shared color bar
+par(fig = c(0.35, 0.65, 0, 0.05), new = TRUE, mar = rep(0, 4))
+image(seq(rng[1], rng[2], length.out = 100), 1,
+      matrix(1:100), col = pal, axes = FALSE, xlab = "", ylab = "")
+axis(1, cex.axis = 0.7, padj = -1.5, tck = -0.3)
+mtext("Latent eta", side = 1, line = 1.2, cex = 0.7)
+```
+
+### Joint latent-space scatterplot
+
+We can also look at the joint distribution of ancestral states across the two
+variables. Each point is an internal node, with crosshairs showing the 95%
+credible interval:
+
+```{r asr-latent-scatter}
+asr_wide <- asr_latent |>
+  select(node, variable, estimate, lower, upper) |>
+  pivot_wider(
+    names_from = variable,
+    values_from = c(estimate, lower, upper)
+  )
+
+ggplot(asr_wide,
+       aes(x = estimate_political_authority,
+           y = estimate_religious_authority)) +
+  geom_errorbar(
+    aes(ymin = lower_religious_authority,
+        ymax = upper_religious_authority),
+    alpha = 0.2, width = 0
+  ) +
+  geom_errorbarh(
+    aes(xmin = lower_political_authority,
+        xmax = upper_political_authority),
+    alpha = 0.2, height = 0
+  ) +
+  geom_point(color = "#B2182B", size = 2) +
+  labs(
+    x = "Political authority (latent)",
+    y = "Religious authority (latent)",
+    title = "Ancestral states at internal nodes"
+  )
+```
+
+## Ancestral states on the response scale
+
+For ordered-logistic variables, the response scale returns estimated category
+probabilities at each node -- how likely each level of authority (absent,
+sublocal, local, supralocal) was at that ancestral node. Each ordinal variable
+expands to one row per category, with `category` populated:
+
+```{r asr-response}
+asr_resp <- coev_ancestral_states(
+  fit, nodes = "all", scale = "response"
+)
+head(asr_resp, 8)
+```
+
+The point estimate (`estimate`) for ordinal-response rows is the posterior
+mean, so the per-node category estimates sum exactly to 1 (matching the
+convention of `predict.brmsfit`). The `lower` and `upper` columns are
+per-category posterior quantiles and won't generally sum to 1.
+
+### Pie chart tree: response-scale probabilities
+
+This is the most intuitive way to visualize ordinal ancestral states. Each pie
+chart at an internal node shows the posterior mean probability of each
+category. At the tips, observed values are shown as solid colors (one category
+with probability 1). If a tip has missing data, the model-estimated
+probabilities are shown instead.
+
+```{r asr-pie-tree, fig.asp=0.55, out.width="80%"}
+cat_labels <- c("Absent", "Sublocal", "Local", "Supralocal")
+cat_colors <- c("#FFFFB2", "#FECC5C", "#FD8D3C", "#E31A1C")
+n_cats <- length(cat_labels)
+
+# pivot ordinal-response long format -> per-node probability matrix
+to_pie_mat <- function(df) {
+  wide <- df |>
+    select(node, category, estimate) |>
+    pivot_wider(names_from = category, values_from = estimate) |>
+    arrange(node)
+  as.matrix(wide[, paste0("cat_", seq_len(n_cats))])
+}
+
+par(mfrow = c(1, 2), mar = c(1, 0, 3, 0))
+
+for (var in unique(asr_resp$variable)) {
+  df_var <- asr_resp |> filter(variable == var)
+  plot(tree, show.tip.label = FALSE, edge.width = 1.5,
+       edge.color = "grey50", main = gsub("_", " ", var))
+  # internal nodes: model-estimated category probabilities
+  nodelabels(pie = to_pie_mat(filter(df_var, node > n_tips)),
+             piecol = cat_colors, cex = 0.6)
+  # tips: observed value (deterministic) when present, otherwise model estimate
+  tip_pie <- to_pie_mat(filter(df_var, node <= n_tips))
+  obs <- authority$data[[var]][match(tree$tip.label, authority$data$language)]
+  observed <- !is.na(obs)
+  tip_pie[observed, ] <- 0
+  tip_pie[cbind(which(observed), as.integer(obs[observed]))] <- 1
+  tiplabels(pie = tip_pie, piecol = cat_colors, cex = 0.4)
+}
+
+# shared legend
+par(fig = c(0.3, 0.7, 0, 0.05), new = TRUE, mar = rep(0, 4))
+plot.new()
+legend("center", legend = cat_labels, fill = cat_colors,
+       horiz = TRUE, bty = "n", cex = 0.9, title = "Authority level")
+```
+
+## Working with raw posterior draws
+
+Setting `summary = FALSE` returns the full posterior array, which is useful for
+custom summaries or propagating uncertainty:
+
+```{r asr-draws-str}
+asr_draws <- coev_ancestral_states(fit, summary = FALSE)
+str(asr_draws, max.level = 1)
+```
+
+The `draws` element is a 3D array with dimensions `[draws, nodes, variables]`.
+Here's an example: the posterior density of latent values at the root node for
+both variables:
+
+```{r asr-root-density}
+root_node_idx <- which(asr_draws$node_ids == n_tips + 1)
+
+root_df <- data.frame(
+  political_authority = asr_draws$draws[, root_node_idx, 1],
+  religious_authority = asr_draws$draws[, root_node_idx, 2]
+) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "eta")
+
+ggplot(root_df, aes(x = eta, fill = variable)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_manual(
+    values = c(political_authority = "#2166AC",
+               religious_authority = "#B2182B"),
+    labels = c("Political", "Religious"),
+    name = "Authority"
+  ) +
+  labs(
+    x = "Latent value (eta)",
+    y = "Density",
+    title = "Posterior distribution at the root node"
+  )
+```
+
+## Identifying nodes on the tree
+
+To query ancestral states for specific nodes, you first need to know their IDs.
+The `coev_plot_node_labels()` function plots the tree with internal node IDs
+displayed in red:
+
+```{r asr-node-labels, fig.asp=1, out.width="60%"}
+tree <- coev_plot_node_labels(fit)
+```
+
+Node numbering follows ape's convention: tips are `1:N_tips` and internal nodes
+are `(N_tips + 1):(2 * N_tips - 1)`.
+
+### Interactive node selection
+
+In an interactive R session you can click directly on the tree to identify
+nodes. `coev_identify_nodes()` wraps `ape::identify.phylo()` in a loop so that
+multiple clicks accumulate; the loop ends when you click outside the tree (or
+press Esc, depending on your graphics device):
+
+``` r
+tree <- coev_plot_node_labels(fit)
+nodes <- coev_identify_nodes(tree)
+coev_ancestral_states(fit, nodes = nodes)
+```
+
+## Selecting specific nodes and variables
+
+Once you know the node IDs, you can target specific nodes or variables to reduce
+computation and focus the output:
+
+```{r asr-subset}
+# only religious authority, at three specific internal nodes
+asr_sub <- coev_ancestral_states(
+  fit,
+  variables = "religious_authority",
+  nodes = c(n_tips + 1, n_tips + 2, n_tips + 3)
+)
+asr_sub
+```
