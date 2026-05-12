@@ -20,3 +20,4 @@ benchmarks/*.html
 benchmarks/*_files/
 coevolve.Rcheck/
 *.tar.gz
+.positai

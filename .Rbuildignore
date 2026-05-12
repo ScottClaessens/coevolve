@@ -13,3 +13,4 @@
 ^\.claude$
 ^benchmarks$
 ^quick_debug\.R$
+^\.positai$
