@@ -5,6 +5,13 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+    inputs:
+      extended:
+        description: 'Run extended (logp Stan/JAX comparison) tests'
+        type: boolean
+        default: false
 
 name: R-CMD-check
 
@@ -29,7 +36,12 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      COEVOLVE_EXTENDED_TESTS: ${{ contains(github.event.pull_request.head.commit.message, 'run-extended') || contains(github.event.head_commit.message, 'run-extended') }}
+      # Extended tests run when:
+      # - workflow_dispatch is invoked with extended=true, or
+      # - the PR carries the "run-extended" label
+      COEVOLVE_EXTENDED_TESTS: >-
+        ${{ (github.event_name == 'workflow_dispatch' && inputs.extended) ||
+            (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-extended')) }}
 
     steps:
       - uses: actions/checkout@v4
