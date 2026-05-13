@@ -29,7 +29,7 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      COEVOLVE_EXTENDED_TESTS: ${{contains(github.event.head_commit.message, 'run-extended')}}
+      COEVOLVE_EXTENDED_TESTS: ${{ env.COEVOLVE_EXTENDED_TESTS }}
 
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +75,15 @@ jobs:
             testthat
             tidyr
             withr
+
+      - name: Detect extended tests
+        run: |
+          if git log -1 --pretty=%B | grep -q "run-extended"; then
+            echo "COEVOLVE_EXTENDED_TESTS=true" >> $GITHUB_ENV
+          else
+            echo "COEVOLVE_EXTENDED_TESTS=false" >> $GITHUB_ENV
+          fi
+        shell: bash
 
       - name: Set up Python
         uses: actions/setup-python@v5
