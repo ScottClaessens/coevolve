@@ -29,7 +29,6 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      COEVOLVE_EXTENDED_TESTS: ${{ env.COEVOLVE_EXTENDED_TESTS }}
 
     steps:
       - uses: actions/checkout@v4
