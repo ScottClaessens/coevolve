@@ -12,9 +12,13 @@ Sys.setenv(COEVOLVE_EXTENDED_TESTS = "true")
 devtools::test()
 ```
 
-To run them in GitHub Actions on a pull request, either:
+In GitHub Actions, the extended tests run as a separate `extended-tests`
+workflow that splits each long-running test file into its own parallel job.
+Trigger it by either:
 
-* add the `run-extended` label to the PR (re-triggers R-CMD-check with the 
-  env var set), or
-* manually dispatch the workflow with the `extended` input set to `true`, e.g.
-  `gh workflow run R-CMD-check.yaml --ref <branch> -f extended=true`.
+* adding the `run-extended` label to the PR, or
+* dispatching the workflow manually:
+  `gh workflow run extended-tests.yaml --ref <branch>`.
+
+R-CMD-check itself never runs the extended tests, so the standard CI signal
+stays fast regardless of the label.

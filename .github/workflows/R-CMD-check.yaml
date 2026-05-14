@@ -5,13 +5,7 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
-    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
-    inputs:
-      extended:
-        description: 'Run extended (logp Stan/JAX comparison) tests'
-        type: boolean
-        default: false
 
 name: R-CMD-check
 
@@ -36,12 +30,8 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
-      # Extended tests run when:
-      # - workflow_dispatch is invoked with extended=true, or
-      # - the PR carries the "run-extended" label
-      COEVOLVE_EXTENDED_TESTS: >-
-        ${{ (github.event_name == 'workflow_dispatch' && inputs.extended) ||
-            (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-extended')) }}
+      # Extended (multi-hour MCMC) tests run in the separate
+      # extended-tests workflow, not here. R-CMD-check is always fast.
 
     steps:
       - uses: actions/checkout@v4
