@@ -108,6 +108,8 @@ jobs:
 
       - name: Run ${{ matrix.test_file }}
         run: |
+          library(testthat)
+          library(coevolve)
           testthat::test_file(
             file.path("tests", "testthat", "${{ matrix.test_file }}"),
             stop_on_failure = TRUE,
