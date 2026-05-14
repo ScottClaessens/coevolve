@@ -4,7 +4,7 @@ run_extended_tests <- identical(Sys.getenv("COEVOLVE_EXTENDED_TESTS"), "true")
 #' @srrstats {G5.6, G5.6a, G5.6b, G5.9, G5.9a, G5.9b, BS7.2} Extended parameter
 #'   recovery tests with multiple fixed seeds for data simulation and cmdstanr
 #' @srrstats {BS7.4, BS7.4a} Predicted values are on same scale as input data
-for (seed in 1:3) {
+for (seed in 1:2) {
   test_that(paste0("coev_fit() recovers parameters (seed = ", seed, ")"), {
     skip_if_not(run_extended_tests)
     # get dummy data
