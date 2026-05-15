@@ -1,4 +1,4 @@
-# coevolve (development version)
+# coevolve 1.1.0
 
 ### New Features
 
