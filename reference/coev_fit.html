@@ -23,7 +23,7 @@ assessed and compared with posterior predictive checks and cross-validation."><m
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -86,7 +86,8 @@ assessed and compared with posterior predictive checks and cross-validation.</p>
 <span>  log_lik <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  prior_only <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  adapt_delta <span class="op">=</span> <span class="fl">0.95</span>,</span>
-<span>  backend <span class="op">=</span> <span class="st">"cmdstanr"</span>,</span>
+<span>  nuts_sampler <span class="op">=</span> <span class="st">"stan"</span>,</span>
+<span>  backend <span class="op">=</span> <span class="fu">deprecated</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  dist_mat <span class="op">=</span> <span class="fu">deprecated</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -248,38 +249,36 @@ samples from the prior only, ignoring the likelihood.</p></dd>
 
 
 <dt id="arg-adapt-delta">adapt_delta<a class="anchor" aria-label="anchor" href="#arg-adapt-delta"></a></dt>
-<dd><p>Target acceptance probability for the NUTS sampler.
-Default is 0.95. For <code>backend = "cmdstanr"</code>, this is passed directly
-to <span class="pkg">cmdstanr::sample()</span>. For <code>backend = "nutpie"</code>, this is mapped
-to the <code>target_accept</code> parameter.</p></dd>
+<dd><p>Target acceptance probability for the
+NUTS sampler (default <code>0.95</code>). Passed to
+<span class="pkg">cmdstanr::sample()</span> as <code>adapt_delta</code>, or to
+nutpie as <code>target_accept</code>.</p></dd>
+
+
+<dt id="arg-nuts-sampler">nuts_sampler<a class="anchor" aria-label="anchor" href="#arg-nuts-sampler"></a></dt>
+<dd><p>Which NUTS implementation to use.
+<code>"stan"</code> (default) fits the Stan model with
+CmdStan via <span class="pkg">cmdstanr</span>. <code>"nutpie"</code> fits a
+pure JAX model using nutpie's Rust NUTS sampler with
+JAX gradients via <code>jax.value_and_grad</code>.</p></dd>
 
 
 <dt id="arg-backend">backend<a class="anchor" aria-label="anchor" href="#arg-backend"></a></dt>
-<dd><p>Character string specifying which backend to use. Options are
-<code>"cmdstanr"</code> (default) or <code>"nutpie"</code>. When <code>"nutpie"</code> is
-specified, the model will be sampled using nutpie via reticulate. Note
-that nutpie must be installed in your Python environment.</p></dd>
+<dd><p>Deprecated. Use the <code>nuts_sampler</code> argument instead.</p></dd>
 
 
 <dt id="arg-dist-mat">dist_mat<a class="anchor" aria-label="anchor" href="#arg-dist-mat"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a> Use the <code>lon_lat</code>
-argument instead.</p></dd>
+<dd><p>Deprecated. Use the <code>lon_lat</code> argument instead.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments. For sampling: arguments passed to
-<span class="pkg">cmdstanr::sample()</span> (when <code>backend = "cmdstanr"</code>) or
-<span class="pkg">nutpie.sample()</span> (when <code>backend = "nutpie"</code>). For compilation:
-<code>extra_stanc_args</code> and <code>extra_compile_args</code> work for both
-samplers. Common sampling arguments include <code>chains</code>,
-<code>iter_sampling</code>, <code>iter_warmup</code>, and <code>seed</code>. For
-<code>backend = "nutpie"</code>, sampler-specific arguments such as
-<code>low_rank_modified_mass_matrix</code> (logical, enables low-rank modified
-mass matrix adaptation), <code>mass_matrix_gamma</code>, and
-<code>mass_matrix_eigval_cutoff</code> can be passed via <code>...</code>. Common
-compilation arguments include <code>extra_stanc_args = list("--O1")</code> for
-optimization and <code>extra_compile_args = list("STAN_THREADS=true")</code> for
-threading.</p></dd>
+<dd><p>Additional arguments. For
+<code>nuts_sampler = "stan"</code>: passed to
+<span class="pkg">cmdstanr::sample()</span> (and compilation via
+<code>extra_stanc_args</code>, <code>extra_compile_args</code>).
+For <code>nuts_sampler = "nutpie"</code>: sampling arguments
+such as <code>chains</code>, <code>iter_sampling</code>,
+<code>iter_warmup</code>, <code>seed</code>.</p></dd>
 
 </dl></div>
     <div id="value">

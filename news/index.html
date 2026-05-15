@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -51,10 +51,11 @@
     </div>
 
     <div class="section level2">
-<h2 class="page-header" data-toc-text="development version" id="coevolve-development-version">coevolve (development version)<a class="anchor" aria-label="anchor" href="#coevolve-development-version"></a></h2>
+<h2 class="page-header" data-toc-text="1.1.0" id="coevolve-110">coevolve 1.1.0<a class="anchor" aria-label="anchor" href="#coevolve-110"></a></h2>
 <div class="section level4">
-<h4 id="new-features-development-version">New Features<a class="anchor" aria-label="anchor" href="#new-features-development-version"></a></h4>
+<h4 id="new-features-1-1-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-1-1-0"></a></h4>
 <ul><li>Allow for single traits (<a href="https://github.com/ScottClaessens/coevolve/issues/107" class="external-link">#107</a>)</li>
+<li>Added pure JAX/NumPyro backend via <code>nuts_sampler = "nutpie"</code>. Uses nutpie’s Rust NUTS sampler with JAX gradients for ~5x faster sampling than Stan on typical models. Requires <code>pip install jax numpyro nutpie</code> (<a href="https://github.com/ScottClaessens/coevolve/issues/109" class="external-link">#109</a>)</li>
 </ul></div>
 </div>
     <div class="section level2">

@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fit Bayesian Generalized Dynamic Phylogenetic Models using Stan • coevolve</title>
+<title>Fit Bayesian Generalized Dynamic Phylogenetic Models using Stan or JAX • coevolve</title>
 <!-- favicons --><link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
 <link rel="icon" type="”image/svg+xml”" href="favicon.svg">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
@@ -16,8 +16,8 @@
 <script src="bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
 <!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="pkgdown.css" rel="stylesheet">
-<script src="pkgdown.js"></script><meta property="og:title" content="Fit Bayesian Generalized Dynamic Phylogenetic Models using Stan">
-<meta property="og:description" content="Fit Bayesian generalized dynamic phylogenetic models using Stan. The package allows an abritrary number of variables with different response distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck evolutionary process, allowing users to assess directionality between coevolving variables.">
+<script src="pkgdown.js"></script><meta property="og:title" content="Fit Bayesian Generalized Dynamic Phylogenetic Models using Stan or JAX">
+<meta property="og:description" content="Fit Bayesian generalized dynamic phylogenetic models using Stan or JAX. The package allows an arbitrary number of variables with different response distributions to coevolve on a phylogenetic tree via an Ornstein-Uhlenbeck evolutionary process, allowing users to assess directionality between coevolving variables. The optional JAX backend enables high-performance sampling with NumPyro and potential GPU acceleration via reticulate.">
 <meta property="og:image" content="https://scottclaessens.github.io/coevolve/logo.png">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
@@ -39,7 +39,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.0.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0</span>
       </span>
     </div>
 
@@ -81,6 +81,7 @@
 </h1></div>
 <!-- badges: start -->
 
+<!-- badges: end -->
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
@@ -183,35 +184,34 @@
 <p><img src="reference/figures/README-authority-delta-theta-1.png" alt="Plot showing the posterior distributions of delta theta for both directions of coevolution between political and religious authority. The bulk of the posterior densities are greater than zero." width="60%" style="display: block; margin: auto;"></p>
 <p>This plot suggests that both variables influence one another in their coevolution. A standardised increase in political authority results in an increase in the optimal trait value for religious authority, and vice versa. In other words, these two variables reciprocally coevolve over evolutionary time.</p>
 <div class="section level3">
-<h3 id="optional-using-nutpie-as-an-alternative-sampler">Optional: Using nutpie as an alternative sampler<a class="anchor" aria-label="anchor" href="#optional-using-nutpie-as-an-alternative-sampler"></a>
+<h3 id="optional-accelerated-sampling-nuts_sampler">Optional: Accelerated sampling (<code>nuts_sampler</code>)<a class="anchor" aria-label="anchor" href="#optional-accelerated-sampling-nuts_sampler"></a>
 </h3>
-<p>The <strong>coevolve</strong> package supports using <code>nutpie</code> as an alternative high-performance sampler. To use nutpie:</p>
-<ol style="list-style-type: decimal">
+<p>Sampling is selected with a single argument:</p>
+<ul>
 <li>
-<p><strong>Install nutpie</strong> in a Python environment:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="ex">pip</span> install <span class="st">"nutpie[stan]"</span></span></code></pre></div>
-</li>
+<strong><code>nuts_sampler = "stan"</code></strong> (default): Stan model via <strong>CmdStan</strong> / <strong>cmdstanr</strong> (Stan’s built-in HMC/NUTS).</li>
 <li>
-<p><strong>Configure reticulate</strong> to use the Python environment with nutpie installed. Choose one of the following options:</p>
-<p><strong>Option A: Set environment variable</strong> (recommended for reproducibility):</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="bu">export</span> <span class="va">RETICULATE_PYTHON</span><span class="op">=</span>/path/to/python</span></code></pre></div>
-<p>Or in R:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<strong><code>nuts_sampler = "nutpie"</code></strong>: uses JAX to compute gradients and <strong>nutpie</strong>’s Rust NUTS sampler for fast, parallel sampling.</li>
+</ul>
+<div class="section level4">
+<h4 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
+</h4>
+<p>The nutpie backend requires Python with JAX, NumPyro, and nutpie. Install them with:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="ex">pip</span> install jax numpyro nutpie</span></code></pre></div>
+<p>Python dependencies are managed automatically via <code>reticulate</code>’s <code>uv</code> environment. The project <code>.Rprofile</code> sets <code>RETICULATE_PYTHON = "managed"</code> by default, so <code>reticulate</code> will install the required packages on first use. To pin a specific Python instead, set <code>RETICULATE_PYTHON</code> before <code>reticulate</code> initialises:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>RETICULATE_PYTHON <span class="op">=</span> <span class="st">"/path/to/python"</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Option B: Use virtual environment</strong>:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu">use_virtualenv</span><span class="op">(</span><span class="st">"~/.venvs/nutpie-env"</span><span class="op">)</span></span></code></pre></div>
-<p><strong>Option C: Use Python directly</strong>:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">reticulate</span><span class="fu">::</span><span class="fu">use_python</span><span class="op">(</span><span class="st">"/path/to/python"</span><span class="op">)</span></span></code></pre></div>
-</li>
-<li>
-<p><strong>Use nutpie</strong> by setting <code>backend = "nutpie"</code> in <code><a href="reference/coev_fit.html">coev_fit()</a></code>:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/coev_fit.html">coev_fit</a></span><span class="op">(</span><span class="va">...</span>, backend <span class="op">=</span> <span class="st">"nutpie"</span><span class="op">)</span></span></code></pre></div>
-</li>
-</ol>
-<p><strong>Note</strong>: Explicit configuration is required to ensure reproducibility and avoid version conflicts. The package does not automatically search for nutpie installations.</p>
+</div>
+<div class="section level4">
+<h4 id="example-nutpie-recommended-accelerated-path">Example: nutpie (recommended accelerated path)<a class="anchor" aria-label="anchor" href="#example-nutpie-recommended-accelerated-path"></a>
+</h4>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/coev_fit.html">coev_fit</a></span><span class="op">(</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  nuts_sampler <span class="op">=</span> <span class="st">"nutpie"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><strong>Note</strong>: If you have previously pointed <code>reticulate</code> at a different Python (for example an older conda or mamba base environment), restart R after changing <code>RETICULATE_PYTHON</code> so the new interpreter is picked up cleanly.</p>
+</div>
 </div>
 </div>
 <div class="section level2">
@@ -276,6 +276,7 @@
 <li><a href="https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="https://app.codecov.io/gh/ScottClaessens/coevolve" class="external-link"><img src="https://codecov.io/gh/ScottClaessens/coevolve/graph/badge.svg" alt="Codecov test coverage"></a></li>
 <li><a href="https://github.com/ScottClaessens/coevolve/actions?query=workflow%3Alint" class="external-link"><img src="https://github.com/ScottClaessens/coevolve/actions/workflows/lint.yaml/badge.svg" alt="lint"></a></li>
+<li><a href="https://github.com/ropensci/software-review/issues/717" class="external-link"><img src="https://badges.ropensci.org/717_status.svg" alt="Status at rOpenSci Software Peer Review"></a></li>
 </ul>
 </div>
 
