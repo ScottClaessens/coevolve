@@ -330,8 +330,15 @@ coev_fit <- function(data, variables, id, tree,
       as.integer(sample_args$iter_sampling) else 1000L
     num_warmup <- if ("iter_warmup" %in% names(sample_args))
       as.integer(sample_args$iter_warmup) else 1000L
-    seed <- if ("seed" %in% names(sample_args))
-      as.integer(sample_args$seed) else 0L
+    # Match cmdstanr behavior: when the user does not pass `seed`, draw a
+    # random one (rather than using a fixed default like 0L). Storing the
+    # generated seed on the fit object via create_jax_wrapper() lets users
+    # reproduce a fit with `seed = fit$seed`.
+    seed <- if ("seed" %in% names(sample_args)) {
+      as.integer(sample_args$seed)
+    } else {
+      sample.int(.Machine$integer.max, 1L)
+    }
     stop_if_jax_not_available() # nolint: object_usage_linter.
     nutpie_args <- sample_args
     nutpie_args[c(
