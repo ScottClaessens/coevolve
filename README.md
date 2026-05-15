@@ -11,6 +11,8 @@
 [![R-CMD-check](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml)
 [![Codecov test coverage](https://codecov.io/gh/ScottClaessens/coevolve/graph/badge.svg)](https://app.codecov.io/gh/ScottClaessens/coevolve)
 [![lint](https://github.com/ScottClaessens/coevolve/actions/workflows/lint.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions?query=workflow%3Alint)
+[![Status at rOpenSci Software Peer Review](https://badges.ropensci.org/717_status.svg)](https://github.com/ropensci/software-review/issues/717)
+
 <!-- badges: end -->
 
 ## Overview
