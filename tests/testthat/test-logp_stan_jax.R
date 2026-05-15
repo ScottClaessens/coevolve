@@ -122,6 +122,25 @@ test_that("logp agrees: negative_binomial_softplus (simulated)", {
   )
 })
 
+test_that("logp agrees: gamma_log (simulated)", {
+  skip_if_not(run_extended_tests)
+  withr::with_seed(5, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rgamma(n, shape = 2, rate = 1)
+    )
+  })
+  expect_logp_agreement(
+    data = d,
+    variables = list(x = "normal", y = "gamma_log"),
+    id = "id",
+    tree = tree
+  )
+})
+
 test_that("logp agrees: exact GP spatial control", {
   skip_if_not(run_extended_tests)
   expect_logp_agreement(
@@ -325,6 +344,27 @@ test_that("logp agrees WITH likelihood: poisson_softplus", {
   expect_logp_agreement(
     data = d,
     variables = list(x = "normal", y = "poisson_softplus"),
+    id = "id",
+    tree = tree,
+    prior_only = FALSE,
+    grad_tol = 1e-2
+  )
+})
+
+test_that("logp agrees WITH likelihood: gamma_log", {
+  skip_if_not(run_extended_tests)
+  withr::with_seed(5, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rgamma(n, shape = 2, rate = 1)
+    )
+  })
+  expect_logp_agreement(
+    data = d,
+    variables = list(x = "normal", y = "gamma_log"),
     id = "id",
     tree = tree,
     prior_only = FALSE,
