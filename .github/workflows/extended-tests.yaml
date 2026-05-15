@@ -1,0 +1,118 @@
+# Runs the long-running extended test suite as a matrix of parallel jobs,
+# each handling one test file. Triggered explicitly because each job takes
+# ~30-60 min of MCMC.
+on:
+  pull_request:
+    branches: [main, master]
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+
+name: extended-tests
+
+permissions: read-all
+
+concurrency:
+  group: extended-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  extended:
+    # Only run when explicitly requested:
+    # - workflow_dispatch fired manually, or
+    # - the PR carries the run-extended label.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'run-extended')
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test_file:
+          - test-extended-direction.R
+          - test-extended-recovery.R
+          - test-extended-scaling.R
+          - test-extended-prior.R
+          - test-logp_stan_jax.R
+
+    name: ${{ matrix.test_file }}
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      COEVOLVE_EXTENDED_TESTS: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: release
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: NA
+          extra-packages: |
+            ape
+            stan-dev/cmdstanr
+            colorspace
+            dplyr
+            ggdist
+            ggplot2
+            knitr
+            methods
+            phangorn
+            mjg211/phaseR
+            posterior
+            purrr
+            readr
+            rlang
+            reticulate
+            rmarkdown
+            stringr
+            testthat
+            tidyr
+            withr
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install nutpie and JAX
+        run: |
+          python -m pip install --upgrade pip
+          pip install jax numpyro nutpie
+        shell: bash
+
+      - name: Configure reticulate
+        run: |
+          python_path=$(python -c "import sys; print(sys.executable)")
+          echo "RETICULATE_PYTHON=$python_path" >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: Build Cmdstan
+        run: |
+          cmdstanr::check_cmdstan_toolchain(fix = TRUE)
+          cmdstanr::install_cmdstan(cores = parallel::detectCores())
+        shell: Rscript {0}
+
+      - name: Install package
+        run: R CMD INSTALL .
+        shell: bash
+
+      - name: Run ${{ matrix.test_file }}
+        run: |
+          library(testthat)
+          library(coevolve)
+          testthat::test_file(
+            file.path("tests", "testthat", "${{ matrix.test_file }}"),
+            stop_on_failure = TRUE,
+            stop_on_warning = FALSE
+          )
+        shell: Rscript {0}

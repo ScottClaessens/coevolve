@@ -34,5 +34,12 @@ stancode <- function(object) {
 
 #' @export
 stancode.coevfit <- function(object) {
+  if (is.null(object$stan_code)) {
+    stop2(
+      "No Stan code available. This model was fitted with the ",
+      object$nuts_sampler, " backend (JAX). ",
+      "Use coev_make_stancode() to generate equivalent Stan code."
+    )
+  }
   cat(object$stan_code)
 }

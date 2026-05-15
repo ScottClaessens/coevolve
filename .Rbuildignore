@@ -10,3 +10,7 @@
 ^docs$
 ^pkgdown$
 ^codemeta\.json$
+^\.claude$
+^benchmarks$
+^quick_debug\.R$
+^\.positai$

@@ -340,7 +340,7 @@ nutpie_sample <- function(stan_code, data_list,
   # stop if nutpie is not available
   stop_if_nutpie_not_available()
   # import nutpie
-  nutpie <- reticulate::import("nutpie", convert = FALSE)
+  nutpie <- reticulate::import("nutpie", convert = FALSE) # nolint
   # separate compilation arguments from sampling arguments
   all_additional_args <- list(...)
   # known compilation arguments for compile_stan_model
@@ -433,14 +433,20 @@ nutpie_sample <- function(stan_code, data_list,
     # this is needed because reticulate doesn't directly support **kwargs syntax
     # we define it each time (it's lightweight and ensures it's available)
     reticulate::py_run_string("
+import nutpie as _nutpie
+
 def nutpie_call_with_data(compiled_model, data_dict):
     return compiled_model.with_data(**data_dict)
+
+def nutpie_call_sample(compiled_model, kwargs):
+    return _nutpie.sample(compiled_model, **kwargs)
 ")
     # call the helper function
     call_func <- reticulate::py$nutpie_call_with_data
     model_with_data <- call_func(compiled, python_data)
     # sample
-    trace <- do.call(nutpie$sample, c(list(model_with_data), sample_args))
+    sample_func <- reticulate::py$nutpie_call_sample
+    trace <- sample_func(model_with_data, reticulate::r_to_py(sample_args))
     return(trace)
   }, error = function(e) {
     # Convert Python error to R error
