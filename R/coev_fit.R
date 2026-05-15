@@ -330,15 +330,55 @@ coev_fit <- function(data, variables, id, tree,
       as.integer(sample_args$iter_sampling) else 1000L
     num_warmup <- if ("iter_warmup" %in% names(sample_args))
       as.integer(sample_args$iter_warmup) else 1000L
-    seed <- if ("seed" %in% names(sample_args))
-      as.integer(sample_args$seed) else 0L
+    # Match cmdstanr behavior: when the user does not pass `seed`, draw a
+    # random one (rather than using a fixed default like 0L). Storing the
+    # generated seed on the fit object via create_jax_wrapper() lets users
+    # reproduce a fit with `seed = fit$seed`.
+    seed <- if ("seed" %in% names(sample_args)) {
+      as.integer(sample_args$seed)
+    } else {
+      sample.int(.Machine$integer.max, 1L)
+    }
     stop_if_jax_not_available() # nolint: object_usage_linter.
-    nutpie_args <- sample_args
-    nutpie_args[c(
-      "chains", "iter_sampling", "iter_warmup", "seed",
-      "parallel_chains", "refresh", "nuts_backend",
-      "nuts_gradient_backend", "compile_mode"
-    )] <- NULL
+    # Validate `...` against an allow-list of recognized arguments. This
+    # replaces the previous approach of blacklisting cmdstanr-only names,
+    # which silently dropped any cmdstanr arg the list hadn't yet been
+    # extended to cover. Anything in `...` must be either an arg coev_fit
+    # handles itself (chains/iter_sampling/iter_warmup/seed) or a known
+    # nutpie::sample() argument that we forward as-is.
+    coev_fit_handled_args <- c(
+      "chains", "iter_sampling", "iter_warmup", "seed"
+    )
+    nutpie_passthrough_args <- c(
+      "target_accept", "cores", "save_warmup", "discard_tuning",
+      "progress_bar", "progress_template", "progress_style",
+      "init_mean", "init_std",
+      "store_unconstrained", "store_divergences", "store_gradient",
+      "store_mass_matrix"
+    )
+    unknown_args <- setdiff(
+      names(sample_args),
+      c(coev_fit_handled_args, nutpie_passthrough_args)
+    )
+    if (length(unknown_args) > 0L) {
+      stop2(
+        "Argument(s) not supported by the JAX/nutpie backend: ",
+        paste0("`", unknown_args, "`", collapse = ", "), ".\n",
+        "Recognized arguments for nuts_sampler = \"nutpie\": ",
+        paste0(
+          "`",
+          c(coev_fit_handled_args, nutpie_passthrough_args),
+          "`",
+          collapse = ", "
+        ),
+        ".\nUse nuts_sampler = \"stan\" if you need cmdstanr-specific ",
+        "arguments such as `parallel_chains`, `refresh`, `nuts_backend`, ",
+        "`nuts_gradient_backend`, or `compile_mode`."
+      )
+    }
+    nutpie_args <- sample_args[
+      intersect(names(sample_args), nutpie_passthrough_args)
+    ]
     distributions <- as.character(variables)
     sd_jax <- embed_model_config( # nolint: object_usage_linter.
       standata_to_jax( # nolint: object_usage_linter.

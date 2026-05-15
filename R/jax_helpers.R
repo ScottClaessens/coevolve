@@ -252,31 +252,70 @@ standata_to_jax <- function(sd, distributions) {
 
 #' Pre-compute level-batched tree traversal data
 #'
-#' Groups tree nodes by topological depth so the model graph can process
-#' each level as a single batched operation instead of one op per node.
+#' Groups tree nodes by depth-from-root so the JAX model can apply each
+#' branch-length transition as a single batched einsum across all nodes
+#' at the same depth, instead of looping node-by-node like the Stan model
+#' does. Within-level work runs in parallel; levels remain sequential
+#' because each node's posterior depends on its parent.
+#'
+#' Output arrays are padded to a fixed \code{max_level_size} so the JAX
+#' JIT can specialize on a single shape across trees and levels. Padded
+#' slots point at the root node of each tree: applying the identity to
+#' root yields root, so the pads are effectively no-ops — they cost
+#' wasted compute but do not affect correctness.
+#'
+#' Algorithm (per tree):
+#' \enumerate{
+#'   \item Walk segments in traversal order; compute each node's depth
+#'     from the root (root depth = 0, its children depth = 1, etc.).
+#'   \item Across all trees, find \code{n_nonroot} (the deepest level)
+#'     and \code{max_level_size} (the widest level). These set the
+#'     output array shape.
+#'   \item For each (tree, level) cell, copy matching segment data into
+#'     \code{level_*} arrays. Short levels are padded with the root id.
+#' }
+#'
+#' \code{seg_drift_slot[t, i] = i - 2L} mirrors Stan's \code{z_drift[t, i-1]}
+#' indexing for \code{i in 2:N_seg}. The root segment (i=1) has no drift
+#' slot; non-root segments map to z_drift positions 0..(N_seg-2).
 #'
 #' @param node_seq_0 Integer matrix (N_tree, N_seg), 0-indexed node IDs in
-#'   traversal order.
+#'   traversal order. First column is the root of each tree.
 #' @param parent_0 Integer matrix (N_tree, N_seg), 0-indexed parent node IDs.
 #' @param tip_0 Integer matrix (N_tree, N_seg), 1 = tip, 0 = internal.
 #' @param length_index_0 Integer matrix (N_tree, N_seg), 0-indexed index into
-#'   unique_lengths.
-#' @param N_tree Integer, number of trees.
+#'   the deduplicated branch-length array.
+#' @param N_tree Integer, number of trees (1 for single phylo, >1 for
+#'   multiPhylo).
 #' @param N_seg Integer, number of segments per tree.
 #'
-#' @returns Named list with padded level-batched arrays.
+#' @returns Named list with padded level-batched arrays:
+#'   \describe{
+#'     \item{n_levels}{Number of non-root depth levels.}
+#'     \item{max_level_size}{Padded second dimension of every level array.}
+#'     \item{root_ids}{Root node id for each tree (length N_tree).}
+#'     \item{level_node_ids, level_parent_ids, level_length_idx,
+#'       level_is_internal, level_drift_idx}{Arrays of shape
+#'       (N_tree, n_levels, max_level_size). Slots beyond
+#'       \code{level_sizes[t, l]} are padding (set to root_id).}
+#'     \item{level_sizes}{Real (unpadded) size at each (tree, level).}
+#'   }
 #'
 #' @noRd
 compute_tree_levels <- function(node_seq_0, parent_0, tip_0,
                                 length_index_0, # nolint
                                 N_tree, N_seg) { # nolint
+  # Step 1: per tree, compute depth of every node from the root.
+  # `node_to_step` inverts `node_seq_0` so we can look up the traversal
+  # position of any node id; depth is then resolved by walking parents
+  # in traversal order (parents always appear before children).
   all_depths <- matrix(0L, N_tree, N_seg)
   root_ids <- integer(N_tree)
 
   for (t in seq_len(N_tree)) {
     ns <- node_seq_0[t, ]
     pa <- parent_0[t, ]
-    root_ids[t] <- ns[1]
+    root_ids[t] <- ns[1] # first traversal entry is always the root
 
     node_to_step <- integer(N_seg)
     node_to_step[ns + 1L] <- seq_len(N_seg) - 1L
@@ -289,6 +328,8 @@ compute_tree_levels <- function(node_seq_0, parent_0, tip_0,
     all_depths[t, ] <- depth
   }
 
+  # Step 2: choose padded array shape from the deepest and widest levels
+  # observed across all trees.
   n_levels_total <- max(all_depths) + 1L
   n_nonroot <- n_levels_total - 1L
 
@@ -299,8 +340,8 @@ compute_tree_levels <- function(node_seq_0, parent_0, tip_0,
     }
   }
 
-  # Map each segment position to its z_drift index (= segment_pos - 1,
-  # matching Stan's z_drift[t, i-1] indexing for i in 2:N_seg).
+  # Pre-compute z_drift slot for every non-root segment (see function
+  # docstring for the index mapping).
   seg_drift_slot <- matrix(0L, N_tree, N_seg)
   for (t in seq_len(N_tree)) {
     for (i in 2:N_seg) {
@@ -308,6 +349,8 @@ compute_tree_levels <- function(node_seq_0, parent_0, tip_0,
     }
   }
 
+  # Step 3: fill the level arrays. Slots beyond the real level size are
+  # padded with the tree's root id (a self-loop, harmless).
   lvl_node_ids    <- array(0L, dim = c(N_tree, n_nonroot, max_level_size))
   lvl_parent_ids  <- array(0L, dim = c(N_tree, n_nonroot, max_level_size))
   lvl_length_idx  <- array(0L, dim = c(N_tree, n_nonroot, max_level_size))
