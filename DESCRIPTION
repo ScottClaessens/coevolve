@@ -21,6 +21,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE, roclets = c("namespace", "rd", "srr::srr_stats_roclet"))
 Suggests: 
     knitr,
+    loo,
     rmarkdown,
     reticulate,
     testthat (>= 3.0.0),
@@ -38,7 +39,7 @@ Imports:
     lifecycle,
     Matrix,
     methods,
-    patchwork,
+    patchwork (>= 1.2.0),
     phangorn,
     phaseR,
     phytools,
