@@ -9,24 +9,24 @@
 #' @importFrom stats rnorm
 #' @noRd
 compare_stan_jax_logprob <- function(
-    data,
-    variables,
-    id,
-    tree,
-    effects_mat = NULL,
-    complete_cases = FALSE,
-    lon_lat = NULL,
-    dist_k = NA,
-    dist_cov = "exp_quad",
-    measurement_error = NULL,
-    prior = NULL,
-    scale = TRUE,
-    estimate_correlated_drift = FALSE,
-    estimate_residual = TRUE,
-    prior_only = TRUE,
-    seed = 1L,
-    n_points = 5L,
-    grad_tol = 1e-6) {
+  data,
+  variables,
+  id,
+  tree,
+  effects_mat = NULL,
+  complete_cases = FALSE,
+  lon_lat = NULL,
+  dist_k = NA,
+  dist_cov = "exp_quad",
+  measurement_error = NULL,
+  prior = NULL,
+  scale = TRUE,
+  estimate_correlated_drift = FALSE,
+  estimate_residual = TRUE,
+  prior_only = TRUE,
+  seed = 1L,
+  n_points = 5L,
+  grad_tol = 1e-6) {
 
   if (!requireNamespace("cmdstanr", quietly = TRUE)) {
     stop2("Package 'cmdstanr' is required.")
