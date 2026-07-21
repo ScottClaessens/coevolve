@@ -75,14 +75,14 @@ fit <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 3 finished in 252.4 seconds.
-#> Chain 4 finished in 258.9 seconds.
-#> Chain 1 finished in 348.7 seconds.
-#> Chain 2 finished in 357.2 seconds.
+#> Chain 3 finished in 256.2 seconds.
+#> Chain 4 finished in 262.9 seconds.
+#> Chain 1 finished in 354.9 seconds.
+#> Chain 2 finished in 361.1 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 304.3 seconds.
-#> Total execution time: 357.3 seconds.
+#> Mean chain execution time: 308.8 seconds.
+#> Total execution time: 361.2 seconds.
 #> Warning: 7 of 4000 (0.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
@@ -164,6 +164,13 @@ coevolution. A standardised increase in political authority results in
 an increase in the optimal trait value for religious authority, and vice
 versa. In other words, these two variables reciprocally coevolve over
 evolutionary time.
+
+## Further resources
+
+- [Introductory
+  vignettes](https://scottclaessens.github.io/coevolve/articles/)
+- [Methods paper](https://doi.org/10.1111/2041-210x.70303)
+- [Lecture and R workshop](https://www.youtube.com/watch?v=9dsTeVflA1s)
 
 ## Citing coevolve
 

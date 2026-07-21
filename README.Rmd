@@ -136,6 +136,12 @@ increase in the optimal trait value for religious authority, and vice versa.
 In other words, these two variables reciprocally coevolve over evolutionary
 time.
 
+## Further resources
+
+- [Introductory vignettes](https://scottclaessens.github.io/coevolve/articles/)
+- [Methods paper](https://doi.org/10.1111/2041-210x.70303)
+- [Lecture and R workshop](https://www.youtube.com/watch?v=9dsTeVflA1s)
+
 ## Citing coevolve
 
 When using the **coevolve** package, please cite the following papers:
