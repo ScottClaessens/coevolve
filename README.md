@@ -32,15 +32,7 @@ traits.
 
 ## Installation
 
-To use the **coevolve** package, you must first install the `cmdstanr`
-package (see full installation instructions here:
-<https://mc-stan.org/cmdstanr/>).
-
-``` r
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-```
-
-You can then install the development version of **coevolve** with:
+You can install the development version of **coevolve** with:
 
 ``` r
 # install.packages("devtools")

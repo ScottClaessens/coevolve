@@ -19,7 +19,6 @@ URL: https://github.com/ScottClaessens/coevolve, https://scottclaessens.github.i
 BugReports: https://github.com/ScottClaessens/coevolve/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE, roclets = c("namespace", "rd", "srr::srr_stats_roclet"))
-RoxygenNote: 7.3.3
 Suggests: 
     knitr,
     rmarkdown,
@@ -59,3 +58,4 @@ Additional_repositories: https://stan-dev.r-universe.dev/
 Remotes:
     stan-dev/cmdstanr,
     mjg211/phaseR
+Config/roxygen2/version: 8.0.0
