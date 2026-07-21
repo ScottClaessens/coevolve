@@ -6,6 +6,8 @@
 #'
 #' @returns Samples in 'rethinking' style list format
 #'
+#' @family extract
+#'
 #' @examples
 #' \dontrun{
 #' # fit dynamic coevolutionary model

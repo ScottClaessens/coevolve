@@ -46,4 +46,10 @@ print(fit)
 }
 \seealso{
 \code{\link{summary.coevfit}}
+
+Other summarise:
+\code{\link[=summary.coevfit]{summary.coevfit()}},
+\code{\link[=summary.jax_fit]{summary.jax_fit()}},
+\code{\link[=summary.nutpie_fit]{summary.nutpie_fit()}}
 }
+\concept{summarise}

@@ -21,3 +21,11 @@ A draws_array object.
 Extracts draws from a nutpie_fit object, compatible with
 cmdstanr's draws() method.
 }
+\seealso{
+Other extract:
+\code{\link[=draws.jax_fit]{draws.jax_fit()}},
+\code{\link[=extract_samples]{extract_samples()}},
+\code{\link[=metadata.jax_fit]{metadata.jax_fit()}},
+\code{\link[=metadata.nutpie_fit]{metadata.nutpie_fit()}}
+}
+\concept{extract}

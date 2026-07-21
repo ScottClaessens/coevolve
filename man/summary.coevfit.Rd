@@ -57,3 +57,10 @@ Paul-Christian Bürkner (2020). Rank-normalization, folding, and
 localization: An improved R-hat for assessing convergence of
 MCMC. \emph{Bayesian Analysis}. 1–28. dpi:10.1214/20-BA1221
 }
+\seealso{
+Other summarise:
+\code{\link[=print.coevfit]{print.coevfit()}},
+\code{\link[=summary.jax_fit]{summary.jax_fit()}},
+\code{\link[=summary.nutpie_fit]{summary.nutpie_fit()}}
+}
+\concept{summarise}

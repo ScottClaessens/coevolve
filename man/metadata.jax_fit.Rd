@@ -15,3 +15,11 @@ A list containing metadata.
 \description{
 Extract metadata from jax_fit object
 }
+\seealso{
+Other extract:
+\code{\link[=draws.jax_fit]{draws.jax_fit()}},
+\code{\link[=draws.nutpie_fit]{draws.nutpie_fit()}},
+\code{\link[=extract_samples]{extract_samples()}},
+\code{\link[=metadata.nutpie_fit]{metadata.nutpie_fit()}}
+}
+\concept{extract}

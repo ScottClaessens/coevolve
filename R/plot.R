@@ -25,6 +25,8 @@
 #'
 #' @return A list of \code{ggplot} objects
 #'
+#' @family plot
+#'
 #' @examples
 #' \dontrun{
 #' # fit dynamic coevolutionary model

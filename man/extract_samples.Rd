@@ -37,3 +37,11 @@ extract_samples(fit)
 }
 
 }
+\seealso{
+Other extract:
+\code{\link[=draws.jax_fit]{draws.jax_fit()}},
+\code{\link[=draws.nutpie_fit]{draws.nutpie_fit()}},
+\code{\link[=metadata.jax_fit]{metadata.jax_fit()}},
+\code{\link[=metadata.nutpie_fit]{metadata.nutpie_fit()}}
+}
+\concept{extract}

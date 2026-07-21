@@ -76,7 +76,17 @@ E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political
 authority in Austronesian societies. \emph{Nature Human Behaviour},
 \emph{7}(1), 38-45. \code{10.1038/s41562-022-01471-y}
 }
+\seealso{
+Other plot:
+\code{\link[=coev_plot_delta_theta]{coev_plot_delta_theta()}},
+\code{\link[=coev_plot_flowfield]{coev_plot_flowfield()}},
+\code{\link[=coev_plot_pred_series]{coev_plot_pred_series()}},
+\code{\link[=coev_plot_predictive_check]{coev_plot_predictive_check()}},
+\code{\link[=coev_plot_selection_gradient]{coev_plot_selection_gradient()}},
+\code{\link[=plot.coevfit]{plot.coevfit()}}
+}
 \author{
 Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
 \email{erikjacob.ringen@uzh.ch}
 }
+\concept{plot}

@@ -24,6 +24,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Scott Claessens \email{scott.claessens@gmail.com} (\href{https://orcid.org/0000-0002-3562-6981}{ORCID})
   \item Erik Ringen \email{erikjacob.ringen@uzh.ch}
 }
 

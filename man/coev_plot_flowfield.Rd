@@ -90,8 +90,17 @@ authority in Austronesian societies. \emph{Nature Human Behaviour},
 }
 \seealso{
 \code{\link{coev_plot_selection_gradient}}
+
+Other plot:
+\code{\link[=coev_plot_delta_theta]{coev_plot_delta_theta()}},
+\code{\link[=coev_plot_pred_series]{coev_plot_pred_series()}},
+\code{\link[=coev_plot_predictive_check]{coev_plot_predictive_check()}},
+\code{\link[=coev_plot_selection_gradient]{coev_plot_selection_gradient()}},
+\code{\link[=coev_plot_trait_values]{coev_plot_trait_values()}},
+\code{\link[=plot.coevfit]{plot.coevfit()}}
 }
 \author{
 Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
 \email{erikjacob.ringen@uzh.ch}
 }
+\concept{plot}

@@ -19,3 +19,10 @@ A data.frame with summary statistics.
 \description{
 Summary statistics for jax_fit object
 }
+\seealso{
+Other summarise:
+\code{\link[=print.coevfit]{print.coevfit()}},
+\code{\link[=summary.coevfit]{summary.coevfit()}},
+\code{\link[=summary.nutpie_fit]{summary.nutpie_fit()}}
+}
+\concept{summarise}

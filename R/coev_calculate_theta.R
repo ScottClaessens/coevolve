@@ -25,6 +25,8 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
+#' @family calculate
+#'
 #' @details The equilibrium trait values for freely evolving traits
 #'   \eqn{\mathbf{\eta}} are calculated using the following formula:
 #'

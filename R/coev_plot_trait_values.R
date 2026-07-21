@@ -29,6 +29,8 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
+#' @family plot
+#'
 #' @references
 #' Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods
 #' reveal that resource-use intensification drives the evolution of "complex"

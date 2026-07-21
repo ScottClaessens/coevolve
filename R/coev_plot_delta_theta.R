@@ -24,6 +24,8 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
+#' @family plot
+#'
 #' @details This function repeatedly uses the
 #'   \code{\link{coev_calculate_delta_theta}} function under the hood to
 #'   generate a pairs plot of \eqn{\Delta\theta} for all variables in the model.

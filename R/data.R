@@ -26,6 +26,8 @@
 #'
 #' @srrstats {G5.1} Example dataset for package
 #'
+#' @family data
+#'
 #' @source Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S.,
 #'   Ringen, E. J., & Atkinson, Q. D. (2023). Coevolution of religious and
 #'   political authority in Austronesian societies. \emph{Nature Human
@@ -88,6 +90,8 @@
 #'
 #' @srrstats {G5.1} Example dataset for package
 #'
+#' @family data
+#'
 #' @source DeCasien, A. R., Williams, S. A., & Higham, J. P. (2017). Primate
 #'   brain size is predicted by diet but not sociality. \emph{Nature Ecology &
 #'   Evolution}, \emph{1}(5), 0112.
@@ -136,6 +140,8 @@
 #' }
 #'
 #' @srrstats {G5.1} Example dataset for package
+#'
+#' @family data
 #'
 #' @source de Villemeruil P. & Nakagawa, S. (2014). General quantitative genetic
 #'   methods for comparative biology. In L. Garamszegi (Ed.), \emph{Modern

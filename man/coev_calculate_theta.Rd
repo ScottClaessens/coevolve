@@ -104,8 +104,12 @@ authority in Austronesian societies. \emph{Nature Human Behaviour},
 \seealso{
 \code{\link{coev_calculate_delta_theta}},
 \code{\link{coev_plot_delta_theta}}
+
+Other calculate:
+\code{\link[=coev_calculate_delta_theta]{coev_calculate_delta_theta()}}
 }
 \author{
 Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
 \email{erikjacob.ringen@uzh.ch}
 }
+\concept{calculate}

@@ -16,3 +16,11 @@ A list containing metadata.
 Extracts metadata from a nutpie_fit object, compatible with
 cmdstanr's metadata() method.
 }
+\seealso{
+Other extract:
+\code{\link[=draws.jax_fit]{draws.jax_fit()}},
+\code{\link[=draws.nutpie_fit]{draws.nutpie_fit()}},
+\code{\link[=extract_samples]{extract_samples()}},
+\code{\link[=metadata.jax_fit]{metadata.jax_fit()}}
+}
+\concept{extract}

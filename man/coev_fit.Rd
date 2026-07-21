@@ -297,8 +297,13 @@ authority in Austronesian societies. \emph{Nature Human Behaviour},
 }
 \seealso{
 \code{\link{coev_make_stancode}}, \code{\link{coev_make_standata}}
+
+Other fit:
+\code{\link[=coev_make_stancode]{coev_make_stancode()}},
+\code{\link[=coev_make_standata]{coev_make_standata()}}
 }
 \author{
 Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
 \email{erikjacob.ringen@uzh.ch}
 }
+\concept{fit}
