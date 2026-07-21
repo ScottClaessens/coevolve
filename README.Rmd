@@ -48,7 +48,7 @@ knitr::opts_chunk$set(
 
 The **coevolve** package allows the user to fit Bayesian generalized dynamic
 phylogenetic models in Stan. These models can be used to estimate how
-variables have coevolved over evolutionary time and to assess causal
+traits have coevolved over evolutionary time and to assess causal
 directionality (X → Y vs. Y → X) and contingencies (X, then Y) in evolution.
 
 While existing methods only allow pairs of binary traits to coevolve
@@ -127,7 +127,7 @@ absolute deviation increase in another variable.
 #|   Plot showing the posterior distributions of delta theta for both
 #|   directions of coevolution between political and religious authority. The
 #|   bulk of the posterior densities are greater than zero.
-coev_plot_delta_theta(fit)
+coev_plot_delta_theta(fit, prob_outer = 0.90)
 ```
 
 This plot suggests that both variables influence one another in their 
@@ -136,47 +136,6 @@ increase in the optimal trait value for religious authority, and vice versa.
 In other words, these two variables reciprocally coevolve over evolutionary
 time.
 
-### Optional: Accelerated sampling (`nuts_sampler`)
-
-Sampling is selected with a single argument:
-
-- **`nuts_sampler = "stan"`** (default): Stan model via **CmdStan** /
-  **cmdstanr** (Stan's built-in HMC/NUTS).
-- **`nuts_sampler = "nutpie"`**: uses JAX to compute gradients and
-  **nutpie**'s Rust NUTS sampler for fast, parallel sampling.
-
-#### Setup
-
-The nutpie backend requires Python with JAX, NumPyro, and nutpie. Install
-them with:
-
-```bash
-pip install jax numpyro nutpie
-```
-
-Python dependencies are managed automatically via `reticulate`'s `uv`
-environment. The project `.Rprofile` sets `RETICULATE_PYTHON = "managed"`
-by default, so `reticulate` will install the required packages on first
-use. To pin a specific Python instead, set `RETICULATE_PYTHON` before
-`reticulate` initialises:
-
-```r
-Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
-```
-
-#### Example: nutpie (recommended accelerated path)
-
-```r
-fit <- coev_fit(
-  ...,
-  nuts_sampler = "nutpie"
-)
-```
-
-**Note**: If you have previously pointed `reticulate` at a different Python
-(for example an older conda or mamba base environment), restart R after
-changing `RETICULATE_PYTHON` so the new interpreter is picked up cleanly.
-
 ## Citing coevolve
 
 When using the **coevolve** package, please cite the following papers:
@@ -184,7 +143,7 @@ When using the **coevolve** package, please cite the following papers:
 - Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods 
   reveal that resource-use intensification drives the evolution of "complex" 
   societies. _EcoEvoRXiv_. https://doi.org/10.32942/osf.io/wfp95
-- Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen, 
-  E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political 
-  authority in Austronesian societies. _Nature Human Behaviour_, _7_(1), 38-45. 
-  https://doi.org/10.1038/s41562-022-01471-y
+- Ringen, E., Claessens, S., Martin, J. S., & Jaeggi, A. V. (2026). Trait 
+  coevolution and causal inference using generalized dynamic phylogenetic 
+  models. _Methods in Ecology and Evolution_, _17_(6), 1818-1836. 
+  https://doi.org/10.1111/2041-210x.70303
