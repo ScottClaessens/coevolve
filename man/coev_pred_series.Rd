@@ -106,4 +106,3 @@ epreds_intervention <- coev_pred_series(
 Scott Claessens \email{scott.claessens@gmail.com}, Erik Ringen
 \email{erikjacob.ringen@uzh.ch}
 }
-\concept{predict}

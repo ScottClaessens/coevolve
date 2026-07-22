@@ -19,11 +19,3 @@ A draws_array object.
 \description{
 Extract draws from jax_fit object
 }
-\seealso{
-Other extract:
-\code{\link[=draws.nutpie_fit]{draws.nutpie_fit()}},
-\code{\link[=extract_samples]{extract_samples()}},
-\code{\link[=metadata.jax_fit]{metadata.jax_fit()}},
-\code{\link[=metadata.nutpie_fit]{metadata.nutpie_fit()}}
-}
-\concept{extract}

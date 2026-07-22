@@ -70,10 +70,4 @@ coev_plot_delta_theta(m)
 }
 
 }
-\seealso{
-Other data:
-\code{\link{authority}},
-\code{\link{repeated}}
-}
-\concept{data}
 \keyword{datasets}

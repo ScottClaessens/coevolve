@@ -2,7 +2,7 @@ url: https://scottclaessens.github.io/coevolve/
 template:
   math-rendering: mathjax
 reference:
-- title: Data
+- title: Datasets
   contents:
   - '`authority`'
   - '`primates`'

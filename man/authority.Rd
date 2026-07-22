@@ -64,10 +64,4 @@ coev_plot_delta_theta(m)
 }
 
 }
-\seealso{
-Other data:
-\code{\link{primates}},
-\code{\link{repeated}}
-}
-\concept{data}
 \keyword{datasets}

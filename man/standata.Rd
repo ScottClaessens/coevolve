@@ -39,4 +39,3 @@ standata(fit)
 }
 
 }
-\concept{expose}

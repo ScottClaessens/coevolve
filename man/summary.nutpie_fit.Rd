@@ -25,10 +25,3 @@ compatible with cmdstanr's summary() method. This method mimics
 cmdstanr's interface where summary() is called with named arguments
 where names are column names and values are function names or formulas.
 }
-\seealso{
-Other summarise:
-\code{\link[=print.coevfit]{print.coevfit()}},
-\code{\link[=summary.coevfit]{summary.coevfit()}},
-\code{\link[=summary.jax_fit]{summary.jax_fit()}}
-}
-\concept{summarise}
