@@ -1,9 +1,15 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   coevolve: coevolve.html
-last_built: 2026-05-15T16:10Z
+  compare: compare.html
+  jax: jax.html
+  missing: missing.html
+  multiphylo: multiphylo.html
+  repeated: repeated.html
+  spatial: spatial.html
+last_built: 2026-07-22T15:25Z
 urls:
   reference: https://scottclaessens.github.io/coevolve/reference
   article: https://scottclaessens.github.io/coevolve/articles

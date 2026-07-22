@@ -52,6 +52,9 @@
   <a href="reference/index.html">Reference</a>
 </li>
 <li>
+  <a href="articles/index.html">Articles</a>
+</li>
+<li>
   <a href="news/index.html">Changelog</a>
 </li>
       </ul>
@@ -81,31 +84,27 @@
 </h1></div>
 <!-- badges: start -->
 
-<!-- badges: end -->
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
-<p>The <strong>coevolve</strong> package allows the user to fit Bayesian generalized dynamic phylogenetic models in Stan. These models can be used to estimate how variables have coevolved over evolutionary time and to assess causal directionality (X → Y vs. Y → X) and contingencies (X, then Y) in evolution.</p>
+<p>The <strong>coevolve</strong> package allows the user to fit Bayesian generalized dynamic phylogenetic models in Stan. These models can be used to estimate how traits have coevolved over evolutionary time and to assess causal directionality (X → Y vs. Y → X) and contingencies (X, then Y) in evolution.</p>
 <p>While existing methods only allow pairs of binary traits to coevolve (e.g., <a href="https://www.evolution.reading.ac.uk/BayesTraitsV4.1.2/BayesTraitsV4.1.2.html" class="external-link">BayesTraits</a>), the <strong>coevolve</strong> package allows users to include multiple traits of different data types, including binary, ordinal, count, and continuous traits.</p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>To use the <strong>coevolve</strong> package, you must first install the <code>cmdstanr</code> package (see full installation instructions here: <a href="https://mc-stan.org/cmdstanr/" class="external-link uri">https://mc-stan.org/cmdstanr/</a>).</p>
+<p>You can install the development version of <strong>coevolve</strong> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"cmdstanr"</span>, repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"https://mc-stan.org/r-packages/"</span>, <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"repos"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>You can then install the development version of <strong>coevolve</strong> with:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"ScottClaessens/coevolve"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="how-to-use-coevolve">How to use coevolve<a class="anchor" aria-label="anchor" href="#how-to-use-coevolve"></a>
 </h2>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/ScottClaessens/coevolve" class="external-link">coevolve</a></span><span class="op">)</span></span></code></pre></div>
 <p>As an example, we analyse the coevolution of political and religious authority in 97 Austronesian societies. These data were compiled and analysed in <a href="https://www.nature.com/articles/s41562-022-01471-y" class="external-link">Sheehan et al. (2023)</a>. Both variables are four-level ordinal variables reflecting increasing levels of authority. We use a phylogeny of Austronesian languages to assess patterns of coevolution.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span></span>
 <span>  <span class="fu"><a href="reference/coev_fit.html">coev_fit</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">data</span>,</span>
@@ -124,18 +123,18 @@
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt; Running MCMC with 4 parallel chains...</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Chain 1 finished in 441.6 seconds.</span></span>
-<span><span class="co">#&gt; Chain 2 finished in 582.9 seconds.</span></span>
-<span><span class="co">#&gt; Chain 3 finished in 621.8 seconds.</span></span>
-<span><span class="co">#&gt; Chain 4 finished in 626.9 seconds.</span></span>
+<span><span class="co">#&gt; Chain 3 finished in 256.2 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 262.9 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 354.9 seconds.</span></span>
+<span><span class="co">#&gt; Chain 2 finished in 361.1 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
-<span><span class="co">#&gt; Mean chain execution time: 568.3 seconds.</span></span>
-<span><span class="co">#&gt; Total execution time: 627.2 seconds.</span></span>
-<span><span class="co">#&gt; Warning: 22 of 4000 (1.0%) transitions ended with a divergence.</span></span>
+<span><span class="co">#&gt; Mean chain execution time: 308.8 seconds.</span></span>
+<span><span class="co">#&gt; Total execution time: 361.2 seconds.</span></span>
+<span><span class="co">#&gt; Warning: 7 of 4000 (0.0%) transitions ended with a divergence.</span></span>
 <span><span class="co">#&gt; See https://mc-stan.org/misc/warnings for details.</span></span></code></pre></div>
 <p>The results can be investigated using:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Variables: political_authority = ordered_logistic </span></span>
 <span><span class="co">#&gt;            religious_authority = ordered_logistic </span></span>
@@ -146,73 +145,52 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Autoregressive selection effects:</span></span>
 <span><span class="co">#&gt;                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; political_authority    -0.67      0.53 -1.99 -0.03 1.00     2120     1768</span></span>
-<span><span class="co">#&gt; religious_authority    -0.78      0.59 -2.20 -0.03 1.00     2260     1766</span></span>
+<span><span class="co">#&gt; political_authority    -0.64      0.53 -1.96 -0.02 1.00     2282     2149</span></span>
+<span><span class="co">#&gt; religious_authority    -0.81      0.57 -2.16 -0.04 1.00     2639     2106</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Cross selection effects:</span></span>
 <span><span class="co">#&gt;                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; political_authority ⟶ religious_authority     2.32      1.03  0.38  4.45 1.00     1567     1971</span></span>
-<span><span class="co">#&gt; religious_authority ⟶ political_authority     1.82      1.11 -0.28  4.07 1.00     1288     2124</span></span>
+<span><span class="co">#&gt; political_authority ⟶ religious_authority     2.34      0.96  0.42  4.29 1.01     1508     1853</span></span>
+<span><span class="co">#&gt; religious_authority ⟶ political_authority     1.68      1.08 -0.42  3.83 1.00     1067     2030</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Drift parameters:</span></span>
 <span><span class="co">#&gt;                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; sd(political_authority)                          1.95      0.83  0.27  3.50 1.01      801     1193</span></span>
-<span><span class="co">#&gt; sd(religious_authority)                          1.29      0.80  0.06  2.94 1.00      761     1327</span></span>
-<span><span class="co">#&gt; cor(political_authority,religious_authority)     0.26      0.32 -0.44  0.78 1.00     2732     2641</span></span>
+<span><span class="co">#&gt; sd(political_authority)                          2.01      0.83  0.25  3.60 1.01      643      602</span></span>
+<span><span class="co">#&gt; sd(religious_authority)                          1.25      0.79  0.08  2.96 1.02      734     1737</span></span>
+<span><span class="co">#&gt; cor(political_authority,religious_authority)     0.26      0.31 -0.41  0.77 1.00     2760     2512</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Continuous time intercept parameters:</span></span>
 <span><span class="co">#&gt;                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; political_authority     0.21      0.95 -1.56  2.09 1.00     4088     1162</span></span>
-<span><span class="co">#&gt; religious_authority     0.21      0.94 -1.65  2.06 1.00     5112     2655</span></span>
+<span><span class="co">#&gt; political_authority     0.23      0.94 -1.60  2.07 1.00     4889     2814</span></span>
+<span><span class="co">#&gt; religious_authority     0.31      0.94 -1.51  2.19 1.00     5071     2710</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Ordinal cutpoint parameters:</span></span>
 <span><span class="co">#&gt;                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; political_authority[1]    -1.31      0.91 -3.12  0.51 1.00     2736     2683</span></span>
-<span><span class="co">#&gt; political_authority[2]    -0.56      0.89 -2.32  1.24 1.00     3129     2891</span></span>
-<span><span class="co">#&gt; political_authority[3]     1.64      0.92 -0.10  3.55 1.00     3268     2956</span></span>
-<span><span class="co">#&gt; religious_authority[1]    -1.53      0.92 -3.31  0.24 1.00     3019     3066</span></span>
-<span><span class="co">#&gt; religious_authority[2]    -0.84      0.90 -2.59  0.94 1.00     3329     3051</span></span>
-<span><span class="co">#&gt; religious_authority[3]     1.60      0.95 -0.17  3.51 1.00     3205     3102</span></span>
-<span><span class="co">#&gt; Warning: There were 22 divergent transitions after warmup.</span></span>
+<span><span class="co">#&gt; political_authority[1]    -1.32      0.88 -3.05  0.43 1.00     2746     2770</span></span>
+<span><span class="co">#&gt; political_authority[2]    -0.57      0.86 -2.28  1.14 1.00     3083     2967</span></span>
+<span><span class="co">#&gt; political_authority[3]     1.63      0.88 -0.06  3.48 1.00     3629     3113</span></span>
+<span><span class="co">#&gt; religious_authority[1]    -1.50      0.92 -3.28  0.31 1.00     3289     2605</span></span>
+<span><span class="co">#&gt; religious_authority[2]    -0.81      0.91 -2.59  0.96 1.00     3582     2759</span></span>
+<span><span class="co">#&gt; religious_authority[3]     1.63      0.92 -0.12  3.49 1.00     3786     3337</span></span>
+<span><span class="co">#&gt; Warning: There were 7 divergent transitions after warmup.</span></span>
 <span><span class="co">#&gt; http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></span></code></pre></div>
 <p>The summary provides general information about the model and details on the posterior draws for the model parameters. In particular, the output shows the autoregressive selection effects (i.e., the effect of a variable on itself in the future), the cross selection effects (i.e., the effect of a variable on another variable in the future), the amount of drift, continuous time intercept parameters for the stochastic differential equation, and cutpoints for the ordinal variables.</p>
 <p>While this summary output is useful as a first glance, it is difficult to interpret these parameters directly to infer directions of coevolution. Another approach is to “intervene” in the system. We can hold variables of interest at their average values and then increase one variable by a standardised amount to see how this affects the optimal trait value for another variable.</p>
 <p>The <code><a href="reference/coev_plot_delta_theta.html">coev_plot_delta_theta()</a></code> function allows us to visualise <span class="math inline">\(\Delta\theta_{z}\)</span> for all variable pairs in the model. <span class="math inline">\(\Delta\theta_{z}\)</span> is defined as the change in the optimal trait value of one variable which results from a one median absolute deviation increase in another variable.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/coev_plot_delta_theta.html">coev_plot_delta_theta</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Removed 235 rows containing non-finite outside the scale range (`stat_density()`).</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/coev_plot_delta_theta.html">coev_plot_delta_theta</a></span><span class="op">(</span><span class="va">fit</span>, prob_outer <span class="op">=</span> <span class="fl">0.90</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Warning: Removed 518 rows containing non-finite outside the scale range (`stat_density()`).</span></span></code></pre></div>
 <p><img src="reference/figures/README-authority-delta-theta-1.png" alt="Plot showing the posterior distributions of delta theta for both directions of coevolution between political and religious authority. The bulk of the posterior densities are greater than zero." width="60%" style="display: block; margin: auto;"></p>
 <p>This plot suggests that both variables influence one another in their coevolution. A standardised increase in political authority results in an increase in the optimal trait value for religious authority, and vice versa. In other words, these two variables reciprocally coevolve over evolutionary time.</p>
-<div class="section level3">
-<h3 id="optional-accelerated-sampling-nuts_sampler">Optional: Accelerated sampling (<code>nuts_sampler</code>)<a class="anchor" aria-label="anchor" href="#optional-accelerated-sampling-nuts_sampler"></a>
-</h3>
-<p>Sampling is selected with a single argument:</p>
+</div>
+<div class="section level2">
+<h2 id="further-resources">Further resources<a class="anchor" aria-label="anchor" href="#further-resources"></a>
+</h2>
 <ul>
-<li>
-<strong><code>nuts_sampler = "stan"</code></strong> (default): Stan model via <strong>CmdStan</strong> / <strong>cmdstanr</strong> (Stan’s built-in HMC/NUTS).</li>
-<li>
-<strong><code>nuts_sampler = "nutpie"</code></strong>: uses JAX to compute gradients and <strong>nutpie</strong>’s Rust NUTS sampler for fast, parallel sampling.</li>
+<li><a href="https://scottclaessens.github.io/coevolve/articles/">Introductory vignettes</a></li>
+<li><a href="https://doi.org/10.1111/2041-210x.70303" class="external-link">Methods paper</a></li>
+<li><a href="https://www.youtube.com/watch?v=9dsTeVflA1s" class="external-link">Lecture and R workshop</a></li>
 </ul>
-<div class="section level4">
-<h4 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
-</h4>
-<p>The nutpie backend requires Python with JAX, NumPyro, and nutpie. Install them with:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="ex">pip</span> install jax numpyro nutpie</span></code></pre></div>
-<p>Python dependencies are managed automatically via <code>reticulate</code>’s <code>uv</code> environment. The project <code>.Rprofile</code> sets <code>RETICULATE_PYTHON = "managed"</code> by default, so <code>reticulate</code> will install the required packages on first use. To pin a specific Python instead, set <code>RETICULATE_PYTHON</code> before <code>reticulate</code> initialises:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>RETICULATE_PYTHON <span class="op">=</span> <span class="st">"/path/to/python"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level4">
-<h4 id="example-nutpie-recommended-accelerated-path">Example: nutpie (recommended accelerated path)<a class="anchor" aria-label="anchor" href="#example-nutpie-recommended-accelerated-path"></a>
-</h4>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/coev_fit.html">coev_fit</a></span><span class="op">(</span></span>
-<span>  <span class="va">...</span>,</span>
-<span>  nuts_sampler <span class="op">=</span> <span class="st">"nutpie"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p><strong>Note</strong>: If you have previously pointed <code>reticulate</code> at a different Python (for example an older conda or mamba base environment), restart R after changing <code>RETICULATE_PYTHON</code> so the new interpreter is picked up cleanly.</p>
-</div>
-</div>
 </div>
 <div class="section level2">
 <h2 id="citing-coevolve">Citing coevolve<a class="anchor" aria-label="anchor" href="#citing-coevolve"></a>
@@ -221,7 +199,7 @@
 <ul>
 <li>Ringen, E., Martin, J. S., &amp; Jaeggi, A. (2021). Novel phylogenetic methods reveal that resource-use intensification drives the evolution of “complex” societies. <em>EcoEvoRXiv</em>. <a href="https://doi.org/10.32942/osf.io/wfp95" class="external-link uri">https://doi.org/10.32942/osf.io/wfp95</a>
 </li>
-<li>Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen, E. J., &amp; Atkinson, Q. D. (2023). Coevolution of religious and political authority in Austronesian societies. <em>Nature Human Behaviour</em>, <em>7</em>(1), 38-45. <a href="https://doi.org/10.1038/s41562-022-01471-y" class="external-link uri">https://doi.org/10.1038/s41562-022-01471-y</a>
+<li>Ringen, E., Claessens, S., Martin, J. S., &amp; Jaeggi, A. V. (2026). Trait coevolution and causal inference using generalized dynamic phylogenetic models. <em>Methods in Ecology and Evolution</em>, <em>17</em>(6), 1818-1836. <a href="https://doi.org/10.1111/2041-210x.70303" class="external-link uri">https://doi.org/10.1111/2041-210x.70303</a>
 </li>
 </ul>
 </div>
@@ -291,7 +269,7 @@
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer>

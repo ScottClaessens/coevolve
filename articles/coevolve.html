@@ -50,6 +50,9 @@
   <a href="../reference/index.html">Reference</a>
 </li>
 <li>
+  <a href="../articles/index.html">Articles</a>
+</li>
+<li>
   <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
@@ -77,9 +80,9 @@
                         <h4 data-toc-skip class="author">Scott
 Claessens</h4>
             
-            <h4 data-toc-skip class="date">2026-03-26</h4>
+            <h4 data-toc-skip class="date">2026-07-22</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/v1.1.0/vignettes/coevolve.Rmd" class="external-link"><code>vignettes/coevolve.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/main/vignettes/coevolve.Rmd" class="external-link"><code>vignettes/coevolve.Rmd</code></a></small>
       <div class="hidden name"><code>coevolve.Rmd</code></div>
 
     </div>
@@ -92,29 +95,27 @@ Claessens</h4>
 <p>This vignette provides an introduction to the
 <strong>coevolve</strong> package. It briefly describes the class of
 generalized dynamic phylogenetic models (GDPMs) that the package is
-designed to fit. It then runs through several working examples to
-showcase features of the package, including models with different
-response distributions, missing data, repeated observations, multiPhylo
-tree objects, and controls for spatial location.</p>
+designed to fit. It then runs through a working example to showcase
+different features of the package.</p>
 </div>
 <div class="section level2">
 <h2 id="the-generalized-dynamic-phylogenetic-model">The generalized dynamic phylogenetic model<a class="anchor" aria-label="anchor" href="#the-generalized-dynamic-phylogenetic-model"></a>
 </h2>
 <p>In the <strong>coevolve</strong> package, the main function is
 <code><a href="../reference/coev_fit.html">coev_fit()</a></code>, which fits a generalized dynamic phylogenetic
-model to taxa variables given the phylogenetic relationships among taxa.
-The model allows the user to determine whether evolutionary change in
-one variable precedes evolutionary change in another variable.</p>
-<p>A full description of the model can be found in <a href="https://ecoevorxiv.org/repository/view/4119/" class="external-link">this pre-print</a>.
-Briefly, the model represents observed variables as latent variables
-that are allowed to coevolve along an evolutionary time series.
-Coevolution unfolds according to a stochastic differential equation
-similar to an Ornstein-Uhlenbeck process, which contains both
-“selection” (tendency towards an optimum value) and “drift” (exogenous
-Gaussian noise) components. Change in the latent variables depend upon
-all other latent variables in the model and themselves, allowing users
-to assess the directional influence of one variable on future change in
-another variable.</p>
+model to traits given the phylogenetic relationships among taxa. The
+model allows the user to determine whether evolutionary change in one
+trait precedes evolutionary change in another trait.</p>
+<p>A full description of the model can be found in <a href="https://doi.org/10.1111/2041-210x.70303" class="external-link">this paper</a>. Briefly,
+the model represents observed variables as latent variables that are
+allowed to coevolve along an evolutionary time series. Coevolution
+unfolds according to a stochastic differential equation similar to an
+Ornstein-Uhlenbeck process, which contains both “selection” (tendency
+towards an optimum value) and “drift” (exogenous Gaussian noise)
+components. Change in the latent variables depend upon all other latent
+variables in the model and themselves, allowing users to assess the
+directional influence of one variable on future change in another
+variable.</p>
 <p>Similar dynamic coevolutionary models are offered in programs like
 BayesTraits (see <a href="http://www.evolution.reading.ac.uk/BayesTraitsV4.1.1/BayesTraitsV4.1.1.html" class="external-link">here</a>).
 However, these models are limited to a small number of discrete traits.
@@ -159,7 +160,7 @@ Users can run these steps one-by-one using the
 functions, but for brevity we just use the <code><a href="../reference/coev_fit.html">coev_fit()</a></code>
 function.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit1</span> <span class="op">&lt;-</span></span>
+<code class="sourceCode R"><span><span class="va">fit</span> <span class="op">&lt;-</span></span>
 <span>  <span class="fu"><a href="../reference/coev_fit.html">coev_fit</a></span><span class="op">(</span></span>
 <span>    data <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">data</span>,</span>
 <span>    variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -170,8 +171,6 @@ function.</p>
 <span>    tree <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span>,</span>
 <span>    <span class="co"># set manual prior</span></span>
 <span>    prior <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>A_offdiag <span class="op">=</span> <span class="st">"normal(0, 2)"</span><span class="op">)</span>,</span>
-<span>    <span class="co"># return log likelihood</span></span>
-<span>    log_lik <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>    <span class="co"># additional arguments for cmdstanr</span></span>
 <span>    parallel_chains <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>    iter_sampling <span class="op">=</span> <span class="fl">2000</span>,</span>
@@ -181,14 +180,14 @@ function.</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 3 finished in 554.7 seconds.
-Chain 4 finished in 706.9 seconds.
-Chain 1 finished in 725.2 seconds.
-Chain 2 finished in 757.4 seconds.
+Chain 3 finished in 552.2 seconds.
+Chain 4 finished in 639.2 seconds.
+Chain 1 finished in 696.3 seconds.
+Chain 2 finished in 726.0 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 686.0 seconds.
-Total execution time: 757.6 seconds.</code></pre>
+Mean chain execution time: 653.4 seconds.
+Total execution time: 726.1 seconds.</code></pre>
 <p>The function takes several arguments, including a dataset, a named
 list of variables that we would like to coevolve in the model (along
 with their associated response distributions), the column in the dataset
@@ -200,7 +199,7 @@ The user can also pass additional arguments to cmdstanr’s
 <p>Once the model has fitted, we can print a summary of the
 parameters.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit1</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Variables: political_authority = ordered_logistic 
            religious_authority = ordered_logistic 
      Data: authority$data (Number of observations: 97)
@@ -214,15 +213,22 @@ political_authority    -0.65      0.52 -1.95 -0.03 1.00     4343     4203
 religious_authority    -0.79      0.59 -2.15 -0.03 1.00     5225     3876
 
 Cross selection effects:
-                                          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority ⟶ religious_authority     2.33      0.98  0.44  4.29 1.00     3328     3594
-religious_authority ⟶ political_authority     1.74      1.09 -0.32  3.91 1.00     2109     4686
+                                          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS
+political_authority ⟶ religious_authority     2.33      0.98  0.44  4.29 1.00     3328
+religious_authority ⟶ political_authority     1.74      1.09 -0.32  3.91 1.00     2109
+                                          Tail_ESS
+political_authority ⟶ religious_authority     3594
+religious_authority ⟶ political_authority     4686
 
 Drift parameters:
-                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(political_authority)                          1.98      0.84  0.21  3.54 1.00     1272     1261
-sd(religious_authority)                          1.25      0.79  0.06  2.92 1.00     1640     3283
-cor(political_authority,religious_authority)     0.25      0.31 -0.42  0.77 1.00     4837     5973
+                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS
+sd(political_authority)                          1.98      0.84  0.21  3.54 1.00     1272
+sd(religious_authority)                          1.25      0.79  0.06  2.92 1.00     1640
+cor(political_authority,religious_authority)     0.25      0.31 -0.42  0.77 1.00     4837
+                                             Tail_ESS
+sd(political_authority)                          1261
+sd(religious_authority)                          3283
+cor(political_authority,religious_authority)     5973
 
 Continuous time intercept parameters:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
@@ -261,12 +267,10 @@ another variable. This function returns a posterior distribution. We can
 easily visualise the posterior distributions for all cross effects at
 once using the function <code><a href="../reference/coev_plot_delta_theta.html">coev_plot_delta_theta()</a></code>.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/coev_plot_delta_theta.html">coev_plot_delta_theta</a></span><span class="op">(</span><span class="va">fit1</span><span class="op">)</span></span></code></pre></div>
-<div class="figure" style="text-align: center">
-<p><img src="authority-delta-theta-1.png" alt="plot of chunk authority-delta-theta" width="60%"></p>
-</div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/coev_plot_delta_theta.html">coev_plot_delta_theta</a></span><span class="op">(</span><span class="va">fit</span>, prob_outer <span class="op">=</span> <span class="fl">0.90</span><span class="op">)</span></span></code></pre></div>
+<p><img src="authority-delta-theta-1.png" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>This plot shows the posterior distribution, the posterior median, and
-the 66% and 95% credible intervals for <span class="math inline">\(\Delta\theta_{z}\)</span>. We can conclude that
+the 66% and 90% credible intervals for <span class="math inline">\(\Delta\theta_{z}\)</span>. We can conclude that
 political and religious authority both influence each other in their
 evolution. A one median absolute deviation increase in political
 authority results in an increase in the equilibrium trait value for
@@ -282,24 +286,20 @@ trait space. We can do this using the
 plot of estimated trait values for all the variables in the model (along
 with associated posterior uncertainty on the diagonal).</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/coev_plot_trait_values.html">coev_plot_trait_values</a></span><span class="op">(</span><span class="va">fit1</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">5</span>, <span class="fl">7</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">5</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<div class="figure" style="text-align: center">
-<p><img src="authority-trait-values-1.png" alt="plot of chunk authority-trait-values" width="60%"></p>
-</div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/coev_plot_trait_values.html">coev_plot_trait_values</a></span><span class="op">(</span><span class="va">fit</span>, xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">5</span>, <span class="fl">7</span><span class="op">)</span>, ylim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">5</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p><img src="authority-trait-values-1.png" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>Now that we have a good sense of the trait space, we can plot a flow
 field of evolutionary change. The <code><a href="../reference/coev_plot_flowfield.html">coev_plot_flowfield()</a></code>
 function plots the strength and direction of evolutionary change at
 different locations in trait space.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/coev_plot_flowfield.html">coev_plot_flowfield</a></span><span class="op">(</span></span>
-<span>  object <span class="op">=</span> <span class="va">fit1</span>,</span>
+<span>  object <span class="op">=</span> <span class="va">fit</span>,</span>
 <span>  var1 <span class="op">=</span> <span class="st">"political_authority"</span>,</span>
 <span>  var2 <span class="op">=</span> <span class="st">"religious_authority"</span>,</span>
 <span>  limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
-<div class="figure" style="text-align: center">
-<p><img src="authority-flowfield-1.png" alt="plot of chunk authority-flowfield" width="60%"></p>
-</div>
+<p><img src="authority-flowfield-1.png" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>The arrows in this plot tend to point towards the upper right-hand
 corner, suggesting that political and religious authority evolve towards
 higher levels in a runaway coevolutionary process.</p>
@@ -310,14 +310,12 @@ different locations in trait space, with green indicating positive
 selection and red indicating negative selection.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/coev_plot_selection_gradient.html">coev_plot_selection_gradient</a></span><span class="op">(</span></span>
-<span>  object <span class="op">=</span> <span class="va">fit1</span>,</span>
+<span>  object <span class="op">=</span> <span class="va">fit</span>,</span>
 <span>  var1 <span class="op">=</span> <span class="st">"political_authority"</span>,</span>
 <span>  var2 <span class="op">=</span> <span class="st">"religious_authority"</span>,</span>
 <span>  limits <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">5</span>, <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="figure" style="text-align: center">
-<p><img src="authority-selection-gradient-1.png" alt="plot of chunk authority-selection-gradient" width="60%"></p>
-</div>
+<p><img src="authority-selection-gradient-1.png" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>We can see from this plot that as each variable increases, the
 selection on the other variable increases.</p>
 <p>Finally, we can “replay the past” by simulating these coevolutionary
@@ -327,25 +325,21 @@ ancestral states at the root of the phylogeny as starting points, and
 allows the variables to coevolve over time. Shaded areas represent 95%
 credible intervals for the predictions.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/coev_plot_pred_series.html">coev_plot_pred_series</a></span><span class="op">(</span><span class="va">fit1</span><span class="op">)</span></span></code></pre></div>
-<div class="figure" style="text-align: center">
-<p><img src="authority-pred-series-1-1.png" alt="plot of chunk authority-pred-series-1" width="60%"></p>
-</div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/coev_plot_pred_series.html">coev_plot_pred_series</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<p><img src="authority-pred-series-1-1.png" alt="" width="60%" style="display: block; margin: auto;"></p>
 <p>It is also possible to initialise the variables at different starting
 points, to see the implied coevolutionary dynamics. For example, we can
 imagine a case where the ancestral society had high levels of political
 authority but low levels of religious authority.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/coev_plot_pred_series.html">coev_plot_pred_series</a></span><span class="op">(</span></span>
-<span>  object <span class="op">=</span> <span class="va">fit1</span>,</span>
+<span>  object <span class="op">=</span> <span class="va">fit</span>,</span>
 <span>  eta_anc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    political_authority <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>    religious_authority <span class="op">=</span> <span class="op">-</span><span class="fl">5</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<div class="figure" style="text-align: center">
-<p><img src="authority-pred-series-2-1.png" alt="plot of chunk authority-pred-series-2" width="60%"></p>
-</div>
+<p><img src="authority-pred-series-2-1.png" alt="" width="60%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level2">
 <h2 id="available-response-distributions">Available response distributions<a class="anchor" aria-label="anchor" href="#available-response-distributions"></a>
@@ -398,453 +392,6 @@ This can be useful when users would like to assess the coevolution
 between variables of different types.</p>
 </div>
 <div class="section level2">
-<h2 id="handling-missing-data">Handling missing data<a class="anchor" aria-label="anchor" href="#handling-missing-data"></a>
-</h2>
-<p>Often in comparative datasets, data will be missing for some taxa.
-Rather than remove cases if they have any missing data, the
-<code><a href="../reference/coev_fit.html">coev_fit()</a></code> function will automatically impute any missing
-values in the model, using all available information.</p>
-<p>We show this by modelling the coevolutionary relationships between
-brain weight and group size across 21 primate species from the
-Lemuriformes clade. Data on primate species were compiled by DeCasien et
-al. (2017). There are data for 143 primate species in total, but we
-focus on one clade to keep the example small and simple.</p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># filter dataset to Lemuriformes only</span></span>
-<span><span class="va">primates_data</span> <span class="op">&lt;-</span> <span class="va">primates</span><span class="op">$</span><span class="va">data</span><span class="op">[</span><span class="va">primates</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">clade</span> <span class="op">==</span> <span class="st">"Lemuriformes"</span>,<span class="op">]</span></span>
-<span></span>
-<span><span class="co"># prune phylogeny to Lemuriformes only</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/emmanuelparadis/ape" class="external-link">ape</a></span><span class="op">)</span></span>
-<span><span class="va">primates_phylogeny</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ape/man/drop.tip.html" class="external-link">keep.tip</a></span><span class="op">(</span><span class="va">primates</span><span class="op">$</span><span class="va">phylogeny</span>, <span class="va">primates_data</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># view data</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">primates_data</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"species"</span>, <span class="st">"brain_weight"</span>, <span class="st">"group_size"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></code></pre></div>
-<pre><code>                        species brain_weight group_size
-13                Avahi_laniger    10.251355   2.666667
-14           Avahi_occidentalis     8.236200         NA
-44           Cheirogaleus_major     6.119797   5.500000
-45          Cheirogaleus_medius     2.912291   2.000000
-54 Daubentonia_madagascariensis    46.344725   1.750000
-56            Eulemur_coronatus    21.394398   6.950000</code></pre>
-<p>Both variables are positive reals, so we use the “gamma_log”
-distribution. While there are no missing data for the brain weight
-variable, some data are missing for the group size variable.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit2</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="../reference/coev_fit.html">coev_fit</a></span><span class="op">(</span></span>
-<span>    data <span class="op">=</span> <span class="va">primates_data</span>,</span>
-<span>    variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>      brain_weight <span class="op">=</span> <span class="st">"gamma_log"</span>,</span>
-<span>      group_size <span class="op">=</span> <span class="st">"gamma_log"</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    id <span class="op">=</span> <span class="st">"species"</span>,</span>
-<span>    tree <span class="op">=</span> <span class="va">primates_phylogeny</span>,</span>
-<span>    <span class="co"># additional arguments for cmdstanr</span></span>
-<span>    parallel_chains <span class="op">=</span> <span class="fl">4</span>,</span>
-<span>    iter_sampling <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>    iter_warmup <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>    refresh <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>    seed <span class="op">=</span> <span class="fl">1</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<pre><code>Running MCMC with 4 parallel chains...
-
-Chain 1 finished in 208.7 seconds.
-Chain 3 finished in 217.3 seconds.
-Chain 4 finished in 226.4 seconds.
-Chain 2 finished in 288.3 seconds.
-
-All 4 chains finished successfully.
-Mean chain execution time: 235.2 seconds.
-Total execution time: 288.4 seconds.</code></pre>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit2</span><span class="op">)</span></span></code></pre></div>
-<pre><code>Variables: brain_weight = gamma_log 
-           group_size = gamma_log 
-     Data: primates_data (Number of observations: 21)
-Phylogeny: primates_phylogeny (Number of trees: 1)
-    Draws: 4 chains, each with iter = 2000; warmup = 2000; thin = 1
-           total post-warmup draws = 8000
-
-Autoregressive selection effects:
-             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight    -0.44      0.36 -1.33 -0.01 1.00     5487     2827
-group_size      -0.76      0.52 -1.95 -0.04 1.00     4512     3041
-
-Cross selection effects:
-                          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight ⟶ group_size     0.27      0.79 -1.43  1.69 1.00     2327     3530
-group_size ⟶ brain_weight     0.95      1.00 -0.97  3.09 1.01      738      287
-
-Drift parameters:
-                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(brain_weight)                 1.05      0.24  0.62  1.56 1.00     1850     2491
-sd(group_size)                   0.73      0.45  0.04  1.68 1.01      773     1213
-cor(brain_weight,group_size)     0.08      0.30 -0.52  0.64 1.00     2192      959
-
-Continuous time intercept parameters:
-             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight    -0.34      0.78 -1.83  1.20 1.00     5466     5389
-group_size      -1.03      0.83 -2.53  0.65 1.00     2964     4869
-
-Shape parameters:
-             Estimate Est.Error 2.5%  97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight    57.43     55.36 5.13 207.68 1.01      561     1199
-group_size       7.10     15.67 1.42  41.76 1.01      689      520</code></pre>
-<pre><code>Warning: There were 404 divergent transitions after warmup.
-http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
-<p>Notice that the number of observations is still 21 in the summary
-output, informing us that all observations were retained and any missing
-data were imputed.</p>
-<p>If we wanted instead to remove any taxa with missing data, we could
-set <code>complete_cases = TRUE</code> when fitting the model.</p>
-</div>
-<div class="section level2">
-<h2 id="repeated-observations">Repeated observations<a class="anchor" aria-label="anchor" href="#repeated-observations"></a>
-</h2>
-<p>Another common feature of comparative datasets is repeated
-observations. In the previous examples, we had only one observation per
-taxon. But often there will be more than one observation for each taxon,
-such as when we have observed multiple individuals of the same species.
-In these cases, it can be useful to include all of these observations in
-the model and estimate the residual variation that is not due to the
-coevolutionary process.</p>
-<p>We show this using an example dataset from de Villemereuil &amp;
-Nakagawa (2014). Suppose we have measured two continuous variables
-(<span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>) for 20 species, with five observations
-for each species.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">repeated</span><span class="op">$</span><span class="va">data</span><span class="op">)</span></span></code></pre></div>
-<pre><code>  species         x         y
-1    sp_1 11.223724 107.41919
-2    sp_1  9.805934 109.16403
-3    sp_1 10.308423  91.88672
-4    sp_1  8.355349 121.54341
-5    sp_1 11.854510 105.31638
-6    sp_2  4.314015  64.99859</code></pre>
-<p>We can fit the dynamic coevolutionary model to this dataset.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit3</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="../reference/coev_fit.html">coev_fit</a></span><span class="op">(</span></span>
-<span>    data <span class="op">=</span> <span class="va">repeated</span><span class="op">$</span><span class="va">data</span>,</span>
-<span>    variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>      x <span class="op">=</span> <span class="st">"normal"</span>,</span>
-<span>      y <span class="op">=</span> <span class="st">"normal"</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    id <span class="op">=</span> <span class="st">"species"</span>,</span>
-<span>    tree <span class="op">=</span> <span class="va">repeated</span><span class="op">$</span><span class="va">phylogeny</span>,</span>
-<span>    <span class="co"># additional arguments for cmdstanr</span></span>
-<span>    parallel_chains <span class="op">=</span> <span class="fl">4</span>,</span>
-<span>    iter_warmup <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>    iter_sampling <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>    refresh <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>    seed <span class="op">=</span> <span class="fl">1</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<pre><code>Running MCMC with 4 parallel chains...
-
-Chain 3 finished in 261.3 seconds.
-Chain 4 finished in 363.7 seconds.
-Chain 2 finished in 376.8 seconds.
-Chain 1 finished in 386.7 seconds.
-
-All 4 chains finished successfully.
-Mean chain execution time: 347.1 seconds.
-Total execution time: 386.8 seconds.</code></pre>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit3</span><span class="op">)</span></span></code></pre></div>
-<pre><code>Variables: x = normal 
-           y = normal 
-     Data: repeated$data (Number of observations: 100)
-Phylogeny: repeated$phylogeny (Number of trees: 1)
-    Draws: 4 chains, each with iter = 2000; warmup = 2000; thin = 1
-           total post-warmup draws = 8000
-
-Autoregressive selection effects:
-  Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x    -1.58      0.77 -3.17 -0.21 1.00     5111     3604
-y    -1.34      0.71 -2.85 -0.15 1.00     5223     3187
-
-Cross selection effects:
-      Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x ⟶ y     0.42      0.86 -1.27  2.10 1.00     7501     6161
-y ⟶ x     0.04      0.85 -1.65  1.71 1.00     7967     6517
-
-Drift parameters:
-         Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(x)        2.93      0.32 2.37  3.60 1.00     5491     5809
-sd(y)        2.58      0.29 2.05  3.21 1.00     5128     6351
-cor(x,y)     0.87      0.06 0.71  0.96 1.00     3770     4970
-
-Continuous time intercept parameters:
-  Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x    -0.06      0.78 -1.61  1.46 1.00     8432     5963
-y     0.04      0.76 -1.48  1.53 1.00     9003     5867
-
-Residual parameters:
-         Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(x)        0.28      0.02  0.23  0.32 1.00     9704     5265
-sd(y)        0.29      0.02  0.25  0.34 1.00    10692     5832
-cor(x,y)    -0.18      0.10 -0.38  0.02 1.00     8699     5553</code></pre>
-<pre><code>Warning: There were 30 divergent transitions after warmup.
-http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
-<p>In the model output, we can see that <code><a href="../reference/coev_fit.html">coev_fit()</a></code> has
-detected the presence of repeated observations and has consequently
-modelled residual standard deviation and residual correlation parameters
-for <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</span>.</p>
-</div>
-<div class="section level2">
-<h2 id="using-multiphylo-tree-objects">Using multiPhylo tree objects<a class="anchor" aria-label="anchor" href="#using-multiphylo-tree-objects"></a>
-</h2>
-<p>Often, we would like to average our analysis over a posterior set of
-phylogenetic trees, rather than use a single tree. This can be a useful
-way to account for phylogenetic uncertainty in our inferences.</p>
-<p>To deal with phylogenetic uncertainty, the <code><a href="../reference/coev_fit.html">coev_fit()</a></code>
-function allows the user to declare multiPhylo objects in the
-<code>tree</code> argument. So long as all trees in the multiPhylo
-object have the same number of taxa with the same tip labels, the Stan
-code will average over all the trees within the same model.</p>
-<p>To keep the computation time short, we imagine a simple case where we
-have a multiPhylo object with two identical Austronesian language
-phylogenies. While the results should be the same in this case as there
-is no phylogenetic uncertainty, users should expect differing results
-when using sets of different trees.</p>
-<div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">authority_multiphylo</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
-<span>  <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span>,</span>
-<span>  <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">authority_multiphylo</span></span></code></pre></div>
-<pre><code>2 phylogenetic trees</code></pre>
-<div class="sourceCode" id="cb30"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit4</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="../reference/coev_fit.html">coev_fit</a></span><span class="op">(</span></span>
-<span>    data <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">data</span>,</span>
-<span>    variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>      political_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span>,</span>
-<span>      religious_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    id <span class="op">=</span> <span class="st">"language"</span>,</span>
-<span>    <span class="co"># use multiPhylo tree object</span></span>
-<span>    tree <span class="op">=</span> <span class="va">authority_multiphylo</span>,</span>
-<span>    <span class="co"># set manual prior</span></span>
-<span>    prior <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>A_offdiag <span class="op">=</span> <span class="st">"normal(0, 2)"</span><span class="op">)</span>,</span>
-<span>    <span class="co"># additional arguments for cmdstanr</span></span>
-<span>    parallel_chains <span class="op">=</span> <span class="fl">4</span>,</span>
-<span>    iter_sampling <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>    iter_warmup <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>    refresh <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>    seed <span class="op">=</span> <span class="fl">1</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<pre><code>Running MCMC with 4 parallel chains...
-
-Chain 4 finished in 605.2 seconds.
-Chain 3 finished in 606.7 seconds.
-Chain 2 finished in 616.3 seconds.
-Chain 1 finished in 618.8 seconds.
-
-All 4 chains finished successfully.
-Mean chain execution time: 611.7 seconds.
-Total execution time: 618.8 seconds.</code></pre>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit4</span><span class="op">)</span></span></code></pre></div>
-<pre><code>Variables: political_authority = ordered_logistic 
-           religious_authority = ordered_logistic 
-     Data: authority$data (Number of observations: 97)
-Phylogeny: authority_multiphylo (Number of trees: 2)
-    Draws: 4 chains, each with iter = 2000; warmup = 2000; thin = 1
-           total post-warmup draws = 8000
-
-Autoregressive selection effects:
-                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority    -0.64      0.52 -1.92 -0.02 1.00     5613     3516
-religious_authority    -0.71      0.55 -2.06 -0.03 1.00     7194     4247
-
-Cross selection effects:
-                                          Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority ⟶ religious_authority     2.16      1.03 0.45  4.45 1.00     2989     4592
-religious_authority ⟶ political_authority     2.00      1.03 0.21  4.26 1.00     2504     3559
-
-Drift parameters:
-                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(political_authority)                          1.09      0.82  0.04  2.89 1.00      913     3153
-sd(religious_authority)                          0.89      0.68  0.04  2.52 1.00     1426     3101
-cor(political_authority,religious_authority)     0.04      0.34 -0.61  0.67 1.00     5369     5862
-
-Continuous time intercept parameters:
-                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority     0.34      0.90 -1.45  2.03 1.00    10239     6144
-religious_authority     0.45      0.91 -1.36  2.24 1.00    10524     6090
-
-Ordinal cutpoint parameters:
-                       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority[1]    -1.49      0.91 -3.35  0.24 1.00     5995     5599
-political_authority[2]    -0.76      0.89 -2.56  0.95 1.00     6697     5828
-political_authority[3]     1.92      0.92  0.16  3.80 1.00     8514     5958
-religious_authority[1]    -1.82      0.88 -3.58 -0.11 1.00     6588     5984
-religious_authority[2]    -1.14      0.86 -2.84  0.54 1.00     7245     6132
-religious_authority[3]     1.71      0.94 -0.03  3.65 1.00     5922     6285</code></pre>
-<pre><code>Warning: There were 15 divergent transitions after warmup.
-http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
-<p>The summary output correctly shows that we averaged over two trees.
-Note that with more trees, users should expect the computation time for
-these models to increase.</p>
-</div>
-<div class="section level2">
-<h2 id="controlling-for-spatial-location">Controlling for spatial location<a class="anchor" aria-label="anchor" href="#controlling-for-spatial-location"></a>
-</h2>
-<p>If we have data on the longitudes and latitudes of taxa, sometimes it
-is useful to control for this spatial location to ensure that our model
-is capturing deep ancestral relationships rather than shared
-environmental effects or more recent diffusion among neighbours. For
-example, when studying the coevolution of political and religious
-authority in Austronesian societies, we would like to ensure that our
-results are due to coevolution over deep cultural time rather than more
-recent borrowing among societies with close geographic proximity.</p>
-<p>The <code>lon_lat</code> argument in the <code><a href="../reference/coev_fit.html">coev_fit()</a></code>
-function allows us to easily control for spatial proximity. This
-argument takes a data frame of longitude and latitude coordinates (in
-decimal degrees) for taxa on the phylogeny. If longitude and latitude
-values are inputted by the user, the function calculates the Euclidean
-distances between these points on a unit sphere and includes a Gaussian
-process over these distances for each variable in the model.</p>
-<p>Here are the longitude and latitude values for the first five
-Austronesian societies:</p>
-<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">authority</span><span class="op">$</span><span class="va">coordinates</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, <span class="op">]</span></span></code></pre></div>
-<pre><code># A tibble: 5 × 3
-  id             latitude longitude
-  &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt;
-1 Aiwoo             -10.3      166.
-2 Alune              -3.1      128.
-3 AnejomAneityum    -20.2      170.
-4 Anuta             -11.6      170.
-5 Atoni              -9.7      124.</code></pre>
-<p>We can include these spatial coordinates in the model. The distance
-matrix is scaled to vary between 0 and 1 under the hood to improve model
-sampling.</p>
-<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">fit5</span> <span class="op">&lt;-</span></span>
-<span>  <span class="fu"><a href="../reference/coev_fit.html">coev_fit</a></span><span class="op">(</span></span>
-<span>    data <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">data</span>,</span>
-<span>    variables <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>      political_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span>,</span>
-<span>      religious_authority <span class="op">=</span> <span class="st">"ordered_logistic"</span></span>
-<span>    <span class="op">)</span>,</span>
-<span>    id <span class="op">=</span> <span class="st">"language"</span>,</span>
-<span>    tree <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">phylogeny</span>,</span>
-<span>    <span class="co"># declare longitude and latitude values</span></span>
-<span>    lon_lat <span class="op">=</span> <span class="va">authority</span><span class="op">$</span><span class="va">coordinates</span>,</span>
-<span>    <span class="co"># set manual prior</span></span>
-<span>    prior <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>A_offdiag <span class="op">=</span> <span class="st">"normal(0, 2)"</span><span class="op">)</span>,</span>
-<span>    <span class="co"># return log likelihood</span></span>
-<span>    log_lik <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>    <span class="co"># additional arguments for cmdstanr</span></span>
-<span>    parallel_chains <span class="op">=</span> <span class="fl">4</span>,</span>
-<span>    iter_sampling <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>    iter_warmup <span class="op">=</span> <span class="fl">2000</span>,</span>
-<span>    refresh <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>    seed <span class="op">=</span> <span class="fl">1</span></span>
-<span>  <span class="op">)</span></span></code></pre></div>
-<pre><code>Running MCMC with 4 parallel chains...
-
-Chain 2 finished in 653.8 seconds.
-Chain 3 finished in 669.8 seconds.
-Chain 4 finished in 685.2 seconds.
-Chain 1 finished in 911.2 seconds.
-
-All 4 chains finished successfully.
-Mean chain execution time: 730.0 seconds.
-Total execution time: 911.4 seconds.</code></pre>
-<div class="sourceCode" id="cb39"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit5</span><span class="op">)</span></span></code></pre></div>
-<pre><code>Variables: political_authority = ordered_logistic 
-           religious_authority = ordered_logistic 
-     Data: authority$data (Number of observations: 97)
-Phylogeny: authority$phylogeny (Number of trees: 1)
-    Draws: 4 chains, each with iter = 2000; warmup = 2000; thin = 1
-           total post-warmup draws = 8000
-
-Autoregressive selection effects:
-                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority    -0.70      0.55 -2.04 -0.03 1.00     5198     3665
-religious_authority    -0.77      0.57 -2.14 -0.03 1.00     4905     2919
-
-Cross selection effects:
-                                          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority ⟶ religious_authority     1.97      1.25 -0.67  4.37 1.00     2512     2004
-religious_authority ⟶ political_authority     1.49      1.28 -1.08  4.01 1.00     1885     3395
-
-Drift parameters:
-                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(political_authority)                          1.26      0.74  0.06  2.83 1.00      974     1590
-sd(religious_authority)                          0.94      0.64  0.04  2.40 1.01     1590     2316
-cor(political_authority,religious_authority)     0.12      0.33 -0.54  0.70 1.00     3963     5106
-
-Continuous time intercept parameters:
-                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority     0.41      0.97 -1.51  2.32 1.00     6112     5721
-religious_authority     0.42      0.93 -1.37  2.26 1.00     6920     5885
-
-Ordinal cutpoint parameters:
-                       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority[1]    -1.57      1.03 -3.56  0.44 1.00     4403     6008
-political_authority[2]    -0.85      1.01 -2.81  1.19 1.00     4441     5608
-political_authority[3]     1.30      1.06 -0.70  3.47 1.00     3242     5209
-religious_authority[1]    -1.87      1.06 -3.94  0.24 1.00     4308     5009
-religious_authority[2]    -1.16      1.04 -3.18  0.96 1.00     4488     4854
-religious_authority[3]     1.54      1.10 -0.53  3.76 1.00     3936     5472
-
-Gaussian Process parameters for distances:
-                          Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-rho(political_authority)      0.10      0.05 0.04  0.20 1.00      781     1298
-rho(religious_authority)      0.07      0.04 0.03  0.18 1.00      502      461
-sdgp(political_authority)     1.87      0.73 0.72  3.59 1.00     2167     2185
-sdgp(religious_authority)     2.40      0.80 1.04  4.16 1.00     2358     2639</code></pre>
-<pre><code>Warning: There were 10 divergent transitions after warmup.
-http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
-<p>The summary output shows that the model has estimated the parameters
-for two Gaussian process functions over geographic locations, one for
-each variable.</p>
-<p>In addition, it is possible to change the underlying covariance
-kernel for the Gaussian processes using the <code>dist_cov</code>
-argument and estimate approximate Hilbert-space Gaussian processes using
-the <code>dist_k</code> argument. The latter may be particularly useful
-for large datasets where exact Gaussian processes are intractable. See
-<code><a href="../reference/coev_fit.html">help(coev_fit)</a></code> for more details.</p>
-</div>
-<div class="section level2">
-<h2 id="model-comparison">Model comparison<a class="anchor" aria-label="anchor" href="#model-comparison"></a>
-</h2>
-<p>When we set <code>log_lik = TRUE</code>, the underlying Stan code for
-these models returns a log likelihood vector for all observations. With
-this, it is possible to compare different models using methods like
-approximate leave-one-out cross-validation. For example, we can use the
-<code>loo_compare()</code> function from the <a href="https://mc-stan.org/loo/index.html" class="external-link">loo</a> package to see whether
-adding the spatial control in the authority example improved our
-out-of-sample predictive accuracy.</p>
-<div class="sourceCode" id="cb42"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://mc-stan.org/loo/" class="external-link">loo</a></span><span class="op">)</span></span>
-<span><span class="fu">loo_compare</span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    fit1 <span class="op">=</span> <span class="va">fit1</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="fu">loo</span><span class="op">(</span><span class="op">)</span>, <span class="co"># authority model without spatial control</span></span>
-<span>    fit5 <span class="op">=</span> <span class="va">fit5</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="fu">loo</span><span class="op">(</span><span class="op">)</span>  <span class="co"># authority model with spatial control</span></span>
-<span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<pre><code>     elpd_diff se_diff
-fit5  0.0       0.0   
-fit1 -5.8       4.7   </code></pre>
-<p>This model comparison suggests that adding spatial location to the
-model did not improve out-of-sample predictive accuracy.</p>
-<p>This model comparison approach may also be useful for comparing
-models with different cross selection effects constrained to zero (see
-the <code>effects_mat</code> argument in the <code><a href="../reference/coev_fit.html">coev_fit()</a></code>
-function). The user can then test whether “turning on” a particular
-cross selection effect improves model fit. However, currently it is not
-possible to compare models that include different coevolving variables,
-as the datasets and resulting log likelihood vectors vary between
-models.</p>
-</div>
-<div class="section level2">
 <h2 id="conclusion">Conclusion<a class="anchor" aria-label="anchor" href="#conclusion"></a>
 </h2>
 <p>We hope that this package is a useful addition to the phylogenetic
@@ -855,14 +402,6 @@ GitHub: <a href="https://github.com/ScottClaessens/coevolve/issues" class="exter
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<p>DeCasien, A. R., Williams, S. A., &amp; Higham, J. P. (2017). Primate
-brain size is predicted by diet but not sociality. <em>Nature Ecology
-&amp; Evolution</em>, <em>1</em>(5), 0112.</p>
-<p>de Villemereuil P. &amp; Nakagawa, S. (2014). General quantitative
-genetic methods for comparative biology. In L. Garamszegi (Ed.),
-<em>Modern phylogenetic comparative methods and their application in
-evolutionary biology: concepts and practice</em> (pp. 287-303).
-Springer, New York.</p>
 <p>Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S.,
 Ringen, E. J., &amp; Atkinson, Q. D. (2023). Coevolution of religious
 and political authority in Austronesian societies. <em>Nature Human
@@ -887,7 +426,7 @@ Behaviour</em>, <em>7</em>(1), 38-45.</p>
 
 <div class="pkgdown">
   <p></p>
-<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+<p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
       </footer>
