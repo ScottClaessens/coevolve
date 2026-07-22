@@ -1,3 +1,13 @@
 url: https://scottclaessens.github.io/coevolve/
 template:
   math-rendering: mathjax
+articles:
+- title: All vignettes
+  contents:
+  - coevolve
+  - missing
+  - repeated
+  - multiphylo
+  - spatial
+  - compare
+  - jax

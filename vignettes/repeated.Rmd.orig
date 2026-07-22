@@ -1,0 +1,110 @@
+---
+title: "Accounting for repeated observations with coevolve"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+pkgdown:
+  as_is: true
+date: "`r Sys.Date()`"
+author: "Scott Claessens"
+vignette: >
+  %\VignetteIndexEntry{Accounting for repeated observations with coevolve}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+options(width = 120)
+knitr::opts_chunk$set(
+  comment = NA,
+  fig.path = "vignettes/",
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.8,
+  out.width = "60%",
+  fig.align = "center",
+  fig.cap = ""
+  )
+library(pander)
+```
+
+## Introduction
+
+A common feature of comparative datasets is repeated observations. In many
+analyses, we only have one observation per taxon. But often there will
+be more than one observation for each taxon, such as when we have observed
+multiple individuals of the same species. In these cases, it can be useful to
+include all of these observations in the model and estimate the residual
+variation that is not due to the coevolutionary process.
+
+## Accounting for repeated observations
+
+When repeated observations are present, we add taxon-level varying intercepts
+$\alpha$ to the model as follows:
+
+$$
+\begin{split}
+y_{i,j} &\sim f(\mu_{i,j}, \phi_j) \\
+g(\mu_{i,j}) &= \boldsymbol{\eta}_{i,j} + \alpha_{i,j} \\
+\alpha_{i,j} &\sim \mathcal{N}(0, \Sigma)
+\end{split}
+$$
+
+where $y_{i,j}$ is the observed value for trait $j$ from taxa $i$, $f()$ is a
+likelihood function with expected value $\mu$ and possible additional parameters
+$\phi$, $g()$ is a link function converting the expected value to the latent
+continuous space of the evolutionary process, $\boldsymbol{\eta}_{i,j}$ is
+the latent trait value of trait $j$ for taxa $i$, $\alpha_{i,j}$ is the
+taxon-level varying intercept for trait $j$ for taxa $i$, and $\Sigma$ is a
+$j$ x $j$ variance-covariance matrix for the varying intercepts. The varying
+effects represent within-species/population variance in the latent trait values.
+
+## A working example
+
+We show this using an example dataset from de Villemereuil & Nakagawa (2014).
+Suppose we have measured two continuous variables ($x$ and $y$) for 20 species,
+with five observations for each species.
+
+```{r repeated-data}
+head(repeated$data)
+```
+
+We can fit the dynamic coevolutionary model to this dataset.
+
+```{r repeated-fit, warning=FALSE, message=FALSE}
+fit <-
+  coev_fit(
+    data = repeated$data,
+    variables = list(
+      x = "normal",
+      y = "normal"
+    ),
+    id = "species",
+    tree = repeated$phylogeny,
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_warmup = 2000,
+    iter_sampling = 2000,
+    refresh = 0,
+    seed = 1
+  )
+```
+
+```{r repeated-summary}
+summary(fit)
+```
+
+In the model output, we can see that `coev_fit()` has detected the presence of
+repeated observations and has consequently modelled residual standard deviation
+and residual correlation parameters for $x$ and $y$.
+
+If we wanted to remove the additional varying effects structure when repeated
+observations are present, we could set `estimate_residual = FALSE` when fitting
+the model.
+
+## References
+
+de Villemereuil P. & Nakagawa, S. (2014). General quantitative genetic methods
+for comparative biology. In L. Garamszegi (Ed.), *Modern phylogenetic
+comparative methods and their application in evolutionary biology: concepts and
+practice* (pp. 287-303). Springer, New York.

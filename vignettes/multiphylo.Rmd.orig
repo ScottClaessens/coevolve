@@ -1,0 +1,96 @@
+---
+title: "Averaging over samples of trees with coevolve"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+pkgdown:
+  as_is: true
+date: "`r Sys.Date()`"
+author: "Scott Claessens"
+vignette: >
+  %\VignetteIndexEntry{Averaging over samples of trees with coevolve}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+options(width = 120)
+knitr::opts_chunk$set(
+  comment = NA,
+  fig.path = "vignettes/",
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.8,
+  out.width = "60%",
+  fig.align = "center",
+  fig.cap = ""
+  )
+library(pander)
+```
+
+## Introduction
+
+Often, we would like to average our analysis over a posterior set of
+phylogenetic trees, rather than use a single tree. This can be a useful way to
+account for phylogenetic uncertainty in our inferences.
+
+To deal with phylogenetic uncertainty, the `coev_fit()` function allows the user
+to declare multiPhylo objects in the `tree` argument. So long as all trees in
+the multiPhylo object have the same number of taxa with the same tip labels,
+the function will average over all the trees within the same model.
+
+## A working example
+
+To keep the computation time short, we imagine a simple case where we have a
+multiPhylo object with five identical Austronesian language phylogenies. While
+the results should be the same in this case as there is no phylogenetic
+uncertainty, users should expect differing results when using sets of different
+trees.
+
+```{r authority-multiphylo}
+authority_multiphylo <- c(
+  authority$phylogeny,
+  authority$phylogeny,
+  authority$phylogeny,
+  authority$phylogeny,
+  authority$phylogeny
+)
+
+authority_multiphylo
+```
+
+We fit the model as usual, declaring our new multiPhylo object in the `tree`
+argument:
+
+```{r authority-fit-multiphylo, warning=FALSE, message=FALSE}
+fit <-
+  coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    # use multiPhylo tree object
+    tree = authority_multiphylo,
+    # set manual prior
+    prior = list(A_offdiag = "normal(0, 2)"),
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
+    refresh = 0,
+    seed = 1
+  )
+```
+
+```{r authority-summary-multiphylo}
+summary(fit)
+```
+
+The summary output correctly shows that we averaged over five trees.
+
+Note that with more trees, users should expect the computation time for these
+models to increase. If models are taking too long to fit with `cmdstanr`, users
+could try fitting the model with `nuts_sampler = "nutpie"`, as this approach
+parallelises over trees more efficiently than Stan.
