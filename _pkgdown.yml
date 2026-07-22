@@ -13,6 +13,7 @@ reference:
   - '`coev_make_stancode`'
   - '`coev_make_standata`'
 - title: Summarise
+  contents:
   - '`print.coevfit`'
   - '`summary.coevfit`'
   - '`summary.jax_fit`'
