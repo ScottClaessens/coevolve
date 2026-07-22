@@ -53,7 +53,7 @@
     </div>
 
     <table class="ref-index"><colgroup><col class="alias"><col class="title"></colgroup><tbody><tr><th colspan="2">
-          <h2 id="all-functions">All functions <a href="#all-functions" class="anchor" aria-hidden="true"></a></h2>
+          <h2 id="data">Data <a href="#data" class="anchor" aria-hidden="true"></a></h2>
           <p class="section-desc"></p>
         </th>
       </tr></tbody><tbody><tr><td>
@@ -61,14 +61,18 @@
         </td>
         <td><p>Political and religious authority in Austronesian societies</p></td>
       </tr><tr><td>
-          <p><code><a href="coev_calculate_delta_theta.html">coev_calculate_delta_theta()</a></code> </p>
+          <p><code><a href="primates.html">primates</a></code> </p>
         </td>
-        <td><p>Calculate delta theta from a fitted <code>coevfit</code> object</p></td>
+        <td><p>Brain weight, body weight, diet, and sociality in primates</p></td>
       </tr><tr><td>
-          <p><code><a href="coev_calculate_theta.html">coev_calculate_theta()</a></code> </p>
+          <p><code><a href="repeated.html">repeated</a></code> </p>
         </td>
-        <td><p>Calculate equilibrium trait values (theta) for a fitted <code>coevfit</code> object</p></td>
-      </tr><tr><td>
+        <td><p>Example dataset with repeated observations</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="fit">Fit <a href="#fit" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
           <p><code><a href="coev_fit.html">coev_fit()</a></code> </p>
         </td>
         <td><p>Fit Bayesian dynamic coevolutionary model in Stan</p></td>
@@ -80,6 +84,34 @@
           <p><code><a href="coev_make_standata.html">coev_make_standata()</a></code> </p>
         </td>
         <td><p>Make Stan data for dynamic coevolutionary model</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="summarise">Summarise <a href="#summarise" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="print.coevfit.html">print(<i>&lt;coevfit&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Print a summary of a fitted model represented by a <code>coevfit</code> object</p></td>
+      </tr><tr><td>
+          <p><code><a href="summary.coevfit.html">summary(<i>&lt;coevfit&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Create a summary of a fitted model represented by a <code>coevfit</code> object</p></td>
+      </tr><tr><td>
+          <p><code><a href="summary.jax_fit.html">summary(<i>&lt;jax_fit&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Summary statistics for jax_fit object</p></td>
+      </tr><tr><td>
+          <p><code><a href="summary.nutpie_fit.html">summary(<i>&lt;nutpie_fit&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Compute summary statistics for nutpie_fit object</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="plot">Plot <a href="#plot" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="plot.coevfit.html">plot(<i>&lt;coevfit&gt;</i>)</a></code> </p>
+        </td>
+        <td><p>Trace and density plots for <code>coevfit</code> objects</p></td>
       </tr><tr><td>
           <p><code><a href="coev_plot_delta_theta.html">coev_plot_delta_theta()</a></code> </p>
         </td>
@@ -104,14 +136,14 @@
           <p><code><a href="coev_plot_trait_values.html">coev_plot_trait_values()</a></code> </p>
         </td>
         <td><p>Plot estimated trait values from a fitted <code>coevfit</code> object</p></td>
-      </tr><tr><td>
-          <p><code><a href="coev_pred_series.html">coev_pred_series()</a></code> </p>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="extract">Extract <a href="#extract" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="extract_samples.html">extract_samples()</a></code> </p>
         </td>
-        <td><p>Predict a co-evolutionary time series from a fitted <code>coevfit</code> object</p></td>
-      </tr><tr><td>
-          <p><code><a href="coev_simulate_coevolution.html">coev_simulate_coevolution()</a></code> </p>
-        </td>
-        <td><p>Simulate the coevolution of multiple variables in discrete time steps</p></td>
+        <td><p>Extract samples (draws) from a fitted <code>coevfit</code> object</p></td>
       </tr><tr><td>
           <p><code><a href="draws.jax_fit.html">draws(<i>&lt;jax_fit&gt;</i>)</a></code> </p>
         </td>
@@ -120,39 +152,11 @@
           <p><code><a href="draws.nutpie_fit.html">draws(<i>&lt;nutpie_fit&gt;</i>)</a></code> </p>
         </td>
         <td><p>Extract draws from nutpie_fit object</p></td>
-      </tr><tr><td>
-          <p><code><a href="extract_samples.html">extract_samples()</a></code> </p>
-        </td>
-        <td><p>Extract samples (draws) from a fitted <code>coevfit</code> object</p></td>
-      </tr><tr><td>
-          <p><code><a href="metadata.jax_fit.html">metadata(<i>&lt;jax_fit&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Extract metadata from jax_fit object</p></td>
-      </tr><tr><td>
-          <p><code><a href="metadata.nutpie_fit.html">metadata(<i>&lt;nutpie_fit&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Extract metadata from nutpie_fit object</p></td>
-      </tr><tr><td>
-          <p><code><a href="plot.coevfit.html">plot(<i>&lt;coevfit&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Trace and density plots for <code>coevfit</code> objects</p></td>
-      </tr><tr><td>
-          <p><code><a href="primates.html">primates</a></code> </p>
-        </td>
-        <td><p>Brain weight, body weight, diet, and sociality in primates</p></td>
-      </tr><tr><td>
-          <p><code><a href="print.coevfit.html">print(<i>&lt;coevfit&gt;</i>)</a></code> </p>
-        </td>
-        <td><p>Print a summary of a fitted model represented by a <code>coevfit</code> object</p></td>
-      </tr><tr><td>
-          <p><code><a href="repeated.html">repeated</a></code> </p>
-        </td>
-        <td><p>Example dataset with repeated observations</p></td>
-      </tr><tr><td>
-          <p><code><a href="save_coevfit.html">save_coevfit()</a></code> </p>
-        </td>
-        <td><p>Save a fitted <code>coevfit</code> object to a file</p></td>
-      </tr><tr><td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="expose">Expose <a href="#expose" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
           <p><code><a href="stancode.html">stancode()</a></code> </p>
         </td>
         <td><p>Expose the Stan code of a fitted model represented by a <code>coevfit</code> object</p></td>
@@ -161,17 +165,45 @@
         </td>
         <td><p>Expose the Stan data list for a fitted model represented by a <code>coevfit</code> object</p></td>
       </tr><tr><td>
-          <p><code><a href="summary.coevfit.html">summary(<i>&lt;coevfit&gt;</i>)</a></code> </p>
+          <p><code><a href="metadata.jax_fit.html">metadata(<i>&lt;jax_fit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Create a summary of a fitted model represented by a <code>coevfit</code> object</p></td>
+        <td><p>Extract metadata from jax_fit object</p></td>
       </tr><tr><td>
-          <p><code><a href="summary.jax_fit.html">summary(<i>&lt;jax_fit&gt;</i>)</a></code> </p>
+          <p><code><a href="metadata.nutpie_fit.html">metadata(<i>&lt;nutpie_fit&gt;</i>)</a></code> </p>
         </td>
-        <td><p>Summary statistics for jax_fit object</p></td>
+        <td><p>Extract metadata from nutpie_fit object</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="calculate">Calculate <a href="#calculate" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="coev_calculate_delta_theta.html">coev_calculate_delta_theta()</a></code> </p>
+        </td>
+        <td><p>Calculate delta theta from a fitted <code>coevfit</code> object</p></td>
       </tr><tr><td>
-          <p><code><a href="summary.nutpie_fit.html">summary(<i>&lt;nutpie_fit&gt;</i>)</a></code> </p>
+          <p><code><a href="coev_calculate_theta.html">coev_calculate_theta()</a></code> </p>
         </td>
-        <td><p>Compute summary statistics for nutpie_fit object</p></td>
+        <td><p>Calculate equilibrium trait values (theta) for a fitted <code>coevfit</code> object</p></td>
+      </tr><tr><td>
+          <p><code><a href="coev_pred_series.html">coev_pred_series()</a></code> </p>
+        </td>
+        <td><p>Predict a co-evolutionary time series from a fitted <code>coevfit</code> object</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="save">Save <a href="#save" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="save_coevfit.html">save_coevfit()</a></code> </p>
+        </td>
+        <td><p>Save a fitted <code>coevfit</code> object to a file</p></td>
+      </tr></tbody><tbody><tr><th colspan="2">
+          <h2 id="simulate">Simulate <a href="#simulate" class="anchor" aria-hidden="true"></a></h2>
+          <p class="section-desc"></p>
+        </th>
+      </tr></tbody><tbody><tr><td>
+          <p><code><a href="coev_simulate_coevolution.html">coev_simulate_coevolution()</a></code> </p>
+        </td>
+        <td><p>Simulate the coevolution of multiple variables in discrete time steps</p></td>
       </tr></tbody></table></div>
 
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
