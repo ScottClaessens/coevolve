@@ -111,8 +111,6 @@ create_nutpie_wrapper <- function(trace, draws_array, stan_variables,
 #'
 #' @returns A draws_array object.
 #'
-#' @family extract
-#'
 #' @method draws nutpie_fit
 #' @export
 draws.nutpie_fit <- function(x, variables = NULL, ...) {
@@ -141,8 +139,6 @@ draws.nutpie_fit <- function(x, variables = NULL, ...) {
 #'
 #' @returns A data.frame with summary statistics, compatible with cmdstanr
 #'   format.
-#'
-#' @family summarise
 #'
 #' @method summary nutpie_fit
 #' @export
@@ -223,8 +219,6 @@ summary.nutpie_fit <- function(object, variables = NULL, ...) {
 #' @param x A nutpie_fit object.
 #'
 #' @returns A list containing metadata.
-#'
-#' @family extract
 #'
 #' @method metadata nutpie_fit
 #' @export

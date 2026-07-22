@@ -131,8 +131,6 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @family fit
-#'
 #' @details For further details, see \code{help(coev_fit)}
 #'
 #' @references

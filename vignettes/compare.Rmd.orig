@@ -1,5 +1,5 @@
 ---
-title: "Model comparison with coevolve"
+title: "Model comparison"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -8,7 +8,7 @@ pkgdown:
 date: "`r Sys.Date()`"
 author: "Scott Claessens"
 vignette: >
-  %\VignetteIndexEntry{Model comparison with coevolve}
+  %\VignetteIndexEntry{Model comparison}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

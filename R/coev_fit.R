@@ -170,8 +170,6 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @family fit
-#'
 #' @details Fit a Bayesian dynamic coevolutionary model in Stan. A general
 #'   overview is provided in the vignette \code{vignette("coevolve")}
 #'

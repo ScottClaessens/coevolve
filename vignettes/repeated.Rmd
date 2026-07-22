@@ -1,5 +1,5 @@
 ---
-title: "Accounting for repeated observations with coevolve"
+title: "Accounting for repeated observations"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -8,7 +8,7 @@ pkgdown:
 date: "2026-07-22"
 author: "Scott Claessens"
 vignette: >
-  %\VignetteIndexEntry{Accounting for repeated observations with coevolve}
+  %\VignetteIndexEntry{Accounting for repeated observations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -33,7 +33,7 @@ $$
 \begin{split}
 y_{i,j} &\sim f(\mu_{i,j}, \phi_j) \\
 g(\mu_{i,j}) &= \boldsymbol{\eta}_{i,j} + \alpha_{i,j} \\
-\alpha_{i,j} &\sim \mathcal{N}(0, \Sigma)
+\alpha_{i,j} &\sim N(0, \Sigma)
 \end{split}
 $$
 

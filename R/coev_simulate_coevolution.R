@@ -41,8 +41,6 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @family simulate
-#'
 #' @details The model underlying this simulation is a simple VAR(1)
 #'   autoregressive model, where values of all variables at the previous
 #'   timestep predict values at the current timestep. In the case of two

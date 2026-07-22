@@ -16,8 +16,6 @@
 #'
 #' @returns List of class coevsummary
 #'
-#' @family summarise
-#'
 #' @details The convergence diagnostics \code{rhat}, \code{ess_bulk}, and
 #'   \code{ess_tail} are described in detail in Vehtari et al. (2020).
 #'
@@ -318,8 +316,6 @@ summary.coevfit <- function(object, prob = 0.95, robust = FALSE, ...) {
 #'  to method \code{summary} of \code{coevfit}.
 #'
 #' @returns A printed summary of a \code{coevfit} model object
-#'
-#' @family summarise
 #'
 #' @seealso \code{\link{summary.coevfit}}
 #'

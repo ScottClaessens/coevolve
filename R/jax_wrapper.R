@@ -83,8 +83,6 @@ create_jax_wrapper <- function(trace_result, draws_array, stan_variables,
 #'
 #' @returns A draws_array object.
 #'
-#' @family extract
-#'
 #' @method draws jax_fit
 #' @export
 draws.jax_fit <- function(x, variables = NULL, ...) {
@@ -102,8 +100,6 @@ draws.jax_fit <- function(x, variables = NULL, ...) {
 #' @param ... Named summary spec arguments (cmdstanr style).
 #'
 #' @returns A data.frame with summary statistics.
-#'
-#' @family summarise
 #'
 #' @method summary jax_fit
 #' @export
@@ -137,8 +133,6 @@ summary.jax_fit <- function(object, variables = NULL, ...) {
 #' @param x A jax_fit object.
 #'
 #' @returns A list containing metadata.
-#'
-#' @family extract
 #'
 #' @method metadata jax_fit
 #' @export

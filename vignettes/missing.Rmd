@@ -1,5 +1,5 @@
 ---
-title: "Handling missing data with coevolve"
+title: "Handling missing data"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -8,7 +8,7 @@ pkgdown:
 date: "2026-07-22"
 author: "Scott Claessens"
 vignette: >
-  %\VignetteIndexEntry{Handling missing data with coevolve}
+  %\VignetteIndexEntry{Handling missing data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

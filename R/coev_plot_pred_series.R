@@ -22,8 +22,6 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com},
 #'   Erik Ringen \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @family plot
-#'
 #' @seealso \code{\link{coev_pred_series}}
 #'
 #' @examples

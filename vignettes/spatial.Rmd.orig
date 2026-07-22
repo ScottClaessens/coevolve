@@ -1,5 +1,5 @@
 ---
-title: "Controlling for spatial locations with coevolve"
+title: "Controlling for spatial locations"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -8,7 +8,7 @@ pkgdown:
 date: "`r Sys.Date()`"
 author: "Scott Claessens"
 vignette: >
-  %\VignetteIndexEntry{Controlling for spatial locations with coevolve}
+  %\VignetteIndexEntry{Controlling for spatial locations}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

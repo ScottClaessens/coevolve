@@ -7,8 +7,6 @@
 #'
 #' @return Named list of data for Stan
 #'
-#' @family expose
-#'
 #' @examples
 #' \dontrun{
 #' # fit dynamic coevolutionary model

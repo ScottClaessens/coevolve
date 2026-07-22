@@ -26,8 +26,6 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @family plot
-#'
 #' @details The flowfield visualises the change in two coevolving traits
 #'   depending on their current states, with the direction and strength of
 #'   change depicting with the direction and size of arrows. If nullclines are

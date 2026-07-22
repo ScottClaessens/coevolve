@@ -1,5 +1,5 @@
 ---
-title: "Accelerated sampling using JAX with coevolve"
+title: "Accelerated sampling using JAX and nutpie"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -8,7 +8,7 @@ pkgdown:
 date: "2026-07-22"
 author: "Scott Claessens"
 vignette: >
-  %\VignetteIndexEntry{Accelerated sampling using JAX with coevolve}
+  %\VignetteIndexEntry{Accelerated sampling using JAX and nutpie}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

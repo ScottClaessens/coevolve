@@ -13,8 +13,6 @@
 #'
 #' @returns An .RDS file containing the fitted \code{coevfit} model object
 #'
-#' @family save
-#'
 #' @examples
 #' \dontrun{
 #' # fit dynamic coevolutionary model

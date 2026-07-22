@@ -1,6 +1,43 @@
 url: https://scottclaessens.github.io/coevolve/
 template:
   math-rendering: mathjax
+reference:
+- title: Data
+  contents:
+  - '`authority`'
+  - '`primates`'
+  - '`repeated`'
+- title: Fit
+  contents:
+  - '`coev_fit`'
+  - '`coev_make_stancode`'
+  - '`coev_make_standata`'
+- title: Plot
+  contents:
+  - '`coev_plot_delta_theta`'
+  - '`coev_plot_flowfield`'
+  - '`coev_plot_pred_series`'
+  - '`coev_plot_predictive_check`'
+  - '`coev_plot_selection_gradient`'
+  - '`coev_plot_trait_values`'
+- title: Extract
+  contents:
+  - '`extract_samples`'
+- title: Expose
+  contents:
+  - '`stancode`'
+  - '`standata`'
+- title: Calculate
+  contents:
+  - '`coev_calculate_delta_theta`'
+  - '`coev_calculate_theta`'
+  - '`coev_pred_series`'
+- title: Save
+  contents:
+  - '`save_coevfit`'
+- title: Simulate
+  contents:
+  - '`coev_simulate_coevolution`'
 articles:
 - title: All vignettes
   contents:

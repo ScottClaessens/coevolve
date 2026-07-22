@@ -1,5 +1,5 @@
 ---
-title: "Averaging over samples of trees with coevolve"
+title: "Averaging over samples of trees"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -8,7 +8,7 @@ pkgdown:
 date: "2026-07-22"
 author: "Scott Claessens"
 vignette: >
-  %\VignetteIndexEntry{Averaging over samples of trees with coevolve}
+  %\VignetteIndexEntry{Averaging over samples of trees}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---

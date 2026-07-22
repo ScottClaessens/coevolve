@@ -23,8 +23,6 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @family calculate
-#'
 #' @details This function calculates \eqn{\Delta\theta}, which is defined as the
 #'   difference in the equilibrium value for a "response" trait that results
 #'   from a standardised increase in the value of another "predictor" trait. The

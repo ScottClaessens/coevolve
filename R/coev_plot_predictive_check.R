@@ -21,8 +21,6 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @family plot
-#'
 #' @examples
 #' \dontrun{
 #' # fit dynamic coevolutionary model

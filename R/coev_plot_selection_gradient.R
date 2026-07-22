@@ -23,8 +23,6 @@
 #' @author Scott Claessens \email{scott.claessens@@gmail.com}, Erik Ringen
 #'   \email{erikjacob.ringen@@uzh.ch}
 #'
-#' @family plot
-#'
 #' @details The selection gradient is operationalised as the ratio of the
 #'   change in a trait due to deterministic selection \eqn{\Delta\alpha} to
 #'   the change in a trait due to stochastic drift \eqn{\sigma}. Values
