@@ -1,3 +1,10 @@
+# coevolve - development version
+
+### Other Changes
+
+* Update documentation (#111)
+* Fixed cmdstanr location in documentation (#112)
+
 # coevolve 1.1.0
 
 ### New Features
