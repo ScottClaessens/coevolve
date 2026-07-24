@@ -1,5 +1,9 @@
 # coevolve - development version
 
+### Bug Fixes
+
+* Fixed issue with plotting functions when `nuts_sampler = "nutpie"` (#114)
+
 ### Other Changes
 
 * Update documentation (#111)
