@@ -506,6 +506,7 @@ class CoevJaxModel:
         vs.append(("Q_sigma", (J,)))
         vs.append(("b", (J,)))
         vs.append(("eta_anc", (self.N_tree, J)))
+        vs.append(("eta", (self.N_tree, self.N_seg, J)))
         if self.estimate_correlated_drift:
             vs.append(("cor_R", (J, J)))
         for j1, nc in zip(self.ordered_j, self.ordered_ncuts):
@@ -1199,6 +1200,18 @@ class CoevJaxModel:
             Q, L_R, _ = self._build_Q_matrix(params)
             vals.append(A_mat)  # A
             vals.append(Q)      # Q
+            
+            Q_inf = ksolve(A_mat, Q, self.J)
+            A_delta_cache, L_VCV_cache, A_solve_cache, b_delta_cache = (
+                self._compute_caches(A_mat, Q_inf, params)
+            )
+            
+            eta, tip_L_VCV = self._tree_traversal(
+                params,
+                A_delta_cache,
+                L_VCV_cache,
+                b_delta_cache,
+            )
 
             vals.append(params["A_diag"])
             if self.n_offdiag > 0:
@@ -1206,6 +1219,7 @@ class CoevJaxModel:
             vals.append(params["Q_sigma"])
             vals.append(params["b"])
             vals.append(params["eta_anc"])
+            vals.append(eta)
 
             if self.estimate_correlated_drift:
                 vals.append(L_R @ L_R.T)  # cor_R

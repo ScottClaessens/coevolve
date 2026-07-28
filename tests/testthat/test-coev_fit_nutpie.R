@@ -402,3 +402,38 @@ test_that("JAX fit with HSGP returns coevfit with GP params", {
   expect_true(any(grepl("^sigma_dist", vars)))
   expect_true(any(grepl("^rho_dist", vars)))
 })
+
+test_that("Plotting functions work with JAX fit", {
+  skip_if_not(
+    coevolve:::check_jax_available(),
+    message = "JAX not available - skipping JAX tests"
+  )
+  fit <- coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    prior = list(A_offdiag = "normal(0, 2)"),
+    nuts_sampler = "nutpie",
+    chains = 1,
+    iter_warmup = 50,
+    iter_sampling = 50,
+    seed = 1
+  )
+  expect_no_error(coev_plot_trait_values(fit))
+  expect_no_error(coev_plot_delta_theta(fit))
+  expect_no_error(coev_plot_pred_series(fit))
+  expect_no_error(
+    coev_plot_flowfield(
+      fit, var1 = "political_authority", var2 = "religious_authority"
+    )
+  )
+  expect_no_error(
+    coev_plot_selection_gradient(
+      fit, var1 = "political_authority", var2 = "religious_authority"
+    )
+  )
+})
