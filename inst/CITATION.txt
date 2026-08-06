@@ -1,0 +1,10 @@
+@article{ringen2026trait,
+  title={Trait coevolution and causal inference using generalized dynamic phylogenetic models},
+  author={Ringen, Erik J and Claessens, Scott and Martin, Jordan S and Jaeggi, Adrian V},
+  journal={Methods in Ecology and Evolution},
+  volume={17},
+  number={6},
+  pages={1818--1836},
+  year={2026},
+  publisher={Wiley Online Library}
+}
