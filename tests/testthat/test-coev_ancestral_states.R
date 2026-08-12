@@ -69,12 +69,12 @@ test_that("coev_ancestral_states() returns correct structure", {
 
   expect_true(is.data.frame(result))
   expect_true(all(
-    c("node", "variable", "category", "estimate", "lower", "upper") %in%
+    c("node", "variable", "estimate", "lower", "upper") %in%
       names(result)
   ))
   expect_false("clade_pp" %in% names(result))
-  # latent scale: category is always NA
-  expect_true(all(is.na(result$category)))
+  # latent scale: no category column
+  expect_false("category" %in% names(result))
   n_tips <- m01$stan_data$N_tips
   n_internal <- n_tips - 1
   n_vars <- length(m01$variables)
@@ -210,14 +210,10 @@ test_that("coev_ancestral_states() ordinal response uses category column", {
   expect_true(all(grepl("^cat_", result$category)))
   expect_true(all(result$estimate >= 0 & result$estimate <= 1))
   expect_true(all(result$lower >= 0 & result$upper <= 1))
-  # per-node category estimates should sum to 1 exactly
-  # (means distribute over sums)
-  sums_per_node <- vapply(
-    split(result$estimate, result$node),
-    sum, numeric(1)
-  )
-  expect_equal(unname(sums_per_node), rep(1, length(sums_per_node)),
-               tolerance = 1e-10)
+  # one row per node x category
+  n_cats <- length(unique(result$category))
+  expect_true(n_cats >= 2)
+  expect_equal(nrow(result), length(unique(result$node)) * n_cats)
 })
 
 test_that("coev_ancestral_states() mixed ordinal/non-ordinal output", {

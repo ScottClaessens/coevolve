@@ -47,18 +47,12 @@ columns:
 \describe{
 \item{node}{Integer node ID in the reference tree}
 \item{variable}{Character variable name}
-\item{category}{For ordinal variables on the response scale, the
-category label (\code{"cat_1"}, \code{"cat_2"}, ...). \code{NA}
-otherwise.}
-\item{estimate}{Posterior point estimate. For ordinal-response
-category probabilities this is the posterior \emph{mean} (so the
-per-node category estimates sum to 1, matching the convention of
-\code{predict.brmsfit}); for all other cases it is the posterior
-median.}
-\item{lower}{Lower bound of the credible interval (per-category
-quantile for ordinal-response rows)}
-\item{upper}{Upper bound of the credible interval (per-category
-quantile for ordinal-response rows)}
+\item{category}{Only present when \code{scale = "response"}. For
+ordinal variables, the category label (\code{"cat_1"},
+\code{"cat_2"}, ...). \code{NA} for non-ordinal variables.}
+\item{estimate}{Posterior median}
+\item{lower}{Lower bound of the credible interval}
+\item{upper}{Upper bound of the credible interval}
 }
 The data frame has attributes \code{ref_tree} (the phylo object used),
 \code{prob}, and \code{scale}.

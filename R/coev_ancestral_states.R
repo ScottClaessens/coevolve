@@ -33,18 +33,12 @@
 #'   \describe{
 #'     \item{node}{Integer node ID in the reference tree}
 #'     \item{variable}{Character variable name}
-#'     \item{category}{For ordinal variables on the response scale, the
-#'       category label (\code{"cat_1"}, \code{"cat_2"}, ...). \code{NA}
-#'       otherwise.}
-#'     \item{estimate}{Posterior point estimate. For ordinal-response
-#'       category probabilities this is the posterior \emph{mean} (so the
-#'       per-node category estimates sum to 1, matching the convention of
-#'       \code{predict.brmsfit}); for all other cases it is the posterior
-#'       median.}
-#'     \item{lower}{Lower bound of the credible interval (per-category
-#'       quantile for ordinal-response rows)}
-#'     \item{upper}{Upper bound of the credible interval (per-category
-#'       quantile for ordinal-response rows)}
+#'     \item{category}{Only present when \code{scale = "response"}. For
+#'       ordinal variables, the category label (\code{"cat_1"},
+#'       \code{"cat_2"}, ...). \code{NA} for non-ordinal variables.}
+#'     \item{estimate}{Posterior median}
+#'     \item{lower}{Lower bound of the credible interval}
+#'     \item{upper}{Upper bound of the credible interval}
 #'   }
 #'   The data frame has attributes \code{ref_tree} (the phylo object used),
 #'   \code{prob}, and \code{scale}.
@@ -179,12 +173,11 @@ coev_ancestral_states <- function(object, variables = NULL,
           n_cats <- dim(cat_draws)[3]
           for (k in seq_len(n_cats)) {
             cat_k <- cat_draws[, 1, k]
-            # use mean so per-node category estimates sum to 1
             rows[[length(rows) + 1]] <- data.frame(
               node = selected_nodes[n_i],
               variable = var_names[v_i],
               category = paste0("cat_", k),
-              estimate = mean(cat_k),
+              estimate = stats::median(cat_k),
               lower = stats::quantile(cat_k, probs[1], names = FALSE),
               upper = stats::quantile(cat_k, probs[2], names = FALSE),
               stringsAsFactors = FALSE
@@ -210,6 +203,9 @@ coev_ancestral_states <- function(object, variables = NULL,
     }
     result <- do.call(dplyr::bind_rows, rows)
     result <- tibble::as_tibble(result)
+    if (scale == "latent") {
+      result$category <- NULL
+    }
     attr(result, "ref_tree") <- ref_tree
     attr(result, "prob") <- prob
     attr(result, "scale") <- scale
