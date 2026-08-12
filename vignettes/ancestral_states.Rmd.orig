@@ -88,10 +88,10 @@ asr_latent <- coev_ancestral_states(fit)
 head(asr_latent)
 ```
 
-The result is a long-format tibble with one row per node-variable combination
-(or one row per node-variable-category for ordinal-response output below). The
-`category` column is `NA` on the latent scale and for non-ordinal variables; it
-holds category labels for ordinal-response output. The `node` column uses ape's
+The result is a long-format tibble with one row per node-variable combination.
+On the response scale (below), ordinal variables expand to one row per
+node-variable-category and a `category` column identifies the level; this
+column only appears for response-scale output. The `node` column uses ape's
 numbering convention (tips are `1:N_tips`, internal nodes are
 `(N_tips+1):(2*N_tips-1)`), so it integrates directly with phylo objects.
 
@@ -127,11 +127,11 @@ for (var in unique(asr_all$variable)) {
 }
 
 # shared color bar
-par(fig = c(0.35, 0.65, 0, 0.05), new = TRUE, mar = rep(0, 4))
+par(fig = c(0.35, 0.65, 0.02, 0.18), new = TRUE, mar = c(1.8, 0, 1.1, 0))
 image(seq(rng[1], rng[2], length.out = 100), 1,
       matrix(1:100), col = pal, axes = FALSE, xlab = "", ylab = "")
-axis(1, cex.axis = 0.7, padj = -1.5, tck = -0.3)
-mtext("Latent eta", side = 1, line = 1.2, cex = 0.7)
+axis(1, cex.axis = 0.7, padj = -1, tck = -0.25)
+mtext("Latent eta", side = 3, line = 0.2, cex = 0.7)
 ```
 
 ### Joint latent-space scatterplot
@@ -183,18 +183,18 @@ asr_resp <- coev_ancestral_states(
 head(asr_resp, 8)
 ```
 
-The point estimate (`estimate`) for ordinal-response rows is the posterior
-mean, so the per-node category estimates sum exactly to 1 (matching the
-convention of `predict.brmsfit`). The `lower` and `upper` columns are
-per-category posterior quantiles and won't generally sum to 1.
+The point estimate (`estimate`) is the posterior median for all rows,
+consistent with the latent scale. Because medians do not distribute over
+sums, the per-node category estimates need not sum exactly to 1. The `lower`
+and `upper` columns are per-category posterior quantiles.
 
 ### Pie chart tree: response-scale probabilities
 
 This is the most intuitive way to visualize ordinal ancestral states. Each pie
-chart at an internal node shows the posterior mean probability of each
-category. At the tips, observed values are shown as solid colors (one category
-with probability 1). If a tip has missing data, the model-estimated
-probabilities are shown instead.
+chart at an internal node shows the posterior probability of each category
+(posterior medians, normalized to sum to 1). At the tips, observed values are
+shown as solid colors (one category with probability 1). If a tip has missing
+data, the model-estimated probabilities are shown instead.
 
 ```{r asr-pie-tree, fig.asp=0.55, out.width="80%"}
 cat_labels <- c("Absent", "Sublocal", "Local", "Supralocal")
@@ -207,7 +207,8 @@ to_pie_mat <- function(df) {
     select(node, category, estimate) |>
     pivot_wider(names_from = category, values_from = estimate) |>
     arrange(node)
-  as.matrix(wide[, paste0("cat_", seq_len(n_cats))])
+  mat <- as.matrix(wide[, paste0("cat_", seq_len(n_cats))])
+  mat / rowSums(mat)
 }
 
 par(mfrow = c(1, 2), mar = c(1, 0, 3, 0))
@@ -229,9 +230,9 @@ for (var in unique(asr_resp$variable)) {
 }
 
 # shared legend
-par(fig = c(0.3, 0.7, 0, 0.05), new = TRUE, mar = rep(0, 4))
+par(fig = c(0.2, 0.8, 0, 0.12), new = TRUE, mar = rep(0, 4))
 plot.new()
-legend("center", legend = cat_labels, fill = cat_colors,
+legend("center", legend = cat_labels, fill = cat_colors, xpd = NA,
        horiz = TRUE, bty = "n", cex = 0.9, title = "Authority level")
 ```
 
@@ -276,27 +277,23 @@ ggplot(root_df, aes(x = eta, fill = variable)) +
 ## Identifying nodes on the tree
 
 To query ancestral states for specific nodes, you first need to know their IDs.
-The `coev_plot_node_labels()` function plots the tree with internal node IDs
-displayed in red:
+Node numbering follows ape's convention: tips are `1:N_tips` and internal nodes
+are `(N_tips + 1):(2 * N_tips - 1)`. The ape package provides everything needed
+to display and select nodes -- for example, plotting the tree with internal
+node IDs labelled:
 
 ```{r asr-node-labels, fig.asp=1, out.width="60%"}
-tree <- coev_plot_node_labels(fit)
+plot(tree, show.tip.label = FALSE, edge.color = "grey70")
+nodelabels(cex = 0.5, frame = "circle", bg = "lightblue")
 ```
 
-Node numbering follows ape's convention: tips are `1:N_tips` and internal nodes
-are `(N_tips + 1):(2 * N_tips - 1)`.
-
-### Interactive node selection
-
-In an interactive R session you can click directly on the tree to identify
-nodes. `coev_identify_nodes()` wraps `ape::identify.phylo()` in a loop so that
-multiple clicks accumulate; the loop ends when you click outside the tree (or
-press Esc, depending on your graphics device):
+In an interactive R session you can instead click directly on the plotted tree
+to select nodes with `ape::identify.phylo()`:
 
 ``` r
-tree <- coev_plot_node_labels(fit)
-nodes <- coev_identify_nodes(tree)
-coev_ancestral_states(fit, nodes = nodes)
+plot(tree, show.tip.label = FALSE)
+node <- identify(tree)$nodes
+coev_ancestral_states(fit, nodes = node)
 ```
 
 ## Selecting specific nodes and variables
