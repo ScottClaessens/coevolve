@@ -437,3 +437,40 @@ test_that("Plotting functions work with JAX fit", {
     )
   )
 })
+
+test_that("coev_ancestral_states() works with JAX fit", {
+  skip_if_not(
+    coevolve:::check_jax_available(),
+    message = "JAX not available - skipping JAX tests"
+  )
+  fit <- coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    prior = list(A_offdiag = "normal(0, 2)"),
+    nuts_sampler = "nutpie",
+    chains = 1,
+    iter_warmup = 50,
+    iter_sampling = 50,
+    seed = 1
+  )
+  # latent scale summary
+  asr <- coev_ancestral_states(fit)
+  expect_true(is.data.frame(asr))
+  expect_true(all(
+    c("node", "variable", "estimate", "lower", "upper") %in% names(asr)
+  ))
+  expect_true(all(is.finite(asr$estimate)))
+  # response scale summary (exercises cutpoint extraction)
+  asr_resp <- coev_ancestral_states(fit, scale = "response")
+  expect_true("category" %in% names(asr_resp))
+  expect_true(all(asr_resp$estimate >= 0 & asr_resp$estimate <= 1))
+  # raw draws
+  asr_draws <- coev_ancestral_states(fit, summary = FALSE)
+  expect_true(is.array(asr_draws$draws))
+  expect_equal(length(dim(asr_draws$draws)), 3)
+})
