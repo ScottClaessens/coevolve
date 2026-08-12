@@ -65,6 +65,10 @@ jobs:
           cmdstanr::check_cmdstan_toolchain(fix = TRUE)
           cmdstanr::install_cmdstan(cores = parallel::detectCores())
         shell: Rscript {0}
+        
+      - name: Install package
+        run: R CMD INSTALL .
+        shell: bash
 
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
