@@ -5,7 +5,7 @@
 * Added `coev_ancestral_states()` for extracting posterior estimates of
   ancestral trait values at internal phylogenetic nodes, on either the
   latent or response scale (#86)
-* Added vignette "Ancestral State Reconstruction with coevolve"
+* Added vignette "Ancestral state reconstruction"
 
 ### Bug Fixes
 
@@ -13,14 +13,15 @@
 
 ### Other Changes
 
-* Update documentation (#111)
+* Updated documentation (#111)
 * Fixed cmdstanr location in documentation (#112)
+* Added package citation (#116)
 
 # coevolve 1.1.0
 
 ### New Features
 
-* Allow for single traits (#107)
+* Allowed for single traits (#107)
 * Added pure JAX/NumPyro backend via `nuts_sampler = "nutpie"`.
   Uses nutpie's Rust NUTS sampler with JAX gradients for ~5x
   faster sampling than Stan on typical models. Requires

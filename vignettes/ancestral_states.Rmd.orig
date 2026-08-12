@@ -1,5 +1,5 @@
 ---
-title: "Ancestral State Reconstruction with coevolve"
+title: "Ancestral state reconstruction"
 output:
   rmarkdown::html_vignette:
     toc: true
@@ -8,7 +8,7 @@ pkgdown:
 date: "`r Sys.Date()`"
 author: "Erik Ringen"
 vignette: >
-  %\VignetteIndexEntry{Ancestral State Reconstruction with coevolve}
+  %\VignetteIndexEntry{Ancestral state reconstruction}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
