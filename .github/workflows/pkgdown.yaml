@@ -70,6 +70,10 @@ jobs:
         run: R CMD INSTALL .
         shell: bash
 
+      - name: Install package
+        run: R CMD INSTALL .
+        shell: bash
+
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}

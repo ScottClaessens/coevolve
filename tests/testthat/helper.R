@@ -44,7 +44,7 @@ setup_nutpie_for_tests <- function() {
         # try to reconfigure (may not work if already initialized)
         reticulate::use_python(nutpie_python, required = FALSE)
       }
-      if (coevolve::check_nutpie_available()) {
+      if (coevolve:::check_nutpie_available()) {
         return(TRUE)
       }
     }, error = function(e) NULL)
@@ -56,7 +56,7 @@ setup_nutpie_for_tests <- function() {
     if (dir.exists(expanded_venv)) {
       tryCatch({
         reticulate::use_virtualenv(expanded_venv, required = FALSE)
-        if (coevolve::check_nutpie_available()) {
+        if (coevolve:::check_nutpie_available()) {
           return(TRUE)
         }
       }, error = function(e) NULL)
@@ -67,12 +67,12 @@ setup_nutpie_for_tests <- function() {
   if (reticulate_python != "" && file.exists(reticulate_python)) {
     # if RETICULATE_PYTHON is set, reticulate should use it automatically
     # just check if nutpie is available
-    if (coevolve::check_nutpie_available()) {
+    if (coevolve:::check_nutpie_available()) {
       return(TRUE)
     }
   }
   # if nutpie is already available (from previous configuration), return TRUE
-  if (coevolve::check_nutpie_available()) {
+  if (coevolve:::check_nutpie_available()) {
     return(TRUE)
   }
   # if we get here, nutpie is not available

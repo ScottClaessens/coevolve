@@ -30,6 +30,7 @@ reference:
 - title: Extract
   contents:
   - '`extract_samples`'
+  - '`coev_ancestral_states`'
   - '`draws.jax_fit`'
   - '`draws.nutpie_fit`'
 - title: Expose
@@ -59,3 +60,4 @@ articles:
   - spatial
   - compare
   - jax
+  - ancestral_states

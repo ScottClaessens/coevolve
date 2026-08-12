@@ -7,6 +7,8 @@ knitr::knit("vignettes/multiphylo.Rmd.orig", "vignettes/multiphylo.Rmd")
 knitr::knit("vignettes/spatial.Rmd.orig",    "vignettes/spatial.Rmd")
 knitr::knit("vignettes/compare.Rmd.orig",    "vignettes/compare.Rmd")
 knitr::knit("vignettes/jax.Rmd.orig",        "vignettes/jax.Rmd")
+knitr::knit("vignettes/ancestral_states.Rmd.orig",
+            "vignettes/ancestral_states.Rmd")
 
 # remove "vignettes/" to ensure correct figure paths
 edit_figure_paths <- function(file) {
@@ -21,3 +23,4 @@ edit_figure_paths("vignettes/multiphylo.Rmd")
 edit_figure_paths("vignettes/spatial.Rmd")
 edit_figure_paths("vignettes/compare.Rmd")
 edit_figure_paths("vignettes/jax.Rmd")
+edit_figure_paths("vignettes/ancestral_states.Rmd")
