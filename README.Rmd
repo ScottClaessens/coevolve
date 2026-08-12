@@ -28,6 +28,7 @@ knitr::opts_chunk$set(
   [![R-CMD-check](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml)
   [![Codecov test coverage](https://codecov.io/gh/ScottClaessens/coevolve/graph/badge.svg)](https://app.codecov.io/gh/ScottClaessens/coevolve)
   [![lint](https://github.com/ScottClaessens/coevolve/actions/workflows/lint.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions?query=workflow%3Alint)
+  [![Status at rOpenSci Software Peer Review](https://badges.ropensci.org/717_status.svg)](https://github.com/ropensci/software-review/issues/717)
 <!-- badges: end -->
 
 ```{r srr-tags, eval = FALSE, echo = FALSE}
@@ -46,9 +47,9 @@ knitr::opts_chunk$set(
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian generalized dynamic
-phylogenetic models in Stan. These models can be used to estimate how variables 
-have coevolved over evolutionary time and to assess causal directionality
-(X → Y vs. Y → X) and contingencies (X, then Y) in evolution.
+phylogenetic models in Stan. These models can be used to estimate how
+traits have coevolved over evolutionary time and to assess causal
+directionality (X → Y vs. Y → X) and contingencies (X, then Y) in evolution.
 
 While existing methods only allow pairs of binary traits to coevolve
 (e.g., [BayesTraits](https://www.evolution.reading.ac.uk/BayesTraitsV4.1.2/BayesTraitsV4.1.2.html)),
@@ -57,14 +58,7 @@ data types, including binary, ordinal, count, and continuous traits.
 
 ## Installation
 
-To use the **coevolve** package, you must first install the `cmdstanr` package
-(see full installation instructions here: https://mc-stan.org/cmdstanr/).
-
-```{r install_cmdstanr, eval = FALSE}
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-```
-
-You can then install the development version of **coevolve** with:
+You can install the development version of **coevolve** with:
 
 ```{r install_coevolve, eval = FALSE}
 # install.packages("devtools")
@@ -133,7 +127,7 @@ absolute deviation increase in another variable.
 #|   Plot showing the posterior distributions of delta theta for both
 #|   directions of coevolution between political and religious authority. The
 #|   bulk of the posterior densities are greater than zero.
-coev_plot_delta_theta(fit)
+coev_plot_delta_theta(fit, prob_outer = 0.90)
 ```
 
 This plot suggests that both variables influence one another in their 
@@ -142,47 +136,11 @@ increase in the optimal trait value for religious authority, and vice versa.
 In other words, these two variables reciprocally coevolve over evolutionary
 time.
 
-### Optional: Using nutpie as an alternative sampler
+## Further resources
 
-The **coevolve** package supports using `nutpie` as an alternative 
-high-performance sampler. To use nutpie:
-
-1. **Install nutpie** in a Python environment:
-
-   ```bash
-   pip install "nutpie[stan]"
-   ```
-
-2. **Configure reticulate** to use the Python environment with nutpie installed.
-   Choose one of the following options:
-
-   **Option A: Set environment variable** (recommended for reproducibility):
-   ```bash
-   export RETICULATE_PYTHON=/path/to/python
-   ```
-   Or in R:
-   ```r
-   Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
-   ```
-
-   **Option B: Use virtual environment**:
-   ```r
-   reticulate::use_virtualenv("~/.venvs/nutpie-env")
-   ```
-
-   **Option C: Use Python directly**:
-   ```r
-   reticulate::use_python("/path/to/python")
-   ```
-
-3. **Use nutpie** by setting `backend = "nutpie"` in `coev_fit()`:
-   ```r
-   fit <- coev_fit(..., backend = "nutpie")
-   ```
-
-**Note**: Explicit configuration is required to ensure reproducibility and avoid
-version conflicts. The package does not automatically search for nutpie 
-installations.
+- [Introductory vignettes](https://scottclaessens.github.io/coevolve/articles/)
+- [Methods paper](https://doi.org/10.1111/2041-210x.70303)
+- [Lecture and R workshop](https://www.youtube.com/watch?v=9dsTeVflA1s)
 
 ## Citing coevolve
 
@@ -191,7 +149,7 @@ When using the **coevolve** package, please cite the following papers:
 - Ringen, E., Martin, J. S., & Jaeggi, A. (2021). Novel phylogenetic methods 
   reveal that resource-use intensification drives the evolution of "complex" 
   societies. _EcoEvoRXiv_. https://doi.org/10.32942/osf.io/wfp95
-- Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S., Ringen, 
-  E. J., & Atkinson, Q. D. (2023). Coevolution of religious and political 
-  authority in Austronesian societies. _Nature Human Behaviour_, _7_(1), 38-45. 
-  https://doi.org/10.1038/s41562-022-01471-y
+- Ringen, E., Claessens, S., Martin, J. S., & Jaeggi, A. V. (2026). Trait 
+  coevolution and causal inference using generalized dynamic phylogenetic 
+  models. _Methods in Ecology and Evolution_, _17_(6), 1818-1836. 
+  https://doi.org/10.1111/2041-210x.70303

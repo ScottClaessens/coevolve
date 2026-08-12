@@ -1,0 +1,118 @@
+---
+title: "Handling missing data"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+pkgdown:
+  as_is: true
+date: "`r Sys.Date()`"
+author: "Scott Claessens"
+vignette: >
+  %\VignetteIndexEntry{Handling missing data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+options(width = 120)
+knitr::opts_chunk$set(
+  comment = NA,
+  fig.path = "vignettes/",
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.8,
+  out.width = "60%",
+  fig.align = "center",
+  fig.cap = ""
+  )
+library(pander)
+```
+
+## Introduction
+
+Often in comparative datasets, data will be missing for some taxa. Rather
+than remove cases if they have any missing data, the `coev_fit()` function will
+automatically impute any missing values in the model, using all available
+information.
+
+## Handling missing data
+
+The observational model for generalized dynamic phylogenetic models is:
+
+$$
+\begin{split}
+y_{i,j} &\sim f(\mu_{i,j}, \phi_j) \\
+g(\mu_{i,j}) &= \boldsymbol{\eta}_{i,j}
+\end{split}
+$$
+
+where $y_{i,j}$ is the observed value for trait $j$ from taxa $i$, $f()$ is a
+likelihood function with expected value $\mu$ and possible additional parameters
+$\phi$, $g()$ is a link function converting the expected value to the latent
+continuous space of the evolutionary process, and $\boldsymbol{\eta}_{i,j}$ is
+the latent trait value of trait $j$ for taxa $i$.
+
+When data are missing for $y_{i,j}$, the model will use Bayesian imputation. It
+will continue to estimate $\boldsymbol{\eta}_{i,j}$ using information about
+phylogenetic relatedness and observed trait covariation. This is preferred as
+the model will use all available information in its inferences, rather than
+throw away information by deleting taxa with missing data.
+
+## A working example
+
+We show this by modelling the coevolutionary relationships between brain weight
+and group size across 21 primate species from the Lemuriformes clade. Data on
+primate species were compiled by DeCasien et al. (2017). There are data for 143
+primate species in total, but we focus on one clade to keep the example small
+and simple.
+
+```{r primates-data, warning=FALSE, message=FALSE}
+# filter dataset to Lemuriformes only
+primates_data <- primates$data[primates$data$clade == "Lemuriformes",]
+
+# prune phylogeny to Lemuriformes only
+library(ape)
+primates_phylogeny <- keep.tip(primates$phylogeny, primates_data$species)
+
+# view data
+head(primates_data[, c("species", "brain_weight", "group_size")])
+```
+
+Both variables are positive reals, so we use the "gamma_log" distribution. While
+there are no missing data for the brain weight variable, some data are missing
+for the group size variable.
+
+```{r primates-fit, warning=FALSE, message=FALSE}
+fit <-
+  coev_fit(
+    data = primates_data,
+    variables = list(
+      brain_weight = "gamma_log",
+      group_size = "gamma_log"
+    ),
+    id = "species",
+    tree = primates_phylogeny,
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
+    refresh = 0,
+    seed = 1
+  )
+```
+
+```{r primates-summary}
+summary(fit)
+```
+
+Notice that the number of observations is still 21 in the summary output,
+informing us that all observations were retained and any missing data were
+imputed.
+
+If we wanted instead to remove any taxa with missing data, we could set
+`complete_cases = TRUE` when fitting the model.
+
+## References
+
+DeCasien, A. R., Williams, S. A., & Higham, J. P. (2017). Primate brain size is
+predicted by diet but not sociality. *Nature Ecology & Evolution*, *1*(5), 0112.

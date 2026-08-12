@@ -1,16 +1,30 @@
-# coevolve (development version)
+# coevolve - development version
 
 ### New Features
 
 * Added `coev_ancestral_states()` for extracting posterior estimates of
   ancestral trait values at internal phylogenetic nodes, on either the
   latent or response scale (#86)
-* Added `coev_plot_node_labels()` for plotting the tree with internal
-  node IDs displayed
-* Added `coev_identify_nodes()` for interactive multi-click node selection,
-  wrapping `ape::identify.phylo()` in a loop
 * Added vignette "Ancestral State Reconstruction with coevolve"
+
+### Bug Fixes
+
+* Fixed issue with plotting functions when `nuts_sampler = "nutpie"` (#114)
+
+### Other Changes
+
+* Update documentation (#111)
+* Fixed cmdstanr location in documentation (#112)
+
+# coevolve 1.1.0
+
+### New Features
+
 * Allow for single traits (#107)
+* Added pure JAX/NumPyro backend via `nuts_sampler = "nutpie"`.
+  Uses nutpie's Rust NUTS sampler with JAX gradients for ~5x
+  faster sampling than Stan on typical models. Requires
+  `pip install jax numpyro nutpie` (#109)
 
 # coevolve 1.0.0
 
@@ -23,7 +37,7 @@
 * Added `nutpie` as an alternative sampler for the Stan models (#92)
 * Cached matrix computations when branch lengths are identical (#93)
 * Implemented Hilbert-space approximate Gaussian processes for spatial control,
-  adding the `lon_lat` argument and deprecating the `dist_mat` argument in 
+  adding the `lon_lat` argument and deprecating the `dist_mat` argument in
   `coev_fit()` (#103)
 
 ### Other Changes

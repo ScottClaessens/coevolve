@@ -40,7 +40,6 @@ jobs:
           extra-packages: |
             ape
             stan-dev/cmdstanr
-            coevolve
             colorspace
             dplyr
             ggdist
@@ -48,7 +47,7 @@ jobs:
             knitr
             methods
             phangorn
-            phaseR
+            mjg211/phaseR
             pkgdown
             posterior
             purrr

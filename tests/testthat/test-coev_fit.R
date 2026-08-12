@@ -883,7 +883,7 @@ test_that("coev_fit() produces expected errors", {
     "Argument 'prior_only' must be a logical of length one.",
     fixed = TRUE
   )
-  expect_error(
+  lifecycle::expect_defunct(
     coev_fit(
       data = d,
       variables = list(
@@ -893,9 +893,7 @@ test_that("coev_fit() produces expected errors", {
       id = "id",
       tree = tree,
       backend = 0
-    ),
-    "Argument 'backend' must be a character string of length one.",
-    fixed = TRUE
+    )
   )
   expect_error(
     coev_fit(
@@ -906,9 +904,9 @@ test_that("coev_fit() produces expected errors", {
       ),
       id = "id",
       tree = tree,
-      backend = "testing"
+      nuts_sampler = "testing"
     ),
-    "Argument 'backend' must be either 'cmdstanr' or 'nutpie'.",
+    "one of: stan, nutpie",
     fixed = TRUE
   )
   lifecycle::expect_defunct(
@@ -1190,22 +1188,20 @@ test_that("coev_fit() works with cmdstanr backend and nutpie arguments", {
   })
   # expect no error
   expect_no_error({
-    suppressWarnings(
-      coev_fit(
-        data = d,
-        variables = list(
-          x = "normal",
-          y = "normal"
-        ),
-        id = "id",
-        tree = tree,
-        chains = 1,
-        seed = 1,
-        refresh = 0,
-        backend = "cmdstanr",
-        extra_stanc_args = list("--O1"),
-        extra_compile_args = list(stan_threads = TRUE)
-      )
+    coev_fit(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "normal"
+      ),
+      id = "id",
+      tree = tree,
+      chains = 1,
+      seed = 1,
+      refresh = 0,
+      nuts_sampler = "stan",
+      extra_stanc_args = list("--O1"),
+      extra_compile_args = list(stan_threads = TRUE)
     )
   })
 })

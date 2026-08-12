@@ -1,0 +1,110 @@
+---
+title: "Accelerated sampling using JAX and nutpie"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+pkgdown:
+  as_is: true
+date: "2026-07-22"
+author: "Scott Claessens"
+vignette: >
+  %\VignetteIndexEntry{Accelerated sampling using JAX and nutpie}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
+## Introduction
+
+By default, the package generates the model in Stan and fits the model using the
+**cmdstanr** package. However, it is also possible to fit the model using JAX
+and **nutpie**. The key argument is `nuts_sampler` in the `coev_fit()` function:
+
+- `nuts_sampler = "stan"` (default): Stan model via **CmdStan** /
+  **cmdstanr** (Stan’s built-in HMC/NUTS).
+- `nuts_sampler = "nutpie"`: uses JAX to compute gradients and
+  **nutpie**’s Rust NUTS sampler for fast, parallel sampling.
+
+JAX and nutpie offer potentially faster walltimes and more efficient
+parallelising over samples of trees compared to **cmdstanr**.
+
+## Setup
+
+The nutpie backend requires Python with JAX, NumPyro, and nutpie.
+Install them with:
+
+```bash
+pip install jax numpyro nutpie
+```
+
+Python dependencies are managed automatically via `reticulate`’s `uv`
+environment. The project `.Rprofile` sets `RETICULATE_PYTHON = "managed"`
+by default, so `reticulate` will install the required packages on first
+use. To pin a specific Python instead, set `RETICULATE_PYTHON` before
+`reticulate` initialises:
+
+```r
+Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
+```
+
+## A working example
+
+We can fit an example model with JAX and nutpie by setting
+`nuts_sampler = "nutpie"` in the call to `coev_fit()`:
+
+
+``` r
+fit <-
+  coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    nuts_sampler = "nutpie"
+  )
+
+summary(fit)
+```
+
+```
+Variables: political_authority = ordered_logistic 
+           religious_authority = ordered_logistic 
+     Data: authority$data (Number of observations: 97)
+Phylogeny: authority$phylogeny (Number of trees: 1)
+    Draws: 4 chains, each with iter = 1000; warmup = 1000; thin = 1
+           total post-warmup draws = 4000
+
+Autoregressive selection effects:
+                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority    -0.53      0.43 -1.60 -0.02 1.00     1388     1555
+religious_authority    -0.61      0.49 -1.80 -0.03 1.00     1674     1056
+
+Cross selection effects:
+                                          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority ⟶ religious_authority     1.53      0.72  0.03  2.88 1.00      994     1387
+religious_authority ⟶ political_authority     1.07      0.83 -0.59  2.69 1.00      774     1744
+
+Drift parameters:
+                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+sd(political_authority)                          2.19      0.82  0.44  3.70 1.00      632      623
+sd(religious_authority)                          1.45      0.84  0.08  3.14 1.00      478      659
+cor(political_authority,religious_authority)     0.36      0.29 -0.31  0.82 1.00     1848     2407
+
+Continuous time intercept parameters:
+                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority     0.31      0.92 -1.45  2.13 1.00     1742     2330
+religious_authority     0.34      0.92 -1.47  2.12 1.00     1437     2262
+
+Ordinal cutpoint parameters:
+                       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority[1]    -1.44      0.89 -3.20  0.34 1.00     1694     2260
+political_authority[2]    -0.69      0.86 -2.38  1.07 1.00     1795     2414
+political_authority[3]     1.51      0.88 -0.20  3.31 1.00     1913     2485
+religious_authority[1]    -1.55      0.91 -3.30  0.25 1.00     1326     1814
+religious_authority[2]    -0.88      0.90 -2.58  0.95 1.00     1444     2318
+religious_authority[3]     1.50      0.92 -0.24  3.44 1.00     1817     2336
+```

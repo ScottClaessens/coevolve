@@ -248,23 +248,9 @@ coev_make_stancode <- function(data, variables, id, tree,
   #' @srrstats {G2.4, G2.4c} Convert to character
   distributions <- as.character(variables)
   variables <- names(variables)
-  # get default priors
-  priors <-
-    list(
-      b              = "std_normal()",
-      eta_anc        = "std_normal()",
-      A_offdiag      = "std_normal()",
-      A_diag         = "std_normal()",
-      L_R            = "lkj_corr_cholesky(4)",
-      Q_sigma        = "std_normal()",
-      c              = "normal(0, 2)",
-      shape          = "gamma(0.01, 0.01)",
-      sigma_dist     = "exponential(1)",
-      rho_dist       = "exponential(5)",
-      sigma_residual = "exponential(1)",
-      L_residual     = "lkj_corr_cholesky(4)"
-    )
-  # note: default prior for phi (overdispersion) set within the model code
+  # get default priors (shared with coev_make_model_config; phi default is
+  # set within the Stan model code rather than in default_priors())
+  priors <- default_priors() # nolint: object_usage_linter.
   # replace priors if user has explicitly set them
   if (!is.null(prior)) {
     for (i in names(prior)) {

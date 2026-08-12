@@ -1,8 +1,63 @@
 url: https://scottclaessens.github.io/coevolve/
 template:
   math-rendering: mathjax
+reference:
+- title: Datasets
+  contents:
+  - '`authority`'
+  - '`primates`'
+  - '`repeated`'
+- title: Fit
+  contents:
+  - '`coev_fit`'
+  - '`coev_make_stancode`'
+  - '`coev_make_standata`'
+- title: Summarise
+  contents:
+  - '`print.coevfit`'
+  - '`summary.coevfit`'
+  - '`summary.jax_fit`'
+  - '`summary.nutpie_fit`'
+- title: Plot
+  contents:
+  - '`plot.coevfit`'
+  - '`coev_plot_delta_theta`'
+  - '`coev_plot_flowfield`'
+  - '`coev_plot_pred_series`'
+  - '`coev_plot_predictive_check`'
+  - '`coev_plot_selection_gradient`'
+  - '`coev_plot_trait_values`'
+- title: Extract
+  contents:
+  - '`extract_samples`'
+  - '`coev_ancestral_states`'
+  - '`draws.jax_fit`'
+  - '`draws.nutpie_fit`'
+- title: Expose
+  contents:
+  - '`stancode`'
+  - '`standata`'
+  - '`metadata.jax_fit`'
+  - '`metadata.nutpie_fit`'
+- title: Calculate
+  contents:
+  - '`coev_calculate_delta_theta`'
+  - '`coev_calculate_theta`'
+  - '`coev_pred_series`'
+- title: Save
+  contents:
+  - '`save_coevfit`'
+- title: Simulate
+  contents:
+  - '`coev_simulate_coevolution`'
 articles:
-- title: Vignettes
+- title: All vignettes
   contents:
   - coevolve
+  - missing
+  - repeated
+  - multiphylo
+  - spatial
+  - compare
+  - jax
   - ancestral_states

@@ -1,0 +1,96 @@
+---
+title: "Controlling for spatial locations"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+pkgdown:
+  as_is: true
+date: "`r Sys.Date()`"
+author: "Scott Claessens"
+vignette: >
+  %\VignetteIndexEntry{Controlling for spatial locations}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+options(width = 120)
+knitr::opts_chunk$set(
+  comment = NA,
+  fig.path = "vignettes/",
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.8,
+  out.width = "60%",
+  fig.align = "center",
+  fig.cap = ""
+  )
+library(pander)
+```
+
+## Introduction
+
+If we have data on the longitudes and latitudes of taxa, sometimes it is useful
+to control for this spatial location to ensure that our model is capturing deep
+ancestral relationships rather than shared environmental effects or more recent
+diffusion among neighbours.
+
+The `lon_lat` argument in the `coev_fit()` function allows us to easily control
+for spatial proximity. This argument takes a data frame of longitude and
+latitude coordinates (in decimal degrees) for taxa on the phylogeny. If
+longitude and latitude values are inputted by the user, the function calculates
+the Euclidean distances between these points on a unit sphere and includes a
+Gaussian process over these distances for each variable in the model.
+
+## A working example
+
+When studying the coevolution of political and religious authority in
+Austronesian societies, we would like to ensure that our results are due to
+coevolution over deep cultural time rather than more recent borrowing among
+societies with close geographic proximity.
+
+Here are the longitude and latitude values for the first five Austronesian
+societies:
+
+```{r authority-coordinates}
+authority$coordinates[1:5, ]
+```
+
+We can include these spatial coordinates in the model. The distance matrix is
+scaled to vary between 0 and 1 under the hood to improve model sampling.
+
+```{r authority-fit-with-distance, warning=FALSE, message=FALSE}
+fit <-
+  coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    # declare longitude and latitude values
+    lon_lat = authority$coordinates,
+    # set manual prior
+    prior = list(A_offdiag = "normal(0, 2)"),
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
+    refresh = 0,
+    seed = 1
+  )
+```
+
+```{r authority-summary-with-distance}
+summary(fit)
+```
+
+The summary output shows that the model has estimated the parameters for two
+Gaussian process functions over geographic locations, one for each variable.
+
+In addition, it is possible to change the underlying covariance kernel for the
+Gaussian processes using the `dist_cov` argument and estimate approximate
+Hilbert-space Gaussian processes using the `dist_k` argument. The latter may be
+particularly useful for large datasets where exact Gaussian processes are
+intractable. See `help(coev_fit)` for more details.

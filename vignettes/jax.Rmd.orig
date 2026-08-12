@@ -1,0 +1,83 @@
+---
+title: "Accelerated sampling using JAX and nutpie"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+pkgdown:
+  as_is: true
+date: "`r Sys.Date()`"
+author: "Scott Claessens"
+vignette: >
+  %\VignetteIndexEntry{Accelerated sampling using JAX and nutpie}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+options(width = 120)
+knitr::opts_chunk$set(
+  comment = NA,
+  fig.path = "vignettes/",
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.8,
+  out.width = "60%",
+  fig.align = "center",
+  fig.cap = ""
+  )
+library(pander)
+```
+
+## Introduction
+
+By default, the package generates the model in Stan and fits the model using the
+**cmdstanr** package. However, it is also possible to fit the model using JAX
+and **nutpie**. The key argument is `nuts_sampler` in the `coev_fit()` function:
+
+- `nuts_sampler = "stan"` (default): Stan model via **CmdStan** /
+  **cmdstanr** (Stan’s built-in HMC/NUTS).
+- `nuts_sampler = "nutpie"`: uses JAX to compute gradients and
+  **nutpie**’s Rust NUTS sampler for fast, parallel sampling.
+
+JAX and nutpie offer potentially faster walltimes and more efficient
+parallelising over samples of trees compared to **cmdstanr**.
+
+## Setup
+
+The nutpie backend requires Python with JAX, NumPyro, and nutpie.
+Install them with:
+
+```bash
+pip install jax numpyro nutpie
+```
+
+Python dependencies are managed automatically via `reticulate`’s `uv`
+environment. The project `.Rprofile` sets `RETICULATE_PYTHON = "managed"`
+by default, so `reticulate` will install the required packages on first
+use. To pin a specific Python instead, set `RETICULATE_PYTHON` before
+`reticulate` initialises:
+
+```r
+Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
+```
+
+## A working example
+
+We can fit an example model with JAX and nutpie by setting
+`nuts_sampler = "nutpie"` in the call to `coev_fit()`:
+
+```{r authority-nutpie, warning=FALSE, message=FALSE}
+fit <-
+  coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    nuts_sampler = "nutpie"
+  )
+
+summary(fit)
+```

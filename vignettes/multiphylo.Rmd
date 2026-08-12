@@ -1,0 +1,147 @@
+---
+title: "Averaging over samples of trees"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+pkgdown:
+  as_is: true
+date: "2026-07-22"
+author: "Scott Claessens"
+vignette: >
+  %\VignetteIndexEntry{Averaging over samples of trees}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
+## Introduction
+
+Often, we would like to average our analysis over a posterior set of
+phylogenetic trees, rather than use a single tree. This can be a useful way to
+account for phylogenetic uncertainty in our inferences.
+
+To deal with phylogenetic uncertainty, the `coev_fit()` function allows the user
+to declare multiPhylo objects in the `tree` argument. So long as all trees in
+the multiPhylo object have the same number of taxa with the same tip labels,
+the function will average over all the trees within the same model.
+
+## A working example
+
+To keep the computation time short, we imagine a simple case where we have a
+multiPhylo object with five identical Austronesian language phylogenies. While
+the results should be the same in this case as there is no phylogenetic
+uncertainty, users should expect differing results when using sets of different
+trees.
+
+
+``` r
+authority_multiphylo <- c(
+  authority$phylogeny,
+  authority$phylogeny,
+  authority$phylogeny,
+  authority$phylogeny,
+  authority$phylogeny
+)
+
+authority_multiphylo
+```
+
+```
+5 phylogenetic trees
+```
+
+We fit the model as usual, declaring our new multiPhylo object in the `tree`
+argument:
+
+
+``` r
+fit <-
+  coev_fit(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    # use multiPhylo tree object
+    tree = authority_multiphylo,
+    # set manual prior
+    prior = list(A_offdiag = "normal(0, 2)"),
+    # additional arguments for cmdstanr
+    parallel_chains = 4,
+    iter_sampling = 2000,
+    iter_warmup = 2000,
+    refresh = 0,
+    seed = 1
+  )
+```
+
+```
+Running MCMC with 4 parallel chains...
+
+Chain 1 finished in 656.8 seconds.
+Chain 2 finished in 923.7 seconds.
+Chain 4 finished in 948.0 seconds.
+Chain 3 finished in 981.0 seconds.
+
+All 4 chains finished successfully.
+Mean chain execution time: 877.4 seconds.
+Total execution time: 981.2 seconds.
+```
+
+
+``` r
+summary(fit)
+```
+
+```
+Variables: political_authority = ordered_logistic 
+           religious_authority = ordered_logistic 
+     Data: authority$data (Number of observations: 97)
+Phylogeny: authority_multiphylo (Number of trees: 5)
+    Draws: 4 chains, each with iter = 2000; warmup = 2000; thin = 1
+           total post-warmup draws = 8000
+
+Autoregressive selection effects:
+                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority    -0.63      0.51 -1.88 -0.02 1.00     7062     3695
+religious_authority    -0.69      0.54 -2.04 -0.03 1.00     8325     5335
+
+Cross selection effects:
+                                          Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority ⟶ religious_authority     2.32      1.06 0.61  4.66 1.00     4224     5591
+religious_authority ⟶ political_authority     2.16      0.99 0.52  4.33 1.00     2651     5819
+
+Drift parameters:
+                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+sd(political_authority)                          0.83      0.67  0.03  2.45 1.00     3619     5184
+sd(religious_authority)                          0.78      0.61  0.03  2.28 1.00     4586     5388
+cor(political_authority,religious_authority)     0.01      0.34 -0.63  0.65 1.00     6064     6033
+
+Continuous time intercept parameters:
+                    Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority     0.48      0.86 -1.24  2.14 1.00    13415     5871
+religious_authority     0.58      0.89 -1.10  2.30 1.00     2540      598
+
+Ordinal cutpoint parameters:
+                       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority[1]    -1.62      0.91 -3.45  0.07 1.00     5186     6187
+political_authority[2]    -0.82      0.87 -2.56  0.83 1.00     7068     6249
+political_authority[3]     1.90      0.91  0.18  3.73 1.00    11570     6524
+religious_authority[1]    -2.05      0.92 -3.88 -0.31 1.00     2223      363
+religious_authority[2]    -1.30      0.88 -3.19  0.41 1.00     1672      328
+religious_authority[3]     1.67      0.97 -0.17  3.67 1.00     1778      349
+```
+
+```
+Warning: There were 107 divergent transitions after warmup.
+http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+```
+
+The summary output correctly shows that we averaged over five trees.
+
+Note that with more trees, users should expect the computation time for these
+models to increase. If models are taking too long to fit with `cmdstanr`, users
+could try fitting the model with `nuts_sampler = "nutpie"`, as this approach
+parallelises over trees more efficiently than Stan.

@@ -400,7 +400,7 @@ run_checks_pred_series <- function(object, eta_anc, intervention_values,
     }
     # stop if any values in intervention_values are not NA or numeric
     if (any(unlist(lapply(intervention_values,
-                          function(x) !is.na(x) & !is.numeric(x))))) {
+                          function(x) !is.na(x) && !is.numeric(x))))) {
       stop2("Values in 'intervention_values' must each be NA or numeric.")
     }
     # stop if all variables are held constant in intervention_values

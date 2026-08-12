@@ -160,7 +160,7 @@ coev_calculate_theta <- function(object, intervention_values = NULL) {
     }
     # stop if any values in intervention_list are not NA or numeric
     if (any(unlist(lapply(intervention_values,
-                          function(x) !is.na(x) & !is.numeric(x))))) {
+                          function(x) !is.na(x) && !is.numeric(x))))) {
       stop2("Values in 'intervention_values' must each be NA or numeric.")
     }
     # stop if all variables are held constant in intervention_list

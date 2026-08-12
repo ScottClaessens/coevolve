@@ -7,19 +7,24 @@
 
 <!-- badges: start -->
 
-[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Project Status: Active – The project has reached a stable, usable
+state and is being actively
+developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![R-CMD-check](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions/workflows/R-CMD-check.yaml)
-[![Codecov test coverage](https://codecov.io/gh/ScottClaessens/coevolve/graph/badge.svg)](https://app.codecov.io/gh/ScottClaessens/coevolve)
+[![Codecov test
+coverage](https://codecov.io/gh/ScottClaessens/coevolve/graph/badge.svg)](https://app.codecov.io/gh/ScottClaessens/coevolve)
 [![lint](https://github.com/ScottClaessens/coevolve/actions/workflows/lint.yaml/badge.svg)](https://github.com/ScottClaessens/coevolve/actions?query=workflow%3Alint)
+[![Status at rOpenSci Software Peer
+Review](https://badges.ropensci.org/717_status.svg)](https://github.com/ropensci/software-review/issues/717)
 <!-- badges: end -->
 
 ## Overview
 
 The **coevolve** package allows the user to fit Bayesian generalized
 dynamic phylogenetic models in Stan. These models can be used to
-estimate how variables have coevolved over evolutionary time and to
-assess causal directionality (X → Y vs. Y → X) and contingencies (X,
-then Y) in evolution.
+estimate how traits have coevolved over evolutionary time and to assess
+causal directionality (X → Y vs. Y → X) and contingencies (X, then Y) in
+evolution.
 
 While existing methods only allow pairs of binary traits to coevolve
 (e.g.,
@@ -30,15 +35,7 @@ traits.
 
 ## Installation
 
-To use the **coevolve** package, you must first install the `cmdstanr`
-package (see full installation instructions here:
-<https://mc-stan.org/cmdstanr/>).
-
-``` r
-install.packages("cmdstanr", repos = c("https://mc-stan.org/r-packages/", getOption("repos")))
-```
-
-You can then install the development version of **coevolve** with:
+You can install the development version of **coevolve** with:
 
 ``` r
 # install.packages("devtools")
@@ -78,15 +75,15 @@ fit <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 1 finished in 441.6 seconds.
-#> Chain 2 finished in 582.9 seconds.
-#> Chain 3 finished in 621.8 seconds.
-#> Chain 4 finished in 626.9 seconds.
+#> Chain 3 finished in 256.2 seconds.
+#> Chain 4 finished in 262.9 seconds.
+#> Chain 1 finished in 354.9 seconds.
+#> Chain 2 finished in 361.1 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 568.3 seconds.
-#> Total execution time: 627.2 seconds.
-#> Warning: 22 of 4000 (1.0%) transitions ended with a divergence.
+#> Mean chain execution time: 308.8 seconds.
+#> Total execution time: 361.2 seconds.
+#> Warning: 7 of 4000 (0.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
 
@@ -103,34 +100,34 @@ summary(fit)
 #> 
 #> Autoregressive selection effects:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority    -0.67      0.53 -1.99 -0.03 1.00     2120     1768
-#> religious_authority    -0.78      0.59 -2.20 -0.03 1.00     2260     1766
+#> political_authority    -0.64      0.53 -1.96 -0.02 1.00     2282     2149
+#> religious_authority    -0.81      0.57 -2.16 -0.04 1.00     2639     2106
 #> 
 #> Cross selection effects:
 #>                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority ⟶ religious_authority     2.32      1.03  0.38  4.45 1.00     1567     1971
-#> religious_authority ⟶ political_authority     1.82      1.11 -0.28  4.07 1.00     1288     2124
+#> political_authority ⟶ religious_authority     2.34      0.96  0.42  4.29 1.01     1508     1853
+#> religious_authority ⟶ political_authority     1.68      1.08 -0.42  3.83 1.00     1067     2030
 #> 
 #> Drift parameters:
 #>                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> sd(political_authority)                          1.95      0.83  0.27  3.50 1.01      801     1193
-#> sd(religious_authority)                          1.29      0.80  0.06  2.94 1.00      761     1327
-#> cor(political_authority,religious_authority)     0.26      0.32 -0.44  0.78 1.00     2732     2641
+#> sd(political_authority)                          2.01      0.83  0.25  3.60 1.01      643      602
+#> sd(religious_authority)                          1.25      0.79  0.08  2.96 1.02      734     1737
+#> cor(political_authority,religious_authority)     0.26      0.31 -0.41  0.77 1.00     2760     2512
 #> 
 #> Continuous time intercept parameters:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority     0.21      0.95 -1.56  2.09 1.00     4088     1162
-#> religious_authority     0.21      0.94 -1.65  2.06 1.00     5112     2655
+#> political_authority     0.23      0.94 -1.60  2.07 1.00     4889     2814
+#> religious_authority     0.31      0.94 -1.51  2.19 1.00     5071     2710
 #> 
 #> Ordinal cutpoint parameters:
 #>                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority[1]    -1.31      0.91 -3.12  0.51 1.00     2736     2683
-#> political_authority[2]    -0.56      0.89 -2.32  1.24 1.00     3129     2891
-#> political_authority[3]     1.64      0.92 -0.10  3.55 1.00     3268     2956
-#> religious_authority[1]    -1.53      0.92 -3.31  0.24 1.00     3019     3066
-#> religious_authority[2]    -0.84      0.90 -2.59  0.94 1.00     3329     3051
-#> religious_authority[3]     1.60      0.95 -0.17  3.51 1.00     3205     3102
-#> Warning: There were 22 divergent transitions after warmup.
+#> political_authority[1]    -1.32      0.88 -3.05  0.43 1.00     2746     2770
+#> political_authority[2]    -0.57      0.86 -2.28  1.14 1.00     3083     2967
+#> political_authority[3]     1.63      0.88 -0.06  3.48 1.00     3629     3113
+#> religious_authority[1]    -1.50      0.92 -3.28  0.31 1.00     3289     2605
+#> religious_authority[2]    -0.81      0.91 -2.59  0.96 1.00     3582     2759
+#> religious_authority[3]     1.63      0.92 -0.12  3.49 1.00     3786     3337
+#> Warning: There were 7 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
@@ -156,8 +153,8 @@ of one variable which results from a one median absolute deviation
 increase in another variable.
 
 ``` r
-coev_plot_delta_theta(fit)
-#> Warning: Removed 235 rows containing non-finite outside the scale range (`stat_density()`).
+coev_plot_delta_theta(fit, prob_outer = 0.90)
+#> Warning: Removed 518 rows containing non-finite outside the scale range (`stat_density()`).
 ```
 
 <img src="man/figures/README-authority-delta-theta-1.png" alt="Plot showing the posterior distributions of delta theta for both directions of coevolution between political and religious authority. The bulk of the posterior densities are greater than zero." width="60%" style="display: block; margin: auto;" />
@@ -168,47 +165,12 @@ an increase in the optimal trait value for religious authority, and vice
 versa. In other words, these two variables reciprocally coevolve over
 evolutionary time.
 
-### Optional: Using nutpie as an alternative sampler
+## Further resources
 
-The **coevolve** package supports using `nutpie` as an alternative 
-high-performance sampler. To use nutpie:
-
-1. **Install nutpie** in a Python environment:
-
-   ```bash
-   pip install "nutpie[stan]"
-   ```
-
-2. **Configure reticulate** to use the Python environment with nutpie installed.
-   Choose one of the following options:
-
-   **Option A: Set environment variable** (recommended for reproducibility):
-   ```bash
-   export RETICULATE_PYTHON=/path/to/python
-   ```
-   Or in R:
-   ```r
-   Sys.setenv(RETICULATE_PYTHON = "/path/to/python")
-   ```
-
-   **Option B: Use virtual environment**:
-   ```r
-   reticulate::use_virtualenv("~/.venvs/nutpie-env")
-   ```
-
-   **Option C: Use Python directly**:
-   ```r
-   reticulate::use_python("/path/to/python")
-   ```
-
-3. **Use nutpie** by setting `backend = "nutpie"` in `coev_fit()`:
-   ```r
-   fit <- coev_fit(..., backend = "nutpie")
-   ```
-
-**Note**: Explicit configuration is required to ensure reproducibility and avoid
-version conflicts. The package does not automatically search for nutpie 
-installations.
+- [Introductory
+  vignettes](https://scottclaessens.github.io/coevolve/articles/)
+- [Methods paper](https://doi.org/10.1111/2041-210x.70303)
+- [Lecture and R workshop](https://www.youtube.com/watch?v=9dsTeVflA1s)
 
 ## Citing coevolve
 
@@ -218,8 +180,7 @@ When using the **coevolve** package, please cite the following papers:
   methods reveal that resource-use intensification drives the evolution
   of “complex” societies. *EcoEvoRXiv*.
   <https://doi.org/10.32942/osf.io/wfp95>
-- Sheehan, O., Watts, J., Gray, R. D., Bulbulia, J., Claessens, S.,
-  Ringen, E. J., & Atkinson, Q. D. (2023). Coevolution of religious and
-  political authority in Austronesian societies. *Nature Human
-  Behaviour*, *7*(1), 38-45.
-  <https://doi.org/10.1038/s41562-022-01471-y>
+- Ringen, E., Claessens, S., Martin, J. S., & Jaeggi, A. V. (2026).
+  Trait coevolution and causal inference using generalized dynamic
+  phylogenetic models. *Methods in Ecology and Evolution*, *17*(6),
+  1818-1836. <https://doi.org/10.1111/2041-210x.70303>

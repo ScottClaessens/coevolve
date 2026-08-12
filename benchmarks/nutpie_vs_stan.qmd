@@ -1,0 +1,408 @@
+---
+title: "Benchmark: nutpie (JAX) vs nutpie (BridgeStan) vs Stan"
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  warning: false
+  message: false
+---
+
+```{r setup}
+devtools::load_all()
+library(ape)
+library(posterior)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+theme_set(theme_minimal(base_size = 14))
+
+# Sampling settings
+N_CHAINS  <- 4L
+N_WARMUP  <- 500L
+N_SAMPLES <- 2000L
+SEED      <- 42L
+```
+
+## Overview
+
+We benchmark three sampling backends across all vignette models that the JAX
+backend supports:
+
+1. **Stan** (`nuts_sampler = "stan"`) — CmdStan's built-in NUTS sampler
+2. **nutpie/JAX** (`nuts_sampler = "nutpie"`) — pure JAX log-density + nutpie
+3. **nutpie/BridgeStan** — compiled Stan model sampled via nutpie through
+   BridgeStan (legacy approach, run separately on the `main` branch via
+   `benchmarks/bench_bridgestan.R`)
+
+For each model and backend we record wall-clock sampling time and the
+per-parameter bulk/tail effective sample sizes.
+
+Models:
+
+1. **Authority** — ordered logistic (97 taxa)
+2. **Primates** — gamma-log with missing data (21 taxa)
+3. **Repeated measures** — normal with repeated obs (20 taxa, 100 obs)
+4. **MultiPhylo** — ordered logistic, phylogenetic uncertainty (97 taxa, 2 trees)
+5. **Measurement error** — normal with known SE (20 taxa)
+6. **Exact GP** — ordered logistic + spatial control via full GP (97 taxa)
+7. **HSGP** — ordered logistic + spatial control via Hilbert-space approximate GP (97 taxa, `dist_k=5`)
+
+## Helper functions
+
+```{r helpers}
+fit_and_summarise <- function(model_name, ..., nuts_sampler) {
+  t0 <- proc.time()[3]
+  fit <- coev_fit(
+    ...,
+    nuts_sampler    = nuts_sampler,
+    chains          = N_CHAINS,
+    parallel_chains = N_CHAINS,
+    iter_warmup     = N_WARMUP,
+    iter_sampling   = N_SAMPLES,
+    seed            = SEED
+  )
+  elapsed <- proc.time()[3] - t0
+
+  # Both CmdStanMCMC and jax_fit have $summary()
+  summ <- fit$fit$summary()
+
+  data.frame(
+    model    = model_name,
+    backend  = nuts_sampler,
+    variable = summ$variable,
+    ess_bulk = summ$ess_bulk,
+    ess_tail = summ$ess_tail,
+    rhat     = summ$rhat,
+    elapsed  = elapsed
+  )
+}
+```
+
+## 1. Authority
+
+```{r authority}
+auth_stan <- fit_and_summarise(
+  "authority",
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  prior = list(A_offdiag = "normal(0, 2)"),
+  nuts_sampler = "stan"
+)
+
+auth_nutpie <- fit_and_summarise(
+  "authority",
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  prior = list(A_offdiag = "normal(0, 2)"),
+  nuts_sampler = "nutpie"
+)
+```
+
+## 2. Primates (gamma-log, missing data)
+
+```{r primates}
+primates_data <- primates$data[primates$data$clade == "Lemuriformes", ]
+primates_phylogeny <- keep.tip(primates$phylogeny, primates_data$species)
+
+prim_stan <- fit_and_summarise(
+  "primates",
+  data = primates_data,
+  variables = list(
+    brain_weight = "gamma_log",
+    group_size   = "gamma_log"
+  ),
+  id = "species",
+  tree = primates_phylogeny,
+  nuts_sampler = "stan"
+)
+
+prim_nutpie <- fit_and_summarise(
+  "primates",
+  data = primates_data,
+  variables = list(
+    brain_weight = "gamma_log",
+    group_size   = "gamma_log"
+  ),
+  id = "species",
+  tree = primates_phylogeny,
+  nuts_sampler = "nutpie"
+)
+```
+
+## 3. Repeated measures
+
+```{r repeated}
+rep_stan <- fit_and_summarise(
+  "repeated",
+  data = repeated$data,
+  variables = list(x = "normal", y = "normal"),
+  id = "species",
+  tree = repeated$phylogeny,
+  nuts_sampler = "stan"
+)
+
+rep_nutpie <- fit_and_summarise(
+  "repeated",
+  data = repeated$data,
+  variables = list(x = "normal", y = "normal"),
+  id = "species",
+  tree = repeated$phylogeny,
+  nuts_sampler = "nutpie"
+)
+```
+
+## 4. MultiPhylo (phylogenetic uncertainty)
+
+```{r multiphylo}
+authority_multiphylo <- c(authority$phylogeny, authority$phylogeny)
+
+multi_stan <- fit_and_summarise(
+  "multiphylo",
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority_multiphylo,
+  prior = list(A_offdiag = "normal(0, 2)"),
+  nuts_sampler = "stan"
+)
+
+multi_nutpie <- fit_and_summarise(
+  "multiphylo",
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority_multiphylo,
+  prior = list(A_offdiag = "normal(0, 2)"),
+  nuts_sampler = "nutpie"
+)
+```
+
+## 5. Measurement error
+
+```{r measurement-error}
+set.seed(123)
+n_me <- 20
+tree_me <- rcoal(n_me)
+d_me <- data.frame(
+  id   = tree_me$tip.label,
+  x    = rnorm(n_me),
+  y    = rnorm(n_me),
+  x_se = rexp(n_me, 5),
+  y_se = rexp(n_me, 5)
+)
+
+me_stan <- fit_and_summarise(
+  "measurement_error",
+  data = d_me,
+  variables = list(x = "normal", y = "normal"),
+  id = "id",
+  tree = tree_me,
+  measurement_error = list(x = "x_se", y = "y_se"),
+  nuts_sampler = "stan"
+)
+
+me_nutpie <- fit_and_summarise(
+  "measurement_error",
+  data = d_me,
+  variables = list(x = "normal", y = "normal"),
+  id = "id",
+  tree = tree_me,
+  measurement_error = list(x = "x_se", y = "y_se"),
+  nuts_sampler = "nutpie"
+)
+```
+
+## 6. Exact GP (spatial control)
+
+```{r exact-gp}
+gp_stan <- fit_and_summarise(
+  "exact_gp",
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  lon_lat = authority$coordinates,
+  prior = list(A_offdiag = "normal(0, 2)"),
+  nuts_sampler = "stan"
+)
+
+gp_nutpie <- fit_and_summarise(
+  "exact_gp",
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  lon_lat = authority$coordinates,
+  prior = list(A_offdiag = "normal(0, 2)"),
+  nuts_sampler = "nutpie"
+)
+```
+
+## 7. HSGP (approximate GP, spatial control)
+
+```{r hsgp}
+hsgp_stan <- fit_and_summarise(
+  "hsgp",
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  lon_lat = authority$coordinates,
+  dist_k = 5,
+  prior = list(A_offdiag = "normal(0, 2)"),
+  nuts_sampler = "stan"
+)
+
+hsgp_nutpie <- fit_and_summarise(
+  "hsgp",
+  data = authority$data,
+  variables = list(
+    political_authority = "ordered_logistic",
+    religious_authority = "ordered_logistic"
+  ),
+  id = "language",
+  tree = authority$phylogeny,
+  lon_lat = authority$coordinates,
+  dist_k = 5,
+  prior = list(A_offdiag = "normal(0, 2)"),
+  nuts_sampler = "nutpie"
+)
+```
+
+## Combine and save results
+
+```{r save-results}
+# Stan + JAX results from this run
+jax_stan_ess <- bind_rows(
+  auth_stan, auth_nutpie,
+  prim_stan, prim_nutpie,
+  rep_stan, rep_nutpie,
+  multi_stan, multi_nutpie,
+  me_stan, me_nutpie,
+  gp_stan, gp_nutpie,
+  hsgp_stan, hsgp_nutpie
+)
+
+# BridgeStan results pre-computed on main via bench_bridgestan.R
+bs_ess <- read.csv("nutpie_bs_ess.csv")
+
+all_ess <- bind_rows(jax_stan_ess, bs_ess)
+
+# Nicer labels for plotting
+all_ess <- all_ess |>
+  mutate(backend = factor(
+    backend,
+    levels = c("stan", "nutpie_bs", "nutpie"),
+    labels = c("Stan", "nutpie (BridgeStan)", "nutpie (JAX)")
+  ))
+
+saveRDS(all_ess, "nutpie_vs_stan_ess.rds")
+write.csv(all_ess, "nutpie_vs_stan_ess.csv", row.names = FALSE)
+```
+
+## Results
+
+### Wall-clock time
+
+```{r plot-time, fig.width=8, fig.height=4}
+time_df <- all_ess |>
+  distinct(model, backend, elapsed)
+
+ggplot(time_df, aes(x = model, y = elapsed, fill = backend)) +
+  geom_col(position = "dodge") +
+  labs(y = "Wall-clock time (seconds)", x = NULL, fill = "Backend") +
+  scale_fill_manual(values = c(
+    "Stan" = "#4575b4",
+    "nutpie (BridgeStan)" = "#fdae61",
+    "nutpie (JAX)" = "#d73027"
+  ))
+```
+
+### ESS distributions
+
+```{r plot-ess-bulk, fig.width=9, fig.height=5}
+ggplot(all_ess, aes(x = backend, y = ess_bulk, fill = backend)) +
+  geom_violin(alpha = 0.6, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  facet_wrap(~model, scales = "free_y") +
+  labs(y = "Bulk ESS", x = NULL) +
+  scale_fill_manual(values = c(
+    "Stan" = "#4575b4",
+    "nutpie (BridgeStan)" = "#fdae61",
+    "nutpie (JAX)" = "#d73027"
+  )) +
+  theme(legend.position = "none")
+```
+
+```{r plot-ess-tail, fig.width=9, fig.height=5}
+ggplot(all_ess, aes(x = backend, y = ess_tail, fill = backend)) +
+  geom_violin(alpha = 0.6, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  facet_wrap(~model, scales = "free_y") +
+  labs(y = "Tail ESS", x = NULL) +
+  scale_fill_manual(values = c(
+    "Stan" = "#4575b4",
+    "nutpie (BridgeStan)" = "#fdae61",
+    "nutpie (JAX)" = "#d73027"
+  )) +
+  theme(legend.position = "none")
+```
+
+### ESS per second
+
+```{r plot-ess-per-sec, fig.width=9, fig.height=5}
+all_ess |>
+  mutate(ess_bulk_per_sec = ess_bulk / elapsed) |>
+  ggplot(aes(x = backend, y = ess_bulk_per_sec, fill = backend)) +
+  geom_violin(alpha = 0.6, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  facet_wrap(~model, scales = "free_y") +
+  labs(y = "Bulk ESS / second", x = NULL) +
+  scale_fill_manual(values = c(
+    "Stan" = "#4575b4",
+    "nutpie (BridgeStan)" = "#fdae61",
+    "nutpie (JAX)" = "#d73027"
+  )) +
+  theme(legend.position = "none")
+```
+
+### Summary table
+
+```{r summary-table}
+all_ess |>
+  group_by(model, backend) |>
+  summarise(
+    elapsed       = first(elapsed),
+    median_ess    = median(ess_bulk, na.rm = TRUE),
+    min_ess       = min(ess_bulk, na.rm = TRUE),
+    median_ess_s  = median(ess_bulk / elapsed, na.rm = TRUE),
+    max_rhat      = max(rhat, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  knitr::kable(digits = 1)
+```

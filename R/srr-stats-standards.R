@@ -17,7 +17,6 @@ NULL
 #'   result in lost data
 #' @srrstatsNA {G2.14a} NAs are important information, and so the package does
 #'   not error when they are present
-#' @srrstatsNA {G3.0} The package does not compare floating points for equality
 #' @srrstatsNA {G5.0} This package is designed to be used with specific data
 #'   (i.e., phylogenetic data) so NIST datasets would not be applicable
 #' @srrstatsNA {G5.4b} This package is not a new implementation of an existing
