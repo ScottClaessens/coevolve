@@ -2,6 +2,7 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
+  ancestral_states: ancestral_states.html
   coevolve: coevolve.html
   compare: compare.html
   jax: jax.html
@@ -9,7 +10,7 @@ articles:
   multiphylo: multiphylo.html
   repeated: repeated.html
   spatial: spatial.html
-last_built: 2026-07-28T09:56Z
+last_built: 2026-08-12T10:23Z
 urls:
   reference: https://scottclaessens.github.io/coevolve/reference
   article: https://scottclaessens.github.io/coevolve/articles
