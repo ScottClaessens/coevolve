@@ -5,7 +5,7 @@ output:
     toc: true
 pkgdown:
   as_is: true
-date: "2026-07-22"
+date: "2026-08-19"
 author: "Scott Claessens"
 vignette: >
   %\VignetteIndexEntry{Introduction to the coevolve package}
@@ -29,15 +29,39 @@ generalized dynamic phylogenetic model to traits given the phylogenetic
 relationships among taxa. The model allows the user to determine whether
 evolutionary change in one trait precedes evolutionary change in another trait.
 
-A full description of the model can be found in
-[this paper](https://doi.org/10.1111/2041-210x.70303). Briefly, the model
-represents observed variables as latent variables that are allowed to coevolve
-along an evolutionary time series. Coevolution unfolds according to a stochastic
-differential equation similar to an Ornstein-Uhlenbeck process, which contains
-both "selection" (tendency towards an optimum value) and "drift" (exogenous
-Gaussian noise) components. Change in the latent variables depend upon all other
-latent variables in the model and themselves, allowing users to assess the
-directional influence of one variable on future change in another variable.
+Under the hood, the package estimates the parameters of the following stochastic
+differential equation along the branches of a phylogenetic tree. The equation
+partitions evolutionary change in the traits into state-dependent deterministic
+selection and state-independent Brownian motion, similar to a multivariate
+Ornstein-Uhlenbeck process:
+
+$$
+d\pmb{\eta}(t) = (\textbf{A}\pmb{\eta}(t) + \textbf{b}) + \textbf{G}dW(t)
+$$
+
+$\pmb{\eta}(t)$ is a vector of latent variables at time $t$. The matrix
+$\textbf{A}$ represents "selection" with strictly negative autoregressive terms
+on the diagonal. Off-diagonals may be positive or negative, controlling the
+effect of each trait on the others (e.g., $\textbf{A}[2,1]$ represents the
+effect of $\eta_1$ on $\eta_2$). $\textbf{b}$ is a vector of continuous time
+intercepts. The matrix $\textbf{G}$ is the Cholesky decomposition of the
+positive semi-definite "drift" covariance matrix $\textbf{Q}$ which scales the
+Brownian motion process $W(t)$.
+
+The following observation-level measurement model then links $\pmb{\eta}$ to
+the observations at the tips of the tree:
+
+$$
+y_{[n,j]} \sim f(\mu_{[n,j]}, {\phi}_{[j]}) \\
+g(\mu_{[n,j]}) = \pmb{\eta}_{[n]}
+$$
+
+$y_{[n,j]}$ denotes the observed value for trait $j$ from species or population
+$n$ at the tips of a phylogeny. $f()$ is a probability density or mass function
+with expected value $\mu$ and additional distributional parameters $\pmb{\phi}$.
+$g()$ denotes a link function, which transforms the expected value from the
+support of the function $f()$ latent values to the unbounded continuous space of
+the evolutionary process.
 
 Similar dynamic coevolutionary models are offered in programs like BayesTraits
 (see [here](http://www.evolution.reading.ac.uk/BayesTraitsV4.1.1/BayesTraitsV4.1.1.html)).
@@ -46,6 +70,9 @@ However, these models are limited to a small number of discrete traits. The
 coevolutionary effects between any number of variables and a much wider range of
 response distributions, including continuous, binary, ordinal, and count
 distributions.
+
+For more information about the model, refer to the introductory methods paper
+[here](https://doi.org/10.1111/2041-210x.70303).
 
 ## A working example
 
@@ -111,14 +138,14 @@ fit <-
 ```
 Running MCMC with 4 parallel chains...
 
-Chain 3 finished in 552.2 seconds.
-Chain 4 finished in 639.2 seconds.
-Chain 1 finished in 696.3 seconds.
-Chain 2 finished in 726.0 seconds.
+Chain 3 finished in 515.0 seconds.
+Chain 4 finished in 665.3 seconds.
+Chain 1 finished in 690.4 seconds.
+Chain 2 finished in 714.4 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 653.4 seconds.
-Total execution time: 726.1 seconds.
+Mean chain execution time: 646.3 seconds.
+Total execution time: 714.5 seconds.
 ```
 
 The function takes several arguments, including a dataset, a named list of
@@ -150,22 +177,15 @@ political_authority    -0.65      0.52 -1.95 -0.03 1.00     4343     4203
 religious_authority    -0.79      0.59 -2.15 -0.03 1.00     5225     3876
 
 Cross selection effects:
-                                          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS
-political_authority ⟶ religious_authority     2.33      0.98  0.44  4.29 1.00     3328
-religious_authority ⟶ political_authority     1.74      1.09 -0.32  3.91 1.00     2109
-                                          Tail_ESS
-political_authority ⟶ religious_authority     3594
-religious_authority ⟶ political_authority     4686
+                                          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority ⟶ religious_authority     2.33      0.98  0.44  4.29 1.00     3328     3594
+religious_authority ⟶ political_authority     1.74      1.09 -0.32  3.91 1.00     2109     4686
 
 Drift parameters:
-                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS
-sd(political_authority)                          1.98      0.84  0.21  3.54 1.00     1272
-sd(religious_authority)                          1.25      0.79  0.06  2.92 1.00     1640
-cor(political_authority,religious_authority)     0.25      0.31 -0.42  0.77 1.00     4837
-                                             Tail_ESS
-sd(political_authority)                          1261
-sd(religious_authority)                          3283
-cor(political_authority,religious_authority)     5973
+                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+sd(political_authority)                          1.98      0.84  0.21  3.54 1.00     1272     1261
+sd(religious_authority)                          1.25      0.79  0.06  2.92 1.00     1640     3283
+cor(political_authority,religious_authority)     0.25      0.31 -0.42  0.77 1.00     4837     5973
 
 Continuous time intercept parameters:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS

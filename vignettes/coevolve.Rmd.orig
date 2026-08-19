@@ -42,15 +42,39 @@ generalized dynamic phylogenetic model to traits given the phylogenetic
 relationships among taxa. The model allows the user to determine whether
 evolutionary change in one trait precedes evolutionary change in another trait.
 
-A full description of the model can be found in
-[this paper](https://doi.org/10.1111/2041-210x.70303). Briefly, the model
-represents observed variables as latent variables that are allowed to coevolve
-along an evolutionary time series. Coevolution unfolds according to a stochastic
-differential equation similar to an Ornstein-Uhlenbeck process, which contains
-both "selection" (tendency towards an optimum value) and "drift" (exogenous
-Gaussian noise) components. Change in the latent variables depend upon all other
-latent variables in the model and themselves, allowing users to assess the
-directional influence of one variable on future change in another variable.
+Under the hood, the package estimates the parameters of the following stochastic
+differential equation along the branches of a phylogenetic tree. The equation
+partitions evolutionary change in the traits into state-dependent deterministic
+selection and state-independent Brownian motion, similar to a multivariate
+Ornstein-Uhlenbeck process:
+
+$$
+d\pmb{\eta}(t) = (\textbf{A}\pmb{\eta}(t) + \textbf{b}) + \textbf{G}dW(t)
+$$
+
+$\pmb{\eta}(t)$ is a vector of latent variables at time $t$. The matrix
+$\textbf{A}$ represents "selection" with strictly negative autoregressive terms
+on the diagonal. Off-diagonals may be positive or negative, controlling the
+effect of each trait on the others (e.g., $\textbf{A}[2,1]$ represents the
+effect of $\eta_1$ on $\eta_2$). $\textbf{b}$ is a vector of continuous time
+intercepts. The matrix $\textbf{G}$ is the Cholesky decomposition of the
+positive semi-definite "drift" covariance matrix $\textbf{Q}$ which scales the
+Brownian motion process $W(t)$.
+
+The following observation-level measurement model then links $\pmb{\eta}$ to
+the observations at the tips of the tree:
+
+$$
+y_{[n,j]} \sim f(\mu_{[n,j]}, {\phi}_{[j]}) \\
+g(\mu_{[n,j]}) = \pmb{\eta}_{[n]}
+$$
+
+$y_{[n,j]}$ denotes the observed value for trait $j$ from species or population
+$n$ at the tips of a phylogeny. $f()$ is a probability density or mass function
+with expected value $\mu$ and additional distributional parameters $\pmb{\phi}$.
+$g()$ denotes a link function, which transforms the expected value from the
+support of the function $f()$ latent values to the unbounded continuous space of
+the evolutionary process.
 
 Similar dynamic coevolutionary models are offered in programs like BayesTraits
 (see [here](http://www.evolution.reading.ac.uk/BayesTraitsV4.1.1/BayesTraitsV4.1.1.html)).
@@ -59,6 +83,9 @@ However, these models are limited to a small number of discrete traits. The
 coevolutionary effects between any number of variables and a much wider range of
 response distributions, including continuous, binary, ordinal, and count
 distributions.
+
+For more information about the model, refer to the introductory methods paper
+[here](https://doi.org/10.1111/2041-210x.70303).
 
 ## A working example
 
