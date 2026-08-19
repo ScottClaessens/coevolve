@@ -71,7 +71,10 @@ where \eqn{\alpha} represents the intercepts, \eqn{\beta} represents the
 selection matrix, and \eqn{\epsilon} represents the vector of drift
 parameters. With some probability \eqn{p}, a speciation event creates two
 independent evolutionary branches. This simulation continues until the
-intended sample size of species has been reached.
+intended sample size of species has been reached. Note: this VAR(1) model
+is not the same as the generalized dynamic phylogenetic model that is
+estimated by the coev_fit() function (see the introductory vignette for
+mathematical details of generalized dynamic phylogenetic models).
 }
 \examples{
 # simulate coevolution of x and y
