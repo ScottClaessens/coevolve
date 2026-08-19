@@ -141,8 +141,9 @@ variables that we would like to coevolve in the model (along with their
 associated response distributions), the column in the dataset that links to
 the phylogeny tip labels, and a phylogeny of class `phylo`. The function sets
 priors for the parameters by default, but it is possible for the user to
-manually set these priors. The user can also pass additional arguments to
-cmdstanr's `sample()` method which runs under the hood.
+manually set these priors (see the [vignette on setting priors](priors.html)
+for more details). The user can also pass additional arguments to cmdstanr's
+`sample()` method which runs under the hood.
 
 Once the model has fitted, we can print a summary of the parameters.
 

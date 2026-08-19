@@ -1,0 +1,132 @@
+---
+title: "Setting manual priors"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+pkgdown:
+  as_is: true
+date: "`r Sys.Date()`"
+author: "Scott Claessens"
+vignette: >
+  %\VignetteIndexEntry{Setting manual priors}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
+options(width = 120)
+knitr::opts_chunk$set(
+  comment = NA,
+  fig.path = "vignettes/",
+  dev = "png",
+  dpi = 150,
+  fig.asp = 0.8,
+  out.width = "60%",
+  fig.align = "center",
+  fig.cap = ""
+  )
+library(pander)
+```
+
+## Introduction
+
+This vignette describes how to set manual priors on parameters with the
+**coevolve** package. It describes the default priors that are used by the
+package and how users can specify their own priors.
+
+## Default priors
+
+If the user does not explicitly declare any priors using the `prior` argument in
+`coev_fit()`, then the model will default to the following priors:
+
+```{r default-priors, echo=FALSE, results='asis'}
+tabl <- "
+| Parameter label   | Parameter description                     | Default prior          | Constraint |
+|-------------------|-------------------------------------------|------------------------|------------|
+| `A_diag`          | Autoregressive selection effects          | `std_normal()`         | Negative   |
+| `A_offdiag`       | Cross selection effects                   | `std_normal()`         |            |
+| `L_R`             | Cholesky factor for drift matrix          | `lkj_corr_cholesky(4)` |            |
+| `Q_sigma`         | Drift standard deviations                 | `std_normal()`         | Positive   |
+| `eta_anc`         | Root ancestral states                     | `std_normal()`         |            |
+| `c`               | Ordinal cutpoints                         | `normal(0, 2)`         |            |
+| `shape`           | Shape parameters (gamma distribution)     | `gamma(0.01, 0.01)`    | Positive   |
+| `sigma_dist`      | Standard deviations for spatial GPs       | `exponential(1)`       | Positive   |
+| `rho_dist`        | Rho parameters for spatial GPs            | `exponential(5)`       | Positive   |
+| `sigma_residual`  | Residual standard deviations              | `exponential(1)`       | Positive   |
+| `L_residual`      | Cholesky factor for residual correlations | `lkj_corr_cholesky(4)` |            |
+"
+cat(tabl)
+```
+
+In addition, the default prior for `phi` (the overdispersion parameter for the
+negative-binomial distribution) is scaled automatically based on the variance of
+the data.
+
+These default priors were chosen to be weakly regularising, which improves model
+fitting and conservatism in parameter estimates. However, we recommend that
+users assess the suitability of these default priors by fitting the model with
+`coev_fit(..., prior_only = TRUE)` and then plotting prior predictive checks for
+all variables using the `coev_plot_predictive_check()` function.
+
+## Setting manual priors
+
+When the package writes the underlying Stan code for the model, it sets these
+default priors in the model block. For example, we can extract the section of
+the Stan code that sets the priors from an example model:
+
+```{r print-stan-default-priors, warning=FALSE, message=FALSE}
+# generate the stan code with default priors
+stan_code_default <-
+  coev_make_stancode(
+    data = authority$data,
+    variables = list(
+      religious_authority = "ordered_logistic",
+      political_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny
+  )
+
+# extract the priors section from the model block
+cat(substr(stan_code_default, 8739, 9088))
+```
+
+If we wanted to set manual priors to replace some of these, we need only declare
+our manual priors as Stan-readable strings using the `prior` argument. This
+argument accepts a named list of priors for the model:
+
+```{r print-stan-manual-priors, warning=FALSE, message=FALSE}
+# generate the stan code with manual priors
+stan_code_manual <-
+  coev_make_stancode(
+    data = authority$data,
+    variables = list(
+      religious_authority = "ordered_logistic",
+      political_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    prior = list(
+      A_diag = "normal(0, 2.5)",
+      A_offdiag = "normal(0, 2.5)",
+      Q_sigma = "exponential(3)",
+      c = "normal(0, 3)"
+    )
+  )
+
+# extract the priors section from the model block
+cat(substr(stan_code_manual, 8739, 9093))
+```
+
+We could fit the model with these manual priors by setting the same `prior`
+argument when running the `coev_fit()` function.
+
+## Limitations on setting priors
+
+Because of the way the Stan code is written, priors are currently set globally.
+For example, it is not possible to set one prior for one cross-selection effect
+and a different prior for another cross-selection effect. Users must set a
+global prior for all cross-selection effects by setting
+`prior = list(A_offdiag = ...)`. To set different priors for different
+parameters, we recommend that users generate the Stan code and modify
+it manually to suit their needs.

@@ -138,14 +138,14 @@ fit <-
 ```
 Running MCMC with 4 parallel chains...
 
-Chain 3 finished in 515.0 seconds.
-Chain 4 finished in 665.3 seconds.
-Chain 1 finished in 690.4 seconds.
-Chain 2 finished in 714.4 seconds.
+Chain 3 finished in 512.0 seconds.
+Chain 4 finished in 624.1 seconds.
+Chain 1 finished in 681.3 seconds.
+Chain 2 finished in 748.4 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 646.3 seconds.
-Total execution time: 714.5 seconds.
+Mean chain execution time: 641.4 seconds.
+Total execution time: 748.4 seconds.
 ```
 
 The function takes several arguments, including a dataset, a named list of
@@ -153,8 +153,9 @@ variables that we would like to coevolve in the model (along with their
 associated response distributions), the column in the dataset that links to
 the phylogeny tip labels, and a phylogeny of class `phylo`. The function sets
 priors for the parameters by default, but it is possible for the user to
-manually set these priors. The user can also pass additional arguments to
-cmdstanr's `sample()` method which runs under the hood.
+manually set these priors (see the [vignette on setting priors](priors.html)
+for more details). The user can also pass additional arguments to cmdstanr's
+`sample()` method which runs under the hood.
 
 Once the model has fitted, we can print a summary of the parameters.
 

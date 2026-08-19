@@ -1,6 +1,7 @@
 # Pre-compile vignettes that take a long time to run
 # see: https://ropensci.org/blog/2019/12/08/precompute-vignettes/
 knitr::knit("vignettes/coevolve.Rmd.orig",   "vignettes/coevolve.Rmd")
+knitr::knit("vignettes/priors.Rmd.orig",     "vignettes/priors.Rmd")
 knitr::knit("vignettes/missing.Rmd.orig",    "vignettes/missing.Rmd")
 knitr::knit("vignettes/repeated.Rmd.orig",   "vignettes/repeated.Rmd")
 knitr::knit("vignettes/multiphylo.Rmd.orig", "vignettes/multiphylo.Rmd")
@@ -17,6 +18,7 @@ edit_figure_paths <- function(file) {
   writeLines(lines, file)
 }
 edit_figure_paths("vignettes/coevolve.Rmd")
+edit_figure_paths("vignettes/priors.Rmd")
 edit_figure_paths("vignettes/missing.Rmd")
 edit_figure_paths("vignettes/repeated.Rmd")
 edit_figure_paths("vignettes/multiphylo.Rmd")

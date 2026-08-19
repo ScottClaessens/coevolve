@@ -54,6 +54,7 @@ articles:
 - title: All vignettes
   contents:
   - coevolve
+  - priors
   - missing
   - repeated
   - multiphylo
