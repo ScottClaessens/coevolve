@@ -10,6 +10,7 @@
 <url><loc>https://scottclaessens.github.io/coevolve/articles/jax.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/articles/missing.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/articles/multiphylo.html</loc></url>
+<url><loc>https://scottclaessens.github.io/coevolve/articles/priors.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/articles/repeated.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/articles/spatial.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/authors.html</loc></url>
@@ -37,6 +38,7 @@
 <url><loc>https://scottclaessens.github.io/coevolve/reference/index.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/metadata.jax_fit.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/metadata.nutpie_fit.html</loc></url>
+<url><loc>https://scottclaessens.github.io/coevolve/reference/pairs.coevfit.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/plot.coevfit.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/primates.html</loc></url>
 <url><loc>https://scottclaessens.github.io/coevolve/reference/print.coevfit.html</loc></url>

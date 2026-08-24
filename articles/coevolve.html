@@ -37,7 +37,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0</span>
       </span>
     </div>
 
@@ -80,7 +80,7 @@
                         <h4 data-toc-skip class="author">Scott
 Claessens</h4>
             
-            <h4 data-toc-skip class="date">2026-07-22</h4>
+            <h4 data-toc-skip class="date">2026-08-19</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/main/vignettes/coevolve.Rmd" class="external-link"><code>vignettes/coevolve.Rmd</code></a></small>
       <div class="hidden name"><code>coevolve.Rmd</code></div>
@@ -106,16 +106,40 @@ different features of the package.</p>
 model to traits given the phylogenetic relationships among taxa. The
 model allows the user to determine whether evolutionary change in one
 trait precedes evolutionary change in another trait.</p>
-<p>A full description of the model can be found in <a href="https://doi.org/10.1111/2041-210x.70303" class="external-link">this paper</a>. Briefly,
-the model represents observed variables as latent variables that are
-allowed to coevolve along an evolutionary time series. Coevolution
-unfolds according to a stochastic differential equation similar to an
-Ornstein-Uhlenbeck process, which contains both “selection” (tendency
-towards an optimum value) and “drift” (exogenous Gaussian noise)
-components. Change in the latent variables depend upon all other latent
-variables in the model and themselves, allowing users to assess the
-directional influence of one variable on future change in another
-variable.</p>
+<p>Under the hood, the package estimates the parameters of the following
+stochastic differential equation along the branches of a phylogenetic
+tree. The equation partitions evolutionary change in the traits into
+state-dependent deterministic selection and state-independent Brownian
+motion, similar to a multivariate Ornstein-Uhlenbeck process:</p>
+<p><span class="math display">\[
+d\pmb{\eta}(t) = (\textbf{A}\pmb{\eta}(t) + \textbf{b}) +
+\textbf{G}dW(t)
+\]</span></p>
+<p><span class="math inline">\(\pmb{\eta}(t)\)</span> is a vector of
+latent variables at time <span class="math inline">\(t\)</span>. The
+matrix <span class="math inline">\(\textbf{A}\)</span> represents
+“selection” with strictly negative autoregressive terms on the diagonal.
+Off-diagonals may be positive or negative, controlling the effect of
+each trait on the others (e.g., <span class="math inline">\(\textbf{A}[2,1]\)</span> represents the effect of
+<span class="math inline">\(\eta_1\)</span> on <span class="math inline">\(\eta_2\)</span>). <span class="math inline">\(\textbf{b}\)</span> is a vector of continuous time
+intercepts. The matrix <span class="math inline">\(\textbf{G}\)</span>
+is the Cholesky decomposition of the positive semi-definite “drift”
+covariance matrix <span class="math inline">\(\textbf{Q}\)</span> which
+scales the Brownian motion process <span class="math inline">\(W(t)\)</span>.</p>
+<p>The following observation-level measurement model then links <span class="math inline">\(\pmb{\eta}\)</span> to the observations at the
+tips of the tree:</p>
+<p><span class="math display">\[
+y_{[n,j]} \sim f(\mu_{[n,j]}, {\phi}_{[j]}) \\
+g(\mu_{[n,j]}) = \pmb{\eta}_{[n]}
+\]</span></p>
+<p><span class="math inline">\(y_{[n,j]}\)</span> denotes the observed
+value for trait <span class="math inline">\(j\)</span> from species or
+population <span class="math inline">\(n\)</span> at the tips of a
+phylogeny. <span class="math inline">\(f()\)</span> is a probability
+density or mass function with expected value <span class="math inline">\(\mu\)</span> and additional distributional
+parameters <span class="math inline">\(\pmb{\phi}\)</span>. <span class="math inline">\(g()\)</span> denotes a link function, which
+transforms the expected value from the support of the function <span class="math inline">\(f()\)</span> latent values to the unbounded
+continuous space of the evolutionary process.</p>
 <p>Similar dynamic coevolutionary models are offered in programs like
 BayesTraits (see <a href="http://www.evolution.reading.ac.uk/BayesTraitsV4.1.1/BayesTraitsV4.1.1.html" class="external-link">here</a>).
 However, these models are limited to a small number of discrete traits.
@@ -123,6 +147,8 @@ The <strong>coevolve</strong> package goes beyond these models by
 allowing the user to estimate coevolutionary effects between any number
 of variables and a much wider range of response distributions, including
 continuous, binary, ordinal, and count distributions.</p>
+<p>For more information about the model, refer to the introductory
+methods paper <a href="https://doi.org/10.1111/2041-210x.70303" class="external-link">here</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="a-working-example">A working example<a class="anchor" aria-label="anchor" href="#a-working-example"></a>
@@ -180,21 +206,22 @@ function.</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 3 finished in 552.2 seconds.
-Chain 4 finished in 639.2 seconds.
-Chain 1 finished in 696.3 seconds.
-Chain 2 finished in 726.0 seconds.
+Chain 3 finished in 512.0 seconds.
+Chain 4 finished in 624.1 seconds.
+Chain 1 finished in 681.3 seconds.
+Chain 2 finished in 748.4 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 653.4 seconds.
-Total execution time: 726.1 seconds.</code></pre>
+Mean chain execution time: 641.4 seconds.
+Total execution time: 748.4 seconds.</code></pre>
 <p>The function takes several arguments, including a dataset, a named
 list of variables that we would like to coevolve in the model (along
 with their associated response distributions), the column in the dataset
 that links to the phylogeny tip labels, and a phylogeny of class
 <code>phylo</code>. The function sets priors for the parameters by
-default, but it is possible for the user to manually set these priors.
-The user can also pass additional arguments to cmdstanr’s
+default, but it is possible for the user to manually set these priors
+(see the <a href="priors.html">vignette on setting priors</a> for more
+details). The user can also pass additional arguments to cmdstanr’s
 <code><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample()</a></code> method which runs under the hood.</p>
 <p>Once the model has fitted, we can print a summary of the
 parameters.</p>
@@ -213,22 +240,15 @@ political_authority    -0.65      0.52 -1.95 -0.03 1.00     4343     4203
 religious_authority    -0.79      0.59 -2.15 -0.03 1.00     5225     3876
 
 Cross selection effects:
-                                          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS
-political_authority ⟶ religious_authority     2.33      0.98  0.44  4.29 1.00     3328
-religious_authority ⟶ political_authority     1.74      1.09 -0.32  3.91 1.00     2109
-                                          Tail_ESS
-political_authority ⟶ religious_authority     3594
-religious_authority ⟶ political_authority     4686
+                                          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+political_authority ⟶ religious_authority     2.33      0.98  0.44  4.29 1.00     3328     3594
+religious_authority ⟶ political_authority     1.74      1.09 -0.32  3.91 1.00     2109     4686
 
 Drift parameters:
-                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS
-sd(political_authority)                          1.98      0.84  0.21  3.54 1.00     1272
-sd(religious_authority)                          1.25      0.79  0.06  2.92 1.00     1640
-cor(political_authority,religious_authority)     0.25      0.31 -0.42  0.77 1.00     4837
-                                             Tail_ESS
-sd(political_authority)                          1261
-sd(religious_authority)                          3283
-cor(political_authority,religious_authority)     5973
+                                             Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
+sd(political_authority)                          1.98      0.84  0.21  3.54 1.00     1272     1261
+sd(religious_authority)                          1.25      0.79  0.06  2.92 1.00     1640     3283
+cor(political_authority,religious_authority)     0.25      0.31 -0.42  0.77 1.00     4837     5973
 
 Continuous time intercept parameters:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS

@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.1.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0</span>
       </span>
     </div>
 
@@ -54,6 +54,25 @@
     </div>
 
     <div class="section level2">
+<h2 class="page-header" data-toc-text="1.2.0" id="coevolve-120">coevolve 1.2.0<a class="anchor" aria-label="anchor" href="#coevolve-120"></a></h2>
+<div class="section level4">
+<h4 id="new-features-1-2-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-1-2-0"></a></h4>
+<ul><li>Added <code><a href="../reference/coev_ancestral_states.html">coev_ancestral_states()</a></code> for extracting posterior estimates of ancestral trait values at internal phylogenetic nodes, on either the latent or response scale (<a href="https://github.com/ScottClaessens/coevolve/issues/86" class="external-link">#86</a>)</li>
+<li>Added vignette “Ancestral state reconstruction”</li>
+</ul></div>
+<div class="section level4">
+<h4 id="bug-fixes-1-2-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0"></a></h4>
+<ul><li>Fixed issue with plotting functions when <code>nuts_sampler = "nutpie"</code> (<a href="https://github.com/ScottClaessens/coevolve/issues/114" class="external-link">#114</a>)</li>
+</ul></div>
+<div class="section level4">
+<h4 id="other-changes-1-2-0">Other Changes<a class="anchor" aria-label="anchor" href="#other-changes-1-2-0"></a></h4>
+<ul><li>Updated documentation (<a href="https://github.com/ScottClaessens/coevolve/issues/111" class="external-link">#111</a>)</li>
+<li>Fixed cmdstanr location in documentation (<a href="https://github.com/ScottClaessens/coevolve/issues/112" class="external-link">#112</a>)</li>
+<li>Responded to <a href="https://ropensci.org/" class="external-link">rOpenSci</a> package review (<a href="https://github.com/ScottClaessens/coevolve/issues/113" class="external-link">#113</a>)</li>
+<li>Added package citation (<a href="https://github.com/ScottClaessens/coevolve/issues/116" class="external-link">#116</a>)</li>
+</ul></div>
+</div>
+    <div class="section level2">
 <h2 class="page-header" data-toc-text="1.1.0" id="coevolve-110">coevolve 1.1.0<a class="anchor" aria-label="anchor" href="#coevolve-110"></a></h2>
 <div class="section level4">
 <h4 id="new-features-1-1-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-1-1-0"></a></h4>
@@ -64,14 +83,14 @@
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.0.0" id="coevolve-100">coevolve 1.0.0<a class="anchor" aria-label="anchor" href="#coevolve-100"></a></h2>
 <div class="section level4">
-<h4 id="bug-fixes-1-0-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0"></a></h4>
-<ul><li>Fixed issue with <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> when <code>estimate_residual = FALSE</code> (<a href="https://github.com/ScottClaessens/coevolve/issues/95" class="external-link">#95</a>)</li>
-</ul></div>
-<div class="section level4">
 <h4 id="new-features-1-0-0">New Features<a class="anchor" aria-label="anchor" href="#new-features-1-0-0"></a></h4>
 <ul><li>Added <code>nutpie</code> as an alternative sampler for the Stan models (<a href="https://github.com/ScottClaessens/coevolve/issues/92" class="external-link">#92</a>)</li>
 <li>Cached matrix computations when branch lengths are identical (<a href="https://github.com/ScottClaessens/coevolve/issues/93" class="external-link">#93</a>)</li>
 <li>Implemented Hilbert-space approximate Gaussian processes for spatial control, adding the <code>lon_lat</code> argument and deprecating the <code>dist_mat</code> argument in <code><a href="../reference/coev_fit.html">coev_fit()</a></code> (<a href="https://github.com/ScottClaessens/coevolve/issues/103" class="external-link">#103</a>)</li>
+</ul></div>
+<div class="section level4">
+<h4 id="bug-fixes-1-0-0">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-0-0"></a></h4>
+<ul><li>Fixed issue with <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> when <code>estimate_residual = FALSE</code> (<a href="https://github.com/ScottClaessens/coevolve/issues/95" class="external-link">#95</a>)</li>
 </ul></div>
 <div class="section level4">
 <h4 id="other-changes-1-0-0">Other Changes<a class="anchor" aria-label="anchor" href="#other-changes-1-0-0"></a></h4>
