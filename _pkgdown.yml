@@ -21,6 +21,7 @@ reference:
 - title: Plot
   contents:
   - '`plot.coevfit`'
+  - '`pairs.coevfit`'
   - '`coev_plot_delta_theta`'
   - '`coev_plot_flowfield`'
   - '`coev_plot_pred_series`'

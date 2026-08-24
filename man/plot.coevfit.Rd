@@ -16,10 +16,10 @@
 \arguments{
 \item{x}{An object of class \code{coevfit}.}
 
-\item{parameters}{If NULL (default), the function returns a list of plots for
-the main parameters from the model (the selection matrix "A", the drift
-matrix "Q", and the continuous time intercepts "b"). Otherwise, a character
-vector declaring the parameters to plot (strictly case-sensitive).}
+\item{parameters}{If NULL (default), the function returns plots for the main
+parameters from the model (the selection matrix "A", the drift matrix "Q",
+and the continuous time intercepts "b"). Otherwise, a character vector
+declaring the parameters to plot (strictly case-sensitive).}
 
 \item{combo}{A character vector with at least two elements. Each element of
 \code{combo} corresponds to a column in the resulting plot and should be

@@ -9,10 +9,10 @@
 #'   from the model object
 #'
 #' @param x An object of class \code{coevfit}.
-#' @param parameters If NULL (default), the function returns a list of plots for
-#'   the main parameters from the model (the selection matrix "A", the drift
-#'   matrix "Q", and the continuous time intercepts "b"). Otherwise, a character
-#'   vector declaring the parameters to plot (strictly case-sensitive).
+#' @param parameters If NULL (default), the function returns plots for the main
+#'   parameters from the model (the selection matrix "A", the drift matrix "Q",
+#'   and the continuous time intercepts "b"). Otherwise, a character vector
+#'   declaring the parameters to plot (strictly case-sensitive).
 #' @param combo A character vector with at least two elements. Each element of
 #'   \code{combo} corresponds to a column in the resulting plot and should be
 #'   the name of one of the available
@@ -92,4 +92,78 @@ plot.coevfit <- function(x, parameters = NULL, combo = c("dens", "trace"),
     }
   }
   invisible(plots)
+}
+
+#' Create a matrix of output plots from a \code{coevfit} object
+#'
+#' A \code{\link[graphics:pairs]{pairs}} method that is customized for MCMC
+#' output.
+#'
+#' @param x An object of class \code{coevfit}
+#' @inheritParams plot.coevfit
+#' @param ... Further arguments to be passed to
+#'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
+#'
+#' @details For a detailed description see
+#'   \code{\link[bayesplot:MCMC-scatterplots]{mcmc_pairs}}.
+#'
+#' @returns A matrix of output plots
+#'
+#' @author Scott Claessens \email{scott.claessens@@gmail.com}
+#'
+#' @seealso \code{\link{plot.coevfit}}
+#'
+#' @examples
+#' \dontrun{
+#' # fit dynamic coevolutionary model
+#' fit <- coev_fit(
+#'   data = authority$data,
+#'   variables = list(
+#'     political_authority = "ordered_logistic",
+#'     religious_authority = "ordered_logistic"
+#'   ),
+#'   id = "language",
+#'   tree = authority$phylogeny,
+#'   # additional arguments for cmdstanr::sample()
+#'   chains = 4,
+#'   parallel_chains = 4,
+#'   seed = 1
+#'   )
+#'
+#' # print pairs plot
+#' pairs(fit)
+#' }
+#'
+#' @export
+pairs.coevfit <- function(x, parameters = NULL, ...) {
+  #' @srrstats {G5.2, G5.2a} Unique error messages for each input
+  # stop if object is not of class coevfit
+  #' @srrstats {G2.1} Assertion on type of input
+  if (!methods::is(x, "coevfit")) {
+    stop2(
+      paste0(
+        "Argument 'object' must be a fitted coevolutionary model of class ",
+        "coevfit."
+      )
+    )
+  }
+  if (!is.null(parameters)) {
+    if (!is.character(parameters)) {
+      # stop if parameters not character
+      #' @srrstats {G2.1} Assertion on type of input
+      stop2("Argument 'parameters' must be a character vector.")
+    } else if (!all(parameters %in% x$fit$metadata()$model_params)) {
+      stop2("Argument 'parameters' contains invalid parameter names.")
+    }
+  } else {
+    # keep only main parameters: A, Q, and b
+    parameters <- x$fit$metadata()$model_params
+    parameters <- parameters[
+      stringr::str_starts(parameters, stringr::fixed("A[")) |
+        stringr::str_starts(parameters, stringr::fixed("Q[")) |
+        stringr::str_starts(parameters, stringr::fixed("b["))
+    ]
+  }
+  draws <- x$fit$draws(variables = parameters)
+  bayesplot::mcmc_pairs(draws, ...)
 }
