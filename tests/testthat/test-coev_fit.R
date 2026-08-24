@@ -1041,6 +1041,9 @@ test_that("coev_fit() fits test fixtures", {
   plot(m4, combo = c("hist", "trace"))
   plot(m4, npars = 3)
   plot(m4, plot = FALSE)
+  # pairs method works as expected
+  pairs(m4)
+  pairs(m4, parameters = c("A[1,1]", "A[1,2]", "A[2,1]", "A[2,2]"))
 })
 
 test_that("effects_mat argument to coev_fit() works as expected", {
