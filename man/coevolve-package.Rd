@@ -25,7 +25,13 @@ Useful links:
 Authors:
 \itemize{
   \item Scott Claessens \email{scott.claessens@gmail.com} (\href{https://orcid.org/0000-0002-3562-6981}{ORCID})
-  \item Erik Ringen \email{erikjacob.ringen@uzh.ch}
+  \item Erik Ringen \email{erikjacob.ringen@uzh.ch} (\href{https://orcid.org/0000-0002-3565-6961}{ORCID})
+}
+
+Other contributors:
+\itemize{
+  \item Rob Moss \email{rgmoss@unimelb.edu.au} (\href{https://orcid.org/0000-0002-4568-2012}{ORCID}) [reviewer]
+  \item Krzysztof Bartoszek \email{krzbar@protonmail.ch} (\href{https://orcid.org/0000-0002-5816-4345}{ORCID}) [reviewer]
 }
 
 }

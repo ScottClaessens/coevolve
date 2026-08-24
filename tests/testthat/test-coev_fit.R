@@ -1041,6 +1041,27 @@ test_that("coev_fit() fits test fixtures", {
   plot(m4, combo = c("hist", "trace"))
   plot(m4, npars = 3)
   plot(m4, plot = FALSE)
+  # expect following errors for pairs method
+  expect_error(
+    suppressWarnings(pairs.coevfit(x = "fail")),
+    "Argument 'object' must be a fitted coevolutionary model of class coevfit.",
+    fixed = TRUE
+  )
+  expect_error(
+    suppressWarnings(pairs(m4, parameters = 0L)),
+    "Argument 'parameters' must be a character vector.",
+    fixed = TRUE
+  )
+  expect_error(
+    suppressWarnings(pairs(m4, parameters = "test")),
+    "Argument 'parameters' contains invalid parameter names.",
+    fixed = TRUE
+  )
+  # pairs method works as expected
+  suppressWarnings(pairs(m4))
+  suppressWarnings(
+    pairs(m4, parameters = c("A[1,1]", "A[1,2]", "A[2,1]", "A[2,2]"))
+  )
 })
 
 test_that("effects_mat argument to coev_fit() works as expected", {
