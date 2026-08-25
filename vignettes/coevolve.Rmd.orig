@@ -28,13 +28,6 @@ knitr::opts_chunk$set(
 library(pander)
 ```
 
-```{r srr-tags, eval = FALSE, echo = FALSE}
-#' srr_standards_in_vignette
-#'
-#' @srrstats {BS1.2b} This vignette contains general and applied textual
-#'   descriptions of the package and example code
-```
-
 ## Introduction
 
 This vignette provides an introduction to the **coevolve** package. It briefly
