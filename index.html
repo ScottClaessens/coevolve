@@ -94,12 +94,8 @@
 <h2 id="generalized-dynamic-phylogenetic-models">Generalized dynamic phylogenetic models<a class="anchor" aria-label="anchor" href="#generalized-dynamic-phylogenetic-models"></a>
 </h2>
 <p>Under the hood, the package estimates the parameters of the following stochastic differential equation along the branches of a phylogenetic tree. The equation partitions evolutionary change in the traits into state-dependent deterministic selection and state-independent Brownian motion, similar to a multivariate Ornstein-Uhlenbeck process:</p>
-<p><span class="math display">\[d\pmb{\eta}(t) = (\textbf{A}\pmb{\eta}(t) + \textbf{b}) + \textbf{G}dW(t)\]</span></p>
-<p><span class="math inline">\(\pmb{\eta}(t)\)</span> is a vector of latent variables at time <span class="math inline">\(t\)</span>. The matrix <span class="math inline">\(\textbf{A}\)</span> represents “selection” with strictly negative autoregressive terms on the diagonal. Off-diagonals may be positive or negative, controlling the effect of each trait on the others (e.g., <span class="math inline">\(\textbf{A}[2,1]\)</span> represents the effect of <span class="math inline">\(\eta_1\)</span> on <span class="math inline">\(\eta_2\)</span>). <span class="math inline">\(\textbf{b}\)</span> is a vector of continuous time intercepts. The matrix <span class="math inline">\(\textbf{G}\)</span> is the Cholesky decomposition of the positive semi-definite “drift” covariance matrix <span class="math inline">\(\textbf{Q}\)</span> which scales the Brownian motion process <span class="math inline">\(W(t)\)</span>.</p>
-<p>The following observation-level measurement model then links <span class="math inline">\(\pmb{\eta}\)</span> to the observations at the tips of the tree:</p>
-<p><span class="math display">\[y_{[n,j]} \sim f(\mu_{[n,j]}, {\phi}_{[j]}) \\
-g(\mu_{[n,j]}) = \pmb{\eta}_{[n]}\]</span></p>
-<p><span class="math inline">\(y_{[n,j]}\)</span> denotes the observed value for trait <span class="math inline">\(j\)</span> from species or population <span class="math inline">\(n\)</span> at the tips of a phylogeny. <span class="math inline">\(f()\)</span> is a probability density or mass function with expected value <span class="math inline">\(\mu\)</span> and additional distributional parameters <span class="math inline">\(\pmb{\phi}\)</span>. <span class="math inline">\(g()\)</span> denotes a link function, which transforms the expected value from the support of the function <span class="math inline">\(f()\)</span> latent values to the unbounded continuous space of the evolutionary process.</p>
+<p><span class="math display">\[d\eta(t) = (\textbf{A}\eta(t) + \textbf{b}) + \textbf{G}dW(t)\]</span></p>
+<p><span class="math inline">\(\eta(t)\)</span> is a vector of latent variables at time <span class="math inline">\(t\)</span>. The matrix <span class="math inline">\(\textbf{A}\)</span> represents “selection” with strictly negative autoregressive terms on the diagonal. Off-diagonals may be positive or negative, controlling the effect of each trait on the others (e.g., <span class="math inline">\(\textbf{A}[2,1]\)</span> represents the effect of <span class="math inline">\(\eta_1\)</span> on <span class="math inline">\(\eta_2\)</span>). <span class="math inline">\(\textbf{b}\)</span> is a vector of continuous time intercepts. The matrix <span class="math inline">\(\textbf{G}\)</span> is the Cholesky decomposition of the positive semi-definite “drift” covariance matrix <span class="math inline">\(\textbf{Q}\)</span> which scales the Brownian motion process <span class="math inline">\(W(t)\)</span>. An observation-level measurement model then links <span class="math inline">\(\eta\)</span> to the observations at the tips of the tree.</p>
 <p>For more information about the model, refer to the introductory methods paper <a href="https://doi.org/10.1111/2041-210x.70303" class="external-link">here</a>.</p>
 </div>
 <div class="section level2">
@@ -135,14 +131,14 @@ g(\mu_{[n,j]}) = \pmb{\eta}_{[n]}\]</span></p>
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt; Running MCMC with 4 parallel chains...</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Chain 3 finished in 256.3 seconds.</span></span>
-<span><span class="co">#&gt; Chain 4 finished in 261.3 seconds.</span></span>
-<span><span class="co">#&gt; Chain 1 finished in 352.4 seconds.</span></span>
-<span><span class="co">#&gt; Chain 2 finished in 379.5 seconds.</span></span>
+<span><span class="co">#&gt; Chain 3 finished in 259.1 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 266.1 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 356.2 seconds.</span></span>
+<span><span class="co">#&gt; Chain 2 finished in 386.1 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
-<span><span class="co">#&gt; Mean chain execution time: 312.4 seconds.</span></span>
-<span><span class="co">#&gt; Total execution time: 379.6 seconds.</span></span>
+<span><span class="co">#&gt; Mean chain execution time: 316.9 seconds.</span></span>
+<span><span class="co">#&gt; Total execution time: 386.2 seconds.</span></span>
 <span><span class="co">#&gt; Warning: 7 of 4000 (0.0%) transitions ended with a divergence.</span></span>
 <span><span class="co">#&gt; See https://mc-stan.org/misc/warnings for details.</span></span></code></pre></div>
 <p>The results can be investigated using:</p>
