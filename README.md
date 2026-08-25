@@ -41,9 +41,9 @@ tree. The equation partitions evolutionary change in the traits into
 state-dependent deterministic selection and state-independent Brownian
 motion, similar to a multivariate Ornstein-Uhlenbeck process:
 
-$$d\pmb{\eta}(t) = (\textbf{A}\pmb{\eta}(t) + \textbf{b}) + \textbf{G}dW(t)$$
+$$d\eta(t) = (\textbf{A}\eta(t) + \textbf{b}) + \textbf{G}dW(t)$$
 
-$\pmb{\eta}(t)$ is a vector of latent variables at time $t$. The matrix
+$\eta(t)$ is a vector of latent variables at time $t$. The matrix
 $\textbf{A}$ represents “selection” with strictly negative
 autoregressive terms on the diagonal. Off-diagonals may be positive or
 negative, controlling the effect of each trait on the others (e.g.,
@@ -51,21 +51,8 @@ $\textbf{A}[2,1]$ represents the effect of $\eta_1$ on $\eta_2$).
 $\textbf{b}$ is a vector of continuous time intercepts. The matrix
 $\textbf{G}$ is the Cholesky decomposition of the positive semi-definite
 “drift” covariance matrix $\textbf{Q}$ which scales the Brownian motion
-process $W(t)$.
-
-The following observation-level measurement model then links
-$\pmb{\eta}$ to the observations at the tips of the tree:
-
-$$y_{[n,j]} \sim f(\mu_{[n,j]}, {\phi}_{[j]}) \\
-g(\mu_{[n,j]}) = \pmb{\eta}_{[n]}$$
-
-$y_{[n,j]}$ denotes the observed value for trait $j$ from species or
-population $n$ at the tips of a phylogeny. $f()$ is a probability
-density or mass function with expected value $\mu$ and additional
-distributional parameters $\pmb{\phi}$. $g()$ denotes a link function,
-which transforms the expected value from the support of the function
-$f()$ latent values to the unbounded continuous space of the
-evolutionary process.
+process $W(t)$. An observation-level measurement model then links $\eta$
+to the observations at the tips of the tree.
 
 For more information about the model, refer to the introductory methods
 paper [here](https://doi.org/10.1111/2041-210x.70303).
@@ -112,14 +99,14 @@ fit <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 3 finished in 256.3 seconds.
-#> Chain 4 finished in 261.3 seconds.
-#> Chain 1 finished in 352.4 seconds.
-#> Chain 2 finished in 379.5 seconds.
+#> Chain 3 finished in 259.1 seconds.
+#> Chain 4 finished in 266.1 seconds.
+#> Chain 1 finished in 356.2 seconds.
+#> Chain 2 finished in 386.1 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 312.4 seconds.
-#> Total execution time: 379.6 seconds.
+#> Mean chain execution time: 316.9 seconds.
+#> Total execution time: 386.2 seconds.
 #> Warning: 7 of 4000 (0.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
