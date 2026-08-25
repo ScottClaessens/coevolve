@@ -38,6 +38,10 @@ NULL
 #'   perfectly collinear input data, as these data could still be valid outcomes
 #'   of a coevolutionary process (e.g., strong reciprocal coevolution)
 #' @srrstatsNA {BS4.1} We do not compare to alternative samplers
+#' @srrstatsNA {BS4.2} The package does not itself contain a means to validate
+#'   posterior estimates. However, we conducted extensive posterior validation
+#'   and simulation-based calibration for the model in our introductory methods
+#'   paper: https://doi.org/10.1111/2041-210x.70303
 #' @srrstatsNA {BS4.4} cmdstanr::sample() does not have an option to stop chains
 #'   upon convergence
 #'
