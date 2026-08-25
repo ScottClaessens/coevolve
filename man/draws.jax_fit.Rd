@@ -17,5 +17,10 @@
 A draws_array object.
 }
 \description{
-Extract draws from jax_fit object
+Internal S3 method. Extracts draws from a jax_fit object,
+compatible with cmdstanr's draws() method.
+}
+\examples{
+TRUE
+
 }

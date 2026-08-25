@@ -1,6 +1,6 @@
 #' Check if nutpie is available via reticulate
 #'
-#' @srrstats {G1.4} Function is documented
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Checks if nutpie can be imported via reticulate. This function
 #'   attempts to import nutpie using the currently configured Python environment
@@ -62,7 +62,7 @@ check_nutpie_available <- function() {
 
 #' Stop if nutpie is not available via reticulate
 #'
-#' @srrstats {G1.4} Function is documented
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Stops if nutpie cannot be imported via reticulate.
 #'
@@ -82,7 +82,7 @@ stop_if_nutpie_not_available <- function() {
 
 #' Compile a Stan model using nutpie
 #'
-#' @srrstats {G1.4} Function is documented
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Compiles a Stan model string using nutpie's compile_stan_model
 #'   function. This is a wrapper around nutpie's Python API via reticulate.
@@ -265,7 +265,7 @@ convert_r_to_python_data <- function(data_list) {
 
 #' Sample from a Stan model using nutpie
 #'
-#' @srrstats {G1.4} Function is documented
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Samples from a compiled Stan model using nutpie. This function
 #'   handles compilation, data conversion, and sampling.
@@ -460,7 +460,7 @@ def nutpie_call_sample(compiled_model, kwargs):
 
 #' Convert nutpie draws to posterior draws_array format
 #'
-#' @srrstats {G1.4} Function is documented
+#' @srrstats {G1.4a} Non-exported function documented here
 #'
 #' @description Converts draws from a nutpie trace object to a posterior
 #'   draws_array format compatible with cmdstanr output. This function handles

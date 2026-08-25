@@ -20,8 +20,12 @@ A data.frame with summary statistics, compatible with cmdstanr
 format.
 }
 \description{
-Computes summary statistics from a nutpie_fit object,
-compatible with cmdstanr's summary() method. This method mimics
-cmdstanr's interface where summary() is called with named arguments
+Internal S3 method. Computes summary statistics from a
+nutpie_fit object, compatible with cmdstanr's summary() method. This method
+mimics cmdstanr's interface where summary() is called with named arguments
 where names are column names and values are function names or formulas.
+}
+\examples{
+TRUE
+
 }

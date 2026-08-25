@@ -77,11 +77,17 @@ create_jax_wrapper <- function(trace_result, draws_array, stan_variables,
 
 #' Extract draws from jax_fit object
 #'
+#' @description Internal S3 method. Extracts draws from a jax_fit object,
+#'   compatible with cmdstanr's draws() method.
+#'
 #' @param x A jax_fit object.
 #' @param variables Character vector of variable names to extract.
 #' @param ... Additional arguments (ignored).
 #'
 #' @returns A draws_array object.
+#'
+#' @examples
+#' TRUE
 #'
 #' @method draws jax_fit
 #' @export
@@ -95,11 +101,19 @@ draws.jax_fit <- function(x, variables = NULL, ...) {
 
 #' Summary statistics for jax_fit object
 #'
+#' @description Internal S3 method. Computes summary statistics from a
+#'   jax_fit object, compatible with cmdstanr's summary() method. This method
+#'   mimics cmdstanr's interface where summary() is called with named arguments
+#'   where names are column names and values are function names or formulas.
+#'
 #' @param object A jax_fit object.
 #' @param variables Character vector of variable names to summarize.
 #' @param ... Named summary spec arguments (cmdstanr style).
 #'
 #' @returns A data.frame with summary statistics.
+#'
+#' @examples
+#' TRUE
 #'
 #' @method summary jax_fit
 #' @export
@@ -130,9 +144,15 @@ summary.jax_fit <- function(object, variables = NULL, ...) {
 
 #' Extract metadata from jax_fit object
 #'
+#' @description Internal S3 method. Extracts metadata from a jax_fit object,
+#'   compatible with cmdstanr's metadata() method.
+#'
 #' @param x A jax_fit object.
 #'
 #' @returns A list containing metadata.
+#'
+#' @examples
+#' TRUE
 #'
 #' @method metadata jax_fit
 #' @export

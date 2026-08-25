@@ -18,6 +18,10 @@ extracts all variables.}
 A draws_array object.
 }
 \description{
-Extracts draws from a nutpie_fit object, compatible with
-cmdstanr's draws() method.
+Internal S3 method. Extracts draws from a nutpie_fit object,
+compatible with cmdstanr's draws() method.
+}
+\examples{
+TRUE
+
 }

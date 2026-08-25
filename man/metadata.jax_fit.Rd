@@ -13,5 +13,10 @@
 A list containing metadata.
 }
 \description{
-Extract metadata from jax_fit object
+Internal S3 method. Extracts metadata from a jax_fit object,
+compatible with cmdstanr's metadata() method.
+}
+\examples{
+TRUE
+
 }

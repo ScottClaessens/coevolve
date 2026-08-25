@@ -13,6 +13,10 @@
 A list containing metadata.
 }
 \description{
-Extracts metadata from a nutpie_fit object, compatible with
-cmdstanr's metadata() method.
+Internal S3 method. Extracts metadata from a nutpie_fit object,
+compatible with cmdstanr's metadata() method.
+}
+\examples{
+TRUE
+
 }

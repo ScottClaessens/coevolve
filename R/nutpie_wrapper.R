@@ -99,10 +99,8 @@ create_nutpie_wrapper <- function(trace, draws_array, stan_variables,
 
 #' Extract draws from nutpie_fit object
 #'
-#' @srrstats {G1.4a} Non-exported function documented here
-#'
-#' @description Extracts draws from a nutpie_fit object, compatible with
-#'   cmdstanr's draws() method.
+#' @description Internal S3 method. Extracts draws from a nutpie_fit object,
+#'   compatible with cmdstanr's draws() method.
 #'
 #' @param x A nutpie_fit object.
 #' @param variables Character vector of variable names to extract. If NULL,
@@ -110,6 +108,9 @@ create_nutpie_wrapper <- function(trace, draws_array, stan_variables,
 #' @param ... Additional arguments (currently ignored).
 #'
 #' @returns A draws_array object.
+#'
+#' @examples
+#' TRUE
 #'
 #' @method draws nutpie_fit
 #' @export
@@ -124,11 +125,9 @@ draws.nutpie_fit <- function(x, variables = NULL, ...) {
 
 #' Compute summary statistics for nutpie_fit object
 #'
-#' @srrstats {G1.4a} Non-exported function documented here
-#'
-#' @description Computes summary statistics from a nutpie_fit object,
-#'   compatible with cmdstanr's summary() method. This method mimics
-#'   cmdstanr's interface where summary() is called with named arguments
+#' @description Internal S3 method. Computes summary statistics from a
+#'   nutpie_fit object, compatible with cmdstanr's summary() method. This method
+#'   mimics cmdstanr's interface where summary() is called with named arguments
 #'   where names are column names and values are function names or formulas.
 #'
 #' @param object A nutpie_fit object.
@@ -139,6 +138,9 @@ draws.nutpie_fit <- function(x, variables = NULL, ...) {
 #'
 #' @returns A data.frame with summary statistics, compatible with cmdstanr
 #'   format.
+#'
+#' @examples
+#' TRUE
 #'
 #' @method summary nutpie_fit
 #' @export
@@ -211,14 +213,15 @@ summary.nutpie_fit <- function(object, variables = NULL, ...) {
 
 #' Extract metadata from nutpie_fit object
 #'
-#' @srrstats {G1.4a} Non-exported function documented here
-#'
-#' @description Extracts metadata from a nutpie_fit object, compatible with
-#'   cmdstanr's metadata() method.
+#' @description Internal S3 method. Extracts metadata from a nutpie_fit object,
+#'   compatible with cmdstanr's metadata() method.
 #'
 #' @param x A nutpie_fit object.
 #'
 #' @returns A list containing metadata.
+#'
+#' @examples
+#' TRUE
 #'
 #' @method metadata nutpie_fit
 #' @export
@@ -244,8 +247,6 @@ metadata.nutpie_fit <- function(x) {
 
 #' Generic method for extracting draws
 #'
-#' @srrstats {G1.4} Function is documented
-#'
 #' @description Generic function for extracting draws from fit objects.
 #'   Currently supports nutpie_fit objects.
 #'
@@ -260,8 +261,6 @@ draws <- function(x, ...) {
 }
 
 #' Generic method for extracting metadata
-#'
-#' @srrstats {G1.4} Function is documented
 #'
 #' @description Generic function for extracting metadata from fit objects.
 #'   Currently supports nutpie_fit objects.

@@ -16,8 +16,6 @@ reference:
   contents:
   - '`print.coevfit`'
   - '`summary.coevfit`'
-  - '`summary.jax_fit`'
-  - '`summary.nutpie_fit`'
 - title: Plot
   contents:
   - '`plot.coevfit`'
@@ -32,14 +30,10 @@ reference:
   contents:
   - '`extract_samples`'
   - '`coev_ancestral_states`'
-  - '`draws.jax_fit`'
-  - '`draws.nutpie_fit`'
 - title: Expose
   contents:
   - '`stancode`'
   - '`standata`'
-  - '`metadata.jax_fit`'
-  - '`metadata.nutpie_fit`'
 - title: Calculate
   contents:
   - '`coev_calculate_delta_theta`'
@@ -51,6 +45,14 @@ reference:
 - title: Simulate
   contents:
   - '`coev_simulate_coevolution`'
+- title: Internal S3 methods
+  contents:
+  - '`draws.jax_fit`'
+  - '`draws.nutpie_fit`'
+  - '`metadata.jax_fit`'
+  - '`metadata.nutpie_fit`'
+  - '`summary.jax_fit`'
+  - '`summary.nutpie_fit`'
 articles:
 - title: All vignettes
   contents:

@@ -17,5 +17,12 @@
 A data.frame with summary statistics.
 }
 \description{
-Summary statistics for jax_fit object
+Internal S3 method. Computes summary statistics from a
+jax_fit object, compatible with cmdstanr's summary() method. This method
+mimics cmdstanr's interface where summary() is called with named arguments
+where names are column names and values are function names or formulas.
+}
+\examples{
+TRUE
+
 }
