@@ -277,7 +277,7 @@ coev_make_stancode <- function(data, variables, id, tree,
     "\n\n",
     write_model_block(data, distributions, id, lon_lat, priors,
                       measurement_error, estimate_correlated_drift,
-                      estimate_residual),
+                      estimate_residual, prior_only),
     "\n\n",
     write_gen_quantities_block(data, distributions, id, lon_lat,
                                measurement_error, estimate_correlated_drift,
@@ -580,15 +580,18 @@ write_transformed_pars_block <- function(data, distributions, id, lon_lat,
 #' @noRd
 write_model_block <- function(data, distributions, id, lon_lat, priors,
                               measurement_error, estimate_correlated_drift,
-                              estimate_residual) {
+                              estimate_residual, prior_only = FALSE) {
   # check for repeated
   repeated <- any(duplicated(data[, id])) && estimate_residual
   # add priors for terminal_drift when:
   # 1. there are no repeated measures and no gaussian variables  OR
-  # 2. there are repeated measures and estimate_residual = TRUE
+  # 2. there are repeated measures and estimate_residual = TRUE  OR
+  # 3. the likelihood is skipped, since terminal_drift would otherwise be
+  #    left without any prior at all (its std_normal prior for gaussian
+  #    variables is declared inside the likelihood block)
   add_terminal_drift_prior <-
     (!any(duplicated(data[, id])) && !("normal" %in% distributions)) ||
-    (repeated)
+    (repeated) || prior_only
   # which variables are ordinal?
   ordered_seq <- FALSE
   if ("ordered_logistic" %in% distributions) {

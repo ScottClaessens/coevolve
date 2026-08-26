@@ -13,12 +13,13 @@ coev_make_model_config <- function(data, variables, id, tree,
                                    prior = NULL, scale = TRUE,
                                    estimate_correlated_drift = TRUE,
                                    estimate_residual = TRUE,
+                                   log_lik = FALSE,
                                    prior_only = FALSE) {
 
   run_checks(data, variables, id, tree, effects_mat, complete_cases, lon_lat,
              dist_k, dist_cov, measurement_error, prior, scale,
              estimate_correlated_drift, estimate_residual,
-             log_lik = FALSE, prior_only = prior_only)
+             log_lik = log_lik, prior_only = prior_only)
 
   data <- as.data.frame(data)
   distributions <- as.character(variables)
@@ -85,6 +86,7 @@ coev_make_model_config <- function(data, variables, id, tree,
 
   list(
     distributions           = distributions,
+    log_lik                 = as.integer(log_lik),
     tdrift                  = as.integer(tdrift),
     repeated                = as.integer(repeated),
     needs_terminal_drift    = as.integer(needs_terminal_drift),
