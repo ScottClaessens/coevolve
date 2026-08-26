@@ -45,7 +45,11 @@ generated quantities{
         {{/repeated}}
         {{#set_residuals}}
         {{#is_normal}}
-        residuals[{{j}}] = y[i][{{j}}] - ({{lmod}} + tdrift[t,tip_id[i]][{{j}}]);
+        if (miss[i,{{j}}] == 0) {
+          residuals[{{j}}] = y[i,{{j}}] - ({{lmod}} + tdrift[t,tip_id[i]][{{j}}]);
+        } else {
+          residuals[{{j}}] = residual_z[{{j}},i];
+        }
         {{/is_normal}}
         {{#is_not_normal_and_normal_present}}
         residuals[{{j}}] = residual_z[{{j}},i];
@@ -56,7 +60,11 @@ generated quantities{
         {{/set_residuals}}
         {{#set_tdrifts}}
         {{#is_normal}}
-        tdrifts[{{j}}] = y[i][{{j}}] - ({{lmod}});
+        if (miss[i,{{j}}] == 0) {
+          tdrifts[{{j}}] = y[i,{{j}}] - ({{lmod}});
+        } else {
+          tdrifts[{{j}}] = terminal_drift[t][tip_id[i],{{j}}];
+        }
         {{/is_normal}}
         {{#is_not_normal_and_normal_present}}
         tdrifts[{{j}}] = terminal_drift[t,tip_id[i]][{{j}}];

@@ -438,6 +438,204 @@ test_that("Plotting functions work with JAX fit", {
   )
 })
 
+test_that("JAX fit generates yrep posterior predictions", {
+  skip_if_not(
+    coevolve:::check_jax_available(),
+    message = "JAX not available - skipping JAX tests"
+  )
+  fit_args <- list(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    prior = list(A_offdiag = "normal(0, 2)"),
+    nuts_sampler = "nutpie",
+    chains = 2,
+    iter_warmup = 100,
+    iter_sampling = 100,
+    seed = 1
+  )
+  fit <- do.call(coev_fit, fit_args)
+  sd <- fit$stan_data
+  # yrep is returned with the same dimensions as the Stan backend
+  yrep <- posterior::draws_of(
+    posterior::as_draws_rvars(fit$fit$draws(variables = "yrep"))$yrep
+  )
+  expect_equal(
+    dim(yrep), c(fit$nsamples, sd$N_tree, sd$N_obs, sd$J)
+  )
+  # ordinal predictions fall within the observed category range
+  expect_true(all(yrep == round(yrep)))
+  expect_true(all(yrep >= 1 & yrep <= max(sd$y)))
+  # predictions vary across draws and across chains
+  expect_gt(stats::sd(yrep[, 1, 1, 1]), 0)
+  draws_arr <- fit$fit$draws(variables = "yrep")
+  expect_false(
+    identical(as.vector(draws_arr[1, 1, ]), as.vector(draws_arr[1, 2, ]))
+  )
+  # predictive checks now work for nutpie fits (#118)
+  sw <- suppressWarnings
+  expect_no_error(pp <- sw(coev_plot_predictive_check(fit)))
+  expect_named(pp, names(fit$variables))
+  expect_no_error(sw(coev_plot_predictive_check(fit, ndraws = 1)))
+  # same seed reproduces the same predictions
+  expect_equal(
+    posterior::draws_of(
+      posterior::as_draws_rvars(
+        do.call(coev_fit, fit_args)$fit$draws(variables = "yrep")
+      )$yrep
+    ),
+    yrep
+  )
+})
+
+test_that("JAX yrep works with repeated observations and normal variables", {
+  skip_if_not(
+    coevolve:::check_jax_available(),
+    message = "JAX not available - skipping JAX tests"
+  )
+  fit <- coev_fit(
+    data = repeated$data,
+    variables = list(
+      x = "normal",
+      y = "normal"
+    ),
+    id = "species",
+    tree = repeated$phylogeny,
+    nuts_sampler = "nutpie",
+    chains = 1,
+    iter_warmup = 100,
+    iter_sampling = 100,
+    seed = 1
+  )
+  sd <- fit$stan_data
+  yrep <- posterior::draws_of(
+    posterior::as_draws_rvars(fit$fit$draws(variables = "yrep"))$yrep
+  )
+  expect_equal(
+    dim(yrep), c(fit$nsamples, sd$N_tree, sd$N_obs, sd$J)
+  )
+  expect_true(all(is.finite(yrep)))
+  expect_no_error(suppressWarnings(coev_plot_predictive_check(fit)))
+})
+
+test_that("JAX fit returns log_lik when log_lik = TRUE", {
+  skip_if_not(
+    coevolve:::check_jax_available(),
+    message = "JAX not available - skipping JAX tests"
+  )
+  fit_args <- list(
+    data = authority$data,
+    variables = list(
+      political_authority = "ordered_logistic",
+      religious_authority = "ordered_logistic"
+    ),
+    id = "language",
+    tree = authority$phylogeny,
+    prior = list(A_offdiag = "normal(0, 2)"),
+    nuts_sampler = "nutpie",
+    chains = 1,
+    iter_warmup = 100,
+    iter_sampling = 100,
+    seed = 1
+  )
+  # log_lik is off by default, matching the Stan backend
+  fit <- do.call(coev_fit, fit_args)
+  expect_false(
+    any(grepl("^log_lik", posterior::variables(fit$fit$draws())))
+  )
+  fit <- do.call(coev_fit, c(fit_args, list(log_lik = TRUE)))
+  sd <- fit$stan_data
+  log_lik <- posterior::draws_of(
+    posterior::as_draws_rvars(fit$fit$draws(variables = "log_lik"))$log_lik
+  )
+  expect_equal(dim(log_lik), c(fit$nsamples, sd$N_obs * sd$J))
+  expect_true(all(is.finite(log_lik)))
+  expect_true(all(log_lik <= 0))
+  expect_no_error(suppressWarnings(summary(fit)))
+  skip_if_not_installed("loo")
+  expect_no_error(suppressWarnings(loo::loo(log_lik)))
+})
+
+test_that("JAX log_lik handles normal variables and missing data", {
+  skip_if_not(
+    coevolve:::check_jax_available(),
+    message = "JAX not available - skipping JAX tests"
+  )
+  withr::with_seed(1, {
+    n <- 15
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+  })
+  d$x[1:3] <- NA
+  fit <- coev_fit(
+    data = d,
+    variables = list(x = "normal", y = "normal"),
+    id = "id",
+    tree = tree,
+    nuts_sampler = "nutpie",
+    log_lik = TRUE,
+    chains = 1,
+    iter_warmup = 100,
+    iter_sampling = 100,
+    seed = 1
+  )
+  sd <- fit$stan_data
+  log_lik <- posterior::draws_of(
+    posterior::as_draws_rvars(fit$fit$draws(variables = "log_lik"))$log_lik
+  )
+  expect_equal(dim(log_lik), c(fit$nsamples, sd$N_obs * sd$J))
+  expect_true(all(is.finite(log_lik)))
+  # missing cells contribute nothing (log_sum_exp of zeros over one tree)
+  miss_ids <- which(as.vector(sd$miss) == 1)
+  expect_true(all(log_lik[, miss_ids] == 0))
+  expect_true(all(log_lik[, -miss_ids] != 0))
+})
+
+test_that("JAX fit works with prior_only for normal variables", {
+  skip_if_not(
+    coevolve:::check_jax_available(),
+    message = "JAX not available - skipping JAX tests"
+  )
+  withr::with_seed(3, {
+    n <- 8
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      y = rnorm(n)
+    )
+  })
+  # terminal_drift has no prior of its own outside the likelihood block, so
+  # prior-only sampling used to be improper and failed to initialise (#118)
+  fit <- coev_fit(
+    data = d,
+    variables = list(x = "normal", y = "normal"),
+    id = "id",
+    tree = tree,
+    nuts_sampler = "nutpie",
+    prior_only = TRUE,
+    chains = 2,
+    iter_warmup = 300,
+    iter_sampling = 300,
+    seed = 1
+  )
+  expect_s3_class(fit, "coevfit")
+  rhat <- posterior::summarise_draws(
+    posterior::subset_draws(fit$fit$draws(), variable = "eta_anc"),
+    "rhat"
+  )$rhat
+  expect_true(all(rhat < 1.05))
+  expect_no_error(suppressWarnings(coev_plot_predictive_check(fit)))
+})
+
 test_that("coev_ancestral_states() works with JAX fit", {
   skip_if_not(
     coevolve:::check_jax_available(),

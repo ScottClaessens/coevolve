@@ -1,3 +1,23 @@
+# coevolve - development version
+
+### Bug Fixes
+
+* Fixed `coev_plot_predictive_check()` when `nuts_sampler = "nutpie"`. The
+  JAX backend now returns `yrep` posterior predictions alongside the other
+  model parameters, matching the Stan backend (#118)
+* `log_lik = TRUE` is now supported with `nuts_sampler = "nutpie"`. The JAX
+  backend previously ignored the argument and returned no `log_lik`, so
+  `loo` and `waic` could not be computed from nutpie fits (#118)
+* Fixed `prior_only = TRUE` for models with gaussian variables and no
+  repeated observations. `terminal_drift` only received a prior inside the
+  likelihood block, leaving it improper when the likelihood was skipped.
+  Sampling failed to initialise with `nuts_sampler = "nutpie"` and was
+  unreliable with `nuts_sampler = "stan"` (#118)
+* Fixed the pointwise `log_lik` and `yrep` for gaussian variables with
+  missing data. The generated quantities block used the `-9999` missing
+  value placeholder when constructing residuals, which corrupted the
+  conditional densities of the other variables of the same observation
+
 # coevolve 1.2.0
 
 ### New Features

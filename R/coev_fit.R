@@ -307,7 +307,7 @@ coev_fit <- function(data, variables, id, tree,
       complete_cases, lon_lat, dist_k, dist_cov,
       measurement_error, prior, scale,
       estimate_correlated_drift, estimate_residual,
-      prior_only
+      log_lik, prior_only
     )
   } else {
     sc <- coev_make_stancode(data, variables, id, tree, effects_mat,

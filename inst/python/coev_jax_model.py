@@ -6,6 +6,8 @@ using numpyro.distributions for distribution log-probs. No PyMC or PyTensor.
 Designed to be called via nutpie.compiled_pyfunc.from_pyfunc().
 """
 
+import itertools
+
 import jax
 import jax.numpy as jnp
 import jax.scipy.linalg
@@ -308,6 +310,7 @@ class CoevJaxModel:
         self.effects_mat = np.asarray(data["effects_mat"], dtype=np.int32)
         self.n_offdiag = int(data["n_offdiag"])
         self.prior_only = bool(int(data["prior_only"]))
+        self.log_lik = bool(int(data["log_lik"]))
 
         self.tdrift = bool(int(data["tdrift"]))
         self.repeated = bool(int(data["repeated"]))
@@ -361,6 +364,15 @@ class CoevJaxModel:
 
         if self.has_measurement_error:
             self.se = jnp.array(data["se"], dtype=jnp.float64)
+            # `se` is indexed by observation; posterior predictions need it
+            # indexed by tip, because replicated terminal drift is drawn once
+            # per tip (cf. Stan 07-generated-quantities.stan).
+            if not self.repeated:
+                se_by_tip = np.zeros((self.N_tips, self.J))
+                se_by_tip[self.tip_id] = np.asarray(
+                    data["se"], dtype=np.float64
+                )
+                self.se_by_tip = jnp.array(se_by_tip)
 
         # Tree traversal level data
         self.n_levels = int(data["n_levels"])
@@ -521,6 +533,9 @@ class CoevJaxModel:
         if self.repeated:
             vs.append(("sigma_residual", (J,)))
             vs.append(("cor_residual", (J, J)))
+        vs.append(("yrep", (self.N_tree, self.N_obs, J)))
+        if self.log_lik:
+            vs.append(("log_lik", (self.N_obs * J,)))
         return vs
 
     def _build_expand_info(self):
@@ -827,17 +842,18 @@ class CoevJaxModel:
         lp = lp + dist.Normal(0.0, 1.0).log_prob(params["z_drift"]).sum()
 
         # terminal_drift prior — match Stan exactly:
-        #   add_terminal_drift_prior (= self.tdrift): global std_normal
-        #   set_tdrift (= !self.tdrift): inline per-obs prior on normal
-        #     columns (only when likelihood is evaluated, i.e. !prior_only)
-        if self.tdrift:
+        #   add_terminal_drift_prior (= self.tdrift or prior_only): global
+        #     std_normal. Under prior_only the inline prior below is never
+        #     reached, so terminal_drift would otherwise be left improper.
+        #   set_tdrift: inline per-obs prior on normal columns
+        if self.tdrift or self.prior_only:
             # Stan: to_vector(terminal_drift[t]) ~ std_normal();
             lp = lp + (
                 dist.Normal(0.0, 1.0)
                 .log_prob(params["terminal_drift"])
                 .sum()
             )
-        elif not self.prior_only:
+        else:
             # Stan set_tdrift block: for observed normal vars,
             #   terminal_drift[t][tip_id[i],j] ~ std_normal()
             # For non-normal vars: no separate prior (enters via MVN)
@@ -1110,6 +1126,221 @@ class CoevJaxModel:
         return jnp.sum(jax.scipy.special.logsumexp(all_tree_lps, axis=0))
 
     # ------------------------------------------------------------------
+    # Pointwise log-likelihood  (cf. Stan 07-generated-quantities.stan)
+    # ------------------------------------------------------------------
+
+    def _generate_log_lik(self, params, eta, tip_L_VCV, tdrift, residual_v,
+                          L_residual, dist_v):
+        """Log-likelihood of every (observation, variable) cell.
+
+        Mirrors Stan 07-generated-quantities.stan. Normal variables
+        contribute the *conditional* univariate density given the other
+        variables of the same observation, so that each cell can be scored
+        separately; other variables contribute their own lpmf/lpdf. Missing
+        cells contribute zero before trees are combined with log_sum_exp.
+
+        Returns an (N_obs * J,) vector flattened column-major to match
+        Stan's `to_vector()` of an (N_obs, J) matrix.
+        """
+        J = self.J
+        tid = self.tip_id
+        has_normal = "normal" in self.distributions
+
+        def _one_tree(eta_t, tip_L_VCV_t, tdrift_t, terminal_drift_t):
+            def base_lmod(j0):
+                lm = eta_t[tid][:, j0]
+                if dist_v is not None:
+                    lm = lm + dist_v[tid, j0]
+                return lm
+
+            # `vec` collects the quantity that is multivariate normal across
+            # variables: residuals when observations repeat, terminal drift
+            # otherwise (cf. the Stan set_residuals / set_tdrifts blocks).
+            # Observed normal cells are pinned to the data; every other cell
+            # keeps its latent value.
+            if not has_normal:
+                vec = residual_v if self.repeated else tdrift_t[tid]
+            elif self.repeated:
+                vec = params["residual_z"].T
+                for j0 in self.normal_j0:
+                    vec = vec.at[:, j0].set(
+                        jnp.where(
+                            self.miss[:, j0] == 0,
+                            self.y[:, j0]
+                            - (base_lmod(j0) + tdrift_t[tid][:, j0]),
+                            params["residual_z"][j0],
+                        )
+                    )
+            else:
+                vec = terminal_drift_t[tid]
+                for j0 in self.normal_j0:
+                    vec = vec.at[:, j0].set(
+                        jnp.where(
+                            self.miss[:, j0] == 0,
+                            self.y[:, j0] - base_lmod(j0),
+                            terminal_drift_t[tid][:, j0],
+                        )
+                    )
+
+            # Conditional mean and sd of each normal variable given the
+            # others, from the precision matrix of `vec`.
+            mu_cond = None
+            sigma_cond = None
+            if has_normal:
+                if self.repeated:
+                    L_cov = jnp.diag(params["sigma_residual"]) @ L_residual
+                    cov = jnp.broadcast_to(
+                        L_cov @ L_cov.T, (self.N_obs, J, J)
+                    )
+                else:
+                    L_cov = tip_L_VCV_t[tid]
+                    cov = jnp.matmul(L_cov, L_cov.transpose(0, 2, 1))
+                if self.has_measurement_error:
+                    cov = cov + (
+                        self.se[:, :, None] * jnp.eye(J)[None, :, :]
+                    )
+                cov_inv = jnp.linalg.inv(cov)
+                prec_diag = jnp.diagonal(cov_inv, axis1=-2, axis2=-1)
+                mu_cond = vec - (
+                    jnp.einsum("ijk,ik->ij", cov_inv, vec) / prec_diag
+                )
+                sigma_cond = jnp.sqrt(1.0 / prec_diag)
+
+            cols = []
+            for j0, d in enumerate(self.distributions):
+                if d == "normal":
+                    cols.append(
+                        dist.Normal(
+                            mu_cond[:, j0], sigma_cond[:, j0]
+                        ).log_prob(vec[:, j0])
+                    )
+                    continue
+
+                lmod = base_lmod(j0) + vec[:, j0]
+                miss_j = self.miss[:, j0] == 1
+                y_obs = self.y[:, j0]
+                j1 = j0 + 1
+
+                if d == "bernoulli_logit":
+                    y_safe = jnp.where(miss_j, 0.0, y_obs)
+                    ll = dist.Bernoulli(logits=lmod).log_prob(y_safe)
+                elif d == "ordered_logistic":
+                    y_safe = jnp.where(miss_j, 1.0, y_obs)
+                    ll = _ordered_logistic_logp(
+                        lmod, params[f"c{j1}"], (y_safe - 1).astype(jnp.int32)
+                    )
+                elif d == "poisson_softplus":
+                    y_safe = jnp.where(miss_j, 0.0, y_obs)
+                    ll = dist.Poisson(
+                        rate=self.obs_means[j0] * jax.nn.softplus(lmod)
+                    ).log_prob(y_safe.astype(jnp.int32))
+                elif d == "negative_binomial_softplus":
+                    y_safe = jnp.where(miss_j, 0.0, y_obs)
+                    ll = dist.NegativeBinomial2(
+                        mean=self.obs_means[j0] * jax.nn.softplus(lmod),
+                        concentration=params[f"phi{j1}"].squeeze(),
+                    ).log_prob(y_safe.astype(jnp.int32))
+                elif d == "gamma_log":
+                    y_safe = jnp.where(miss_j, 1.0, y_obs)
+                    alpha = params[f"shape{j1}"].squeeze()
+                    ll = dist.Gamma(
+                        concentration=alpha, rate=alpha / jnp.exp(lmod)
+                    ).log_prob(y_safe)
+                else:
+                    raise ValueError(f"Unsupported distribution: {d!r}")
+                cols.append(ll)
+
+            return jnp.where(self.miss == 0, jnp.stack(cols, axis=-1), 0.0)
+
+        tdrift_batched = (
+            tdrift
+            if tdrift is not None
+            else jnp.zeros((self.N_tree, self.N_tips, J))
+        )
+        all_tree_lps = jax.vmap(_one_tree, in_axes=(0, 0, 0, 0))(
+            eta, tip_L_VCV, tdrift_batched, params["terminal_drift"]
+        )
+        # Combine trees, then flatten column-major like Stan's to_vector().
+        return jax.scipy.special.logsumexp(all_tree_lps, axis=0).T.reshape(-1)
+
+    # ------------------------------------------------------------------
+    # Posterior predictions  (cf. Stan 07-generated-quantities.stan)
+    # ------------------------------------------------------------------
+
+    def _generate_yrep(self, params, eta, tip_L_VCV, dist_v, L_residual, key):
+        """Draw posterior predictions for every observation and tree.
+
+        Mirrors Stan 07-generated-quantities.stan: replicated terminal drift
+        is drawn once per tip (shared by repeated observations of that tip),
+        replicated residuals once per observation, and each variable is then
+        drawn from its response distribution.
+
+        Returns an (N_tree, N_obs, J) array.
+        """
+        J = self.J
+        tid = self.tip_id
+        key_drift, key_resid, key_obs = jax.random.split(key, 3)
+
+        # terminal_drift_rep[t,i] = cholesky_decompose(VCV_tips[t,i]) * z
+        L_tip = tip_L_VCV
+        if self.has_measurement_error and not self.repeated:
+            VCV_tip = jnp.matmul(L_tip, L_tip.transpose(0, 1, 3, 2))
+            se_diag = (
+                self.se_by_tip[:, :, None] * jnp.eye(J)[None, :, :]
+            )
+            L_tip = jnp.linalg.cholesky(VCV_tip + se_diag[None, :, :, :])
+        drift_rep = jnp.einsum(
+            "tijk,tik->tij",
+            L_tip,
+            jax.random.normal(key_drift, (self.N_tree, self.N_tips, J)),
+        )
+
+        lmod = eta[:, tid, :] + drift_rep[:, tid, :]
+        if dist_v is not None:
+            lmod = lmod + dist_v[tid][None, :, :]
+        if self.repeated:
+            lmod = lmod + jnp.einsum(
+                "jk,tik->tij",
+                jnp.diag(params["sigma_residual"]) @ L_residual,
+                jax.random.normal(
+                    key_resid, (self.N_tree, self.N_obs, J)
+                ),
+            )
+
+        keys_j = jax.random.split(key_obs, len(self.distributions))
+        cols = []
+        for j0, d in enumerate(self.distributions):
+            lm = lmod[:, :, j0]
+            key_j = keys_j[j0]
+            if d == "normal":
+                draw = lm
+            elif d == "bernoulli_logit":
+                draw = dist.Bernoulli(logits=lm).sample(key_j)
+            elif d == "ordered_logistic":
+                draw = 1 + dist.OrderedLogistic(
+                    lm, params[f"c{j0 + 1}"]
+                ).sample(key_j)
+            elif d == "poisson_softplus":
+                draw = dist.Poisson(
+                    rate=self.obs_means[j0] * jax.nn.softplus(lm)
+                ).sample(key_j)
+            elif d == "negative_binomial_softplus":
+                draw = dist.NegativeBinomial2(
+                    mean=self.obs_means[j0] * jax.nn.softplus(lm),
+                    concentration=params[f"phi{j0 + 1}"].squeeze(),
+                ).sample(key_j)
+            elif d == "gamma_log":
+                alpha = params[f"shape{j0 + 1}"].squeeze()
+                draw = dist.Gamma(
+                    concentration=alpha, rate=alpha / jnp.exp(lm)
+                ).sample(key_j)
+            else:
+                raise ValueError(f"Unsupported distribution: {d!r}")
+            cols.append(draw.astype(jnp.float64))
+
+        return jnp.stack(cols, axis=-1)
+
+    # ------------------------------------------------------------------
     # Main log-density  (orchestrates all blocks)
     # ------------------------------------------------------------------
 
@@ -1185,13 +1416,16 @@ class CoevJaxModel:
         Keys are returned in the exact order of _expand_var_list().
         The JAX computation is JIT-compiled; only the final
         jax->numpy conversion runs in Python.
+
+        `yrep` needs randomness, so each call folds a per-draw counter into
+        a chain-specific PRNG key seeded from nutpie's (seed1, seed2, chain).
         """
         J = self.J
         var_order = [n for n, _ in self._expand_var_list()]
 
         # JIT-compile the pure JAX part
         @jax.jit
-        def _expand_jax(x):
+        def _expand_jax(x, key):
             params, _ = self.unpack_params(x)
             vals = []
 
@@ -1212,6 +1446,16 @@ class CoevJaxModel:
                 L_VCV_cache,
                 b_delta_cache,
             )
+
+            L_residual = None
+            if self.repeated:
+                n_corr_res = J * (J - 1) // 2
+                if n_corr_res > 0:
+                    L_residual, _ = raw_to_cholesky(
+                        params["_L_residual_raw"], J
+                    )
+                else:
+                    L_residual = jnp.eye(J)
 
             vals.append(params["A_diag"])
             if self.n_offdiag > 0:
@@ -1239,23 +1483,46 @@ class CoevJaxModel:
 
             if self.repeated:
                 vals.append(params["sigma_residual"])
-                n_corr_res = J * (J - 1) // 2
-                if n_corr_res > 0:
-                    L_res, _ = raw_to_cholesky(
-                        params["_L_residual_raw"], J
+                vals.append(L_residual @ L_residual.T)  # cor_residual
+
+            # Generated quantities. Unused transformed parameters are
+            # eliminated by XLA, so nothing here is computed twice.
+            tdrift, residual_v, dist_v = self._transformed_params(
+                params, tip_L_VCV, L_residual
+            )
+            vals.append(
+                self._generate_yrep(
+                    params, eta, tip_L_VCV, dist_v, L_residual, key
+                )
+            )
+            if self.log_lik:
+                vals.append(
+                    self._generate_log_lik(
+                        params, eta, tip_L_VCV, tdrift, residual_v,
+                        L_residual, dist_v
                     )
-                else:
-                    L_res = jnp.eye(J)
-                vals.append(L_res @ L_res.T)  # cor_residual
+                )
 
             return vals
 
         # Warm up JIT
         _x0 = jnp.zeros(self.ndim)
-        _expand_jax(_x0)
+        _expand_jax(_x0, jax.random.PRNGKey(0))
+
+        # Chain-specific base key; each draw folds in its own counter so that
+        # yrep uses a fresh, reproducible random stream.
+        base_key = jax.random.fold_in(
+            jax.random.PRNGKey(int(seed1) % (2 ** 32)),
+            int(seed2) % (2 ** 31),
+        )
+        base_key = jax.random.fold_in(base_key, int(chain))
+        draw_counter = itertools.count()
 
         def expand(x):
-            jax_vals = _expand_jax(jnp.asarray(x))
+            jax_vals = _expand_jax(
+                jnp.asarray(x),
+                jax.random.fold_in(base_key, next(draw_counter)),
+            )
             result = {}
             for i, name in enumerate(var_order):
                 result[name] = np.asarray(
