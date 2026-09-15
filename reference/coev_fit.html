@@ -342,6 +342,13 @@ observations), the model will automatically estimate residual standard
 deviations and residual correlations that capture the within-taxa variation
 that is not due to the coevolutionary process. To turn off this behaviour,
 set <code>estimate_residual = FALSE</code>.</p>
+<p>We do not recommend modelling residual standard deviations in cases where
+repeated observations are present for some traits but not others, as there
+will be no within-species variance for traits without repeated
+observations.</p>
+<p>Note that models with repeated observations for mixtures of continuous and
+non-continuous traits are currently considered experimental and should be
+treated with caution.</p>
 <p><b>Incorporating measurement error</b></p>
 <p>If any normally-distributed coevolving variables are measured with error,
 the user can pass standard errors for one or more of these variables into

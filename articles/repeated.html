@@ -80,7 +80,7 @@
                         <h4 data-toc-skip class="author">Scott
 Claessens</h4>
             
-            <h4 data-toc-skip class="date">2026-07-22</h4>
+            <h4 data-toc-skip class="date">2026-09-15</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/main/vignettes/repeated.Rmd" class="external-link"><code>vignettes/repeated.Rmd</code></a></small>
       <div class="hidden name"><code>repeated.Rmd</code></div>
@@ -162,14 +162,14 @@ for each species.</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 3 finished in 272.3 seconds.
-Chain 4 finished in 366.5 seconds.
-Chain 2 finished in 367.6 seconds.
-Chain 1 finished in 373.3 seconds.
+Chain 3 finished in 265.7 seconds.
+Chain 2 finished in 368.7 seconds.
+Chain 4 finished in 369.0 seconds.
+Chain 1 finished in 378.3 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 344.9 seconds.
-Total execution time: 373.4 seconds.</code></pre>
+Mean chain execution time: 345.4 seconds.
+Total execution time: 378.4 seconds.</code></pre>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Variables: x = normal 
@@ -214,6 +214,17 @@ for <span class="math inline">\(x\)</span> and <span class="math inline">\(y\)</
 <p>If we wanted to remove the additional varying effects structure when
 repeated observations are present, we could set
 <code>estimate_residual = FALSE</code> when fitting the model.</p>
+</div>
+<div class="section level2">
+<h2 id="limitations-of-repeated-observations-models">Limitations of repeated observations models<a class="anchor" aria-label="anchor" href="#limitations-of-repeated-observations-models"></a>
+</h2>
+<p>We do not recommend modelling residual standard deviations in cases
+where repeated observations are present for some traits but not others,
+as there will be no within-species variance for traits without repeated
+observations.</p>
+<p>In addition, note that models with repeated observations for mixtures
+of continuous and non-continuous traits are currently considered
+experimental and should be treated with caution.</p>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
