@@ -10,6 +10,7 @@ knitr::knit("vignettes/compare.Rmd.orig",    "vignettes/compare.Rmd")
 knitr::knit("vignettes/jax.Rmd.orig",        "vignettes/jax.Rmd")
 knitr::knit("vignettes/ancestral_states.Rmd.orig",
             "vignettes/ancestral_states.Rmd")
+knitr::knit("vignettes/scaling.Rmd.orig",    "vignettes/scaling.Rmd")
 
 # remove "vignettes/" to ensure correct figure paths
 edit_figure_paths <- function(file) {
@@ -26,3 +27,4 @@ edit_figure_paths("vignettes/spatial.Rmd")
 edit_figure_paths("vignettes/compare.Rmd")
 edit_figure_paths("vignettes/jax.Rmd")
 edit_figure_paths("vignettes/ancestral_states.Rmd")
+edit_figure_paths("vignettes/scaling.Rmd")
