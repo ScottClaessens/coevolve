@@ -102,6 +102,17 @@ If we wanted to remove the additional varying effects structure when repeated
 observations are present, we could set `estimate_residual = FALSE` when fitting
 the model.
 
+## Limitations of repeated observations models
+
+We do not recommend modelling residual standard deviations in cases where
+repeated observations are present for some traits but not others, as there
+will be no within-species variance for traits without repeated
+observations.
+
+In addition, note that models with repeated observations for mixtures of
+continuous and non-continuous traits are currently considered experimental and
+should be treated with caution.
+
 ## References
 
 de Villemereuil P. & Nakagawa, S. (2014). General quantitative genetic methods
