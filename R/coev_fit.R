@@ -232,6 +232,15 @@
 #'   that is not due to the coevolutionary process. To turn off this behaviour,
 #'   set \code{estimate_residual = FALSE}.
 #'
+#'   We do not recommend modelling residual standard deviations in cases where
+#'   repeated observations are present for some traits but not others, as there
+#'   will be no within-species variance for traits without repeated
+#'   observations.
+#'
+#'   Note that models with repeated observations for mixtures of continuous and
+#'   non-continuous traits are currently considered experimental and should be
+#'   treated with caution.
+#'
 #'   \bold{Incorporating measurement error}
 #'
 #'   If any normally-distributed coevolving variables are measured with error,

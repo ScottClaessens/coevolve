@@ -5,7 +5,7 @@ output:
     toc: true
 pkgdown:
   as_is: true
-date: "2026-07-22"
+date: "2026-09-15"
 author: "Scott Claessens"
 vignette: >
   %\VignetteIndexEntry{Accounting for repeated observations}
@@ -92,14 +92,14 @@ fit <-
 ```
 Running MCMC with 4 parallel chains...
 
-Chain 3 finished in 272.3 seconds.
-Chain 4 finished in 366.5 seconds.
-Chain 2 finished in 367.6 seconds.
-Chain 1 finished in 373.3 seconds.
+Chain 3 finished in 265.7 seconds.
+Chain 2 finished in 368.7 seconds.
+Chain 4 finished in 369.0 seconds.
+Chain 1 finished in 378.3 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 344.9 seconds.
-Total execution time: 373.4 seconds.
+Mean chain execution time: 345.4 seconds.
+Total execution time: 378.4 seconds.
 ```
 
 
@@ -155,6 +155,17 @@ and residual correlation parameters for $x$ and $y$.
 If we wanted to remove the additional varying effects structure when repeated
 observations are present, we could set `estimate_residual = FALSE` when fitting
 the model.
+
+## Limitations of repeated observations models
+
+We do not recommend modelling residual standard deviations in cases where
+repeated observations are present for some traits but not others, as there
+will be no within-species variance for traits without repeated
+observations.
+
+In addition, note that models with repeated observations for mixtures of
+continuous and non-continuous traits are currently considered experimental and
+should be treated with caution.
 
 ## References
 
