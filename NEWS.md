@@ -4,6 +4,15 @@
 
 * Added further documentation about repeated observations models (#120)
 * Added vignette "Algorithmic scaling" (#121)
+* Models with Gaussian variables and no repeated observations now use a
+  conditionally non-centred parameterisation for latent terminal drift, i.e.
+  the terminal drift of non-Gaussian variables and of missing Gaussian values.
+  Latent drift is written as a standard normal innovation conditional on the
+  observed Gaussian residuals of the same taxon. This is a change of variables
+  that leaves the model, the posterior, and the pointwise log-likelihood
+  unchanged, but removes a funnel between the drift parameters and the latent
+  terminal drift that caused poor mixing in mixed Gaussian and non-Gaussian
+  models. Thanks to @yuhangxoox for the diagnosis (#124)
 
 ### Bug Fixes
 

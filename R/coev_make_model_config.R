@@ -48,6 +48,9 @@ coev_make_model_config <- function(data, variables, id, tree,
     tdrift ||
     (length(normal_vars) > 0 &&
      (has_non_normal || any(is.na(data[, normal_vars, drop = FALSE]))))
+  conditional_ncp <- use_conditional_ncp( # nolint: object_usage_linter.
+    data, variables, distributions, id
+  )
 
   ordered_j    <- integer(0)
   ordered_ncuts <- integer(0)
@@ -90,6 +93,7 @@ coev_make_model_config <- function(data, variables, id, tree,
     tdrift                  = as.integer(tdrift),
     repeated                = as.integer(repeated),
     needs_terminal_drift    = as.integer(needs_terminal_drift),
+    conditional_ncp         = as.integer(conditional_ncp),
     residual_v              = as.integer(residual_v),
     estimate_correlated_drift = as.integer(estimate_correlated_drift),
     n_offdiag               = as.integer(n_offdiag),

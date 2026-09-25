@@ -257,16 +257,20 @@ coev_make_stancode <- function(data, variables, id, tree,
       priors[[i]] <- prior[[i]]
     }
   }
+  # conditionally non-centred terminal drift? (#124)
+  conditional_ncp <- use_conditional_ncp( # nolint: object_usage_linter.
+    data, variables, distributions, id
+  )
   # put stan code together
   sc <- paste0(
     "// Generated with coevolve ",
     utils::packageVersion("coevolve"),
     "\n\n",
-    write_functions_block(lon_lat, dist_k, dist_cov),
+    write_functions_block(lon_lat, dist_k, dist_cov, conditional_ncp),
     "\n\n",
     write_data_block(measurement_error, lon_lat, dist_k),
     "\n\n",
-    write_transformed_data_block(distributions, priors),
+    write_transformed_data_block(distributions, priors, conditional_ncp),
     "\n\n",
     write_parameters_block(data, variables, distributions, id, lon_lat, dist_k,
                            estimate_correlated_drift, estimate_residual),
@@ -277,11 +281,11 @@ coev_make_stancode <- function(data, variables, id, tree,
     "\n\n",
     write_model_block(data, distributions, id, lon_lat, priors,
                       measurement_error, estimate_correlated_drift,
-                      estimate_residual, prior_only),
+                      estimate_residual, prior_only, conditional_ncp),
     "\n\n",
     write_gen_quantities_block(data, distributions, id, lon_lat,
                                measurement_error, estimate_correlated_drift,
-                               estimate_residual, log_lik)
+                               estimate_residual, log_lik, conditional_ncp)
   )
   #' @srrstats {BS2.2, BS2.3, BS2.4, BS2.5} Checking distributional parameters
   #'   by confirming that the Stan code is syntactically correct
@@ -363,7 +367,8 @@ render_stan_template <- function(filepath, data = list()) {
 #' @returns Character string
 #'
 #' @noRd
-write_functions_block <- function(lon_lat, dist_k, dist_cov) {
+write_functions_block <- function(lon_lat, dist_k, dist_cov,
+                                  conditional_ncp = FALSE) {
   # functions for approximate gaussian processes
   approximate_gps <- FALSE
   if (!is.null(lon_lat) && !is.na(dist_k)) {
@@ -379,7 +384,8 @@ write_functions_block <- function(lon_lat, dist_k, dist_cov) {
   render_stan_template(
     filepath = "stan/templates/01-functions.stan",
     data = list(
-      approximate_gps = approximate_gps
+      approximate_gps = approximate_gps,
+      conditional_ncp = conditional_ncp
     )
   )
 }
@@ -423,7 +429,8 @@ write_data_block <- function(measurement_error, lon_lat, dist_k) {
 #' @returns Character string
 #'
 #' @noRd
-write_transformed_data_block <- function(distributions, priors) {
+write_transformed_data_block <- function(distributions, priors,
+                                         conditional_ncp = FALSE) {
   # sequence of variables for template
   variable_seq <- lapply(seq_along(distributions), function(j) list(j = j))
   # negative binomial variables for template
@@ -440,7 +447,16 @@ write_transformed_data_block <- function(distributions, priors) {
     filepath = "stan/templates/03-transformed-data.stan",
     data = list(
       variable_seq = variable_seq,
-      neg_binomial_seq = neg_binomial_seq
+      neg_binomial_seq = neg_binomial_seq,
+      conditional_ncp = if (conditional_ncp) {
+        list(
+          is_normal_flags = paste(
+            as.integer(distributions == "normal"), collapse = ", "
+          )
+        )
+      } else {
+        FALSE
+      }
     )
   )
 }
@@ -580,7 +596,8 @@ write_transformed_pars_block <- function(data, distributions, id, lon_lat,
 #' @noRd
 write_model_block <- function(data, distributions, id, lon_lat, priors,
                               measurement_error, estimate_correlated_drift,
-                              estimate_residual, prior_only = FALSE) {
+                              estimate_residual, prior_only = FALSE,
+                              conditional_ncp = FALSE) {
   # check for repeated
   repeated <- any(duplicated(data[, id])) && estimate_residual
   # add priors for terminal_drift when:
@@ -697,6 +714,12 @@ write_model_block <- function(data, distributions, id, lon_lat, priors,
       "cholesky_decompose(add_diag(VCV_tips[t, tip_id[i]], se[i,]))",
       "L_VCV_tips[t, tip_id[i]]"
     )
+    set_tdrift$centred <- !conditional_ncp
+    set_tdrift$conditional_ncp <- if (conditional_ncp) {
+      list(cov_matrix_perm = ncp_cov_matrix_perm(measurement_error))
+    } else {
+      FALSE
+    }
   }
   # function to write likelihoods for non-continuous variables
   write_likelihood <- function(distribution, j) {
@@ -778,6 +801,34 @@ write_model_block <- function(data, distributions, id, lon_lat, priors,
   )
 }
 
+#' Internal function for the permuted terminal drift Cholesky factor
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Returns the Stan expression for the Cholesky factor of the
+#'   terminal drift covariance matrix of observation \code{i}, permuted so that
+#'   observed Gaussian variables come first. Used for the conditionally
+#'   non-centred terminal drift (#124) in \code{\link{coev_make_stancode}}.
+#'
+#' @returns Character string
+#'
+#' @noRd
+ncp_cov_matrix_perm <- function(measurement_error) {
+  if (!is.null(measurement_error)) {
+    paste0(
+      "cholesky_decompose(add_diag(",
+      "VCV_tips[t, tip_id[i]][tdrift_perm[i], tdrift_perm[i]], ",
+      "se[i, tdrift_perm[i]]))"
+    )
+  } else {
+    paste0(
+      "tdrift_perm_identity[i] == 1 ? L_VCV_tips[t, tip_id[i]] : ",
+      "cholesky_decompose(",
+      "VCV_tips[t, tip_id[i]][tdrift_perm[i], tdrift_perm[i]])"
+    )
+  }
+}
+
 #' Internal function for writing the Stan generated quantities block
 #'
 #' @srrstats {G1.4a} Non-exported function documented here
@@ -791,7 +842,8 @@ write_model_block <- function(data, distributions, id, lon_lat, priors,
 write_gen_quantities_block <- function(data, distributions, id, lon_lat,
                                        measurement_error,
                                        estimate_correlated_drift,
-                                       estimate_residual, log_lik) {
+                                       estimate_residual, log_lik,
+                                       conditional_ncp = FALSE) {
   # check if repeated
   repeated <- any(duplicated(data[, id])) && estimate_residual
   # terminal drift cov matrix
@@ -846,6 +898,11 @@ write_gen_quantities_block <- function(data, distributions, id, lon_lat,
     } else {
       init_tdrifts <- TRUE
       set_tdrifts <- set
+      set_tdrifts$conditional_ncp <- if (conditional_ncp) {
+        list(cov_matrix_perm = ncp_cov_matrix_perm(measurement_error))
+      } else {
+        FALSE
+      }
     }
   }
   # set mu_cond and sigma_cond
