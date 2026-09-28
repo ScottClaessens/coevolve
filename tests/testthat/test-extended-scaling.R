@@ -33,10 +33,11 @@ test_that("coev_fit() scales with increasing observations", {
       seed = 1
     )
   s_small <- fit_small$fit$summary()
-  # fit model with 5x the number of observations
+  # fit model with 10x the number of observations
   fit_large <-
     coev_fit(
-      data = rbind(d, d, d, d, d),
+      data = rbind(d, d, d, d, d,
+                   d, d, d, d, d),
       variables = list(
         x = "normal",
         y = "normal"
