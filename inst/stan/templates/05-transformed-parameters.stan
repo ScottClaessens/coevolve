@@ -6,7 +6,7 @@ transformed parameters{
   matrix[J,J] Q = diag_matrix(Q_sigma) * (L_R * L_R') * diag_matrix(Q_sigma); // drift matrix
   {{/estimate_correlated_drift}}
   {{#no_correlated_drift}}
-  matrix[J,J] Q = diag_matrix(Q_sigma^2); // drift matrix
+  matrix[J,J] Q = diag_matrix(square(Q_sigma)); // drift matrix
   {{/no_correlated_drift}}
   matrix[J,J] Q_inf; // asymptotic covariance matrix
   array[N_tree, N_seg] matrix[J,J] VCV_tips; // vcov matrix for drift
