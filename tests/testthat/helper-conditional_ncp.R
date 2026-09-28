@@ -61,7 +61,7 @@ ncp_to_centred <- function(cons, stan_data, distributions,
         chol_obs <- chol_perm[seq_len(n_obs), seq_len(n_obs), drop = FALSE]
         drift_latent <- drift_latent +
           chol_perm[latent, seq_len(n_obs), drop = FALSE] %*%
-          forwardsolve(chol_obs, drift_obs)
+            forwardsolve(chol_obs, drift_obs)
       }
       terminal_drift[t, tip, perm[latent]] <- drift_latent
       log_jacobian <- log_jacobian + sum(log(diag(chol_perm)[latent]))
