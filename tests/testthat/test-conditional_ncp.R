@@ -33,12 +33,12 @@ sim_mixed_data <- function(n = 12, seed = 1) {
 
 expect_ncp_equivalent <- function(...) {
   res <- compare_ncp_centred(...)
-  expect_false(identical(res$code_ncp, res$code_centred))
-  expect_equal(
+  testthat::expect_false(identical(res$code_ncp, res$code_centred))
+  testthat::expect_equal(
     res$lp_ncp, res$lp_centred_plus_jacobian,
     tolerance = 1e-8, label = "non-centred log density"
   )
-  expect_equal(
+  testthat::expect_equal(
     res$log_lik_ncp, res$log_lik_centred,
     tolerance = 1e-10, label = "non-centred pointwise log likelihood"
   )
