@@ -32,7 +32,7 @@ sim_mixed_data <- function(n = 12, seed = 1) {
 }
 
 expect_ncp_equivalent <- function(...) {
-  res <- compare_ncp_centred(...)
+  res <- compare_ncp_centred(...) # nolint
   testthat::expect_false(identical(res$code_ncp, res$code_centred))
   testthat::expect_equal(
     res$lp_ncp, res$lp_centred_plus_jacobian,
