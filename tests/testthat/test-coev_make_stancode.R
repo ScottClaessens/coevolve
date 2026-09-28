@@ -1703,3 +1703,30 @@ test_that("coev_make_stancode() works with single traits", {
     )
   )
 })
+
+test_that("coev_make_stancode() works with measurement error and Bernoulli", {
+  # simulate data
+  withr::with_seed(1, {
+    n <- 20
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      x_se = rexp(n),
+      y = rbinom(n, 1, 0.5)
+    )
+  })
+  # create stan code
+  expect_no_error(
+    coev_make_stancode(
+      data = d,
+      variables = list(
+        x = "normal",
+        y = "bernoulli_logit"
+      ),
+      id = "id",
+      tree = tree,
+      measurement_error = list(x = "x_se")
+    )
+  )
+})
