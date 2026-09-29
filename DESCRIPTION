@@ -1,6 +1,6 @@
 Package: coevolve
 Title: Fit Bayesian Generalized Dynamic Phylogenetic Models using 'Stan' or 'JAX'
-Version: 1.2.0.9000
+Version: 1.2.1
 Authors@R: 
     c(person("Scott", "Claessens", , "scott.claessens@gmail.com", 
              role = c("aut", "cre"), comment = c(ORCID = "0000-0002-3562-6981")),
@@ -29,7 +29,7 @@ Suggests:
     loo,
     rmarkdown,
     reticulate,
-    testthat (>= 3.0.0),
+    testthat (>= 3.1.7),
     tibble,
     withr
 Config/testthat/edition: 3

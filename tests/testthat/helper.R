@@ -98,7 +98,7 @@ manually_fix_parameters <- function(scode) {
       pattern = stringr::fixed(
         paste0(
           "  matrix[J,J] A = diag_matrix(A_diag); // selection matrix\n",
-          "  matrix[J,J] Q = diag_matrix(Q_sigma^2); // drift matrix\n"
+          "  matrix[J,J] Q = diag_matrix(square(Q_sigma)); // drift matrix\n"
         )
       ),
       replacement = paste0(

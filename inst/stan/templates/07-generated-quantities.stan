@@ -72,6 +72,9 @@ generated quantities{
         {{#is_not_normal_and_normal_absent}}
         tdrifts[{{j}}] = tdrift[t,tip_id[i]][{{j}}];
         {{/is_not_normal_and_normal_absent}}
+        {{#conditional_ncp}}
+        tdrifts = ncp_terminal_drift(tdrifts, {{cov_matrix_perm}}, tdrift_perm[i], n_tdrift_obs[i]);
+        {{/conditional_ncp}}
         {{/set_tdrifts}}
         {{#set_mu_cond_and_sigma_cond}}
         {{#repeated}}
