@@ -50,13 +50,6 @@ transformed parameters{
       VCV_cache[u] = Q_inf - quad_form_sym(Q_inf, A_delta_cache[u]');
       L_VCV_cache[u] = cholesky_decompose(VCV_cache[u]);
       A_solve_cache[u] = A \ add_diag(A_delta_cache[u], -1);
-      for (i in 1:J) {
-        for (j in 1:i) {
-          real val = 0.5 * (A_solve_cache[u][i, j] + A_solve_cache[u][j, i]);
-          A_solve_cache[u][i, j] = val;
-          A_solve_cache[u][j, i] = val;
-        }
-      }
     }
     for (t in 1:N_tree) {
       // setting ancestral states and placeholders
