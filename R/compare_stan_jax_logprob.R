@@ -59,7 +59,7 @@ compare_stan_jax_logprob <- function(
   )
   fit <- suppressWarnings(mod$sample(
     data = sd, chains = 1L, iter_warmup = 1L,
-    iter_sampling = 1L, seed = 1L, refresh = 0,
+    iter_sampling = 1L, seed = seed, refresh = 0,
     show_messages = FALSE, init = 0
   ))
   n_upars <- ncol(posterior::as_draws_matrix(

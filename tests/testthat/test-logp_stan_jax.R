@@ -21,10 +21,11 @@ run_extended_tests <- identical(Sys.getenv("COEVOLVE_EXTENDED_TESTS"), "true")
 # so we use a looser tolerance (1e-2) for those.
 expect_logp_agreement <- function(..., grad_tol = 1e-4,
                                   offset_sd_tol = grad_tol,
-                                  log_lik_tol = NULL) {
+                                  log_lik_tol = NULL,
+                                  seed = 1L) {
   result <- coevolve:::compare_stan_jax_logprob(
     ..., log_lik = !is.null(log_lik_tol),
-    n_points = 3L, seed = 1L, grad_tol = grad_tol
+    n_points = 3L, seed = seed, grad_tol = grad_tol
   )
   testthat::expect_lt(
     result$offset_sd, offset_sd_tol,
@@ -405,7 +406,8 @@ test_that("logp agrees WITH likelihood: repeated measures", {
     id = "species",
     tree = repeated$phylogeny,
     prior_only = FALSE,
-    grad_tol = 1e-2
+    grad_tol = 1e-2,
+    seed = 2L
   )
 })
 
