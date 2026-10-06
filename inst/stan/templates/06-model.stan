@@ -93,7 +93,19 @@ model{
         {{#is_not_normal}}
         tdrift[{{j}}] = terminal_drift[t][tip_id[i],{{j}}];
         {{/is_not_normal}}
+        {{#centred}}
         lp[t] = multi_normal_cholesky_lpdf(tdrift | rep_vector(0.0, J), {{cov_matrix}});
+        {{/centred}}
+        {{#conditional_ncp}}
+        {
+          // latent drift is non-centred conditional on observed residuals
+          matrix[J,J] L_perm = {{cov_matrix_perm}};
+          tdrift = ncp_terminal_drift(tdrift, L_perm, tdrift_perm[i], n_tdrift_obs[i]);
+          lp[t] = multi_normal_cholesky_lpdf(tdrift[tdrift_perm[i]] | rep_vector(0.0, J), L_perm);
+          // change of variables from innovations to latent drift
+          target += ncp_log_det(L_perm, n_tdrift_obs[i]);
+        }
+        {{/conditional_ncp}}
         {{/set_tdrift}}
         {{#likelihoods}}
         if (miss[i,{{j}}] == 0) lp[t] += {{likelihood}};

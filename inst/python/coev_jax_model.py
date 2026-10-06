@@ -94,6 +94,42 @@ def mvn_chol_logp(value, chol):
     return -0.5 * (J * LOG_2PI + quad) - logdet
 
 
+def ncp_terminal_drift(x, cov, perm, inv_perm, obs_mask, identity=None,
+                       chol_default=None):
+    """Conditionally non-centred terminal drift (batched over observations).
+
+    Mirrors ncp_terminal_drift() in Stan 01-functions.stan. After permuting
+    by `perm`, the leading `obs_mask` entries of x are observed Gaussian
+    residuals and the remaining entries are standard normal innovations.
+    With L the Cholesky factor of the permuted covariance, the leading
+    entries of r = L^{-1} x_perm depend only on the observed block, so
+    replacing the remaining entries of r with the innovations and
+    multiplying by L gives the latent drift conditional on the observed
+    residuals.
+
+    Returns the realised drift in the original order, the permuted Cholesky
+    factor, and the log absolute determinant of the Jacobian with respect
+    to the innovations.
+    """
+    cov_perm = jnp.take_along_axis(
+        jnp.take_along_axis(cov, perm[:, :, None], axis=1),
+        perm[:, None, :],
+        axis=2,
+    )
+    L = jnp.linalg.cholesky(cov_perm)
+    if chol_default is not None:
+        L = jnp.where(identity[:, None, None], chol_default, L)
+    x_perm = jnp.take_along_axis(x, perm, axis=1)
+    r = jax.lax.linalg.triangular_solve(
+        L, x_perm[..., None], left_side=True, lower=True
+    )[..., 0]
+    r = jnp.where(obs_mask, r, x_perm)
+    x_perm_new = jnp.where(obs_mask, x_perm, jnp.einsum("ijk,ik->ij", L, r))
+    log_diag = jnp.log(jnp.diagonal(L, axis1=-2, axis2=-1))
+    log_det = jnp.sum(jnp.where(obs_mask, 0.0, log_diag), axis=-1)
+    return jnp.take_along_axis(x_perm_new, inv_perm, axis=1), L, log_det
+
+
 # --------------------------------------------------------------------------
 # GP kernel and spectral density functions
 # --------------------------------------------------------------------------
@@ -346,6 +382,31 @@ class CoevJaxModel:
             int(x) for x in np.atleast_1d(data["nonnormal_j0"])
         ]
         self.normal_j0 = [int(x) for x in np.atleast_1d(data["normal_j0"])]
+
+        # Conditionally non-centred terminal drift (#124): per observation,
+        # observed Gaussian variables first, then latent drift
+        # (cf. Stan 03-transformed-data.stan)
+        self.conditional_ncp = bool(int(data.get("conditional_ncp", 0)))
+        if self.conditional_ncp:
+            miss_np = np.asarray(data["miss"], dtype=np.int32).reshape(
+                -1, self.J
+            )
+            is_normal = np.array(
+                [d == "normal" for d in self.distributions]
+            )
+            observed = is_normal[None, :] & (miss_np == 0)
+            perm = np.argsort(~observed, axis=1, kind="stable")
+            n_obs = observed.sum(axis=1)
+            self.ncp_perm = jnp.array(perm, dtype=jnp.int32)
+            self.ncp_inv_perm = jnp.array(
+                np.argsort(perm, axis=1), dtype=jnp.int32
+            )
+            self.ncp_obs_mask = jnp.array(
+                np.arange(self.J)[None, :] < n_obs[:, None]
+            )
+            self.ncp_identity = jnp.array(
+                np.all(perm == np.arange(self.J)[None, :], axis=1)
+            )
 
         self.lkj_eta_drift = float(data["lkj_eta_drift"])
         self.lkj_eta_residual = float(data["lkj_eta_residual"])
@@ -986,17 +1047,17 @@ class CoevJaxModel:
 
             tdrift_vec = None
             residuals = None
+            ncp_log_det = jnp.zeros(self.N_obs)
 
             if has_normal and not self.repeated:
                 L_cov_obs = tip_L_VCV_t[tid]
+                VCV_obs = jnp.matmul(L_cov_obs, L_cov_obs.transpose(0, 2, 1))
                 if self.has_measurement_error:
-                    VCV_obs = jnp.matmul(
-                        L_cov_obs, L_cov_obs.transpose(0, 2, 1)
-                    )
                     se_diag = (
                         self.se[:, :, None] * jnp.eye(J)[None, :, :]
                     )
-                    L_cov_obs = jnp.linalg.cholesky(VCV_obs + se_diag)
+                    VCV_obs = VCV_obs + se_diag
+                    L_cov_obs = jnp.linalg.cholesky(VCV_obs)
 
                 if self.needs_terminal_drift:
                     tdrift_vec = terminal_drift_t[tid]
@@ -1016,7 +1077,23 @@ class CoevJaxModel:
                             missing_fill,
                         )
                     )
-                obs_lp = obs_lp + mvn_chol_logp(tdrift_vec, L_cov_obs)
+                if self.conditional_ncp:
+                    # Stan 06-model.stan: latent drift is non-centred
+                    # conditional on observed residuals; the log Jacobian
+                    # is added outside the mixture over trees
+                    me = self.has_measurement_error
+                    tdrift_vec, L_perm, ncp_log_det = ncp_terminal_drift(
+                        tdrift_vec, VCV_obs, self.ncp_perm,
+                        self.ncp_inv_perm, self.ncp_obs_mask,
+                        identity=None if me else self.ncp_identity,
+                        chol_default=None if me else L_cov_obs,
+                    )
+                    obs_lp = obs_lp + mvn_chol_logp(
+                        jnp.take_along_axis(tdrift_vec, self.ncp_perm, axis=1),
+                        L_perm,
+                    )
+                else:
+                    obs_lp = obs_lp + mvn_chol_logp(tdrift_vec, L_cov_obs)
 
             elif has_normal and self.repeated:
                 residuals = params["residual_z"].T  # (N_obs, J)
@@ -1100,7 +1177,7 @@ class CoevJaxModel:
 
                 obs_lp = obs_lp + jnp.where(self.miss[:, j0] == 0, ll, 0.0)
 
-            return obs_lp
+            return obs_lp, ncp_log_det
 
         # Prepare inputs with leading N_tree axis for vmap.
         # tdrift and terminal_drift may be None/absent for some configs —
@@ -1117,11 +1194,14 @@ class CoevJaxModel:
         )
 
         # vmap over the leading N_tree axis of each input.
-        all_tree_lps = jax.vmap(
+        all_tree_lps, all_tree_ncp_log_dets = jax.vmap(
             _one_tree, in_axes=(0, 0, 0, 0)
         )(eta, tip_L_VCV, tdrift_batched, terminal_drift_batched)
 
-        return jnp.sum(jax.scipy.special.logsumexp(all_tree_lps, axis=0))
+        return (
+            jnp.sum(jax.scipy.special.logsumexp(all_tree_lps, axis=0))
+            + jnp.sum(all_tree_ncp_log_dets)
+        )
 
     # ------------------------------------------------------------------
     # Pointwise log-likelihood  (cf. Stan 07-generated-quantities.stan)
@@ -1178,6 +1258,21 @@ class CoevJaxModel:
                             self.y[:, j0] - base_lmod(j0),
                             terminal_drift_t[tid][:, j0],
                         )
+                    )
+                if self.conditional_ncp:
+                    # realised latent drift from the innovations
+                    L_tip = tip_L_VCV_t[tid]
+                    cov_tip = jnp.matmul(L_tip, L_tip.transpose(0, 2, 1))
+                    me = self.has_measurement_error
+                    if me:
+                        cov_tip = cov_tip + (
+                            self.se[:, :, None] * jnp.eye(J)[None, :, :]
+                        )
+                    vec, _, _ = ncp_terminal_drift(
+                        vec, cov_tip, self.ncp_perm, self.ncp_inv_perm,
+                        self.ncp_obs_mask,
+                        identity=None if me else self.ncp_identity,
+                        chol_default=None if me else L_tip,
                     )
 
             # Conditional mean and sd of each normal variable given the

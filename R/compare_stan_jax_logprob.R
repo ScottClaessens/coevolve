@@ -4,7 +4,9 @@
 #' verify that the JAX log-density agrees with Stan's. Compiles both
 #' models, evaluates log-density and gradient at the same unconstrained
 #' parameter vector, and checks that the log-density offset is constant
-#' across points and gradients agree to a tolerance.
+#' across points and gradients agree to a tolerance. With
+#' \code{log_lik = TRUE}, the pointwise log likelihood from the Stan generated
+#' quantities block is also compared with the JAX backend.
 #'
 #' @importFrom stats rnorm
 #' @noRd
@@ -24,6 +26,7 @@ compare_stan_jax_logprob <- function(
   estimate_correlated_drift = FALSE,
   estimate_residual = TRUE,
   prior_only = TRUE,
+  log_lik = FALSE,
   seed = 1L,
   n_points = 5L,
   grad_tol = 1e-6) {
@@ -41,14 +44,14 @@ compare_stan_jax_logprob <- function(
     complete_cases, lon_lat, dist_k, dist_cov,
     measurement_error, prior, scale,
     estimate_correlated_drift, estimate_residual,
-    log_lik = FALSE, prior_only = prior_only
+    log_lik = log_lik, prior_only = prior_only
   )
   sd <- coev_make_standata(
     data, variables, id, tree, effects_mat,
     complete_cases, lon_lat, dist_k, dist_cov,
     measurement_error, prior, scale,
     estimate_correlated_drift, estimate_residual,
-    log_lik = FALSE, prior_only = prior_only
+    log_lik = log_lik, prior_only = prior_only
   )
 
   mod <- cmdstanr::cmdstan_model(
@@ -56,7 +59,7 @@ compare_stan_jax_logprob <- function(
   )
   fit <- suppressWarnings(mod$sample(
     data = sd, chains = 1L, iter_warmup = 1L,
-    iter_sampling = 1L, seed = 1L, refresh = 0,
+    iter_sampling = 1L, seed = seed, refresh = 0,
     show_messages = FALSE, init = 0
   ))
   n_upars <- ncol(posterior::as_draws_matrix(
@@ -69,7 +72,7 @@ compare_stan_jax_logprob <- function(
     complete_cases, lon_lat, dist_k, dist_cov,
     measurement_error, prior, scale,
     estimate_correlated_drift, estimate_residual,
-    prior_only = prior_only
+    log_lik = log_lik, prior_only = prior_only
   )
   sd_jax <- embed_model_config( # nolint
     standata_to_jax(sd, distributions), cfg # nolint
@@ -101,11 +104,15 @@ compare_stan_jax_logprob <- function(
   reticulate::py_run_string(
     "import jax; vg = jax.jit(jax.value_and_grad(model_obj.log_density))"
   )
+  if (log_lik) {
+    reticulate::py_run_string("expand = model_obj.make_expand_fn()")
+  }
 
   # Evaluate at random points
   set.seed(as.integer(seed))
   offsets <- numeric(n_points)
   max_grad_diffs <- numeric(n_points)
+  max_log_lik_diffs <- rep(NA_real_, n_points)
 
   for (i in seq_len(n_points)) {
     u <- rnorm(n_upars, 0, 0.3)
@@ -129,6 +136,16 @@ _grad_np = np.array(g)
 
     offsets[i] <- logp_stan - logp_jax
     max_grad_diffs[i] <- max(abs(stan_grad - jax_grad))
+
+    if (log_lik) {
+      log_lik_stan <- fit$constrain_variables(
+        u, generated_quantities = TRUE
+      )$log_lik
+      log_lik_jax <- reticulate::py_to_r(
+        reticulate::py_eval("expand")(np$array(u, dtype = "float64"))
+      )$log_lik
+      max_log_lik_diffs[i] <- max(abs(log_lik_stan - log_lik_jax))
+    }
   }
 
   offset_sd <- if (n_points > 1) sd(offsets) else 0
@@ -161,6 +178,7 @@ _grad_np = np.array(g)
     constant_offset  = offsets[1],
     offset_sd        = offset_sd,
     max_grad_diff    = max_grad_diff,
-    mean_grad_diff   = mean(max_grad_diffs)
+    mean_grad_diff   = mean(max_grad_diffs),
+    max_log_lik_diff = max(max_log_lik_diffs)
   )
 }

@@ -20,9 +20,12 @@ run_extended_tests <- identical(Sys.getenv("COEVOLVE_EXTENDED_TESTS"), "true")
 # floating-point errors through the tree traversal and MVN evaluation,
 # so we use a looser tolerance (1e-2) for those.
 expect_logp_agreement <- function(..., grad_tol = 1e-4,
-                                  offset_sd_tol = grad_tol) {
+                                  offset_sd_tol = grad_tol,
+                                  log_lik_tol = NULL,
+                                  seed = 1L) {
   result <- coevolve:::compare_stan_jax_logprob(
-    ..., n_points = 3L, seed = 1L, grad_tol = grad_tol
+    ..., log_lik = !is.null(log_lik_tol),
+    n_points = 3L, seed = seed, grad_tol = grad_tol
   )
   testthat::expect_lt(
     result$offset_sd, offset_sd_tol,
@@ -32,6 +35,12 @@ expect_logp_agreement <- function(..., grad_tol = 1e-4,
     result$max_grad_diff, grad_tol,
     label = "gradient discrepancy"
   )
+  if (!is.null(log_lik_tol)) {
+    testthat::expect_lt(
+      result$max_log_lik_diff, log_lik_tol,
+      label = "pointwise log_lik discrepancy"
+    )
+  }
 }
 
 test_that("logp agrees: ordered logistic (authority)", {
@@ -397,7 +406,8 @@ test_that("logp agrees WITH likelihood: repeated measures", {
     id = "species",
     tree = repeated$phylogeny,
     prior_only = FALSE,
-    grad_tol = 1e-2
+    grad_tol = 1e-2,
+    seed = 2L
   )
 })
 
@@ -416,5 +426,74 @@ test_that("logp agrees WITH likelihood: multiphylo", {
     prior = list(A_offdiag = "normal(0, 2)"),
     prior_only = FALSE,
     grad_tol = 1e-2
+  )
+})
+
+# Conditionally non-centred terminal drift (#124): latent drift of
+# non-Gaussian variables and missing Gaussian values is parameterised
+# conditional on the observed Gaussian residuals. Both backends must agree
+# on the log density and on the pointwise log likelihood, which uses the
+# realised drift. The JAX matrix exponential is approximate, so the two
+# backends differ by ~1e-5 on these likelihoods (as on main); a wrong
+# realised drift gives log_lik errors of order 0.1-1.
+sim_ncp_data <- function(seed = 3) {
+  withr::with_seed(seed, {
+    n <- 10
+    tree <- ape::rcoal(n)
+    d <- data.frame(
+      id = tree$tip.label,
+      x = rnorm(n),
+      w = rnorm(n),
+      y = rbinom(n, 1, 0.5),
+      x_se = rexp(n, 5)
+    )
+  })
+  d$x[c(2, 5)] <- NA
+  d$w[5] <- NA
+  d$y[3] <- NA
+  list(data = d, tree = tree)
+}
+
+test_that("logp and log_lik agree: conditional ncp with missing data", {
+  sim <- sim_ncp_data()
+  expect_logp_agreement(
+    data = sim$data,
+    variables = list(y = "bernoulli_logit", x = "normal", w = "normal"),
+    id = "id",
+    tree = sim$tree,
+    prior_only = FALSE,
+    grad_tol = 1e-2,
+    log_lik_tol = 1e-3
+  )
+})
+
+test_that("logp and log_lik agree: conditional ncp with measurement error", {
+  skip_if_not(run_extended_tests)
+  sim <- sim_ncp_data()
+  expect_logp_agreement(
+    data = sim$data,
+    variables = list(x = "normal", y = "bernoulli_logit"),
+    id = "id",
+    tree = sim$tree,
+    measurement_error = list(x = "x_se"),
+    prior_only = FALSE,
+    grad_tol = 1e-2,
+    log_lik_tol = 1e-3
+  )
+})
+
+test_that("logp and log_lik agree: conditional ncp with multiphylo", {
+  skip_if_not(run_extended_tests)
+  sim <- sim_ncp_data()
+  tree2 <- withr::with_seed(4, ape::rcoal(10, tip.label = sim$tree$tip.label))
+  trees <- c(sim$tree, tree2)
+  expect_logp_agreement(
+    data = sim$data,
+    variables = list(x = "normal", y = "bernoulli_logit"),
+    id = "id",
+    tree = trees,
+    prior_only = FALSE,
+    grad_tol = 1e-2,
+    log_lik_tol = 1e-3
   )
 })
