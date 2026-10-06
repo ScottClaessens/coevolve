@@ -776,3 +776,33 @@ choose_l <- function(x, c) {
   }
   c * range
 }
+
+#' Internal helper function for choosing the terminal drift parameterisation
+#'
+#' @srrstats {G1.4a} Non-exported function documented here
+#'
+#' @description Determines whether the latent terminal drift should be
+#'   conditionally non-centred (#124). This applies to models with Gaussian
+#'   variables and no duplicated taxa, whenever some terminal drift is latent
+#'   (non-Gaussian variables or missing Gaussian values). The latent drift is
+#'   then written as a standard normal innovation conditional on the observed
+#'   Gaussian residuals of the same taxon. This is a change of variables that
+#'   leaves the model unchanged. With duplicated taxa (repeated observations),
+#'   the existing parameterisations are kept. Used in
+#'   \code{coev_make_stancode()} and \code{coev_make_model_config()}.
+#'
+#' @param data Data frame of observations
+#' @param variables Character vector of variable names
+#' @param distributions Character vector of response distributions
+#' @param id Name of the taxon id column
+#'
+#' @returns Logical of length one
+#'
+#' @noRd
+use_conditional_ncp <- function(data, variables, distributions, id) {
+  normal_vars <- variables[distributions == "normal"]
+  length(normal_vars) > 0 &&
+    !any(duplicated(data[, id])) &&
+    (any(distributions != "normal") ||
+       anyNA(data[, normal_vars, drop = FALSE]))
+}

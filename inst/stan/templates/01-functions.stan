@@ -144,5 +144,36 @@ functions {
   }
   {{/matern32}}
   {{/approximate_gps}}
+  {{#conditional_ncp}}
+
+  // map standard normal innovations to latent terminal drift, conditional on
+  // the observed Gaussian residuals of the same taxon. After permuting by
+  // perm, the first n_obs elements of x are observed residuals and the
+  // remaining elements are innovations. L is the Cholesky factor of the
+  // permuted terminal drift covariance matrix.
+  vector ncp_terminal_drift(vector x, matrix L, array[] int perm, int n_obs) {
+    int J = rows(x);
+    vector[J] x_perm = x[perm];
+    vector[J] out;
+    if (n_obs == 0) {
+      x_perm = L * x_perm;
+    } else if (n_obs < J) {
+      vector[n_obs] w = mdivide_left_tri_low(L[1:n_obs, 1:n_obs], x_perm[1:n_obs]);
+      vector[J - n_obs] z = x_perm[(n_obs + 1):J];
+      x_perm[(n_obs + 1):J] = L[(n_obs + 1):J, 1:n_obs] * w
+        + L[(n_obs + 1):J, (n_obs + 1):J] * z;
+    }
+    out[perm] = x_perm;
+    return out;
+  }
+
+  // log absolute determinant of the Jacobian of ncp_terminal_drift() with
+  // respect to the innovations
+  real ncp_log_det(matrix L, int n_obs) {
+    int J = rows(L);
+    if (n_obs == J) return 0;
+    return sum(log(diagonal(L)[(n_obs + 1):J]));
+  }
+  {{/conditional_ncp}}
 
 }
