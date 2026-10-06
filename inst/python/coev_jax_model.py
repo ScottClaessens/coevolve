@@ -719,7 +719,6 @@ class CoevJaxModel:
             VCV_cache[u] = Q_inf - quad_form_sym(Q_inf, A_delta_cache[u]');
             L_VCV_cache[u] = cholesky_decompose(VCV_cache[u]);
             A_solve_cache[u] = A \\ add_diag(A_delta_cache[u], -1);
-            // symmetrize A_solve_cache[u]
           }
 
         Returns (A_delta_cache, L_VCV_cache, A_solve_cache, b_delta_cache).
@@ -741,15 +740,14 @@ class CoevJaxModel:
         VCV_cache = 0.5 * (V + V.transpose(0, 2, 1))
         L_VCV_cache = jnp.linalg.cholesky(VCV_cache)
 
-        # A_solve = A^{-1} (A_delta - I)  (symmetrized)
+        # A_solve = A^{-1} (A_delta - I)  (not symmetric unless A is)
         A_inv = jnp.linalg.solve(A_mat, eye_J)
-        As = jnp.matmul(
+        A_solve_cache = jnp.matmul(
             A_inv[None, :, :],
             A_delta_cache - jnp.broadcast_to(
                 eye_J[None, :, :], A_delta_cache.shape
             ),
         )
-        A_solve_cache = 0.5 * (As + As.transpose(0, 2, 1))
 
         # b_delta = A_solve @ b  (precomputed for tree traversal)
         b_delta_cache = jnp.matmul(

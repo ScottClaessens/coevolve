@@ -16,6 +16,15 @@
 
 ### Bug Fixes
 
+* Fixed the continuous time intercept term in the expected change along a
+  branch, `A^-1 (exp(A t) - I) b`. Since version 1.0.0 this matrix was
+  symmetrised before being multiplied by `b`, which is only correct when the
+  selection matrix `A` is symmetric (e.g., no cross-selection effects). Both
+  the Stan and JAX backends now use the exact expression. In our comparisons
+  the selection (`A`) and drift (`Q`) parameters were essentially unchanged,
+  because `b` is weakly identified and absorbs most of the difference.
+  Posterior estimates of `b` itself can shift; in one simulated example they
+  moved by up to about 0.6 posterior standard deviations
 * Fixed `coev_plot_predictive_check()` when `nuts_sampler = "nutpie"`. The
   JAX backend now returns `yrep` posterior predictions alongside the other
   model parameters, matching the Stan backend (#118)
