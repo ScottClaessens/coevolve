@@ -80,7 +80,7 @@
                         <h4 data-toc-skip class="author">Scott
 Claessens</h4>
             
-            <h4 data-toc-skip class="date">2026-07-22</h4>
+            <h4 data-toc-skip class="date">2026-10-06</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/main/vignettes/compare.Rmd" class="external-link"><code>vignettes/compare.Rmd</code></a></small>
       <div class="hidden name"><code>compare.Rmd</code></div>
@@ -130,14 +130,14 @@ the evolution of each trait depends on the other trait. First, we fit a
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 4 finished in 422.2 seconds.
-Chain 3 finished in 430.6 seconds.
-Chain 1 finished in 444.5 seconds.
-Chain 2 finished in 451.0 seconds.
+Chain 2 finished in 438.8 seconds.
+Chain 4 finished in 439.9 seconds.
+Chain 3 finished in 440.3 seconds.
+Chain 1 finished in 459.9 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 437.1 seconds.
-Total execution time: 451.1 seconds.</code></pre>
+Mean chain execution time: 444.7 seconds.
+Total execution time: 460.1 seconds.</code></pre>
 <p>Second, we fit an “independent” model where the two traits evolve
 independently. To do this, we first need to construct an effects matrix
 to tell the model which effects to estimate. By default, all effects are
@@ -183,14 +183,14 @@ function:</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 4 finished in 157.1 seconds.
-Chain 2 finished in 186.2 seconds.
-Chain 1 finished in 191.1 seconds.
-Chain 3 finished in 191.3 seconds.
+Chain 2 finished in 181.1 seconds.
+Chain 1 finished in 196.7 seconds.
+Chain 3 finished in 203.4 seconds.
+Chain 4 finished in 208.4 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 181.4 seconds.
-Total execution time: 191.6 seconds.</code></pre>
+Mean chain execution time: 197.4 seconds.
+Total execution time: 208.7 seconds.</code></pre>
 <p>Once we have fitted both models, we can use the
 <code>loo_compare()</code> function from the <a href="https://mc-stan.org/loo/index.html" class="external-link">loo</a> package to compare
 them:</p>
@@ -202,9 +202,9 @@ them:</p>
 <span>    fit_independent <span class="op">=</span> <span class="va">fit_independent</span><span class="op">$</span><span class="va">fit</span><span class="op">$</span><span class="fu">loo</span><span class="op">(</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<pre><code>           model elpd_diff se_diff p_worse diag_diff      diag_elpd
-   fit_dependent       0.0     0.0      NA           1 k_psis &gt; 0.7
- fit_independent     -24.0     4.5    1.00           1 k_psis &gt; 0.7</code></pre>
+<pre><code>           model elpd_diff se_diff p_worse diag_diff diag_elpd
+   fit_dependent       0.0     0.0      NA                    
+ fit_independent     -23.7     4.5    1.00                    </code></pre>
 <p>Usually, we would like to see a difference in expected log predictive
 density (<code>elpd_diff</code>) to be greater than two standard errors
 to determine support for one model over another. In this case, the model

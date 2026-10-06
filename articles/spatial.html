@@ -80,7 +80,7 @@
                         <h4 data-toc-skip class="author">Scott
 Claessens</h4>
             
-            <h4 data-toc-skip class="date">2026-07-22</h4>
+            <h4 data-toc-skip class="date">2026-10-06</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/main/vignettes/spatial.Rmd" class="external-link"><code>vignettes/spatial.Rmd</code></a></small>
       <div class="hidden name"><code>spatial.Rmd</code></div>
@@ -149,14 +149,14 @@ sampling.</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 2 finished in 662.1 seconds.
-Chain 3 finished in 674.2 seconds.
-Chain 4 finished in 680.5 seconds.
-Chain 1 finished in 916.1 seconds.
+Chain 4 finished in 663.9 seconds.
+Chain 3 finished in 666.8 seconds.
+Chain 1 finished in 937.3 seconds.
+Chain 2 finished in 948.6 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 733.2 seconds.
-Total execution time: 916.3 seconds.</code></pre>
+Mean chain execution time: 804.1 seconds.
+Total execution time: 948.8 seconds.</code></pre>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Variables: political_authority = ordered_logistic 
@@ -168,41 +168,41 @@ Phylogeny: authority$phylogeny (Number of trees: 1)
 
 Autoregressive selection effects:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority    -0.70      0.55 -2.04 -0.03 1.00     5198     3665
-religious_authority    -0.77      0.57 -2.14 -0.03 1.00     4905     2919
+political_authority    -0.72      0.55 -2.05 -0.02 1.00     5213     3202
+religious_authority    -0.74      0.57 -2.11 -0.03 1.00     5142     3170
 
 Cross selection effects:
                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority ⟶ religious_authority     1.97      1.25 -0.67  4.37 1.00     2512     2004
-religious_authority ⟶ political_authority     1.49      1.28 -1.08  4.01 1.00     1885     3395
+political_authority ⟶ religious_authority     1.85      1.25 -0.75  4.25 1.00     2799     2793
+religious_authority ⟶ political_authority     1.58      1.32 -1.17  4.14 1.00     2792     3400
 
 Drift parameters:
                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(political_authority)                          1.26      0.74  0.06  2.83 1.00      974     1590
-sd(religious_authority)                          0.94      0.64  0.04  2.40 1.01     1590     2316
-cor(political_authority,religious_authority)     0.12      0.33 -0.54  0.70 1.00     3963     5106
+sd(political_authority)                          1.25      0.74  0.09  2.79 1.00     1677     3694
+sd(religious_authority)                          0.96      0.66  0.04  2.43 1.00     2048     3443
+cor(political_authority,religious_authority)     0.12      0.33 -0.54  0.71 1.00     6632     5947
 
 Continuous time intercept parameters:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority     0.41      0.97 -1.51  2.32 1.00     6112     5721
-religious_authority     0.42      0.93 -1.37  2.26 1.00     6920     5885
+political_authority     0.38      0.96 -1.50  2.28 1.00     9242     5774
+religious_authority     0.38      0.97 -1.50  2.26 1.00     9177     5522
 
 Ordinal cutpoint parameters:
                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority[1]    -1.57      1.03 -3.56  0.44 1.00     4403     6008
-political_authority[2]    -0.85      1.01 -2.81  1.19 1.00     4441     5608
-political_authority[3]     1.30      1.06 -0.70  3.47 1.00     3242     5209
-religious_authority[1]    -1.87      1.06 -3.94  0.24 1.00     4308     5009
-religious_authority[2]    -1.16      1.04 -3.18  0.96 1.00     4488     4854
-religious_authority[3]     1.54      1.10 -0.53  3.76 1.00     3936     5472
+political_authority[1]    -1.56      1.03 -3.58  0.50 1.00     6188     5898
+political_authority[2]    -0.83      1.02 -2.81  1.20 1.00     5682     6007
+political_authority[3]     1.31      1.06 -0.72  3.44 1.00     4159     5082
+religious_authority[1]    -1.90      1.05 -3.96  0.18 1.00     6116     4866
+religious_authority[2]    -1.19      1.04 -3.23  0.88 1.00     6325     5471
+religious_authority[3]     1.51      1.08 -0.60  3.70 1.00     5441     5222
 
 Gaussian Process parameters for distances:
                           Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-rho(political_authority)      0.10      0.05 0.04  0.20 1.00      781     1298
-rho(religious_authority)      0.07      0.04 0.03  0.18 1.00      502      461
-sdgp(political_authority)     1.87      0.73 0.72  3.59 1.00     2167     2185
-sdgp(religious_authority)     2.40      0.80 1.04  4.16 1.00     2358     2639</code></pre>
-<pre><code>Warning: There were 10 divergent transitions after warmup.
+rho(political_authority)      0.10      0.07 0.04  0.22 1.00      860     1169
+rho(religious_authority)      0.07      0.05 0.03  0.18 1.00      782      456
+sdgp(political_authority)     1.86      0.76 0.59  3.61 1.00     2300     1541
+sdgp(religious_authority)     2.37      0.79 1.04  4.19 1.00     2136     2029</code></pre>
+<pre><code>Warning: There were 13 divergent transitions after warmup.
 http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
 <p>The summary output shows that the model has estimated the parameters
 for two Gaussian process functions over geographic locations, one for

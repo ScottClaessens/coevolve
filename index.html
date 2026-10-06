@@ -94,7 +94,9 @@
 <h2 id="generalized-dynamic-phylogenetic-models">Generalized dynamic phylogenetic models<a class="anchor" aria-label="anchor" href="#generalized-dynamic-phylogenetic-models"></a>
 </h2>
 <p>Under the hood, the package estimates the parameters of the following stochastic differential equation along the branches of a phylogenetic tree. The equation partitions evolutionary change in the traits into state-dependent deterministic selection and state-independent Brownian motion, similar to a multivariate Ornstein-Uhlenbeck process:</p>
-<p><span class="math display">\[d\eta(t) = (\textbf{A}\eta(t) + \textbf{b}) + \textbf{G}dW(t)\]</span></p>
+<p><span class="math display">\[
+d\eta(t) = (\textbf{A}\eta(t) + \textbf{b}) + \textbf{G}dW(t)
+\]</span></p>
 <p><span class="math inline">\(\eta(t)\)</span> is a vector of latent variables at time <span class="math inline">\(t\)</span>. The matrix <span class="math inline">\(\textbf{A}\)</span> represents “selection” with strictly negative autoregressive terms on the diagonal. Off-diagonals may be positive or negative, controlling the effect of each trait on the others (e.g., <span class="math inline">\(\textbf{A}[2,1]\)</span> represents the effect of <span class="math inline">\(\eta_1\)</span> on <span class="math inline">\(\eta_2\)</span>). <span class="math inline">\(\textbf{b}\)</span> is a vector of continuous time intercepts. The matrix <span class="math inline">\(\textbf{G}\)</span> is the Cholesky decomposition of the positive semi-definite “drift” covariance matrix <span class="math inline">\(\textbf{Q}\)</span> which scales the Brownian motion process <span class="math inline">\(W(t)\)</span>. An observation-level measurement model then links <span class="math inline">\(\eta\)</span> to the observations at the tips of the tree.</p>
 <p>For more information about the model, refer to the introductory methods paper <a href="https://doi.org/10.1111/2041-210x.70303" class="external-link">here</a>.</p>
 </div>
@@ -131,15 +133,15 @@
 <span>  <span class="op">)</span></span>
 <span><span class="co">#&gt; Running MCMC with 4 parallel chains...</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Chain 3 finished in 259.1 seconds.</span></span>
-<span><span class="co">#&gt; Chain 4 finished in 266.1 seconds.</span></span>
-<span><span class="co">#&gt; Chain 1 finished in 356.2 seconds.</span></span>
-<span><span class="co">#&gt; Chain 2 finished in 386.1 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4 finished in 280.8 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1 finished in 290.0 seconds.</span></span>
+<span><span class="co">#&gt; Chain 3 finished in 380.7 seconds.</span></span>
+<span><span class="co">#&gt; Chain 2 finished in 382.0 seconds.</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; All 4 chains finished successfully.</span></span>
-<span><span class="co">#&gt; Mean chain execution time: 316.9 seconds.</span></span>
-<span><span class="co">#&gt; Total execution time: 386.2 seconds.</span></span>
-<span><span class="co">#&gt; Warning: 7 of 4000 (0.0%) transitions ended with a divergence.</span></span>
+<span><span class="co">#&gt; Mean chain execution time: 333.3 seconds.</span></span>
+<span><span class="co">#&gt; Total execution time: 382.1 seconds.</span></span>
+<span><span class="co">#&gt; Warning: 10 of 4000 (0.0%) transitions ended with a divergence.</span></span>
 <span><span class="co">#&gt; See https://mc-stan.org/misc/warnings for details.</span></span></code></pre></div>
 <p>The results can be investigated using:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -153,41 +155,41 @@
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Autoregressive selection effects:</span></span>
 <span><span class="co">#&gt;                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; political_authority    -0.64      0.53 -1.96 -0.02 1.00     2282     2149</span></span>
-<span><span class="co">#&gt; religious_authority    -0.81      0.57 -2.16 -0.04 1.00     2639     2106</span></span>
+<span><span class="co">#&gt; political_authority    -0.67      0.54 -1.95 -0.02 1.00     2418     1577</span></span>
+<span><span class="co">#&gt; religious_authority    -0.77      0.57 -2.10 -0.04 1.00     2712     2298</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Cross selection effects:</span></span>
 <span><span class="co">#&gt;                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; political_authority ⟶ religious_authority     2.34      0.96  0.42  4.29 1.01     1508     1853</span></span>
-<span><span class="co">#&gt; religious_authority ⟶ political_authority     1.68      1.08 -0.42  3.83 1.00     1067     2030</span></span>
+<span><span class="co">#&gt; political_authority ⟶ religious_authority     2.25      0.98  0.32  4.32 1.00     1335     1975</span></span>
+<span><span class="co">#&gt; religious_authority ⟶ political_authority     1.80      1.11 -0.29  4.07 1.01     1240     2146</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Drift parameters:</span></span>
 <span><span class="co">#&gt;                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; sd(political_authority)                          2.01      0.83  0.25  3.60 1.01      643      602</span></span>
-<span><span class="co">#&gt; sd(religious_authority)                          1.25      0.79  0.08  2.96 1.02      734     1737</span></span>
-<span><span class="co">#&gt; cor(political_authority,religious_authority)     0.26      0.31 -0.41  0.77 1.00     2760     2512</span></span>
+<span><span class="co">#&gt; sd(political_authority)                          1.92      0.85  0.17  3.50 1.01      713      814</span></span>
+<span><span class="co">#&gt; sd(religious_authority)                          1.30      0.81  0.06  2.94 1.00      754     1144</span></span>
+<span><span class="co">#&gt; cor(political_authority,religious_authority)     0.25      0.32 -0.43  0.77 1.00     2262     2591</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Continuous time intercept parameters:</span></span>
 <span><span class="co">#&gt;                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; political_authority     0.23      0.94 -1.60  2.07 1.00     4889     2814</span></span>
-<span><span class="co">#&gt; religious_authority     0.31      0.94 -1.51  2.19 1.00     5071     2710</span></span>
+<span><span class="co">#&gt; political_authority     0.22      0.94 -1.63  2.08 1.00     5319     2828</span></span>
+<span><span class="co">#&gt; religious_authority     0.22      0.94 -1.58  2.06 1.00     5725     2185</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Ordinal cutpoint parameters:</span></span>
 <span><span class="co">#&gt;                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS</span></span>
-<span><span class="co">#&gt; political_authority[1]    -1.32      0.88 -3.05  0.43 1.00     2746     2770</span></span>
-<span><span class="co">#&gt; political_authority[2]    -0.57      0.86 -2.28  1.14 1.00     3083     2967</span></span>
-<span><span class="co">#&gt; political_authority[3]     1.63      0.88 -0.06  3.48 1.00     3629     3113</span></span>
-<span><span class="co">#&gt; religious_authority[1]    -1.50      0.92 -3.28  0.31 1.00     3289     2605</span></span>
-<span><span class="co">#&gt; religious_authority[2]    -0.81      0.91 -2.59  0.96 1.00     3582     2759</span></span>
-<span><span class="co">#&gt; religious_authority[3]     1.63      0.92 -0.12  3.49 1.00     3786     3337</span></span>
-<span><span class="co">#&gt; Warning: There were 7 divergent transitions after warmup.</span></span>
+<span><span class="co">#&gt; political_authority[1]    -1.30      0.90 -3.02  0.50 1.00     3239     2666</span></span>
+<span><span class="co">#&gt; political_authority[2]    -0.55      0.87 -2.23  1.20 1.00     3556     2535</span></span>
+<span><span class="co">#&gt; political_authority[3]     1.65      0.88 -0.03  3.40 1.00     3822     3241</span></span>
+<span><span class="co">#&gt; religious_authority[1]    -1.53      0.94 -3.40  0.37 1.00     3653     2465</span></span>
+<span><span class="co">#&gt; religious_authority[2]    -0.84      0.90 -2.61  1.01 1.00     3813     2753</span></span>
+<span><span class="co">#&gt; religious_authority[3]     1.60      0.93 -0.15  3.51 1.00     3992     3139</span></span>
+<span><span class="co">#&gt; Warning: There were 10 divergent transitions after warmup.</span></span>
 <span><span class="co">#&gt; http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></span></code></pre></div>
 <p>The summary provides general information about the model and details on the posterior draws for the model parameters. In particular, the output shows the autoregressive selection effects (i.e., the effect of a variable on itself in the future), the cross selection effects (i.e., the effect of a variable on another variable in the future), the amount of drift, continuous time intercept parameters for the stochastic differential equation, and cutpoints for the ordinal variables.</p>
 <p>While this summary output is useful as a first glance, it is difficult to interpret these parameters directly to infer directions of coevolution. Another approach is to “intervene” in the system. We can hold variables of interest at their average values and then increase one variable by a standardised amount to see how this affects the optimal trait value for another variable.</p>
 <p>The <code><a href="reference/coev_plot_delta_theta.html">coev_plot_delta_theta()</a></code> function allows us to visualise <span class="math inline">\(\Delta\theta_{z}\)</span> for all variable pairs in the model. <span class="math inline">\(\Delta\theta_{z}\)</span> is defined as the change in the optimal trait value of one variable which results from a one median absolute deviation increase in another variable.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/coev_plot_delta_theta.html">coev_plot_delta_theta</a></span><span class="op">(</span><span class="va">fit</span>, prob_outer <span class="op">=</span> <span class="fl">0.90</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning: Removed 518 rows containing non-finite outside the scale range (`stat_density()`).</span></span></code></pre></div>
+<span><span class="co">#&gt; Warning: Removed 549 rows containing non-finite outside the scale range (`stat_density()`).</span></span></code></pre></div>
 <p><img src="reference/figures/README-authority-delta-theta-1.png" alt="Plot showing the posterior distributions of delta theta for both directions of coevolution between political and religious authority. The bulk of the posterior densities are greater than zero." width="60%" style="display: block; margin: auto;"></p>
 <p>This plot suggests that both variables influence one another in their coevolution. A standardised increase in political authority results in an increase in the optimal trait value for religious authority, and vice versa. In other words, these two variables reciprocally coevolve over evolutionary time.</p>
 </div>

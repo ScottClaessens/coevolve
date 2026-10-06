@@ -80,7 +80,7 @@
                         <h4 data-toc-skip class="author">Scott
 Claessens</h4>
             
-            <h4 data-toc-skip class="date">2026-09-15</h4>
+            <h4 data-toc-skip class="date">2026-10-06</h4>
       
       <small class="dont-index">Source: <a href="https://github.com/ScottClaessens/coevolve/blob/main/vignettes/repeated.Rmd" class="external-link"><code>vignettes/repeated.Rmd</code></a></small>
       <div class="hidden name"><code>repeated.Rmd</code></div>
@@ -162,14 +162,14 @@ for each species.</p>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code>Running MCMC with 4 parallel chains...
 
-Chain 3 finished in 265.7 seconds.
-Chain 2 finished in 368.7 seconds.
-Chain 4 finished in 369.0 seconds.
-Chain 1 finished in 378.3 seconds.
+Chain 3 finished in 278.9 seconds.
+Chain 4 finished in 289.5 seconds.
+Chain 1 finished in 376.3 seconds.
+Chain 2 finished in 381.4 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 345.4 seconds.
-Total execution time: 378.4 seconds.</code></pre>
+Mean chain execution time: 331.5 seconds.
+Total execution time: 381.6 seconds.</code></pre>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 <pre><code>Variables: x = normal 
@@ -181,32 +181,31 @@ Phylogeny: repeated$phylogeny (Number of trees: 1)
 
 Autoregressive selection effects:
   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x    -1.58      0.77 -3.17 -0.21 1.00     5111     3604
-y    -1.34      0.71 -2.85 -0.15 1.00     5223     3187
+x    -1.59      0.77 -3.20 -0.23 1.00     5611     3113
+y    -1.34      0.71 -2.83 -0.13 1.00     5226     2942
 
 Cross selection effects:
       Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x ⟶ y     0.42      0.86 -1.27  2.10 1.00     7501     6161
-y ⟶ x     0.04      0.85 -1.65  1.71 1.00     7967     6517
+x ⟶ y     0.43      0.85 -1.23  2.11 1.00     6797     6039
+y ⟶ x     0.04      0.88 -1.68  1.76 1.00     6401     5979
 
 Drift parameters:
          Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(x)        2.93      0.32 2.37  3.60 1.00     5491     5809
-sd(y)        2.58      0.29 2.05  3.21 1.00     5128     6351
-cor(x,y)     0.87      0.06 0.71  0.96 1.00     3770     4970
+sd(x)        2.94      0.32 2.36  3.61 1.00     3880     5282
+sd(y)        2.58      0.30 2.05  3.22 1.00     4580     5045
+cor(x,y)     0.87      0.07 0.70  0.96 1.00     3061     4116
 
 Continuous time intercept parameters:
   Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-x    -0.06      0.78 -1.61  1.46 1.00     8432     5963
-y     0.04      0.76 -1.48  1.53 1.00     9003     5867
+x    -0.05      0.77 -1.56  1.41 1.00     7103     5863
+y     0.04      0.74 -1.43  1.47 1.00     7364     6014
 
 Residual parameters:
          Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(x)        0.28      0.02  0.23  0.32 1.00     9704     5265
-sd(y)        0.29      0.02  0.25  0.34 1.00    10692     5832
-cor(x,y)    -0.18      0.10 -0.38  0.02 1.00     8699     5553</code></pre>
-<pre><code>Warning: There were 30 divergent transitions after warmup.
-http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
+sd(x)        0.28      0.02  0.24  0.33 1.00     8521     5834
+sd(y)        0.29      0.02  0.25  0.34 1.00     9510     6095
+cor(x,y)    -0.18      0.10 -0.38  0.02 1.00     8512     6270</code></pre>
+<pre><code>Warning: There were 17 divergent transitions after warmup. http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</code></pre>
 <p>In the model output, we can see that <code><a href="../reference/coev_fit.html">coev_fit()</a></code> has
 detected the presence of repeated observations and has consequently
 modelled residual standard deviation and residual correlation parameters
