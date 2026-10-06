@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">coevolve</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.0.9000</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.2.1</span>
       </span>
     </div>
 
@@ -53,6 +53,23 @@
       <small>Source: <a href="https://github.com/ScottClaessens/coevolve/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="page-header" data-toc-text="1.2.1" id="coevolve-121">coevolve 1.2.1<a class="anchor" aria-label="anchor" href="#coevolve-121"></a></h2>
+<div class="section level4">
+<h4 id="new-features-1-2-1">New Features<a class="anchor" aria-label="anchor" href="#new-features-1-2-1"></a></h4>
+<ul><li>Added further documentation about repeated observations models (<a href="https://github.com/ScottClaessens/coevolve/issues/120" class="external-link">#120</a>)</li>
+<li>Added vignette “Algorithmic scaling” (<a href="https://github.com/ScottClaessens/coevolve/issues/121" class="external-link">#121</a>)</li>
+<li>Models with Gaussian variables and no repeated observations now use a conditionally non-centred parameterisation for latent terminal drift, i.e. the terminal drift of non-Gaussian variables and of missing Gaussian values. Latent drift is written as a standard normal innovation conditional on the observed Gaussian residuals of the same taxon. This is a change of variables that leaves the model, the posterior, and the pointwise log-likelihood unchanged, but removes a funnel between the drift parameters and the latent terminal drift that caused poor mixing in mixed Gaussian and non-Gaussian models. Thanks to <a href="https://github.com/yuhangxoox" class="external-link">@yuhangxoox</a> for the diagnosis (<a href="https://github.com/ScottClaessens/coevolve/issues/124" class="external-link">#124</a>)</li>
+</ul></div>
+<div class="section level4">
+<h4 id="bug-fixes-1-2-1">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-1"></a></h4>
+<ul><li>Fixed <code><a href="../reference/coev_plot_predictive_check.html">coev_plot_predictive_check()</a></code> when <code>nuts_sampler = "nutpie"</code>. The JAX backend now returns <code>yrep</code> posterior predictions alongside the other model parameters, matching the Stan backend (<a href="https://github.com/ScottClaessens/coevolve/issues/118" class="external-link">#118</a>)</li>
+<li>
+<code>log_lik = TRUE</code> is now supported with <code>nuts_sampler = "nutpie"</code>. The JAX backend previously ignored the argument and returned no <code>log_lik</code>, so <code>loo</code> and <code>waic</code> could not be computed from nutpie fits (<a href="https://github.com/ScottClaessens/coevolve/issues/118" class="external-link">#118</a>)</li>
+<li>Fixed <code>prior_only = TRUE</code> for models with Gaussian variables and no repeated observations. <code>terminal_drift</code> only received a prior inside the likelihood block, leaving it improper when the likelihood was skipped. Sampling failed to initialise with <code>nuts_sampler = "nutpie"</code> and was unreliable with <code>nuts_sampler = "stan"</code> (<a href="https://github.com/ScottClaessens/coevolve/issues/118" class="external-link">#118</a>)</li>
+<li>Fixed the pointwise <code>log_lik</code> and <code>yrep</code> for Gaussian variables with missing data. The generated quantities block used the <code>-9999</code> missing value placeholder when constructing residuals, which corrupted the conditional densities of the other variables of the same observation</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="page-header" data-toc-text="1.2.0" id="coevolve-120">coevolve 1.2.0<a class="anchor" aria-label="anchor" href="#coevolve-120"></a></h2>
 <div class="section level4">
