@@ -88,7 +88,7 @@ stan_code_default <-
   )
 
 # extract the priors section from the model block
-cat(substr(stan_code_default, 8739, 9088))
+cat(substr(stan_code_default, 8510, 8859))
 ```
 
 If we wanted to set manual priors to replace some of these, we need only declare
@@ -115,7 +115,7 @@ stan_code_manual <-
   )
 
 # extract the priors section from the model block
-cat(substr(stan_code_manual, 8739, 9093))
+cat(substr(stan_code_manual, 8510, 8864))
 ```
 
 We could fit the model with these manual priors by setting the same `prior`

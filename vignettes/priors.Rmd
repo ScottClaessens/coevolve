@@ -5,7 +5,7 @@ output:
     toc: true
 pkgdown:
   as_is: true
-date: "2026-08-19"
+date: "2026-10-06"
 author: "Scott Claessens"
 vignette: >
   %\VignetteIndexEntry{Setting manual priors}
@@ -72,7 +72,7 @@ stan_code_default <-
   )
 
 # extract the priors section from the model block
-cat(substr(stan_code_default, 8739, 9088))
+cat(substr(stan_code_default, 8510, 8859))
 ```
 
 ```
@@ -116,7 +116,7 @@ stan_code_manual <-
   )
 
 # extract the priors section from the model block
-cat(substr(stan_code_manual, 8739, 9093))
+cat(substr(stan_code_manual, 8510, 8864))
 ```
 
 ```

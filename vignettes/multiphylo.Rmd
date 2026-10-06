@@ -5,7 +5,7 @@ output:
     toc: true
 pkgdown:
   as_is: true
-date: "2026-07-22"
+date: "2026-10-06"
 author: "Scott Claessens"
 vignette: >
   %\VignetteIndexEntry{Averaging over samples of trees}
@@ -80,14 +80,14 @@ fit <-
 ```
 Running MCMC with 4 parallel chains...
 
-Chain 1 finished in 656.8 seconds.
-Chain 2 finished in 923.7 seconds.
-Chain 4 finished in 948.0 seconds.
-Chain 3 finished in 981.0 seconds.
+Chain 3 finished in 727.6 seconds.
+Chain 1 finished in 803.5 seconds.
+Chain 2 finished in 991.6 seconds.
+Chain 4 finished in 992.6 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 877.4 seconds.
-Total execution time: 981.2 seconds.
+Mean chain execution time: 878.8 seconds.
+Total execution time: 992.9 seconds.
 ```
 
 
@@ -105,37 +105,37 @@ Phylogeny: authority_multiphylo (Number of trees: 5)
 
 Autoregressive selection effects:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority    -0.63      0.51 -1.88 -0.02 1.00     7062     3695
-religious_authority    -0.69      0.54 -2.04 -0.03 1.00     8325     5335
+political_authority    -0.64      0.51 -1.87 -0.02 1.00     7425     4575
+religious_authority    -0.67      0.53 -1.97 -0.02 1.00     7359     4659
 
 Cross selection effects:
                                           Estimate Est.Error 2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority ⟶ religious_authority     2.32      1.06 0.61  4.66 1.00     4224     5591
-religious_authority ⟶ political_authority     2.16      0.99 0.52  4.33 1.00     2651     5819
+political_authority ⟶ religious_authority     2.12      1.02 0.53  4.40 1.00     4673     4834
+religious_authority ⟶ political_authority     2.29      1.05 0.54  4.62 1.00     3907     5364
 
 Drift parameters:
                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(political_authority)                          0.83      0.67  0.03  2.45 1.00     3619     5184
-sd(religious_authority)                          0.78      0.61  0.03  2.28 1.00     4586     5388
-cor(political_authority,religious_authority)     0.01      0.34 -0.63  0.65 1.00     6064     6033
+sd(political_authority)                          0.84      0.68  0.03  2.45 1.00     2788     3731
+sd(religious_authority)                          0.77      0.61  0.03  2.26 1.00     3418     4309
+cor(political_authority,religious_authority)     0.01      0.34 -0.63  0.65 1.00     9295     6150
 
 Continuous time intercept parameters:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority     0.48      0.86 -1.24  2.14 1.00    13415     5871
-religious_authority     0.58      0.89 -1.10  2.30 1.00     2540      598
+political_authority     0.49      0.87 -1.21  2.22 1.00     9800     6034
+religious_authority     0.59      0.87 -1.17  2.27 1.00     9199     5602
 
 Ordinal cutpoint parameters:
                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority[1]    -1.62      0.91 -3.45  0.07 1.00     5186     6187
-political_authority[2]    -0.82      0.87 -2.56  0.83 1.00     7068     6249
-political_authority[3]     1.90      0.91  0.18  3.73 1.00    11570     6524
-religious_authority[1]    -2.05      0.92 -3.88 -0.31 1.00     2223      363
-religious_authority[2]    -1.30      0.88 -3.19  0.41 1.00     1672      328
-religious_authority[3]     1.67      0.97 -0.17  3.67 1.00     1778      349
+political_authority[1]    -1.65      0.92 -3.56  0.08 1.00     6570     5590
+political_authority[2]    -0.85      0.89 -2.66  0.84 1.00     6961     5882
+political_authority[3]     1.92      0.93  0.17  3.86 1.00     8509     6389
+religious_authority[1]    -2.01      0.90 -3.86 -0.29 1.00     6165     5308
+religious_authority[2]    -1.28      0.85 -2.98  0.40 1.00     7178     5949
+religious_authority[3]     1.65      0.93 -0.03  3.60 1.00     8038     5883
 ```
 
 ```
-Warning: There were 107 divergent transitions after warmup.
+Warning: There were 12 divergent transitions after warmup.
 http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 

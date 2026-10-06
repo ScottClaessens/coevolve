@@ -5,7 +5,7 @@ output:
     toc: true
 pkgdown:
   as_is: true
-date: "2026-07-22"
+date: "2026-10-06"
 author: "Scott Claessens"
 vignette: >
   %\VignetteIndexEntry{Model comparison}
@@ -59,14 +59,14 @@ fit_dependent <-
 ```
 Running MCMC with 4 parallel chains...
 
-Chain 4 finished in 422.2 seconds.
-Chain 3 finished in 430.6 seconds.
-Chain 1 finished in 444.5 seconds.
-Chain 2 finished in 451.0 seconds.
+Chain 2 finished in 438.8 seconds.
+Chain 4 finished in 439.9 seconds.
+Chain 3 finished in 440.3 seconds.
+Chain 1 finished in 459.9 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 437.1 seconds.
-Total execution time: 451.1 seconds.
+Mean chain execution time: 444.7 seconds.
+Total execution time: 460.1 seconds.
 ```
 
 Second, we fit an "independent" model where the two traits evolve independently.
@@ -124,14 +124,14 @@ fit_independent <-
 ```
 Running MCMC with 4 parallel chains...
 
-Chain 4 finished in 157.1 seconds.
-Chain 2 finished in 186.2 seconds.
-Chain 1 finished in 191.1 seconds.
-Chain 3 finished in 191.3 seconds.
+Chain 2 finished in 181.1 seconds.
+Chain 1 finished in 196.7 seconds.
+Chain 3 finished in 203.4 seconds.
+Chain 4 finished in 208.4 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 181.4 seconds.
-Total execution time: 191.6 seconds.
+Mean chain execution time: 197.4 seconds.
+Total execution time: 208.7 seconds.
 ```
 
 Once we have fitted both models, we can use the `loo_compare()` function from
@@ -149,9 +149,9 @@ loo_compare(
 ```
 
 ```
-           model elpd_diff se_diff p_worse diag_diff      diag_elpd
-   fit_dependent       0.0     0.0      NA           1 k_psis > 0.7
- fit_independent     -24.0     4.5    1.00           1 k_psis > 0.7
+           model elpd_diff se_diff p_worse diag_diff diag_elpd
+   fit_dependent       0.0     0.0      NA                    
+ fit_independent     -23.7     4.5    1.00                    
 ```
 
 Usually, we would like to see a difference in expected log predictive density

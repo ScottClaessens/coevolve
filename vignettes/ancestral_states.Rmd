@@ -5,7 +5,7 @@ output:
     toc: true
 pkgdown:
   as_is: true
-date: "2026-08-12"
+date: "2026-10-06"
 author: "Erik Ringen"
 vignette: >
   %\VignetteIndexEntry{Ancestral state reconstruction}
@@ -70,58 +70,58 @@ Chain 1 Iteration:   1 / 1000 [  0%]  (Warmup)
 Chain 2 Iteration:   1 / 1000 [  0%]  (Warmup) 
 Chain 3 Iteration:   1 / 1000 [  0%]  (Warmup) 
 Chain 4 Iteration:   1 / 1000 [  0%]  (Warmup) 
-Chain 2 Iteration: 100 / 1000 [ 10%]  (Warmup) 
-Chain 3 Iteration: 100 / 1000 [ 10%]  (Warmup) 
-Chain 4 Iteration: 100 / 1000 [ 10%]  (Warmup) 
 Chain 1 Iteration: 100 / 1000 [ 10%]  (Warmup) 
-Chain 3 Iteration: 200 / 1000 [ 20%]  (Warmup) 
-Chain 2 Iteration: 200 / 1000 [ 20%]  (Warmup) 
+Chain 3 Iteration: 100 / 1000 [ 10%]  (Warmup) 
+Chain 2 Iteration: 100 / 1000 [ 10%]  (Warmup) 
+Chain 4 Iteration: 100 / 1000 [ 10%]  (Warmup) 
 Chain 1 Iteration: 200 / 1000 [ 20%]  (Warmup) 
+Chain 2 Iteration: 200 / 1000 [ 20%]  (Warmup) 
+Chain 3 Iteration: 200 / 1000 [ 20%]  (Warmup) 
 Chain 4 Iteration: 200 / 1000 [ 20%]  (Warmup) 
 Chain 3 Iteration: 300 / 1000 [ 30%]  (Warmup) 
-Chain 4 Iteration: 300 / 1000 [ 30%]  (Warmup) 
-Chain 2 Iteration: 300 / 1000 [ 30%]  (Warmup) 
 Chain 1 Iteration: 300 / 1000 [ 30%]  (Warmup) 
+Chain 2 Iteration: 300 / 1000 [ 30%]  (Warmup) 
+Chain 4 Iteration: 300 / 1000 [ 30%]  (Warmup) 
 Chain 3 Iteration: 400 / 1000 [ 40%]  (Warmup) 
-Chain 4 Iteration: 400 / 1000 [ 40%]  (Warmup) 
-Chain 2 Iteration: 400 / 1000 [ 40%]  (Warmup) 
 Chain 1 Iteration: 400 / 1000 [ 40%]  (Warmup) 
+Chain 2 Iteration: 400 / 1000 [ 40%]  (Warmup) 
+Chain 4 Iteration: 400 / 1000 [ 40%]  (Warmup) 
 Chain 3 Iteration: 500 / 1000 [ 50%]  (Warmup) 
 Chain 3 Iteration: 501 / 1000 [ 50%]  (Sampling) 
+Chain 1 Iteration: 500 / 1000 [ 50%]  (Warmup) 
+Chain 1 Iteration: 501 / 1000 [ 50%]  (Sampling) 
 Chain 4 Iteration: 500 / 1000 [ 50%]  (Warmup) 
 Chain 4 Iteration: 501 / 1000 [ 50%]  (Sampling) 
 Chain 2 Iteration: 500 / 1000 [ 50%]  (Warmup) 
 Chain 2 Iteration: 501 / 1000 [ 50%]  (Sampling) 
-Chain 4 Iteration: 600 / 1000 [ 60%]  (Sampling) 
-Chain 1 Iteration: 500 / 1000 [ 50%]  (Warmup) 
-Chain 1 Iteration: 501 / 1000 [ 50%]  (Sampling) 
 Chain 3 Iteration: 600 / 1000 [ 60%]  (Sampling) 
-Chain 4 Iteration: 700 / 1000 [ 70%]  (Sampling) 
-Chain 2 Iteration: 600 / 1000 [ 60%]  (Sampling) 
-Chain 4 Iteration: 800 / 1000 [ 80%]  (Sampling) 
 Chain 1 Iteration: 600 / 1000 [ 60%]  (Sampling) 
+Chain 4 Iteration: 600 / 1000 [ 60%]  (Sampling) 
+Chain 2 Iteration: 600 / 1000 [ 60%]  (Sampling) 
 Chain 3 Iteration: 700 / 1000 [ 70%]  (Sampling) 
-Chain 4 Iteration: 900 / 1000 [ 90%]  (Sampling) 
-Chain 2 Iteration: 700 / 1000 [ 70%]  (Sampling) 
-Chain 4 Iteration: 1000 / 1000 [100%]  (Sampling) 
-Chain 4 finished in 80.5 seconds.
 Chain 1 Iteration: 700 / 1000 [ 70%]  (Sampling) 
+Chain 4 Iteration: 700 / 1000 [ 70%]  (Sampling) 
+Chain 2 Iteration: 700 / 1000 [ 70%]  (Sampling) 
 Chain 3 Iteration: 800 / 1000 [ 80%]  (Sampling) 
-Chain 2 Iteration: 800 / 1000 [ 80%]  (Sampling) 
 Chain 1 Iteration: 800 / 1000 [ 80%]  (Sampling) 
+Chain 4 Iteration: 800 / 1000 [ 80%]  (Sampling) 
+Chain 2 Iteration: 800 / 1000 [ 80%]  (Sampling) 
 Chain 3 Iteration: 900 / 1000 [ 90%]  (Sampling) 
-Chain 2 Iteration: 900 / 1000 [ 90%]  (Sampling) 
 Chain 1 Iteration: 900 / 1000 [ 90%]  (Sampling) 
+Chain 4 Iteration: 900 / 1000 [ 90%]  (Sampling) 
+Chain 2 Iteration: 900 / 1000 [ 90%]  (Sampling) 
 Chain 3 Iteration: 1000 / 1000 [100%]  (Sampling) 
-Chain 3 finished in 104.4 seconds.
-Chain 2 Iteration: 1000 / 1000 [100%]  (Sampling) 
-Chain 2 finished in 108.4 seconds.
+Chain 3 finished in 108.7 seconds.
 Chain 1 Iteration: 1000 / 1000 [100%]  (Sampling) 
-Chain 1 finished in 110.1 seconds.
+Chain 1 finished in 111.1 seconds.
+Chain 4 Iteration: 1000 / 1000 [100%]  (Sampling) 
+Chain 4 finished in 114.8 seconds.
+Chain 2 Iteration: 1000 / 1000 [100%]  (Sampling) 
+Chain 2 finished in 117.7 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 100.8 seconds.
-Total execution time: 110.2 seconds.
+Mean chain execution time: 113.1 seconds.
+Total execution time: 117.9 seconds.
 ```
 
 Quick check that the model sampled adequately:
@@ -141,38 +141,33 @@ Phylogeny: authority$phylogeny (Number of trees: 1)
 
 Autoregressive selection effects:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority    -0.53      0.44 -1.64 -0.02 1.00     1420     1270
-religious_authority    -0.60      0.48 -1.82 -0.03 1.00     1549     1137
+political_authority    -0.52      0.42 -1.58 -0.02 1.00     1267     1150
+religious_authority    -0.60      0.49 -1.75 -0.02 1.00     1462      871
 
 Cross selection effects:
                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority ⟶ religious_authority     1.50      0.74 -0.04  2.87 1.00      842     1055
-religious_authority ⟶ political_authority     1.05      0.83 -0.62  2.64 1.00      701     1384
+political_authority ⟶ religious_authority     1.54      0.70  0.08  2.79 1.00      812      974
+religious_authority ⟶ political_authority     1.06      0.83 -0.62  2.61 1.00      687     1101
 
 Drift parameters:
                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(political_authority)                          2.15      0.82  0.37  3.70 1.00      453      406
-sd(religious_authority)                          1.46      0.82  0.13  3.10 1.01      416      887
-cor(political_authority,religious_authority)     0.37      0.30 -0.35  0.85 1.00     1116     1360
+sd(political_authority)                          2.26      0.83  0.45  3.73 1.00      415      353
+sd(religious_authority)                          1.41      0.84  0.08  3.08 1.01      397      983
+cor(political_authority,religious_authority)     0.36      0.30 -0.35  0.81 1.00     1420     1678
 
 Continuous time intercept parameters:
                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority     0.31      0.91 -1.55  2.12 1.00     2426     1337
-religious_authority     0.31      0.91 -1.47  2.14 1.01     3135     1612
+political_authority     0.29      0.91 -1.49  2.07 1.00     2419     1563
+religious_authority     0.29      0.91 -1.44  2.01 1.00     2826     1405
 
 Ordinal cutpoint parameters:
                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-political_authority[1]    -1.44      0.88 -3.13  0.23 1.00     1266     1010
-political_authority[2]    -0.70      0.86 -2.36  1.01 1.00     1418     1276
-political_authority[3]     1.48      0.86 -0.20  3.19 1.00     1661     1415
-religious_authority[1]    -1.59      0.92 -3.32  0.24 1.00     1424     1248
-religious_authority[2]    -0.92      0.90 -2.61  0.87 1.00     1699     1531
-religious_authority[3]     1.45      0.92 -0.24  3.28 1.00     1913     1488
-```
-
-```
-Warning: There were 2 divergent transitions after warmup.
-http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
+political_authority[1]    -1.49      0.91 -3.29  0.31 1.00     1712     1598
+political_authority[2]    -0.73      0.89 -2.43  1.04 1.00     2124     1490
+political_authority[3]     1.49      0.92 -0.26  3.41 1.00     2342     1285
+religious_authority[1]    -1.59      0.98 -3.61  0.28 1.00     1775     1329
+religious_authority[2]    -0.92      0.95 -2.77  0.92 1.00     2067     1435
+religious_authority[3]     1.45      0.96 -0.39  3.33 1.00     2412     1444
 ```
 
 ## Ancestral states on the latent scale
@@ -190,12 +185,12 @@ head(asr_latent)
 # A tibble: 6 × 5
    node variable            estimate lower upper
   <int> <chr>                  <dbl> <dbl> <dbl>
-1    98 political_authority    0.377 -1.44  2.15
-2    98 religious_authority    0.292 -1.52  1.92
-3    99 political_authority    0.363 -1.39  2.20
-4    99 religious_authority    0.282 -1.44  1.87
-5   100 political_authority    0.235 -1.94  2.44
-6   100 religious_authority    0.276 -1.61  2.20
+1    98 political_authority    0.368 -1.30  2.02
+2    98 religious_authority    0.300 -1.56  2.20
+3    99 political_authority    0.380 -1.37  2.16
+4    99 religious_authority    0.295 -1.50  2.18
+5   100 political_authority    0.222 -2.01  2.35
+6   100 religious_authority    0.295 -1.71  2.19
 ```
 
 The result is a long-format tibble with one row per node-variable combination.
@@ -289,7 +284,7 @@ ggplot(asr_wide,
 ```
 Warning: `geom_errorbarh()` was deprecated in ggplot2 4.0.0.
 ℹ Please use the `orientation` argument of `geom_errorbar()` instead.
-This warning is displayed once every 8 hours.
+This warning is displayed once per session.
 Call `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.
 ```
 
@@ -321,14 +316,14 @@ head(asr_resp, 8)
 # A tibble: 8 × 6
    node variable            category estimate   lower upper
   <int> <chr>               <chr>       <dbl>   <dbl> <dbl>
-1     1 political_authority cat_1      0.0442 0.00234 0.303
-2     1 political_authority cat_2      0.0419 0.00264 0.193
-3     1 political_authority cat_3      0.346  0.0455  0.587
-4     1 political_authority cat_4      0.536  0.102   0.947
-5     1 religious_authority cat_1      0.0348 0.00157 0.285
-6     1 religious_authority cat_2      0.0284 0.00133 0.149
-7     1 religious_authority cat_3      0.340  0.0352  0.607
-8     1 religious_authority cat_4      0.581  0.106   0.960
+1     1 political_authority cat_1      0.0448 0.00200 0.276
+2     1 political_authority cat_2      0.0425 0.00220 0.181
+3     1 political_authority cat_3      0.349  0.0435  0.600
+4     1 political_authority cat_4      0.536  0.115   0.950
+5     1 religious_authority cat_1      0.0340 0.00139 0.258
+6     1 religious_authority cat_2      0.0275 0.00108 0.154
+7     1 religious_authority cat_3      0.335  0.0282  0.593
+8     1 religious_authority cat_4      0.584  0.124   0.968
 ```
 
 The point estimate (`estimate`) is the posterior median for all rows,
@@ -403,7 +398,7 @@ str(asr_draws, max.level = 1)
 
 ```
 List of 4
- $ draws         : num [1:2000, 1:96, 1:2] 0.914 0.294 1.224 0.221 0.319 ...
+ $ draws         : num [1:2000, 1:96, 1:2] 0.447 0.239 1.269 -0.543 0.754 ...
   ..- attr(*, "dimnames")=List of 3
  $ ref_tree      :List of 5
   ..- attr(*, "class")= chr "phylo"
@@ -495,7 +490,7 @@ asr_sub
 # A tibble: 3 × 5
    node variable            estimate lower upper
   <int> <chr>                  <dbl> <dbl> <dbl>
-1    98 religious_authority    0.292 -1.52  1.92
-2    99 religious_authority    0.282 -1.44  1.87
-3   100 religious_authority    0.276 -1.61  2.20
+1    98 religious_authority    0.300 -1.56  2.20
+2    99 religious_authority    0.295 -1.50  2.18
+3   100 religious_authority    0.295 -1.71  2.19
 ```

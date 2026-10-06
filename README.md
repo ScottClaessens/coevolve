@@ -41,7 +41,9 @@ tree. The equation partitions evolutionary change in the traits into
 state-dependent deterministic selection and state-independent Brownian
 motion, similar to a multivariate Ornstein-Uhlenbeck process:
 
-$$d\eta(t) = (\textbf{A}\eta(t) + \textbf{b}) + \textbf{G}dW(t)$$
+$$
+d\eta(t) = (\textbf{A}\eta(t) + \textbf{b}) + \textbf{G}dW(t)
+$$
 
 $\eta(t)$ is a vector of latent variables at time $t$. The matrix
 $\textbf{A}$ represents “selection” with strictly negative
@@ -99,15 +101,15 @@ fit <-
   )
 #> Running MCMC with 4 parallel chains...
 #> 
-#> Chain 3 finished in 259.1 seconds.
-#> Chain 4 finished in 266.1 seconds.
-#> Chain 1 finished in 356.2 seconds.
-#> Chain 2 finished in 386.1 seconds.
+#> Chain 4 finished in 280.8 seconds.
+#> Chain 1 finished in 290.0 seconds.
+#> Chain 3 finished in 380.7 seconds.
+#> Chain 2 finished in 382.0 seconds.
 #> 
 #> All 4 chains finished successfully.
-#> Mean chain execution time: 316.9 seconds.
-#> Total execution time: 386.2 seconds.
-#> Warning: 7 of 4000 (0.0%) transitions ended with a divergence.
+#> Mean chain execution time: 333.3 seconds.
+#> Total execution time: 382.1 seconds.
+#> Warning: 10 of 4000 (0.0%) transitions ended with a divergence.
 #> See https://mc-stan.org/misc/warnings for details.
 ```
 
@@ -124,34 +126,34 @@ summary(fit)
 #> 
 #> Autoregressive selection effects:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority    -0.64      0.53 -1.96 -0.02 1.00     2282     2149
-#> religious_authority    -0.81      0.57 -2.16 -0.04 1.00     2639     2106
+#> political_authority    -0.67      0.54 -1.95 -0.02 1.00     2418     1577
+#> religious_authority    -0.77      0.57 -2.10 -0.04 1.00     2712     2298
 #> 
 #> Cross selection effects:
 #>                                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority ⟶ religious_authority     2.34      0.96  0.42  4.29 1.01     1508     1853
-#> religious_authority ⟶ political_authority     1.68      1.08 -0.42  3.83 1.00     1067     2030
+#> political_authority ⟶ religious_authority     2.25      0.98  0.32  4.32 1.00     1335     1975
+#> religious_authority ⟶ political_authority     1.80      1.11 -0.29  4.07 1.01     1240     2146
 #> 
 #> Drift parameters:
 #>                                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> sd(political_authority)                          2.01      0.83  0.25  3.60 1.01      643      602
-#> sd(religious_authority)                          1.25      0.79  0.08  2.96 1.02      734     1737
-#> cor(political_authority,religious_authority)     0.26      0.31 -0.41  0.77 1.00     2760     2512
+#> sd(political_authority)                          1.92      0.85  0.17  3.50 1.01      713      814
+#> sd(religious_authority)                          1.30      0.81  0.06  2.94 1.00      754     1144
+#> cor(political_authority,religious_authority)     0.25      0.32 -0.43  0.77 1.00     2262     2591
 #> 
 #> Continuous time intercept parameters:
 #>                     Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority     0.23      0.94 -1.60  2.07 1.00     4889     2814
-#> religious_authority     0.31      0.94 -1.51  2.19 1.00     5071     2710
+#> political_authority     0.22      0.94 -1.63  2.08 1.00     5319     2828
+#> religious_authority     0.22      0.94 -1.58  2.06 1.00     5725     2185
 #> 
 #> Ordinal cutpoint parameters:
 #>                        Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-#> political_authority[1]    -1.32      0.88 -3.05  0.43 1.00     2746     2770
-#> political_authority[2]    -0.57      0.86 -2.28  1.14 1.00     3083     2967
-#> political_authority[3]     1.63      0.88 -0.06  3.48 1.00     3629     3113
-#> religious_authority[1]    -1.50      0.92 -3.28  0.31 1.00     3289     2605
-#> religious_authority[2]    -0.81      0.91 -2.59  0.96 1.00     3582     2759
-#> religious_authority[3]     1.63      0.92 -0.12  3.49 1.00     3786     3337
-#> Warning: There were 7 divergent transitions after warmup.
+#> political_authority[1]    -1.30      0.90 -3.02  0.50 1.00     3239     2666
+#> political_authority[2]    -0.55      0.87 -2.23  1.20 1.00     3556     2535
+#> political_authority[3]     1.65      0.88 -0.03  3.40 1.00     3822     3241
+#> religious_authority[1]    -1.53      0.94 -3.40  0.37 1.00     3653     2465
+#> religious_authority[2]    -0.84      0.90 -2.61  1.01 1.00     3813     2753
+#> religious_authority[3]     1.60      0.93 -0.15  3.51 1.00     3992     3139
+#> Warning: There were 10 divergent transitions after warmup.
 #> http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
@@ -178,7 +180,7 @@ increase in another variable.
 
 ``` r
 coev_plot_delta_theta(fit, prob_outer = 0.90)
-#> Warning: Removed 518 rows containing non-finite outside the scale range (`stat_density()`).
+#> Warning: Removed 549 rows containing non-finite outside the scale range (`stat_density()`).
 ```
 
 <img src="man/figures/README-authority-delta-theta-1.png" alt="Plot showing the posterior distributions of delta theta for both directions of coevolution between political and religious authority. The bulk of the posterior densities are greater than zero." width="60%" style="display: block; margin: auto;" />

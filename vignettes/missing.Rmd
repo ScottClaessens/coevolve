@@ -5,7 +5,7 @@ output:
     toc: true
 pkgdown:
   as_is: true
-date: "2026-07-22"
+date: "2026-10-06"
 author: "Scott Claessens"
 vignette: >
   %\VignetteIndexEntry{Handling missing data}
@@ -103,14 +103,14 @@ fit <-
 ```
 Running MCMC with 4 parallel chains...
 
-Chain 4 finished in 218.4 seconds.
-Chain 3 finished in 218.5 seconds.
-Chain 1 finished in 220.3 seconds.
-Chain 2 finished in 303.0 seconds.
+Chain 4 finished in 209.4 seconds.
+Chain 3 finished in 280.6 seconds.
+Chain 1 finished in 297.8 seconds.
+Chain 2 finished in 307.8 seconds.
 
 All 4 chains finished successfully.
-Mean chain execution time: 240.0 seconds.
-Total execution time: 303.1 seconds.
+Mean chain execution time: 273.9 seconds.
+Total execution time: 308.0 seconds.
 ```
 
 
@@ -128,33 +128,33 @@ Phylogeny: primates_phylogeny (Number of trees: 1)
 
 Autoregressive selection effects:
              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight    -0.44      0.36 -1.33 -0.01 1.00     5487     2827
-group_size      -0.76      0.52 -1.95 -0.04 1.00     4512     3041
+brain_weight    -0.41      0.35 -1.29 -0.01 1.00     6328     4649
+group_size      -0.77      0.54 -2.01 -0.03 1.00     2051      549
 
 Cross selection effects:
                           Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight ⟶ group_size     0.27      0.79 -1.43  1.69 1.00     2327     3530
-group_size ⟶ brain_weight     0.95      1.00 -0.97  3.09 1.01      738      287
+brain_weight ⟶ group_size     0.50      0.71 -1.05  1.80 1.00     4280     3437
+group_size ⟶ brain_weight     0.59      0.92 -1.31  2.37 1.00     5114     4939
 
 Drift parameters:
                              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-sd(brain_weight)                 1.05      0.24  0.62  1.56 1.00     1850     2491
-sd(group_size)                   0.73      0.45  0.04  1.68 1.01      773     1213
-cor(brain_weight,group_size)     0.08      0.30 -0.52  0.64 1.00     2192      959
+sd(brain_weight)                 1.08      0.22  0.71  1.58 1.00     2648     3443
+sd(group_size)                   0.67      0.44  0.04  1.63 1.00      969     1527
+cor(brain_weight,group_size)     0.05      0.29 -0.54  0.61 1.00     9006     5373
 
 Continuous time intercept parameters:
              Estimate Est.Error  2.5% 97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight    -0.34      0.78 -1.83  1.20 1.00     5466     5389
-group_size      -1.03      0.83 -2.53  0.65 1.00     2964     4869
+brain_weight    -0.27      0.84 -1.90  1.46 1.00     8288     5943
+group_size      -0.85      0.77 -2.34  0.68 1.00     8135     5863
 
 Shape parameters:
              Estimate Est.Error 2.5%  97.5% Rhat Bulk_ESS Tail_ESS
-brain_weight    57.43     55.36 5.13 207.68 1.01      561     1199
-group_size       7.10     15.67 1.42  41.76 1.01      689      520
+brain_weight    61.96     59.96 5.82 227.86 1.00      619      603
+group_size       6.37     16.01 1.42  31.16 1.00      903      715
 ```
 
 ```
-Warning: There were 404 divergent transitions after warmup.
+Warning: There were 178 divergent transitions after warmup.
 http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 ```
 
